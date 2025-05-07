@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 20%; /* Dark text for legibility */
+  
+  --muted: 0 0% 97%;
+  --muted-foreground: 0 0% 45%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 20%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20%;
+  
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  
+  /* Primary color: #FF5A5F (Elevate brand color) */
+  --primary: 357 100% 67%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary color: #00B8D9 (Teal) */
+  --secondary: 190 100% 42%;
+  --secondary-foreground: 0 0% 100%;
+  
+  /* Accent color: #32CD32 (Lime Green) */
+  --accent: 120 68% 50%;
+  --accent-foreground: 0 0% 100%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --ring: 357 100% 67%;
+  
+  --radius: 0.5rem;
+  
+  /* Chart colors */
+  --chart-1: 357 100% 67%;
+  --chart-2: 190 100% 42%;
+  --chart-3: 120 68% 50%;
+  --chart-4: 39 100% 50%;
+  --chart-5: 262 83% 58%;
+}
+
+.dark {
+  --background: 0 0% 12%;
+  --foreground: 0 0% 98%;
+  
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 70%;
+  
+  --popover: 0 0% 12%;
+  --popover-foreground: 0 0% 98%;
+  
+  --card: 0 0% 15%;
+  --card-foreground: 0 0% 98%;
+  
+  --border: 0 0% 25%;
+  --input: 0 0% 25%;
+  
+  --primary: 357 90% 65%;
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 190 90% 40%;
+  --secondary-foreground: 0 0% 100%;
+  
+  --accent: 120 60% 45%;
+  --accent-foreground: 0 0% 100%;
+  
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --ring: 357 90% 65%;
+  
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans bg-background text-foreground antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+
+  .font-heading {
+    @apply font-sans;
+  }
+}
+
+/* Utility classes */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-white/30;
+}
+
+/* Animation classes */
+.slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
