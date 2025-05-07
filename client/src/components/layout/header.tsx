@@ -1,0 +1,216 @@
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { 
+  Bell, 
+  User, 
+  ChevronDown, 
+  Menu, 
+  LogOut, 
+  Settings, 
+  Calendar, 
+  Home, 
+  Search,
+  UserCircle
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+export default function Header() {
+  const [location] = useLocation();
+  const { user, logoutMutation } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
+  return (
+    <header className="bg-white shadow-sm sticky top-0 z-40">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+        <Link href="/" className="flex items-center">
+          <span className="text-primary text-2xl font-heading font-bold">Elevate</span>
+        </Link>
+        
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-6">
+          <Link href="/classes" className={`text-foreground hover:text-primary transition font-medium ${location === '/classes' ? 'text-primary' : ''}`}>
+            Classes
+          </Link>
+          <Link href="/coaches" className={`text-foreground hover:text-primary transition font-medium ${location === '/coaches' ? 'text-primary' : ''}`}>
+            Coaches
+          </Link>
+          <Link href="/#how-it-works" className="text-foreground hover:text-primary transition font-medium">
+            How It Works
+          </Link>
+          
+          {/* Not logged in state */}
+          {!user ? (
+            <div className="flex items-center space-x-3">
+              <Link href="/auth">
+                <Button variant="ghost" className="text-foreground hover:text-primary font-medium">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth?register=true">
+                <Button className="bg-primary text-white font-medium">
+                  Join Now
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            /* Logged in state */
+            <div className="flex items-center space-x-4">
+              {user.role === 'coach' && (
+                <Link href="/create-class">
+                  <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+                    Create Class
+                  </Button>
+                </Link>
+              )}
+              
+              <Link href="/bookings">
+                <Button variant="ghost" className="p-2">
+                  <Calendar className="h-5 w-5" />
+                </Button>
+              </Link>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 p-1">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                      {user.profileImage ? (
+                        <img 
+                          src={user.profileImage} 
+                          alt={`${user.firstName} ${user.lastName}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <UserCircle className="h-7 w-7 text-muted-foreground" />
+                      )}
+                    </div>
+                    <span className="font-medium">{user.firstName}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer w-full">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>My Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/bookings" className="cursor-pointer w-full">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      <span>My Bookings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer w-full">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </nav>
+        
+        {/* Mobile Menu Button */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" className="md:hidden p-2">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[250px] sm:w-[300px]">
+            <div className="flex flex-col space-y-4 mt-6">
+              <Link href="/" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Home className="mr-2 h-5 w-5" />
+                  Home
+                </Button>
+              </Link>
+              <Link href="/classes" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Search className="mr-2 h-5 w-5" />
+                  Classes
+                </Button>
+              </Link>
+              <Link href="/coaches" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <User className="mr-2 h-5 w-5" />
+                  Coaches
+                </Button>
+              </Link>
+              
+              {user ? (
+                <>
+                  <Link href="/bookings" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Calendar className="mr-2 h-5 w-5" />
+                      My Bookings
+                    </Button>
+                  </Link>
+                  <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <UserCircle className="mr-2 h-5 w-5" />
+                      My Profile
+                    </Button>
+                  </Link>
+                  {user.role === 'coach' && (
+                    <Link href="/create-class" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full bg-primary text-white">
+                        Create Class
+                      </Button>
+                    </Link>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start text-destructive border-destructive"
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="mr-2 h-5 w-5" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link href="/auth" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/auth?register=true" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full bg-primary text-white">
+                      Join Now
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </header>
+  );
+}
