@@ -1,16 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Class, User, ClassCategory } from "@shared/schema";
-import { MapPin, Clock, Star, Heart } from "lucide-react";
+import { Class, User, ClassCategory, ClassSchedule, ClassWithSchedules } from "@shared/schema";
+import { MapPin, Clock, Star, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDistance } from "date-fns";
+import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface ClassCardProps {
-  classItem: Class;
+  classItem: Class | ClassWithSchedules;
+  schedules?: ClassSchedule[];
 }
 
-export default function ClassCard({ classItem }: ClassCardProps) {
+export default function ClassCard({ classItem, schedules }: ClassCardProps) {
+  // Check if this is a recurring class
+  const isRecurring = 'isRecurring' in classItem && classItem.isRecurring;
+  
+  // Get class schedules from props or from the class item if it's a ClassWithSchedules
+  const classSchedules = schedules || ('schedules' in classItem ? classItem.schedules : undefined);
+  
   // Get coach data
   const { data: coach, isLoading: isLoadingCoach } = useQuery<User>({
     queryKey: [`/api/coaches/${classItem.coachId}`],
@@ -21,8 +29,31 @@ export default function ClassCard({ classItem }: ClassCardProps) {
     queryKey: [`/api/categories/${classItem.categoryId}`],
   });
   
-  // Format the date and time
+  // Get day name from day number
+  const getDayName = (dayNum: number): string => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[dayNum];
+  };
+  
+  // Format time (HH:MM format) for display
+  const formatTimeString = (timeStr: string): string => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12; // Convert 0 to 12
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+  
+  // Format schedule for recurring classes
+  const formatSchedule = (schedule: ClassSchedule): string => {
+    return `${getDayName(schedule.dayOfWeek)} ${formatTimeString(schedule.startTime)} - ${formatTimeString(schedule.endTime)}`;
+  };
+  
+  // Format the date and time for single occurrence classes
   const formatClassTime = () => {
+    if (!classItem.startTime || !classItem.endTime) {
+      return 'Schedule not available';
+    }
+    
     const startDate = new Date(classItem.startTime);
     const endDate = new Date(classItem.endTime);
     
@@ -70,10 +101,33 @@ export default function ClassCard({ classItem }: ClassCardProps) {
           <span>{classItem.location}</span>
         </div>
         
-        <div className="flex items-center mt-1 text-sm text-gray-600">
-          <Clock className="mr-1 h-4 w-4" />
-          <span>{formatClassTime()}</span>
-        </div>
+        {isRecurring ? (
+          <div className="mt-1 space-y-1">
+            <div className="flex items-center text-sm text-gray-600 font-medium">
+              <Calendar className="mr-1 h-4 w-4" />
+              <span>Recurring Class</span>
+            </div>
+            {classSchedules && classSchedules.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {classSchedules.map((schedule, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {getDayName(schedule.dayOfWeek)} {formatTimeString(schedule.startTime)}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600">
+                <Clock className="inline-block mr-1 h-4 w-4" />
+                <span>Schedule not available</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center mt-1 text-sm text-gray-600">
+            <Clock className="mr-1 h-4 w-4" />
+            <span>{formatClassTime()}</span>
+          </div>
+        )}
         
         <div className="flex items-center mt-2">
           {isLoadingCoach ? (
