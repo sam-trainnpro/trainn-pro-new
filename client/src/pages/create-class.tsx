@@ -85,11 +85,21 @@ const createClassSchema = z.object({
     required_error: "End time is required",
     invalid_type_error: "End time must be a date",
   }).optional().or(z.literal(undefined)),
+  // For recurring classes
+  seriesStartDate: z.date({
+    required_error: "Series start date is required",
+    invalid_type_error: "Series start date must be a date",
+  }).optional().or(z.literal(undefined)),
+  seriesEndDate: z.date({
+    required_error: "Series end date is required",
+    invalid_type_error: "Series end date must be a date",
+  }).optional().or(z.literal(undefined)),
   // For recurring classes - array of schedules
   schedules: z.array(scheduleSchema).optional(),
 }).superRefine((data, ctx) => {
   // Validation: either single occurrence or recurring with schedules
   if (data.isRecurring) {
+    // Validate schedules for recurring classes
     if (!data.schedules || data.schedules.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -97,7 +107,23 @@ const createClassSchema = z.object({
         path: ["schedules"],
       });
     }
+    
+    // Validate date range for recurring classes
+    if (!data.seriesStartDate || !data.seriesEndDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Start date and end date are required for recurring classes",
+        path: ["seriesStartDate"],
+      });
+    } else if (data.seriesStartDate >= data.seriesEndDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End date must be after start date",
+        path: ["seriesEndDate"],
+      });
+    }
   } else {
+    // Validate for single occurrence classes
     if (!data.startTime || !data.endTime) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
