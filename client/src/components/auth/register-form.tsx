@@ -27,7 +27,8 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 
-const registerSchema = z.object({
+// Define the schema with termsAccepted as boolean
+const registerSchemaBase = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -35,12 +36,12 @@ const registerSchema = z.object({
   role: z.enum(["customer", "coach"], {
     required_error: "Please select a role",
   }),
-  termsAccepted: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the terms and conditions" }),
+  termsAccepted: z.boolean().refine(val => val === true, {
+    message: "You must accept the terms and conditions"
   }),
 });
 
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = z.infer<typeof registerSchemaBase>;
 
 interface RegisterFormProps {
   defaultRole?: string;
@@ -59,7 +60,7 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
   }
   
   const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchemaBase),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -73,13 +74,23 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
   async function onSubmit(data: RegisterFormValues) {
     try {
       setError(null);
-      await registerMutation.mutateAsync(data);
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        navigate("/");
-      }
+      console.log("Submitting registration form:", { ...data, password: "***" });
+      
+      // Do not attempt to navigate in the same render cycle as the mutation
+      const user = await registerMutation.mutateAsync(data);
+      console.log("Registration successful:", user);
+      
+      // Use setTimeout to ensure navigation happens in a new render cycle
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          console.log("Navigating to home after registration");
+          navigate("/");
+        }
+      }, 0);
     } catch (err: any) {
+      console.error("Registration error:", err);
       setError(err.message || "Registration failed. Please try again.");
     }
   }

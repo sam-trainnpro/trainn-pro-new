@@ -14,10 +14,15 @@ export default function AuthPage() {
   const defaultRole = searchParams.role as string || "customer";
 
   // Redirect if the user is already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  // Use a safe approach to navigation
+  React.useEffect(() => {
+    if (user) {
+      console.log("User already logged in, redirecting to home");
+      setTimeout(() => {
+        navigate("/");
+      }, 0);
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
