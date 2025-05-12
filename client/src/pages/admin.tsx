@@ -2,16 +2,12 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { User, Class } from "@shared/schema";
+import { User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Helmet } from "react-helmet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -27,17 +23,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,30 +38,24 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  User as UserIcon,
+  UserIcon,
   Shield,
-  MoreVertical,
-  CheckCircle,
-  XCircle,
   Search,
-  Filter,
-  Calendar,
-  MapPin,
-  Loader2,
   AlertTriangle,
+  Loader2,
   Lock,
+  CheckCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Helmet } from "react-helmet";
 
 export default function AdminPage() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [coachSearch, setCoachSearch] = useState("");
-  const [classSearch, setClassSearch] = useState("");
-  const [actioningCoachId, setActioningCoachId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [selectedCoach, setSelectedCoach] = useState<User | null>(null);
   
   // Redirect if not logged in or not an admin
   if (!user) {
@@ -105,20 +87,11 @@ export default function AdminPage() {
   // Get all users
   const { 
     data: users, 
-    isLoading: isLoadingUsers, 
-    error: usersError,
+    isLoading, 
+    error,
     refetch: refetchUsers
   } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
-  });
-  
-  // Get all classes
-  const { 
-    data: classes, 
-    isLoading: isLoadingClasses, 
-    error: classesError 
-  } = useQuery<Class[]>({
-    queryKey: ['/api/classes'],
   });
   
   // Approve coach mutation
@@ -127,80 +100,75 @@ export default function AdminPage() {
       const response = await apiRequest("PUT", `/api/admin/coaches/${coachId}/approve`, {});
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Coach approved",
-        description: "The coach has been approved successfully",
+        description: `${data.firstName} ${data.lastName} has been approved and can now create classes.`,
       });
       refetchUsers();
-      setActioningCoachId(null);
+      setApprovalDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
-        title: "Approval failed",
-        description: error.message || "Could not approve coach. Please try again.",
+        title: "Error",
+        description: error.message || "Failed to approve coach. Please try again.",
         variant: "destructive",
       });
-      setActioningCoachId(null);
+      setApprovalDialogOpen(false);
     },
   });
   
   // Handle coach approval
-  const handleApproveCoach = (coachId: number) => {
-    setActioningCoachId(coachId);
-    approveCoachMutation.mutate(coachId);
+  const handleApproveCoach = () => {
+    if (selectedCoach) {
+      approveCoachMutation.mutate(selectedCoach.id);
+    }
+  };
+  
+  // Open approval dialog
+  const openApprovalDialog = (coach: User) => {
+    setSelectedCoach(coach);
+    setApprovalDialogOpen(true);
   };
   
   // Filter coaches based on search query
   const filteredCoaches = users?.filter(user => 
     user.role === "coach" && 
-    (coachSearch === "" || 
-     `${user.firstName} ${user.lastName}`.toLowerCase().includes(coachSearch.toLowerCase()) ||
-     user.email.toLowerCase().includes(coachSearch.toLowerCase()))
+    (searchQuery === "" || 
+     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     user.email.toLowerCase().includes(searchQuery.toLowerCase()))
   ) || [];
   
-  // Get pending coaches
-  const pendingCoaches = filteredCoaches.filter(coach => !coach.isApproved);
-  
-  // Filter classes based on search query
-  const filteredClasses = classes?.filter(classItem =>
-    classSearch === "" ||
-    classItem.title.toLowerCase().includes(classSearch.toLowerCase()) ||
-    classItem.location.toLowerCase().includes(classSearch.toLowerCase())
-  ) || [];
+  // Get pending coaches count
+  const pendingCoachesCount = filteredCoaches.filter(coach => !coach.isApproved).length;
   
   // Format date
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "MM/dd/yyyy");
-  };
-  
-  // Format time
-  const formatTime = (dateString: string) => {
-    return format(new Date(dateString), "h:mm a");
+    if (!dateString) return "-";
+    return format(new Date(dateString), "MMM d, yyyy");
   };
   
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
         <title>Admin Dashboard - Elevate Fitness</title>
-        <meta name="description" content="Admin dashboard for managing Elevate fitness platform. Approve coaches, monitor classes, and manage platform operations." />
+        <meta name="description" content="Manage coach approvals and monitor platform activity in the admin dashboard." />
       </Helmet>
       
       <Header />
       
-      <main className="flex-grow bg-[#F7F7F7] py-8">
+      <main className="flex-grow bg-gray-50 py-8">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-heading font-bold">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Manage coaches, classes and platform operations</p>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+              {pendingCoachesCount > 0 && (
+                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                  {pendingCoachesCount} Coach{pendingCoachesCount !== 1 ? 'es' : ''} Pending Approval
+                </Badge>
+              )}
             </div>
-            
-            {pendingCoaches.length > 0 && (
-              <Badge className="bg-amber-500 px-3 py-1 text-white">
-                {pendingCoaches.length} Pending Approval{pendingCoaches.length !== 1 ? 's' : ''}
-              </Badge>
-            )}
+            <p className="text-muted-foreground">Manage coach approvals and monitor platform activity</p>
           </div>
           
           <Tabs defaultValue="coaches">
@@ -209,9 +177,9 @@ export default function AdminPage() {
                 <UserIcon className="h-4 w-4 mr-2" />
                 Coaches
               </TabsTrigger>
-              <TabsTrigger value="classes">
-                <Calendar className="h-4 w-4 mr-2" />
-                Classes
+              <TabsTrigger value="settings">
+                <Shield className="h-4 w-4 mr-2" />
+                Platform Settings
               </TabsTrigger>
             </TabsList>
             
@@ -220,9 +188,9 @@ export default function AdminPage() {
                 <CardHeader>
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <div>
-                      <CardTitle>Coaches Management</CardTitle>
+                      <CardTitle>Coach Management</CardTitle>
                       <CardDescription>
-                        Approve and manage coach accounts
+                        Approve coaches and manage their accounts
                       </CardDescription>
                     </div>
                     
@@ -232,46 +200,38 @@ export default function AdminPage() {
                         <Input
                           placeholder="Search coaches..."
                           className="pl-10"
-                          value={coachSearch}
-                          onChange={(e) => setCoachSearch(e.target.value)}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
                         />
                       </div>
                     </div>
                   </div>
-                  
-                  {pendingCoaches.length > 0 && (
-                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center">
-                      <AlertTriangle className="text-amber-500 h-5 w-5 mr-2" />
-                      <div>
-                        <p className="font-medium text-amber-800">Coach Approval Required</p>
-                        <p className="text-sm text-amber-700">
-                          {pendingCoaches.length} coach{pendingCoaches.length !== 1 ? 'es' : ''} waiting for your approval
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </CardHeader>
+                
                 <CardContent>
-                  {isLoadingUsers ? (
+                  {isLoading ? (
                     <div className="flex justify-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
-                  ) : usersError ? (
-                    <div className="text-center py-8">
-                      <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
-                      <p className="text-destructive">Failed to load coaches</p>
+                  ) : error ? (
+                    <div className="text-center py-8 text-destructive">
+                      <AlertTriangle className="mx-auto h-8 w-8 mb-2" />
+                      <p>Failed to load coaches. Please try again.</p>
                     </div>
-                  ) : filteredCoaches.length > 0 ? (
+                  ) : filteredCoaches.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No coaches found</p>
+                    </div>
+                  ) : (
                     <div className="rounded-md border">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[250px]">Name</TableHead>
+                            <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
-                            <TableHead className="text-center">Status</TableHead>
-                            <TableHead className="text-center">Joined</TableHead>
-                            <TableHead className="text-center"># Classes</TableHead>
-                            <TableHead className="w-[70px]"></TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Joined</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -281,184 +241,53 @@ export default function AdminPage() {
                                 {coach.firstName} {coach.lastName}
                               </TableCell>
                               <TableCell>{coach.email}</TableCell>
-                              <TableCell className="text-center">
+                              <TableCell>
                                 {coach.isApproved ? (
-                                  <Badge className="bg-green-500">Approved</Badge>
+                                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                                    Approved
+                                  </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-amber-500 border-amber-500">
-                                    Pending
+                                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                                    Pending Approval
                                   </Badge>
                                 )}
                               </TableCell>
-                              <TableCell className="text-center">
-                                {coach.createdAt ? formatDate(coach.createdAt.toString()) : "-"}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {classes?.filter(c => c.coachId === coach.id).length || 0}
-                              </TableCell>
-                              <TableCell>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                      <span className="sr-only">Open menu</span>
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    {!coach.isApproved && (
-                                      <DropdownMenuItem
-                                        onClick={() => handleApproveCoach(coach.id)}
-                                        disabled={actioningCoachId === coach.id}
-                                        className="text-green-600 cursor-pointer"
-                                      >
-                                        <CheckCircle className="mr-2 h-4 w-4" />
-                                        Approve Coach
-                                      </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuItem className="cursor-pointer">
-                                      <UserIcon className="mr-2 h-4 w-4" />
-                                      View Profile
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive cursor-pointer">
-                                      <XCircle className="mr-2 h-4 w-4" />
-                                      Suspend Account
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                              <TableCell>{formatDate(coach.createdAt?.toString() || '')}</TableCell>
+                              <TableCell className="text-right">
+                                {!coach.isApproved && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => openApprovalDialog(coach)}
+                                    className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Approve
+                                  </Button>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
                     </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">No coaches found</p>
-                    </div>
                   )}
                 </CardContent>
               </Card>
             </TabsContent>
             
-            <TabsContent value="classes">
+            <TabsContent value="settings">
               <Card>
                 <CardHeader>
-                  <div className="flex flex-col md:flex-row justify-between gap-4">
-                    <div>
-                      <CardTitle>Classes Management</CardTitle>
-                      <CardDescription>
-                        Monitor and manage all classes on the platform
-                      </CardDescription>
-                    </div>
-                    
-                    <div className="flex-1 md:max-w-sm">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          placeholder="Search classes..."
-                          className="pl-10"
-                          value={classSearch}
-                          onChange={(e) => setClassSearch(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <CardTitle>Platform Settings</CardTitle>
+                  <CardDescription>
+                    Configure platform-wide settings and preferences
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingClasses ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  ) : classesError ? (
-                    <div className="text-center py-8">
-                      <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
-                      <p className="text-destructive">Failed to load classes</p>
-                    </div>
-                  ) : filteredClasses.length > 0 ? (
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[250px]">Class Name</TableHead>
-                            <TableHead>Coach</TableHead>
-                            <TableHead>
-                              <div className="flex items-center">
-                                <MapPin className="h-4 w-4 mr-1" />
-                                Location
-                              </div>
-                            </TableHead>
-                            <TableHead>
-                              <div className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-1" />
-                                Date/Time
-                              </div>
-                            </TableHead>
-                            <TableHead className="text-right">Price</TableHead>
-                            <TableHead className="w-[70px]"></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredClasses.map((classItem) => {
-                            const coach = users?.find(u => u.id === classItem.coachId);
-                            return (
-                              <TableRow key={classItem.id}>
-                                <TableCell className="font-medium">
-                                  {classItem.title}
-                                </TableCell>
-                                <TableCell>
-                                  {coach ? `${coach.firstName} ${coach.lastName}` : `Coach #${classItem.coachId}`}
-                                </TableCell>
-                                <TableCell>{classItem.location}</TableCell>
-                                <TableCell>
-                                  <div className="text-sm">
-                                    <div>{formatDate(classItem.startTime)}</div>
-                                    <div className="text-muted-foreground">
-                                      {formatTime(classItem.startTime)} - {formatTime(classItem.endTime)}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  ${classItem.price.toFixed(2)}
-                                </TableCell>
-                                <TableCell>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" className="h-8 w-8 p-0">
-                                        <span className="sr-only">Open menu</span>
-                                        <MoreVertical className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                      <DropdownMenuItem className="cursor-pointer">
-                                        <Calendar className="mr-2 h-4 w-4" />
-                                        View Class
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem className="cursor-pointer">
-                                        <UserIcon className="mr-2 h-4 w-4" />
-                                        View Coach
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem className="text-destructive cursor-pointer">
-                                        <XCircle className="mr-2 h-4 w-4" />
-                                        Remove Class
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">No classes found</p>
-                    </div>
-                  )}
+                  <p className="text-muted-foreground text-center py-6">
+                    Platform settings coming soon
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -467,6 +296,31 @@ export default function AdminPage() {
       </main>
       
       <Footer />
+      
+      <AlertDialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Coach</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedCoach && (
+                <>
+                  Are you sure you want to approve <span className="font-medium">{selectedCoach.firstName} {selectedCoach.lastName}</span> as a coach?
+                  Once approved, they will be able to create classes and be visible to customers.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleApproveCoach}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              Approve Coach
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

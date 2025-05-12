@@ -181,6 +181,14 @@ export default function Header() {
                       </Button>
                     </Link>
                   )}
+                  {user.role === 'admin' && (
+                    <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <Settings className="mr-2 h-5 w-5" />
+                        Admin Panel
+                      </Button>
+                    </Link>
+                  )}
                   <Button 
                     variant="outline" 
                     className="w-full justify-start text-destructive border-destructive"
