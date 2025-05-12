@@ -43,6 +43,16 @@ export const insertClassCategorySchema = createInsertSchema(classCategories).pic
 export type InsertClassCategory = z.infer<typeof insertClassCategorySchema>;
 export type ClassCategory = typeof classCategories.$inferSelect;
 
+// Class schedules - used for recurring classes
+export const classSchedules = pgTable("class_schedules", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id").notNull(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0 = Sunday, 1 = Monday, etc.
+  startTime: text("start_time").notNull(), // Format: "HH:MM" in 24-hour format
+  endTime: text("end_time").notNull(), // Format: "HH:MM" in 24-hour format
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Classes
 export const classes = pgTable("classes", {
   id: serial("id").primaryKey(),
@@ -57,8 +67,11 @@ export const classes = pgTable("classes", {
   longitude: doublePrecision("longitude"),
   address: text("address").notNull(),
   image: text("image"),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time").notNull(),
+  // For single occurrence classes
+  startTime: timestamp("start_time"), // Made optional
+  endTime: timestamp("end_time"), // Made optional
+  // For recurring classes
+  isRecurring: boolean("is_recurring").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -76,10 +89,27 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   image: true,
   startTime: true,
   endTime: true,
+  isRecurring: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;
 export type Class = typeof classes.$inferSelect;
+
+// Class Schedule schema for insertion
+export const insertClassScheduleSchema = createInsertSchema(classSchedules).pick({
+  classId: true, 
+  dayOfWeek: true,
+  startTime: true,
+  endTime: true,
+});
+
+export type InsertClassSchedule = z.infer<typeof insertClassScheduleSchema>;
+export type ClassSchedule = typeof classSchedules.$inferSelect;
+
+// Extended type to include schedules with a class
+export type ClassWithSchedules = Class & {
+  schedules?: ClassSchedule[];
+};
 
 // Bookings
 export const bookings = pgTable("bookings", {
