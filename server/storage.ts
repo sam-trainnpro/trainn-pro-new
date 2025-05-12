@@ -169,14 +169,37 @@ export class DatabaseStorage implements IStorage {
   
   // Class methods
   async createClass(classData: InsertClass): Promise<Class> {
-    const result = await db.insert(classes)
-      .values({
+    try {
+      console.log("Creating class with data in storage:", classData);
+      
+      // Ensure all required fields are present and properly formatted
+      const formattedData = {
         ...classData,
+        // Ensure numeric fields are correctly typed
+        coachId: Number(classData.coachId),
+        categoryId: Number(classData.categoryId),
+        price: Number(classData.price),
+        capacity: Number(classData.capacity),
+        // Ensure date fields are Date objects
+        startTime: new Date(classData.startTime),
+        endTime: new Date(classData.endTime),
+        // Add created timestamp
         createdAt: new Date()
-      })
-      .returning();
-    
-    return result[0];
+      };
+      
+      console.log("Formatted class data:", formattedData);
+      
+      const result = await db.insert(classes)
+        .values(formattedData)
+        .returning();
+      
+      console.log("Class created successfully:", result[0]);
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error in storage.createClass:", error);
+      throw error; // Re-throw to handle in routes
+    }
   }
   
   async getClass(id: number): Promise<Class | undefined> {

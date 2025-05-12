@@ -102,13 +102,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new class (coaches only)
   app.post("/api/classes", requireCoach, async (req, res) => {
     try {
-      const classData = req.body;
-      classData.coachId = req.user.id;
+      // Initialize class data with user ID
+      const classData: any = { 
+        ...req.body, 
+        coachId: req.user!.id 
+      };
       
+      // Make sure all required fields are present
+      const requiredFields = ['title', 'description', 'categoryId', 'price', 'capacity', 'location', 'address', 'startTime', 'endTime'];
+      
+      const missingFields = requiredFields.filter(field => !classData[field]);
+      
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          message: `Missing required fields: ${missingFields.join(', ')}`
+        });
+      }
+      
+      // Log the data we're trying to process
+      console.log("Creating class with data from route:", {
+        title: classData.title,
+        categoryId: classData.categoryId,
+        price: classData.price,
+        capacity: classData.capacity, 
+        startTime: classData.startTime,
+        endTime: classData.endTime
+      });
+      
+      // Create the class with properly formatted data
       const newClass = await storage.createClass(classData);
+      
       res.status(201).json(newClass);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to create class" });
+    } catch (error: any) {
+      console.error("Error creating class:", error);
+      
+      // Return more detailed error message
+      res.status(500).json({ 
+        message: "Failed to create class", 
+        error: error.message || "Unknown error" 
+      });
     }
   });
 
