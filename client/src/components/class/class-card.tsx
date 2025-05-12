@@ -57,21 +57,46 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     const startDate = new Date(classItem.startTime);
     const endDate = new Date(classItem.endTime);
     
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'short',
+    // If this is a child instance of a recurring class, show the date too
+    const isClassInstance = 'parentClassId' in classItem && classItem.parentClassId;
+    
+    // Format options for time
+    const timeOptions: Intl.DateTimeFormatOptions = {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
     };
     
-    const startFormatted = startDate.toLocaleTimeString('en-US', options);
-    const endFormatted = endDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    // If this is a class instance, show date and day
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    };
     
-    return `${startFormatted} - ${endFormatted}`;
+    let displayText = '';
+    
+    if (isClassInstance) {
+      // Format: "Mon, May 15 • 10:00 AM - 11:00 AM"
+      const dateFormatted = startDate.toLocaleDateString('en-US', dateOptions);
+      const startFormatted = startDate.toLocaleTimeString('en-US', timeOptions);
+      const endFormatted = endDate.toLocaleTimeString('en-US', timeOptions);
+      displayText = `${dateFormatted} • ${startFormatted} - ${endFormatted}`;
+    } else {
+      // Format: "Mon, 10:00 AM - 11:00 AM"
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      };
+      
+      const startFormatted = startDate.toLocaleTimeString('en-US', options);
+      const endFormatted = endDate.toLocaleTimeString('en-US', timeOptions);
+      displayText = `${startFormatted} - ${endFormatted}`;
+    }
+    
+    return displayText;
   };
   
   return (
@@ -92,7 +117,14 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
       
       <div className="p-4">
         <div className="flex justify-between items-start">
-          <h3 className="font-heading font-bold text-lg">{classItem.title}</h3>
+          <div>
+            <h3 className="font-heading font-bold text-lg">{classItem.title}</h3>
+            {'parentClassId' in classItem && classItem.parentClassId && (
+              <div className="text-xs text-primary font-medium mt-0.5">
+                Single class session
+              </div>
+            )}
+          </div>
           <span className="font-bold text-lg">${classItem.price.toFixed(2)}</span>
         </div>
         
