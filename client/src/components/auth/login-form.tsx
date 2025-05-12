@@ -52,9 +52,19 @@ export default function LoginForm() {
   async function onSubmit(data: LoginFormValues) {
     try {
       setError(null);
-      await loginMutation.mutateAsync(data);
-      navigate("/");
+      console.log("Submitting login form:", { email: data.email, password: "***" });
+      
+      // Do not attempt to navigate in the same render cycle as the mutation
+      const user = await loginMutation.mutateAsync(data);
+      console.log("Login successful:", user);
+      
+      // Use setTimeout to ensure navigation happens in a new render cycle
+      setTimeout(() => {
+        console.log("Navigating to home after login");
+        navigate("/");
+      }, 0);
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(err.message || "Login failed. Please check your credentials and try again.");
     }
   }
