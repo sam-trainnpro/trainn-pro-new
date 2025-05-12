@@ -103,7 +103,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db.insert(users).values({
       ...userData,
       createdAt: new Date(),
-      isApproved: userData.role === 'customer'
+      isApproved: userData.role === 'customer' || userData.role === 'admin'
     }).returning();
     
     return result[0];
