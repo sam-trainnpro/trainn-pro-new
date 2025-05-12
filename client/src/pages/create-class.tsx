@@ -227,6 +227,9 @@ export default function CreateClassPage() {
       endTime: new Date(new Date().setHours(new Date().getHours() + 25, 0, 0, 0)),   // Tomorrow at current hour + 1
       image: "",
       isRecurring: false,
+      // Series date range for recurring classes
+      seriesStartDate: new Date(new Date().setHours(0, 0, 0, 0)), // Today at midnight
+      seriesEndDate: new Date(new Date().setDate(new Date().getDate() + 30)), // 30 days from today
       schedules: [],
     },
   });
@@ -732,9 +735,94 @@ export default function CreateClassPage() {
                   </div>
                 ) : (
                   /* Recurring Schedule UI */
-                  <div className="space-y-4">
+                  <div className="space-y-6">
+                    {/* Series Date Range */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b">
+                      <FormField
+                        control={form.control}
+                        name="seriesStartDate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Series Start Date</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full pl-3 text-left font-normal justify-start"
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Select start date</span>
+                                    )}
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormDescription>
+                              First date the class series will run
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="seriesEndDate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Series End Date</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full pl-3 text-left font-normal justify-start"
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Select end date</span>
+                                    )}
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                  disabled={(date) => {
+                                    const startDate = form.getValues("seriesStartDate");
+                                    return startDate ? date < startDate : false;
+                                  }}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormDescription>
+                              Last date the class series will run
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Class Schedule</h3>
+                      <h3 className="text-lg font-medium">Weekly Schedule</h3>
                       <Button 
                         type="button" 
                         onClick={addNewSchedule} 

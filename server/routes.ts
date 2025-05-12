@@ -166,24 +166,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the class with properly formatted data
       const newClass = await storage.createClass(classData);
       
-      // If this is a recurring class, create all the schedule entries
-      if (isRecurring && classData.schedules && classData.schedules.length > 0) {
-        console.log("Creating schedules for recurring class:", classData.schedules);
+      // If this is a recurring class, create individual class instances for each scheduled day
+      if (isRecurring && classData.schedules && classData.schedules.length > 0 && 
+          classData.seriesStartDate && classData.seriesEndDate) {
         
-        for (const schedule of classData.schedules) {
-          await storage.createClassSchedule({
-            classId: newClass.id,
-            dayOfWeek: schedule.dayOfWeek,
-            startTime: schedule.startTime,
-            endTime: schedule.endTime
-          });
+        console.log("Creating individual class instances for recurring schedule");
+        
+        const seriesStartDate = new Date(classData.seriesStartDate);
+        const seriesEndDate = new Date(classData.seriesEndDate);
+        
+        // Iterate through each day in the date range
+        const currentDate = new Date(seriesStartDate);
+        const createdClassIds = [newClass.id]; // Keep track of all created classes
+        
+        while (currentDate <= seriesEndDate) {
+          const currentDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+          
+          // Check if there are any schedules for this day of the week
+          const matchingSchedules = classData.schedules.filter(
+            schedule => schedule.dayOfWeek === currentDayOfWeek
+          );
+          
+          // For each matching schedule, create a class instance
+          for (const schedule of matchingSchedules) {
+            if (currentDate > seriesStartDate) { // Skip first day as we already created the primary class
+              // Parse the time string (HH:MM)
+              const [startHours, startMinutes] = schedule.startTime.split(':').map(Number);
+              const [endHours, endMinutes] = schedule.endTime.split(':').map(Number);
+              
+              // Create new Date objects for the specific date and time
+              const startDateTime = new Date(currentDate);
+              startDateTime.setHours(startHours, startMinutes, 0, 0);
+              
+              const endDateTime = new Date(currentDate);
+              endDateTime.setHours(endHours, endMinutes, 0, 0);
+              
+              // Create a new class instance with the specific date and time
+              const classInstance = {
+                ...classData,
+                startTime: startDateTime.toISOString(),
+                endTime: endDateTime.toISOString(),
+                isRecurring: false, // Set to false as this is a specific instance
+                schedules: undefined, // Remove schedules array
+                seriesStartDate: undefined, // Remove series dates
+                seriesEndDate: undefined,
+                parentClassId: newClass.id // Reference to the parent recurring class
+              };
+              
+              // Create the class instance
+              const newClassInstance = await storage.createClass(classInstance);
+              createdClassIds.push(newClassInstance.id);
+            }
+          }
+          
+          // Move to the next day
+          currentDate.setDate(currentDate.getDate() + 1);
         }
+        
+        console.log(`Created ${createdClassIds.length} class instances for recurring series`);
       }
       
-      // Fetch the complete class with schedules if it's recurring
-      const responseClass = isRecurring 
-        ? await storage.getClassWithSchedules(newClass.id)
-        : newClass;
+      // Return just the parent class
+      const responseClass = newClass;
       
       res.status(201).json(responseClass);
     } catch (error: any) {
