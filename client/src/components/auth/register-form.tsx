@@ -36,7 +36,7 @@ const registerSchemaBase = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(100, "Password must not exceed 100 characters"),
-  role: z.enum(["customer", "coach"], {
+  role: z.enum(["customer", "coach", "admin"], {
     required_error: "Please select a role",
   }),
   termsAccepted: z.boolean().refine(val => val === true, {
@@ -131,7 +131,7 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
                       <RadioGroup
                         onValueChange={field.onChange}
                         defaultValue={field.value}
-                        className="grid grid-cols-2 gap-3"
+                        className="grid grid-cols-3 gap-3"
                       >
                         <div className={`border ${field.value === 'customer' ? 'border-primary text-primary' : 'border-gray-300 text-gray-700'} hover:bg-gray-50 py-2 rounded-lg transition text-center cursor-pointer`}>
                           <RadioGroupItem
@@ -151,6 +151,16 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
                           />
                           <label htmlFor="coach" className="cursor-pointer font-medium w-full h-full block">
                             Coach
+                          </label>
+                        </div>
+                        <div className={`border ${field.value === 'admin' ? 'border-primary text-primary' : 'border-gray-300 text-gray-700'} hover:bg-gray-50 py-2 rounded-lg transition text-center cursor-pointer`}>
+                          <RadioGroupItem
+                            value="admin"
+                            id="admin"
+                            className="sr-only"
+                          />
+                          <label htmlFor="admin" className="cursor-pointer font-medium w-full h-full block">
+                            Admin
                           </label>
                         </div>
                       </RadioGroup>
