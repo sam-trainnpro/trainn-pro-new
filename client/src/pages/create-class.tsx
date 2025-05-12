@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Select, 
   SelectContent, 
@@ -35,10 +36,28 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, CalendarIcon, Lock, AlertCircle } from "lucide-react";
+import { Loader2, CalendarIcon, Lock, AlertCircle, Plus, Trash2 } from "lucide-react";
 import { format, addHours } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet";
+import { 
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+
+// Schedule schema for recurring classes
+const scheduleSchema = z.object({
+  dayOfWeek: z.coerce.number({
+    required_error: "Day of week is required",
+    invalid_type_error: "Day of week must be a number",
+  }),
+  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Start time must be in HH:MM format"),
+  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "End time must be in HH:MM format"),
+});
 
 // Form schema with validation
 const createClassSchema = z.object({
@@ -54,18 +73,43 @@ const createClassSchema = z.object({
   address: z.string().min(5, "Full address is required"),
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
+  image: z.string().optional(),
+  // New field to toggle between single vs recurring class
+  isRecurring: z.boolean().default(false),
+  // For single occurrence classes
   startTime: z.date({
     required_error: "Start time is required",
     invalid_type_error: "Start time must be a date",
-  }),
+  }).optional().or(z.literal(undefined)),
   endTime: z.date({
     required_error: "End time is required",
     invalid_type_error: "End time must be a date",
-  }),
-  image: z.string().optional(),
+  }).optional().or(z.literal(undefined)),
+  // For recurring classes - array of schedules
+  schedules: z.array(scheduleSchema).optional(),
+}).superRefine((data, ctx) => {
+  // Validation: either single occurrence or recurring with schedules
+  if (data.isRecurring) {
+    if (!data.schedules || data.schedules.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one schedule must be added for recurring classes",
+        path: ["schedules"],
+      });
+    }
+  } else {
+    if (!data.startTime || !data.endTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Start time and end time are required for single occurrence classes",
+        path: ["startTime"],
+      });
+    }
+  }
 });
 
 type CreateClassFormValues = z.infer<typeof createClassSchema>;
+type ScheduleFormValues = z.infer<typeof scheduleSchema>;
 
 export default function CreateClassPage() {
   const [, navigate] = useLocation();
@@ -156,7 +200,15 @@ export default function CreateClassPage() {
       startTime: new Date(new Date().setHours(new Date().getHours() + 24, 0, 0, 0)), // Tomorrow at current hour
       endTime: new Date(new Date().setHours(new Date().getHours() + 25, 0, 0, 0)),   // Tomorrow at current hour + 1
       image: "",
+      isRecurring: false,
+      schedules: [],
     },
+  });
+  
+  // Setup field array for schedules
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "schedules",
   });
   
   // Update coordinates when user requests location
