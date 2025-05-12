@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Class, ClassCategory } from "@shared/schema";
+import { Class, ClassCategory, ClassWithSchedules } from "@shared/schema";
 import { useLocation } from "wouter";
 import queryString from "query-string";
 import Header from "@/components/layout/header";
