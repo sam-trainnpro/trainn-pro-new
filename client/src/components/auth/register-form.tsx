@@ -27,12 +27,15 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 
-// Define the schema with termsAccepted as boolean
+// Create a more robust schema with appropriate validation
 const registerSchemaBase = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().min(2, "First name must be at least 2 characters").max(50, "First name must not exceed 50 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters").max(50, "Last name must not exceed 50 characters"),
+  email: z.string().email("Please enter a valid email address").max(100, "Email must not exceed 100 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password must not exceed 100 characters"),
   role: z.enum(["customer", "coach"], {
     required_error: "Please select a role",
   }),

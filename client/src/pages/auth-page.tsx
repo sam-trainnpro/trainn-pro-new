@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import LoginForm from "@/components/auth/login-form";
@@ -11,19 +11,34 @@ export default function AuthPage() {
   const [path, navigate] = useLocation();
   const { user } = useAuth();
   
-  // Get URL and extract search params
-  const currentURL = new URL(window.location.href);
-  const hasRegisterParam = currentURL.searchParams.has('register');
-  const defaultTab = hasRegisterParam ? "register" : "login";
-  const defaultRole = currentURL.searchParams.get('role') || "customer";
-
-  // Add debugging
-  console.log("Auth page path:", path);
-  console.log("Auth page params:", { defaultTab, defaultRole });
+  // Initialize with defaults and update after mount to avoid type errors
+  const [authParams, setAuthParams] = useState({
+    defaultTab: "login",
+    defaultRole: "customer"
+  });
+  
+  // Set URL params after component mount using useEffect
+  useEffect(() => {
+    try {
+      // Safe URL param extraction
+      const searchParams = new URLSearchParams(window.location.search);
+      const hasRegister = searchParams.has('register');
+      const role = searchParams.get('role') || "customer";
+      
+      setAuthParams({
+        defaultTab: hasRegister ? "register" : "login",
+        defaultRole: role
+      });
+      
+      console.log("Auth page path:", path);
+      console.log("Auth params set:", { tab: hasRegister ? "register" : "login", role });
+    } catch (err) {
+      console.error("Error parsing URL params:", err);
+    }
+  }, [path]);
   
   // Redirect if the user is already logged in
-  // Use a safe approach to navigation
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
       console.log("User already logged in, redirecting to home");
       setTimeout(() => {
@@ -41,7 +56,7 @@ export default function AuthPage() {
       
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-md">
-          <Tabs defaultValue={defaultTab} className="w-full">
+          <Tabs defaultValue={authParams.defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Sign In</TabsTrigger>
               <TabsTrigger value="register">Create Account</TabsTrigger>
@@ -50,7 +65,7 @@ export default function AuthPage() {
               <LoginForm />
             </TabsContent>
             <TabsContent value="register">
-              <RegisterForm defaultRole={defaultRole} />
+              <RegisterForm defaultRole={authParams.defaultRole} />
             </TabsContent>
           </Tabs>
         </div>
