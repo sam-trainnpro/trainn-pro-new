@@ -93,15 +93,20 @@ export default function ClassesPage() {
     }
 
     // Date filter
-    if (filters.date) {
-      const filterDate = new Date(filters.date);
-      const classDate = new Date(classItem.startTime);
+    if (filters.date && classItem.startTime) {
+      // Only filter classes that have a start time (either one-time classes or specific instances)
+      const filterDate = filters.date ? new Date(filters.date) : new Date();
+      const classDate = classItem.startTime ? new Date(classItem.startTime) : new Date();
       
       if (filterDate.getFullYear() !== classDate.getFullYear() ||
           filterDate.getMonth() !== classDate.getMonth() ||
           filterDate.getDate() !== classDate.getDate()) {
         return false;
       }
+    } else if (filters.date && !classItem.startTime && classItem.isRecurring) {
+      // For recurring parent classes without a specific start time
+      // Filter them out as we want to show only specific instances when a date is selected
+      return false;
     }
 
     // We could add distance-based filtering here if we had the user's coordinates
