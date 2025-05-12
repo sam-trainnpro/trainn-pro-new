@@ -42,13 +42,20 @@ export default function ClassesPage() {
     }
   }, [searchParams]);
 
-  // Fetch all classes
+  // Fetch all classes with schedules
   const { 
     data: classes, 
     isLoading: isLoadingClasses, 
     error: classesError 
-  } = useQuery<Class[]>({
+  } = useQuery<ClassWithSchedules[]>({
     queryKey: ['/api/classes'],
+    queryFn: async ({ queryKey }) => {
+      const response = await fetch(`${queryKey[0]}?includeSchedules=true`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch classes');
+      }
+      return response.json();
+    },
   });
 
   // Fetch all categories
