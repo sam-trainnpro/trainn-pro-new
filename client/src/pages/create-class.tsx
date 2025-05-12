@@ -224,21 +224,66 @@ export default function CreateClassPage() {
     }
   };
   
+  // Helper to add a new schedule
+  const addNewSchedule = () => {
+    append({
+      dayOfWeek: 1, // Monday by default
+      startTime: "17:00", // 5:00 PM
+      endTime: "18:00", // 6:00 PM
+    });
+  };
+  
+  // Convert day of week number to string
+  const getDayName = (dayNum: number): string => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[dayNum];
+  };
+  
   // Submit handler
   async function onSubmit(data: CreateClassFormValues) {
     setSubmitting(true);
     
-    // Ensure end time is after start time
-    if (data.endTime <= data.startTime) {
-      form.setError("endTime", {
-        type: "manual",
-        message: "End time must be after start time",
-      });
-      setSubmitting(false);
-      return;
+    // Validation for single occurrence classes
+    if (!data.isRecurring && data.startTime && data.endTime) {
+      if (data.endTime <= data.startTime) {
+        form.setError("endTime", {
+          type: "manual",
+          message: "End time must be after start time",
+        });
+        setSubmitting(false);
+        return;
+      }
     }
     
-    await createClassMutation.mutateAsync(data);
+    // For recurring classes, validate each schedule's times
+    if (data.isRecurring && data.schedules) {
+      for (const schedule of data.schedules) {
+        const startTimeParts = schedule.startTime.split(':').map(Number);
+        const endTimeParts = schedule.endTime.split(':').map(Number);
+        
+        const startTimeMinutes = startTimeParts[0] * 60 + startTimeParts[1];
+        const endTimeMinutes = endTimeParts[0] * 60 + endTimeParts[1];
+        
+        if (endTimeMinutes <= startTimeMinutes) {
+          toast({
+            title: "Invalid Schedule",
+            description: `End time must be after start time for ${getDayName(schedule.dayOfWeek)}`,
+            variant: "destructive",
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+    }
+    
+    // Process and submit the class data
+    try {
+      console.log("Submitting class data:", data);
+      await createClassMutation.mutateAsync(data);
+    } catch (error) {
+      console.error("Error submitting class:", error);
+      setSubmitting(false);
+    }
   }
   
   return (
@@ -470,155 +515,319 @@ export default function CreateClassPage() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="startTime"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Start Date & Time</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className="w-full pl-3 text-left font-normal justify-start"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? (
-                                  format(field.value, "PPP p")
-                                ) : (
-                                  <span>Select date and time</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <div className="p-4 border-b">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    // Preserve the time
-                                    const newDate = new Date(date);
-                                    newDate.setHours(
-                                      field.value.getHours(),
-                                      field.value.getMinutes()
-                                    );
-                                    field.onChange(newDate);
-                                    
-                                    // Also update end time to maintain duration
-                                    const currentDuration = form.getValues("endTime").getTime() - field.value.getTime();
-                                    const newEndTime = new Date(newDate.getTime() + currentDuration);
-                                    form.setValue("endTime", newEndTime);
-                                  }
-                                }}
-                                disabled={(date) => date < new Date()}
-                              />
-                            </div>
-                            <div className="p-4 border-t flex justify-between items-center">
-                              <div>
-                                <div className="text-sm font-medium">Time</div>
-                                <div className="flex items-center mt-2">
-                                  <Input
-                                    type="time"
-                                    value={format(field.value, "HH:mm")}
-                                    onChange={(e) => {
-                                      const [hours, minutes] = e.target.value.split(":");
-                                      const newDate = new Date(field.value);
-                                      newDate.setHours(parseInt(hours), parseInt(minutes));
+                {/* Class Schedule Type Selection */}
+                <FormField
+                  control={form.control}
+                  name="isRecurring"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Recurring Class
+                        </FormLabel>
+                        <FormDescription>
+                          Enable to create a class that occurs on multiple days and times
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Show either single occurrence or recurring schedule UI */}
+                {!form.watch("isRecurring") ? (
+                  /* Single Occurrence Class */
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="startTime"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Start Date & Time</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className="w-full pl-3 text-left font-normal justify-start"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? (
+                                    format(field.value, "PPP p")
+                                  ) : (
+                                    <span>Select date and time</span>
+                                  )}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <div className="p-4 border-b">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={(date) => {
+                                    if (date && field.value) {
+                                      // Preserve the time
+                                      const newDate = new Date(date);
+                                      newDate.setHours(
+                                        field.value.getHours(),
+                                        field.value.getMinutes()
+                                      );
                                       field.onChange(newDate);
                                       
                                       // Also update end time to maintain duration
-                                      const currentDuration = form.getValues("endTime").getTime() - field.value.getTime();
-                                      const newEndTime = new Date(newDate.getTime() + currentDuration);
-                                      form.setValue("endTime", newEndTime);
-                                    }}
-                                    className="w-full"
-                                  />
+                                      const endTime = form.getValues("endTime");
+                                      if (endTime) {
+                                        const currentDuration = endTime.getTime() - field.value.getTime();
+                                        const newEndTime = new Date(newDate.getTime() + currentDuration);
+                                        form.setValue("endTime", newEndTime);
+                                      }
+                                    }
+                                  }}
+                                  disabled={(date) => date < new Date()}
+                                />
+                              </div>
+                              <div className="p-4 border-t flex justify-between items-center">
+                                <div>
+                                  <div className="text-sm font-medium">Time</div>
+                                  <div className="flex items-center mt-2">
+                                    <Input
+                                      type="time"
+                                      value={field.value ? format(field.value, "HH:mm") : ""}
+                                      onChange={(e) => {
+                                        if (field.value) {
+                                          const [hours, minutes] = e.target.value.split(":");
+                                          const newDate = new Date(field.value);
+                                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                                          field.onChange(newDate);
+                                          
+                                          // Also update end time to maintain duration
+                                          const endTime = form.getValues("endTime");
+                                          if (endTime) {
+                                            const currentDuration = endTime.getTime() - field.value.getTime();
+                                            const newEndTime = new Date(newDate.getTime() + currentDuration);
+                                            form.setValue("endTime", newEndTime);
+                                          }
+                                        }
+                                      }}
+                                      className="w-full"
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        <FormDescription>
-                          When the class will begin
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="endTime"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>End Date & Time</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className="w-full pl-3 text-left font-normal justify-start"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? (
-                                  format(field.value, "PPP p")
-                                ) : (
-                                  <span>Select date and time</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <div className="p-4 border-b">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    // Preserve the time
-                                    const newDate = new Date(date);
-                                    newDate.setHours(
-                                      field.value.getHours(),
-                                      field.value.getMinutes()
-                                    );
-                                    field.onChange(newDate);
-                                  }
-                                }}
-                                disabled={(date) => date < form.getValues("startTime")}
-                              />
-                            </div>
-                            <div className="p-4 border-t flex justify-between items-center">
-                              <div>
-                                <div className="text-sm font-medium">Time</div>
-                                <div className="flex items-center mt-2">
-                                  <Input
-                                    type="time"
-                                    value={format(field.value, "HH:mm")}
-                                    onChange={(e) => {
-                                      const [hours, minutes] = e.target.value.split(":");
-                                      const newDate = new Date(field.value);
-                                      newDate.setHours(parseInt(hours), parseInt(minutes));
+                            </PopoverContent>
+                          </Popover>
+                          <FormDescription>
+                            When the class will begin
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="endTime"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>End Date & Time</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className="w-full pl-3 text-left font-normal justify-start"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? (
+                                    format(field.value, "PPP p")
+                                  ) : (
+                                    <span>Select date and time</span>
+                                  )}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <div className="p-4 border-b">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={(date) => {
+                                    if (date && field.value) {
+                                      // Preserve the time
+                                      const newDate = new Date(date);
+                                      newDate.setHours(
+                                        field.value.getHours(),
+                                        field.value.getMinutes()
+                                      );
                                       field.onChange(newDate);
-                                    }}
-                                    className="w-full"
-                                  />
+                                    }
+                                  }}
+                                  disabled={(date) => {
+                                    const startTime = form.getValues("startTime");
+                                    return date < (startTime || new Date());
+                                  }}
+                                />
+                              </div>
+                              <div className="p-4 border-t flex justify-between items-center">
+                                <div>
+                                  <div className="text-sm font-medium">Time</div>
+                                  <div className="flex items-center mt-2">
+                                    <Input
+                                      type="time"
+                                      value={field.value ? format(field.value, "HH:mm") : ""}
+                                      onChange={(e) => {
+                                        if (field.value) {
+                                          const [hours, minutes] = e.target.value.split(":");
+                                          const newDate = new Date(field.value);
+                                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                                          field.onChange(newDate);
+                                        }
+                                      }}
+                                      className="w-full"
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        <FormDescription>
-                          When the class will end
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
+                            </PopoverContent>
+                          </Popover>
+                          <FormDescription>
+                            When the class will end
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                ) : (
+                  /* Recurring Schedule UI */
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Class Schedule</h3>
+                      <Button 
+                        type="button" 
+                        onClick={addNewSchedule} 
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Schedule
+                      </Button>
+                    </div>
+                    
+                    {fields.length === 0 ? (
+                      <div className="text-center p-6 border rounded-md bg-muted/20">
+                        <p className="text-muted-foreground mb-2">No schedules added yet</p>
+                        <Button 
+                          type="button" 
+                          onClick={addNewSchedule} 
+                          variant="secondary"
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> Add a Schedule
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {fields.map((item, index) => (
+                          <Card key={item.id} className="overflow-hidden">
+                            <CardHeader className="p-4 pb-2">
+                              <div className="flex justify-between items-center">
+                                <CardTitle className="text-md font-medium">
+                                  Schedule #{index + 1}
+                                </CardTitle>
+                                <Button 
+                                  type="button" 
+                                  onClick={() => remove(index)} 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-8 w-8 p-0 rounded-full"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name={`schedules.${index}.dayOfWeek`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Day of Week</FormLabel>
+                                      <Select 
+                                        onValueChange={(value) => field.onChange(parseInt(value))} 
+                                        defaultValue={field.value.toString()}>
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select day" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="0">Sunday</SelectItem>
+                                          <SelectItem value="1">Monday</SelectItem>
+                                          <SelectItem value="2">Tuesday</SelectItem>
+                                          <SelectItem value="3">Wednesday</SelectItem>
+                                          <SelectItem value="4">Thursday</SelectItem>
+                                          <SelectItem value="5">Friday</SelectItem>
+                                          <SelectItem value="6">Saturday</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name={`schedules.${index}.startTime`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Start Time</FormLabel>
+                                      <FormControl>
+                                        <Input 
+                                          type="time" 
+                                          {...field} 
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name={`schedules.${index}.endTime`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>End Time</FormLabel>
+                                      <FormControl>
+                                        <Input 
+                                          type="time" 
+                                          {...field} 
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     )}
-                  />
-                </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      <p>The class will be scheduled on the selected days every week.</p>
+                    </div>
+                  </div>
+                )}
                 
                 <FormField
                   control={form.control}

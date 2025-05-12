@@ -76,8 +76,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all classes
   app.get("/api/classes", async (req, res) => {
     try {
-      const classes = await storage.getClasses();
-      res.json(classes);
+      // Check if we want to include schedules
+      const includeSchedules = req.query.includeSchedules === 'true';
+      
+      if (includeSchedules) {
+        const classesWithSchedules = await storage.getClassesWithSchedules();
+        res.json(classesWithSchedules);
+      } else {
+        const classes = await storage.getClasses();
+        res.json(classes);
+      }
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch classes" });
     }
@@ -87,13 +95,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/classes/:id", async (req, res) => {
     try {
       const classId = parseInt(req.params.id);
-      const classItem = await storage.getClass(classId);
+      // Check if we want to include schedules
+      const includeSchedules = req.query.includeSchedules === 'true';
       
-      if (!classItem) {
-        return res.status(404).json({ message: "Class not found" });
+      if (includeSchedules) {
+        const classWithSchedules = await storage.getClassWithSchedules(classId);
+        
+        if (!classWithSchedules) {
+          return res.status(404).json({ message: "Class not found" });
+        }
+        
+        res.json(classWithSchedules);
+      } else {
+        const classItem = await storage.getClass(classId);
+        
+        if (!classItem) {
+          return res.status(404).json({ message: "Class not found" });
+        }
+        
+        res.json(classItem);
       }
-      
-      res.json(classItem);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch class" });
     }
@@ -108,10 +129,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         coachId: req.user!.id 
       };
       
-      // Make sure all required fields are present
-      const requiredFields = ['title', 'description', 'categoryId', 'price', 'capacity', 'location', 'address', 'startTime', 'endTime'];
+      const isRecurring = classData.isRecurring === true;
       
-      const missingFields = requiredFields.filter(field => !classData[field]);
+      // Define required fields based on class type
+      const baseRequiredFields = ['title', 'description', 'categoryId', 'price', 'capacity', 'location', 'address'];
+      const singleOccurrenceFields = [...baseRequiredFields, 'startTime', 'endTime'];
+      const recurringFields = [...baseRequiredFields, 'schedules'];
+      
+      // Choose required fields based on class type
+      const requiredFields = isRecurring ? recurringFields : singleOccurrenceFields;
+      
+      // Check for missing fields
+      const missingFields = requiredFields.filter(field => {
+        if (field === 'schedules') {
+          return !classData.schedules || !Array.isArray(classData.schedules) || classData.schedules.length === 0;
+        }
+        return !classData[field];
+      });
       
       if (missingFields.length > 0) {
         return res.status(400).json({
@@ -124,15 +158,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: classData.title,
         categoryId: classData.categoryId,
         price: classData.price,
-        capacity: classData.capacity, 
-        startTime: classData.startTime,
-        endTime: classData.endTime
+        capacity: classData.capacity,
+        isRecurring: classData.isRecurring,
+        schedulesCount: classData.schedules?.length
       });
       
       // Create the class with properly formatted data
       const newClass = await storage.createClass(classData);
       
-      res.status(201).json(newClass);
+      // If this is a recurring class, create all the schedule entries
+      if (isRecurring && classData.schedules && classData.schedules.length > 0) {
+        console.log("Creating schedules for recurring class:", classData.schedules);
+        
+        for (const schedule of classData.schedules) {
+          await storage.createClassSchedule({
+            classId: newClass.id,
+            dayOfWeek: schedule.dayOfWeek,
+            startTime: schedule.startTime,
+            endTime: schedule.endTime
+          });
+        }
+      }
+      
+      // Fetch the complete class with schedules if it's recurring
+      const responseClass = isRecurring 
+        ? await storage.getClassWithSchedules(newClass.id)
+        : newClass;
+      
+      res.status(201).json(responseClass);
     } catch (error: any) {
       console.error("Error creating class:", error);
       
