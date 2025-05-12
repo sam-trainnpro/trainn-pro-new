@@ -1,0 +1,270 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { Class, ClassCategory } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import MobileNavigation from "@/components/layout/mobile-navigation";
+import ClassCard from "@/components/class/class-card";
+import { Helmet } from "react-helmet";
+import { Button } from "@/components/ui/button";
+import { Loader2, Edit, Trash2, Plus } from "lucide-react";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+
+export default function MyClassesPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [classToDelete, setClassToDelete] = useState<number | null>(null);
+  
+  // Fetch classes created by this coach
+  const { 
+    data: classes, 
+    isLoading, 
+    error 
+  } = useQuery<Class[]>({
+    queryKey: ['/api/coaches', user?.id, 'classes'],
+    queryFn: async ({ queryKey }) => {
+      const response = await fetch(`/api/coaches/${queryKey[1]}/classes`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch your classes');
+      }
+      return response.json();
+    },
+    enabled: !!user && user.role === 'coach',
+  });
+  
+  // Group classes by parent (recurring classes together)
+  const groupedClasses = classes ? classes.reduce<Record<string, Class[]>>((acc, classItem) => {
+    // Use parentClassId if available, otherwise use the class's own id
+    const groupId = classItem.parentClassId || classItem.id;
+    
+    if (!acc[groupId]) {
+      acc[groupId] = [];
+    }
+    
+    acc[groupId].push(classItem);
+    return acc;
+  }, {}) : {};
+  
+  // Extract parent classes for display (the first class in each group)
+  const parentClasses = Object.values(groupedClasses).map(group => {
+    // Find the parent class (the one with isRecurring=true) or use the first one
+    return group.find(c => c.isRecurring) || group[0];
+  });
+  
+  // Mutation to delete a class
+  const deleteMutation = useMutation({
+    mutationFn: async (classId: number) => {
+      const response = await apiRequest("DELETE", `/api/classes/${classId}`);
+      if (!response.ok) {
+        throw new Error('Failed to delete class');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Class deleted",
+        description: "Your class has been deleted successfully",
+      });
+      
+      // Invalidate queries to refresh the class list
+      queryClient.invalidateQueries({ queryKey: ['/api/coaches', user?.id, 'classes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleDeleteClass = (classId: number) => {
+    setClassToDelete(classId);
+  };
+  
+  const confirmDelete = () => {
+    if (classToDelete) {
+      deleteMutation.mutate(classToDelete);
+      setClassToDelete(null);
+    }
+  };
+  
+  // Function to determine if a class is a one-time class or a recurring series
+  const getClassType = (classItem: Class) => {
+    if (classItem.isRecurring) {
+      return <Badge className="bg-blue-500">Recurring Series</Badge>;
+    } else if (classItem.parentClassId) {
+      return <Badge className="bg-green-500">Session in Series</Badge>;
+    } else {
+      return <Badge>One-time Class</Badge>;
+    }
+  };
+  
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Helmet>
+        <title>My Classes - Elevate</title>
+        <meta name="description" content="Manage your fitness classes. View, edit, or create new classes." />
+      </Helmet>
+      
+      <Header />
+      
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold font-heading">My Classes</h1>
+          <Link href="/create-class">
+            <Button className="bg-primary text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Class
+            </Button>
+          </Link>
+        </div>
+        
+        {isLoading ? (
+          <div className="flex justify-center items-center min-h-[300px]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="text-center p-8 bg-red-50 rounded-lg">
+            <p className="text-red-600">Error loading your classes. Please try again.</p>
+          </div>
+        ) : parentClasses.length === 0 ? (
+          <div className="text-center p-12 bg-gray-50 rounded-lg">
+            <h3 className="text-xl font-semibold mb-2">You haven't created any classes yet</h3>
+            <p className="text-gray-600 mb-4">Create your first class to start sharing your expertise with others</p>
+            <Link href="/create-class">
+              <Button className="bg-primary text-white">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Your First Class
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {parentClasses.map(classItem => (
+              <Card key={classItem.id} className="overflow-hidden">
+                <div className="h-40 overflow-hidden">
+                  <img 
+                    src={classItem.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb"}
+                    alt={classItem.title} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="font-heading">{classItem.title}</CardTitle>
+                      <CardDescription className="mt-1">${classItem.price.toFixed(2)} per session</CardDescription>
+                    </div>
+                    <div>
+                      {getClassType(classItem)}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 truncate">{classItem.description}</p>
+                  
+                  {classItem.isRecurring && (
+                    <div className="mt-2">
+                      <p className="text-sm font-medium">Sessions in this series: {groupedClasses[classItem.id]?.length || 1}</p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Link href={`/classes/${classItem.id}`}>
+                    <Button variant="outline">View Details</Button>
+                  </Link>
+                  <div className="flex space-x-2">
+                    <Link href={`/edit-class/${classItem.id}`}>
+                      <Button variant="outline" className="px-3">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="px-3 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete this class{classItem.isRecurring ? ' and all of its sessions' : ''}. 
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-red-600 text-white hover:bg-red-700"
+                            onClick={() => handleDeleteClass(classItem.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+      
+      <Footer />
+      <MobileNavigation />
+      
+      {/* Confirmation dialog for deletion */}
+      <AlertDialog open={!!classToDelete} onOpenChange={() => setClassToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this class? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={confirmDelete}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
