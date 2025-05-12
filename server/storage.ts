@@ -1,13 +1,15 @@
 import { users, type User, type InsertUser, classes, type Class, type InsertClass, bookings, type Booking, type InsertBooking, reviews, type Review, type InsertReview, classCategories, type ClassCategory, type InsertClassCategory } from "@shared/schema";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { db, pool } from "./db";
+import { eq, and, desc, inArray } from "drizzle-orm";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 // Extended storage interface
 export interface IStorage {
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
   
   // User-related methods
   getUser(id: number): Promise<User | undefined>;
@@ -50,127 +52,140 @@ export interface IStorage {
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
 }
 
-export class MemStorage implements IStorage {
-  private usersMap: Map<number, User>;
-  private classesMap: Map<number, Class>;
-  private bookingsMap: Map<number, Booking>;
-  private reviewsMap: Map<number, Review>;
-  private classCategoriesMap: Map<number, ClassCategory>;
-  
-  private userId: number = 1;
-  private classId: number = 1;
-  private bookingId: number = 1;
-  private reviewId: number = 1;
-  private categoryId: number = 1;
-  
-  sessionStore: session.SessionStore;
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
   
   constructor() {
-    this.usersMap = new Map();
-    this.classesMap = new Map();
-    this.bookingsMap = new Map();
-    this.reviewsMap = new Map();
-    this.classCategoriesMap = new Map();
-    
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      createTableIfMissing: true 
     });
     
-    // Initialize with some categories
+    // Initialize the database with sample categories
     this.initializeCategories();
   }
   
-  private initializeCategories() {
-    const categories = [
-      { name: 'HIIT', image: 'https://images.unsplash.com/photo-1517130038641-a774d04afb3c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
-      { name: 'Yoga', image: 'https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
-      { name: 'Strength', image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
-      { name: 'Cardio', image: 'https://images.unsplash.com/photo-1434596922112-19c563067271?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
-    ];
-    
-    categories.forEach(category => {
-      this.createClassCategory(category);
-    });
+  private async initializeCategories() {
+    try {
+      // Check if categories already exist
+      const existingCategories = await this.getAllClassCategories();
+      
+      if (existingCategories.length === 0) {
+        // If no categories exist, create them
+        const categories = [
+          { name: 'HIIT', image: 'https://images.unsplash.com/photo-1517130038641-a774d04afb3c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
+          { name: 'Yoga', image: 'https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
+          { name: 'Strength', image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
+          { name: 'Cardio', image: 'https://images.unsplash.com/photo-1434596922112-19c563067271?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=600&h=400' },
+        ];
+        
+        for (const category of categories) {
+          await this.createClassCategory(category);
+        }
+      }
+    } catch (error) {
+      console.error("Error initializing categories:", error);
+    }
   }
   
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.usersMap.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.usersMap.values()).find(
-      (user) => user.email.toLowerCase() === email.toLowerCase(),
-    );
+    const result = await db.select().from(users).where(eq(users.email, email));
+    return result[0];
   }
   
   async createUser(userData: InsertUser): Promise<User> {
-    const id = this.userId++;
-    const user: User = { ...userData, id, createdAt: new Date(), isApproved: userData.role === 'customer' };
-    this.usersMap.set(id, user);
-    return user;
+    const result = await db.insert(users).values({
+      ...userData,
+      createdAt: new Date(),
+      isApproved: userData.role === 'customer'
+    }).returning();
+    
+    return result[0];
   }
   
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const user = await this.getUser(id);
-    if (!user) return undefined;
+    const result = await db.update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
     
-    const updatedUser = { ...user, ...userData };
-    this.usersMap.set(id, updatedUser);
-    return updatedUser;
+    return result[0];
   }
   
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.usersMap.values());
+    return await db.select().from(users);
   }
   
   async getCoaches(): Promise<User[]> {
-    return Array.from(this.usersMap.values()).filter(user => user.role === 'coach');
+    return await db.select().from(users).where(eq(users.role, 'coach'));
   }
   
   async getApprovedCoaches(): Promise<User[]> {
-    return Array.from(this.usersMap.values()).filter(user => user.role === 'coach' && user.isApproved);
+    return await db.select().from(users).where(
+      and(
+        eq(users.role, 'coach'),
+        eq(users.isApproved, true)
+      )
+    );
   }
   
   async approveCoach(id: number): Promise<User | undefined> {
-    const coach = await this.getUser(id);
-    if (!coach || coach.role !== 'coach') return undefined;
+    const result = await db.update(users)
+      .set({ isApproved: true })
+      .where(
+        and(
+          eq(users.id, id),
+          eq(users.role, 'coach')
+        )
+      )
+      .returning();
     
-    coach.isApproved = true;
-    this.usersMap.set(id, coach);
-    return coach;
+    return result[0];
   }
   
   // Class category methods
   async createClassCategory(category: InsertClassCategory): Promise<ClassCategory> {
-    const id = this.categoryId++;
-    const newCategory: ClassCategory = { ...category, id };
-    this.classCategoriesMap.set(id, newCategory);
-    return newCategory;
+    const result = await db.insert(classCategories)
+      .values(category)
+      .returning();
+    
+    return result[0];
   }
   
   async getAllClassCategories(): Promise<ClassCategory[]> {
-    return Array.from(this.classCategoriesMap.values());
+    return await db.select().from(classCategories);
   }
   
   async getClassCategory(id: number): Promise<ClassCategory | undefined> {
-    return this.classCategoriesMap.get(id);
+    const result = await db.select().from(classCategories).where(eq(classCategories.id, id));
+    return result[0];
   }
   
   // Class methods
   async createClass(classData: InsertClass): Promise<Class> {
-    const id = this.classId++;
-    const newClass: Class = { ...classData, id, createdAt: new Date() };
-    this.classesMap.set(id, newClass);
-    return newClass;
+    const result = await db.insert(classes)
+      .values({
+        ...classData,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return result[0];
   }
   
   async getClass(id: number): Promise<Class | undefined> {
-    return this.classesMap.get(id);
+    const result = await db.select().from(classes).where(eq(classes.id, id));
+    return result[0];
   }
   
   async getClasses(): Promise<Class[]> {
-    return Array.from(this.classesMap.values());
+    return await db.select().from(classes).orderBy(desc(classes.createdAt));
   }
   
   async getUserClasses(userId: number): Promise<Class[]> {
@@ -178,100 +193,104 @@ export class MemStorage implements IStorage {
     const userBookings = await this.getUserBookings(userId);
     const classIds = userBookings.map(booking => booking.classId);
     
-    return Array.from(this.classesMap.values()).filter(
-      classItem => classIds.includes(classItem.id)
+    if (classIds.length === 0) {
+      return [];
+    }
+    
+    return await db.select().from(classes).where(
+      inArray(classes.id, classIds)
     );
   }
   
   async getClassesByCategory(categoryId: number): Promise<Class[]> {
-    return Array.from(this.classesMap.values()).filter(
-      classItem => classItem.categoryId === categoryId
-    );
+    return await db.select().from(classes).where(eq(classes.categoryId, categoryId));
   }
   
   async getClassesByCoach(coachId: number): Promise<Class[]> {
-    return Array.from(this.classesMap.values()).filter(
-      classItem => classItem.coachId === coachId
-    );
+    return await db.select().from(classes).where(eq(classes.coachId, coachId));
   }
   
   async updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined> {
-    const classItem = await this.getClass(id);
-    if (!classItem) return undefined;
+    const result = await db.update(classes)
+      .set(classData)
+      .where(eq(classes.id, id))
+      .returning();
     
-    const updatedClass = { ...classItem, ...classData };
-    this.classesMap.set(id, updatedClass);
-    return updatedClass;
+    return result[0];
   }
   
   async deleteClass(id: number): Promise<boolean> {
-    return this.classesMap.delete(id);
+    const result = await db.delete(classes).where(eq(classes.id, id));
+    return result.rowCount > 0;
   }
   
   // Booking methods
   async createBooking(bookingData: InsertBooking): Promise<Booking> {
-    const id = this.bookingId++;
-    const booking: Booking = { ...bookingData, id, createdAt: new Date() };
-    this.bookingsMap.set(id, booking);
-    return booking;
+    const result = await db.insert(bookings)
+      .values({
+        ...bookingData,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return result[0];
   }
   
   async getBooking(id: number): Promise<Booking | undefined> {
-    return this.bookingsMap.get(id);
+    const result = await db.select().from(bookings).where(eq(bookings.id, id));
+    return result[0];
   }
   
   async getUserBookings(userId: number): Promise<Booking[]> {
-    return Array.from(this.bookingsMap.values()).filter(
-      booking => booking.userId === userId
-    );
+    return await db.select().from(bookings).where(eq(bookings.userId, userId));
   }
   
   async getClassBookings(classId: number): Promise<Booking[]> {
-    return Array.from(this.bookingsMap.values()).filter(
-      booking => booking.classId === classId
-    );
+    return await db.select().from(bookings).where(eq(bookings.classId, classId));
   }
   
   async updateBooking(id: number, bookingData: Partial<Booking>): Promise<Booking | undefined> {
-    const booking = await this.getBooking(id);
-    if (!booking) return undefined;
+    const result = await db.update(bookings)
+      .set(bookingData)
+      .where(eq(bookings.id, id))
+      .returning();
     
-    const updatedBooking = { ...booking, ...bookingData };
-    this.bookingsMap.set(id, updatedBooking);
-    return updatedBooking;
+    return result[0];
   }
   
   // Review methods
   async createReview(reviewData: InsertReview): Promise<Review> {
-    const id = this.reviewId++;
-    const review: Review = { ...reviewData, id, createdAt: new Date() };
-    this.reviewsMap.set(id, review);
-    return review;
+    const result = await db.insert(reviews)
+      .values({
+        ...reviewData,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return result[0];
   }
   
   async getClassReviews(classId: number): Promise<Review[]> {
-    return Array.from(this.reviewsMap.values()).filter(
-      review => review.classId === classId
-    );
+    return await db.select().from(reviews).where(eq(reviews.classId, classId));
   }
   
   async getUserReviews(userId: number): Promise<Review[]> {
-    return Array.from(this.reviewsMap.values()).filter(
-      review => review.userId === userId
-    );
+    return await db.select().from(reviews).where(eq(reviews.userId, userId));
   }
   
   // Stripe
   async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {
-    const user = await this.getUser(userId);
-    if (!user) {
-      throw new Error("User not found");
+    const result = await db.update(users)
+      .set({ stripeCustomerId })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (result.length === 0) {
+      throw new Error(`User with ID ${userId} not found`);
     }
     
-    const updatedUser = { ...user, stripeCustomerId };
-    this.usersMap.set(userId, updatedUser);
-    return updatedUser;
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
