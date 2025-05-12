@@ -220,8 +220,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteClass(id: number): Promise<boolean> {
-    const result = await db.delete(classes).where(eq(classes.id, id));
-    return result.rowCount > 0;
+    try {
+      await db.delete(classes).where(eq(classes.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      return false;
+    }
   }
   
   // Booking methods
