@@ -1,18 +1,26 @@
+import React from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import queryString from "query-string";
 import { Helmet } from "react-helmet";
 
 export default function AuthPage() {
-  const [location, navigate] = useLocation();
+  // Fix: wouter's useLocation returns [path, navigate] where path is just a string
+  const [path, navigate] = useLocation();
   const { user } = useAuth();
-  const searchParams = queryString.parse(location.search);
-  const defaultTab = searchParams.register ? "register" : "login";
-  const defaultRole = searchParams.role as string || "customer";
+  
+  // Get URL and extract search params
+  const currentURL = new URL(window.location.href);
+  const hasRegisterParam = currentURL.searchParams.has('register');
+  const defaultTab = hasRegisterParam ? "register" : "login";
+  const defaultRole = currentURL.searchParams.get('role') || "customer";
 
+  // Add debugging
+  console.log("Auth page path:", path);
+  console.log("Auth page params:", { defaultTab, defaultRole });
+  
   // Redirect if the user is already logged in
   // Use a safe approach to navigation
   React.useEffect(() => {

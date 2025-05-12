@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,11 +53,15 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
   const { registerMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   
-  // Redirect if user is already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  // Use effect for navigation instead of conditional rendering
+  React.useEffect(() => {
+    if (user) {
+      console.log("User already logged in, redirecting from registration form");
+      setTimeout(() => {
+        navigate("/");
+      }, 0);
+    }
+  }, [user, navigate]);
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchemaBase),
@@ -71,26 +75,33 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
     },
   });
   
+  // Add a safe submission handler
   async function onSubmit(data: RegisterFormValues) {
     try {
       setError(null);
       console.log("Submitting registration form:", { ...data, password: "***" });
       
-      // Do not attempt to navigate in the same render cycle as the mutation
-      const user = await registerMutation.mutateAsync(data);
-      console.log("Registration successful:", user);
-      
-      // Use setTimeout to ensure navigation happens in a new render cycle
-      setTimeout(() => {
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          console.log("Navigating to home after registration");
-          navigate("/");
-        }
-      }, 0);
+      // We need to prevent the runtime error that might be happening 
+      // due to state updates during form submission
+      try {
+        const user = await registerMutation.mutateAsync(data);
+        console.log("Registration successful:", user);
+        
+        // Use setTimeout to ensure navigation happens in a separate task
+        window.setTimeout(() => {
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            console.log("Navigating to home after registration");
+            navigate("/");
+          }
+        }, 50);
+      } catch (mutationError: any) {
+        console.error("Mutation error:", mutationError);
+        setError(mutationError.message || "Registration failed. Please try again.");
+      }
     } catch (err: any) {
-      console.error("Registration error:", err);
+      console.error("Form submission error:", err);
       setError(err.message || "Registration failed. Please try again.");
     }
   }

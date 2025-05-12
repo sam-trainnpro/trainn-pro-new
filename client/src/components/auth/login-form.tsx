@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,11 +35,15 @@ export default function LoginForm() {
   const { loginMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   
-  // Redirect if user is already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  // Use effect for navigation instead of conditional rendering
+  React.useEffect(() => {
+    if (user) {
+      console.log("User already logged in, redirecting from login form");
+      setTimeout(() => {
+        navigate("/");
+      }, 0);
+    }
+  }, [user, navigate]);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -54,17 +58,24 @@ export default function LoginForm() {
       setError(null);
       console.log("Submitting login form:", { email: data.email, password: "***" });
       
-      // Do not attempt to navigate in the same render cycle as the mutation
-      const user = await loginMutation.mutateAsync(data);
-      console.log("Login successful:", user);
-      
-      // Use setTimeout to ensure navigation happens in a new render cycle
-      setTimeout(() => {
-        console.log("Navigating to home after login");
-        navigate("/");
-      }, 0);
+      // We need to prevent the runtime error that might be happening 
+      // due to state updates during form submission
+      try {
+        const user = await loginMutation.mutateAsync(data);
+        console.log("Login successful:", user);
+        
+        // Use setTimeout with a slight delay to ensure navigation happens 
+        // in a separate task to avoid race conditions with state updates
+        window.setTimeout(() => {
+          console.log("Navigating to home after login");
+          navigate("/");
+        }, 50);
+      } catch (mutationError: any) {
+        console.error("Mutation error:", mutationError);
+        setError(mutationError.message || "Login failed. Please check your credentials and try again.");
+      }
     } catch (err: any) {
-      console.error("Login error:", err);
+      console.error("Form submission error:", err);
       setError(err.message || "Login failed. Please check your credentials and try again.");
     }
   }
