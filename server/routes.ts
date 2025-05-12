@@ -285,13 +285,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete class" });
     }
   });
+  
+  // Update a class
+  app.put("/api/classes/:id", requireCoach, async (req, res) => {
+    try {
+      const classId = parseInt(req.params.id);
+      
+      // Check if the class exists
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      // Check if the class belongs to the coach
+      if (classItem.coachId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this class" });
+      }
+      
+      // Don't allow updating recurring parent classes through this endpoint
+      if (classItem.isRecurring) {
+        return res.status(400).json({ message: "Updating recurring classes is not supported" });
+      }
+      
+      // Update the class
+      const updatedClass = await storage.updateClass(classId, req.body);
+      res.json(updatedClass);
+    } catch (error) {
+      console.error("Error updating class:", error);
+      res.status(500).json({ message: "Failed to update class" });
+    }
+  });
 
   // Get classes by coach ID
   app.get("/api/coaches/:id/classes", async (req, res) => {
     try {
       const coachId = parseInt(req.params.id);
       const classes = await storage.getClassesByCoach(coachId);
-      res.json(classes);
+      
+      // Sort classes: recurring parent classes first, then by date
+      const sortedClasses = classes.sort((a, b) => {
+        // Put recurring parent classes at the top
+        if (a.isRecurring && !b.isRecurring) return -1;
+        if (!a.isRecurring && b.isRecurring) return 1;
+        
+        // For class instances that have a specific date
+        if (a.startTime && b.startTime) {
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        }
+        
+        // If no startTime, sort by creation date
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      res.json(sortedClasses);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch coach classes" });
     }

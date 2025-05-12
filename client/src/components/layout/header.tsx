@@ -108,9 +108,9 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/bookings" className="cursor-pointer w-full">
+                    <Link href={user.role === 'coach' ? "/my-classes" : "/bookings"} className="cursor-pointer w-full">
                       <Calendar className="mr-2 h-4 w-4" />
-                      <span>My Bookings</span>
+                      <span>{user.role === 'coach' ? "My Classes" : "My Bookings"}</span>
                     </Link>
                   </DropdownMenuItem>
                   {user.role === 'admin' && (
@@ -162,10 +162,10 @@ export default function Header() {
               
               {user ? (
                 <>
-                  <Link href="/bookings" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href={user.role === 'coach' ? "/my-classes" : "/bookings"} onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
                       <Calendar className="mr-2 h-5 w-5" />
-                      My Bookings
+                      {user.role === 'coach' ? "My Classes" : "My Bookings"}
                     </Button>
                   </Link>
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
