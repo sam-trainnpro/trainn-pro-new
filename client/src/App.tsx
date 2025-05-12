@@ -15,35 +15,45 @@ import AdminPage from "@/pages/admin";
 import CreateClassPage from "@/pages/create-class";
 import { ProtectedRoute } from "./lib/protected-route";
 
-// Wrapper components to ensure each component returns an Element (not nullable)
-const SafeHome = () => <Home />;
-const SafeAuthPage = () => <AuthPage />;
-const SafeClassesPage = () => <ClassesPage />;
-const SafeClassDetailsPage = () => <ClassDetailsPage />;
-const SafeCoachesPage = () => <CoachesPage />;
-const SafeCoachDetailsPage = () => <CoachDetailsPage />;
-const SafeBookingsPage = () => <BookingsPage />;
-const SafeCheckoutPage = () => <CheckoutPage />;
-const SafeProfilePage = () => <ProfilePage />;
-const SafeAdminPage = () => <AdminPage />;
-const SafeCreateClassPage = () => <CreateClassPage />;
-const SafeNotFound = () => <NotFound />;
-
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={SafeHome} />
-      <Route path="/auth" component={SafeAuthPage} />
-      <Route path="/classes" component={SafeClassesPage} />
-      <Route path="/classes/:id" component={SafeClassDetailsPage} />
-      <Route path="/coaches" component={SafeCoachesPage} />
-      <Route path="/coaches/:id" component={SafeCoachDetailsPage} />
-      <ProtectedRoute path="/bookings" component={SafeBookingsPage} />
-      <ProtectedRoute path="/checkout/:classId" component={SafeCheckoutPage} />
-      <ProtectedRoute path="/profile" component={SafeProfilePage} />
-      <ProtectedRoute path="/admin" component={SafeAdminPage} />
-      <ProtectedRoute path="/create-class" component={SafeCreateClassPage} />
-      <Route component={SafeNotFound} />
+      <Route path="/">
+        <Home />
+      </Route>
+      <Route path="/auth">
+        <AuthPage />
+      </Route>
+      <Route path="/classes">
+        <ClassesPage />
+      </Route>
+      <Route path="/classes/:id">
+        <ClassDetailsPage />
+      </Route>
+      <Route path="/coaches">
+        <CoachesPage />
+      </Route>
+      <Route path="/coaches/:id">
+        <CoachDetailsPage />
+      </Route>
+      <ProtectedRoute path="/bookings">
+        <BookingsPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/checkout/:classId">
+        <CheckoutPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/profile">
+        <ProfilePage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/admin">
+        <AdminPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/create-class">
+        <CreateClassPage />
+      </ProtectedRoute>
+      <Route>
+        <NotFound />
+      </Route>
     </Switch>
   );
 }
