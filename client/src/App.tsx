@@ -13,6 +13,8 @@ import CheckoutPage from "@/pages/checkout";
 import ProfilePage from "@/pages/profile";
 import AdminPage from "@/pages/admin";
 import CreateClassPage from "@/pages/create-class";
+import MyClassesPage from "@/pages/my-classes";
+import EditClassPage from "@/pages/edit-class";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -50,6 +52,12 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/create-class">
         <CreateClassPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/my-classes">
+        <MyClassesPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/edit-class/:id">
+        <EditClassPage />
       </ProtectedRoute>
       <Route>
         <NotFound />
