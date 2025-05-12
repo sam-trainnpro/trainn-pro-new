@@ -101,12 +101,14 @@ export default function ClassDetailsPage() {
   );
   
   // Format dates
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Date not available';
     const date = new Date(dateString);
     return format(date, "EEEE, MMMM d, yyyy");
   };
   
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Time not available';
     const date = new Date(dateString);
     return format(date, "h:mm a");
   };
@@ -226,23 +228,56 @@ export default function ClassDetailsPage() {
                       <p className="mb-6 whitespace-pre-line">{classItem.description}</p>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center">
-                          <Calendar className="h-5 w-5 mr-3 text-primary" />
-                          <div>
-                            <p className="text-sm text-muted-foreground">Date</p>
-                            <p className="font-medium">{formatDate(classItem.startTime)}</p>
+                        {classItem.isRecurring && classItem.schedules && classItem.schedules.length > 0 ? (
+                          <div className="flex flex-col col-span-2">
+                            <div className="flex items-center mb-2">
+                              <Calendar className="h-5 w-5 mr-3 text-primary" />
+                              <p className="font-medium">Recurring Class Schedule</p>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 ml-8 mt-2">
+                              {classItem.schedules.map((schedule, index) => {
+                                // Get day name
+                                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                const dayName = days[schedule.dayOfWeek];
+                                
+                                // Format time
+                                const formatTimeString = (timeStr: string) => {
+                                  const [hours, minutes] = timeStr.split(':').map(Number);
+                                  const period = hours >= 12 ? 'PM' : 'AM';
+                                  const displayHours = hours % 12 || 12; // Convert 0 to 12
+                                  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+                                };
+                                
+                                return (
+                                  <div key={index} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                    <p className="font-medium text-primary">{dayName}</p>
+                                    <p className="text-gray-700">{formatTimeString(schedule.startTime)} - {formatTimeString(schedule.endTime)}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          <Clock className="h-5 w-5 mr-3 text-primary" />
-                          <div>
-                            <p className="text-sm text-muted-foreground">Time</p>
-                            <p className="font-medium">
-                              {formatTime(classItem.startTime)} - {formatTime(classItem.endTime)}
-                            </p>
-                          </div>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center">
+                              <Calendar className="h-5 w-5 mr-3 text-primary" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Date</p>
+                                <p className="font-medium">{formatDate(classItem.startTime)}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center">
+                              <Clock className="h-5 w-5 mr-3 text-primary" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Time</p>
+                                <p className="font-medium">
+                                  {formatTime(classItem.startTime)} - {formatTime(classItem.endTime)}
+                                </p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                         
                         <div className="flex items-center">
                           <Users className="h-5 w-5 mr-3 text-primary" />
@@ -339,7 +374,10 @@ export default function ClassDetailsPage() {
                         <span className="text-sm font-normal text-muted-foreground">per person</span>
                       </CardTitle>
                       <CardDescription>
-                        {formatDate(classItem.startTime)} • {formatTime(classItem.startTime)}
+                        {classItem.isRecurring && classItem.schedules && classItem.schedules.length > 0 
+                          ? "Recurring Class - Multiple Schedule Options"
+                          : `${formatDate(classItem.startTime)} • ${formatTime(classItem.startTime)}`
+                        }
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
