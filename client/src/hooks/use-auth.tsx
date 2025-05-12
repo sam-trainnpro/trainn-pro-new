@@ -13,12 +13,14 @@ type LoginData = {
   password: string;
 };
 
+// Make sure RegisterData includes all fields from the registration form, including termsAccepted
 type RegisterData = {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
   role: string;
+  termsAccepted?: boolean; // Add termsAccepted as optional since it's only for validation
 };
 
 type AuthContextType = {
@@ -46,8 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/login", credentials);
+        return await res.json();
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -57,9 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Login mutation error:", error);
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "An error occurred during login",
         variant: "destructive",
       });
     },
@@ -67,8 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest("POST", "/api/register", userData);
-      return await res.json();
+      try {
+        // Remove termsAccepted from the data sent to the server
+        const { termsAccepted, ...dataToSend } = userData;
+        const res = await apiRequest("POST", "/api/register", dataToSend);
+        return await res.json();
+      } catch (error) {
+        console.error("Registration error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -78,9 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Registration mutation error:", error);
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "An error occurred during registration",
         variant: "destructive",
       });
     },
@@ -88,7 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      try {
+        await apiRequest("POST", "/api/logout");
+      } catch (error) {
+        console.error("Logout error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
@@ -98,9 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Logout mutation error:", error);
       toast({
         title: "Logout failed",
-        description: error.message,
+        description: error.message || "An error occurred during logout",
         variant: "destructive",
       });
     },

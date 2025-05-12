@@ -1,6 +1,4 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -17,21 +15,35 @@ import AdminPage from "@/pages/admin";
 import CreateClassPage from "@/pages/create-class";
 import { ProtectedRoute } from "./lib/protected-route";
 
+// Wrapper components to ensure each component returns an Element (not nullable)
+const SafeHome = () => <Home />;
+const SafeAuthPage = () => <AuthPage />;
+const SafeClassesPage = () => <ClassesPage />;
+const SafeClassDetailsPage = () => <ClassDetailsPage />;
+const SafeCoachesPage = () => <CoachesPage />;
+const SafeCoachDetailsPage = () => <CoachDetailsPage />;
+const SafeBookingsPage = () => <BookingsPage />;
+const SafeCheckoutPage = () => <CheckoutPage />;
+const SafeProfilePage = () => <ProfilePage />;
+const SafeAdminPage = () => <AdminPage />;
+const SafeCreateClassPage = () => <CreateClassPage />;
+const SafeNotFound = () => <NotFound />;
+
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/classes" component={ClassesPage} />
-      <Route path="/classes/:id" component={ClassDetailsPage} />
-      <Route path="/coaches" component={CoachesPage} />
-      <Route path="/coaches/:id" component={CoachDetailsPage} />
-      <ProtectedRoute path="/bookings" component={BookingsPage} />
-      <ProtectedRoute path="/checkout/:classId" component={CheckoutPage} />
-      <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/admin" component={AdminPage} />
-      <ProtectedRoute path="/create-class" component={CreateClassPage} />
-      <Route component={NotFound} />
+      <Route path="/" component={SafeHome} />
+      <Route path="/auth" component={SafeAuthPage} />
+      <Route path="/classes" component={SafeClassesPage} />
+      <Route path="/classes/:id" component={SafeClassDetailsPage} />
+      <Route path="/coaches" component={SafeCoachesPage} />
+      <Route path="/coaches/:id" component={SafeCoachDetailsPage} />
+      <ProtectedRoute path="/bookings" component={SafeBookingsPage} />
+      <ProtectedRoute path="/checkout/:classId" component={SafeCheckoutPage} />
+      <ProtectedRoute path="/profile" component={SafeProfilePage} />
+      <ProtectedRoute path="/admin" component={SafeAdminPage} />
+      <ProtectedRoute path="/create-class" component={SafeCreateClassPage} />
+      <Route component={SafeNotFound} />
     </Switch>
   );
 }
