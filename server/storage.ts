@@ -1,4 +1,11 @@
-import { users, type User, type InsertUser, classes, type Class, type InsertClass, bookings, type Booking, type InsertBooking, reviews, type Review, type InsertReview, classCategories, type ClassCategory, type InsertClassCategory } from "@shared/schema";
+import { 
+  users, type User, type InsertUser, 
+  classes, type Class, type InsertClass, 
+  bookings, type Booking, type InsertBooking, 
+  reviews, type Review, type InsertReview, 
+  classCategories, type ClassCategory, type InsertClassCategory,
+  classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules
+} from "@shared/schema";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
@@ -29,12 +36,19 @@ export interface IStorage {
   // Classes
   createClass(classData: InsertClass): Promise<Class>;
   getClass(id: number): Promise<Class | undefined>;
+  getClassWithSchedules(id: number): Promise<ClassWithSchedules | undefined>;
   getClasses(): Promise<Class[]>;
+  getClassesWithSchedules(): Promise<ClassWithSchedules[]>;
   getUserClasses(userId: number): Promise<Class[]>;
   getClassesByCategory(categoryId: number): Promise<Class[]>;
   getClassesByCoach(coachId: number): Promise<Class[]>;
   updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined>;
   deleteClass(id: number): Promise<boolean>;
+  
+  // Class Schedules
+  createClassSchedule(scheduleData: InsertClassSchedule): Promise<ClassSchedule>;
+  getClassSchedules(classId: number): Promise<ClassSchedule[]>;
+  deleteClassSchedule(id: number): Promise<boolean>;
   
   // Bookings
   createBooking(booking: InsertBooking): Promise<Booking>;
@@ -185,9 +199,9 @@ export class DatabaseStorage implements IStorage {
         categoryId: Number(classData.categoryId),
         price: Number(classData.price),
         capacity: Number(classData.capacity),
-        // Ensure date fields are Date objects
-        startTime: new Date(classData.startTime),
-        endTime: new Date(classData.endTime),
+        // Handle date fields - they might be optional now for recurring classes
+        startTime: classData.startTime ? new Date(classData.startTime) : undefined,
+        endTime: classData.endTime ? new Date(classData.endTime) : undefined,
         // Add created timestamp
         createdAt: new Date()
       };
@@ -207,13 +221,79 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // Class Schedule methods
+  async createClassSchedule(scheduleData: InsertClassSchedule): Promise<ClassSchedule> {
+    try {
+      console.log("Creating class schedule:", scheduleData);
+      const result = await db.insert(classSchedules)
+        .values({
+          ...scheduleData,
+          createdAt: new Date()
+        })
+        .returning();
+        
+      return result[0];
+    } catch (error) {
+      console.error("Error creating class schedule:", error);
+      throw error;
+    }
+  }
+  
+  async getClassSchedules(classId: number): Promise<ClassSchedule[]> {
+    try {
+      return await db.select()
+        .from(classSchedules)
+        .where(eq(classSchedules.classId, classId));
+    } catch (error) {
+      console.error("Error fetching class schedules:", error);
+      return [];
+    }
+  }
+  
+  async deleteClassSchedule(id: number): Promise<boolean> {
+    try {
+      await db.delete(classSchedules)
+        .where(eq(classSchedules.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting class schedule:", error);
+      return false;
+    }
+  }
+  
   async getClass(id: number): Promise<Class | undefined> {
     const result = await db.select().from(classes).where(eq(classes.id, id));
     return result[0];
   }
   
+  async getClassWithSchedules(id: number): Promise<ClassWithSchedules | undefined> {
+    const classResult = await this.getClass(id);
+    if (!classResult) return undefined;
+    
+    const schedules = await this.getClassSchedules(id);
+    return {
+      ...classResult,
+      schedules,
+    };
+  }
+  
   async getClasses(): Promise<Class[]> {
     return await db.select().from(classes).orderBy(desc(classes.createdAt));
+  }
+  
+  async getClassesWithSchedules(): Promise<ClassWithSchedules[]> {
+    const allClasses = await this.getClasses();
+    const classesWithSchedules: ClassWithSchedules[] = [];
+    
+    for (const classItem of allClasses) {
+      const schedules = await this.getClassSchedules(classItem.id);
+      classesWithSchedules.push({
+        ...classItem,
+        schedules,
+      });
+    }
+    
+    return classesWithSchedules;
   }
   
   async getUserClasses(userId: number): Promise<Class[]> {
