@@ -278,7 +278,28 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getClasses(): Promise<Class[]> {
-    return await db.select().from(classes).orderBy(desc(classes.createdAt));
+    try {
+      // Get all classes, sorted by most recent first
+      // If the class has a startTime (specific class instance), order by that first
+      // If no startTime, order by createdAt
+      const result = await db.select().from(classes)
+        .orderBy(
+          sql`CASE 
+              WHEN start_time IS NOT NULL THEN 0
+              ELSE 1
+             END`,
+          // Then order by date - either start_time or created_at
+          sql`CASE 
+              WHEN start_time IS NOT NULL THEN start_time
+              ELSE created_at
+             END`
+        );
+      
+      return result;
+    } catch (error) {
+      console.error("Error getting classes:", error);
+      throw error;
+    }
   }
   
   async getClassesWithSchedules(): Promise<ClassWithSchedules[]> {

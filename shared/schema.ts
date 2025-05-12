@@ -72,6 +72,8 @@ export const classes = pgTable("classes", {
   endTime: timestamp("end_time"), // Made optional
   // For recurring classes
   isRecurring: boolean("is_recurring").default(false),
+  // For child instances of recurring classes
+  parentClassId: integer("parent_class_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -90,6 +92,7 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   startTime: true,
   endTime: true,
   isRecurring: true,
+  parentClassId: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;
