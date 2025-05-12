@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Class, ClassCategory, User, Booking } from "@shared/schema";
+import { Class, ClassCategory, User, Booking, ClassWithSchedules, ClassSchedule } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -53,13 +53,20 @@ export default function ClassDetailsPage() {
   
   const classId = parseInt(params.id);
   
-  // Fetch class details
+  // Fetch class details with schedules
   const { 
     data: classItem, 
     isLoading: isLoadingClass, 
     error: classError 
-  } = useQuery<Class>({
+  } = useQuery<ClassWithSchedules>({
     queryKey: [`/api/classes/${classId}`],
+    queryFn: async ({ queryKey }) => {
+      const response = await fetch(`${queryKey[0]}?includeSchedules=true`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch class details');
+      }
+      return response.json();
+    },
   });
   
   // Get category data
