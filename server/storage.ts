@@ -43,6 +43,8 @@ export interface IStorage {
   getClassesByCategory(categoryId: number): Promise<Class[]>;
   getClassesByCoach(coachId: number): Promise<Class[]>;
   updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined>;
+  updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]>;
+  getClassesByParentId(parentClassId: number): Promise<Class[]>;
   deleteClass(id: number): Promise<boolean>;
   
   // Class Schedules
