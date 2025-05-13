@@ -302,9 +302,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this class" });
       }
       
-      // Don't allow updating recurring parent classes through this endpoint
+      // Check if this is a recurring class
       if (classItem.isRecurring) {
-        return res.status(400).json({ message: "Updating recurring classes is not supported" });
+        // Redirect to the series update endpoint
+        return res.status(400).json({ 
+          message: "This is a recurring class series. Use the series update endpoint.",
+          isRecurring: true,
+          classId: classItem.id
+        });
       }
       
       // Update the class
@@ -316,6 +321,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a recurring class series (coaches only)
+  app.put("/api/classes/:id/series", requireCoach, async (req, res) => {
+    try {
+      const classId = parseInt(req.params.id);
+      
+      // Check if the class exists
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      // Check if the class belongs to the coach
+      if (classItem.coachId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this class series" });
+      }
+      
+      // Verify this is actually a recurring class
+      if (!classItem.isRecurring) {
+        return res.status(400).json({ 
+          message: "This is not a recurring class series. Use the regular update endpoint."
+        });
+      }
+      
+      // Update the entire series
+      const updatedClasses = await storage.updateClassSeries(classId, req.body);
+      
+      res.json({
+        message: "Class series updated successfully",
+        parentClass: updatedClasses[0],
+        updatedCount: updatedClasses.length - 1 // Subtract 1 to exclude the parent class
+      });
+    } catch (error) {
+      console.error("Error updating class series:", error);
+      res.status(500).json({ message: "Failed to update class series" });
+    }
+  });
+  
   // Get classes by coach ID
   app.get("/api/coaches/:id/classes", async (req, res) => {
     try {

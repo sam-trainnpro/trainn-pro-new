@@ -350,6 +350,47 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
   
+  async getClassesByParentId(parentClassId: number): Promise<Class[]> {
+    return await db.select()
+      .from(classes)
+      .where(eq(classes.parentClassId, parentClassId));
+  }
+  
+  async updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]> {
+    // First, update the parent class itself
+    await db.update(classes)
+      .set(classData)
+      .where(eq(classes.id, parentClassId));
+    
+    // Then update all child classes (instances) of this series
+    // We exclude date-specific fields from the update
+    const { startTime, endTime, ...updateData } = classData;
+    
+    // Get all child classes
+    const childClasses = await this.getClassesByParentId(parentClassId);
+    
+    // Update each child class individually to ensure proper returning
+    const updatedClasses: Class[] = [];
+    for (const childClass of childClasses) {
+      const result = await db.update(classes)
+        .set(updateData)
+        .where(eq(classes.id, childClass.id))
+        .returning();
+      
+      if (result.length > 0) {
+        updatedClasses.push(result[0]);
+      }
+    }
+    
+    // Return the updated parent class along with all updated child classes
+    const parentClass = await this.getClass(parentClassId);
+    if (parentClass) {
+      updatedClasses.unshift(parentClass);
+    }
+    
+    return updatedClasses;
+  }
+  
   async deleteClass(id: number): Promise<boolean> {
     try {
       await db.delete(classes).where(eq(classes.id, id));
