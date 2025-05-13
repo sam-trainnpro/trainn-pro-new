@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Filter, DollarSign } from 'lucide-react';
+import { Search, MapPin, Calendar, Filter, DollarSign, X, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -20,6 +20,7 @@ import { useLocation as useGeoLocation } from "@/hooks/use-location";
 import { useQuery } from "@tanstack/react-query";
 import { ClassCategory } from "@shared/schema";
 import { useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface SearchFiltersProps {
   onSearch: (filters: SearchFilters) => void;
@@ -36,10 +37,13 @@ export interface SearchFilters {
 }
 
 export default function SearchFilters({ onSearch }: SearchFiltersProps) {
-  const [searchParams, setSearchParams] = useState<SearchFilters>({
+  const initialFilters: SearchFilters = {
     query: '',
     priceRange: [0, 100],
-  });
+  };
+  
+  const [searchParams, setSearchParams] = useState<SearchFilters>(initialFilters);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   
   const { latitude, longitude, getUserLocation, loading } = useGeoLocation();
   
@@ -99,29 +103,76 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   };
   
   const handlePriceChange = (value: number[]) => {
-    setSearchParams({
+    const newParams = {
       ...searchParams,
       priceRange: [value[0], value[1]]
-    });
+    };
+    setSearchParams(newParams);
+    // Only trigger search after a short delay to avoid too many requests while sliding
+    const delayDebounceFn = setTimeout(() => {
+      onSearch({
+        ...newParams,
+        latitude,
+        longitude
+      });
+    }, 300);
+    
+    return () => clearTimeout(delayDebounceFn);
   };
   
   const handleDateSelect = (date: Date | undefined) => {
-    setSearchParams({
+    const newParams = {
       ...searchParams,
       date
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude,
+      longitude
     });
   };
   
   const handleClassTypeSelect = (value: string) => {
-    setSearchParams({
+    const newParams = {
       ...searchParams,
       classType: value
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude,
+      longitude
     });
   };
   
   const handleLocationClick = () => {
     getUserLocation();
   };
+  
+  // Reset all filters to initial state
+  const handleClearFilters = () => {
+    setSearchParams(initialFilters);
+    onSearch(initialFilters);
+  };
+  
+  // Count active filters
+  useEffect(() => {
+    let count = 0;
+    if (searchParams.query) count++;
+    if (searchParams.date) count++;
+    if (searchParams.classType) count++;
+    if (latitude && longitude) count++;
+    
+    // Only count price if it's different from initial values
+    if (searchParams.priceRange && 
+        (searchParams.priceRange[0] !== initialFilters.priceRange?.[0] || 
+         searchParams.priceRange[1] !== initialFilters.priceRange?.[1])) {
+      count++;
+    }
+    
+    setActiveFiltersCount(count);
+  }, [searchParams, latitude, longitude]);
   
   return (
     <section className="bg-white py-6 shadow-sm sticky top-[61px] z-30">
@@ -252,7 +303,113 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
             <Button className="min-w-fit" onClick={handleSearch}>
               Search
             </Button>
+            
+            {activeFiltersCount > 0 && (
+              <Button 
+                variant="outline" 
+                className="min-w-fit flex items-center gap-1 border-dashed"
+                onClick={handleClearFilters}
+              >
+                <span>Clear Filters</span>
+                <Badge variant="secondary" className="ml-1">{activeFiltersCount}</Badge>
+                <X className="h-4 w-4 ml-1" />
+              </Button>
+            )}
           </div>
+          
+          {/* Active filters display */}
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {searchParams.query && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Search: {searchParams.query}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, query: ''};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude,
+                        longitude
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+              
+              {searchParams.date && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Date: {searchParams.date.toLocaleDateString()}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, date: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude,
+                        longitude
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+              
+              {searchParams.classType && categories && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Type: {categories.find(c => c.id.toString() === searchParams.classType)?.name || 'Unknown'}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, classType: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude,
+                        longitude
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+              
+              {latitude && longitude && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Near Me
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      // We can't directly reset latitude/longitude as they're from another hook
+                      // But we can trigger a search without location
+                      onSearch({
+                        ...searchParams,
+                        latitude: null,
+                        longitude: null
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+              
+              {searchParams.priceRange && 
+               (searchParams.priceRange[0] !== initialFilters.priceRange?.[0] || 
+                searchParams.priceRange[1] !== initialFilters.priceRange?.[1]) && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Price: ${searchParams.priceRange[0]} - ${searchParams.priceRange[1]}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      setSearchParams({
+                        ...searchParams, 
+                        priceRange: initialFilters.priceRange
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>
