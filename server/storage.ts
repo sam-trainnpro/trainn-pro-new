@@ -396,26 +396,87 @@ export class DatabaseStorage implements IStorage {
       // Get the class to see if it's part of a series
       const classItem = await this.getClass(id);
       if (!classItem) {
+        console.log(`Class with id ${id} not found for deletion`);
         return false;
       }
       
-      // If the class is a recurring series, delete all related classes
+      console.log(`Deleting class: ${id}, isRecurring: ${classItem.isRecurring}, parentClassId: ${classItem.parentClassId}`);
+      
+      // Helper function to delete bookings for a class
+      const deleteBookingsForClass = async (classId: number) => {
+        console.log(`Deleting bookings for class ${classId}`);
+        await db.delete(bookings).where(eq(bookings.classId, classId));
+      };
+      
+      // If this is a parent class (recurring series)
       if (classItem.isRecurring) {
-        // Delete all classes in the series
+        // Get all child classes in the series
+        const childClasses = await this.getClassesByParentId(id);
+        console.log(`Found ${childClasses.length} child classes for series ${id}`);
+        
+        // Delete bookings for all child classes
+        for (const childClass of childClasses) {
+          await deleteBookingsForClass(childClass.id);
+        }
+        
+        // Delete all child classes in the series
+        console.log(`Deleting child classes for series ${id}`);
         await db.delete(classes).where(eq(classes.parentClassId, id));
-      } else if (classItem.parentClassId) {
-        // This is just a single instance of a series, only delete this one
+        
+        // Delete bookings for the parent class
+        await deleteBookingsForClass(id);
+        
+        // Then delete the parent class itself
+        console.log(`Deleting parent class ${id}`);
         await db.delete(classes).where(eq(classes.id, id));
-      } else {
-        // This is a standalone class
+      } 
+      // If this is a child class in a series
+      else if (classItem.parentClassId) {
+        // Find the parent class
+        const parentClass = await this.getClass(classItem.parentClassId);
+        
+        if (parentClass?.isRecurring) {
+          // If we're deleting the whole series
+          if (id === parentClass.id) {
+            console.log(`Deleting entire series. Parent: ${parentClass.id}`);
+            
+            // Get all child classes
+            const childClasses = await this.getClassesByParentId(parentClass.id);
+            
+            // Delete bookings for all child classes
+            for (const childClass of childClasses) {
+              await deleteBookingsForClass(childClass.id);
+            }
+            
+            // Delete all child classes
+            await db.delete(classes).where(eq(classes.parentClassId, parentClass.id));
+            
+            // Delete bookings for parent
+            await deleteBookingsForClass(parentClass.id);
+            
+            // Delete the parent class
+            await db.delete(classes).where(eq(classes.id, parentClass.id));
+          } else {
+            // Just delete this single instance
+            console.log(`Deleting single instance ${id} from series ${parentClass.id}`);
+            await deleteBookingsForClass(id);
+            await db.delete(classes).where(eq(classes.id, id));
+          }
+        } else {
+          // Just delete this instance (parent might be gone already)
+          console.log(`Deleting instance ${id}`);
+          await deleteBookingsForClass(id);
+          await db.delete(classes).where(eq(classes.id, id));
+        }
+      } 
+      // This is a standalone class
+      else {
+        console.log(`Deleting standalone class ${id}`);
+        await deleteBookingsForClass(id);
         await db.delete(classes).where(eq(classes.id, id));
       }
       
-      // If it's a recurring class, make sure to delete the parent as well
-      if (classItem.isRecurring) {
-        await db.delete(classes).where(eq(classes.id, id));
-      }
-      
+      console.log(`Successfully deleted class ${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting class:", error);
