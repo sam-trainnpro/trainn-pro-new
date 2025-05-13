@@ -29,7 +29,12 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        // Redirect to home page after successful logout
+        window.location.href = "/";
+      }
+    });
   };
 
   return (

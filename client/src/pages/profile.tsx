@@ -170,9 +170,14 @@ export default function ProfilePage() {
     });
   };
 
-  // Handle logout
+  // Handle logout and redirect to home page afterward
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        // Redirect to home page after successful logout
+        window.location.href = "/";
+      }
+    });
   };
 
   // Get user initials for avatar fallback
