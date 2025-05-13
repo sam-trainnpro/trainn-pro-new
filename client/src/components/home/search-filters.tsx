@@ -16,9 +16,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { useLocation } from "@/hooks/use-location";
+import { useLocation as useGeoLocation } from "@/hooks/use-location";
 import { useQuery } from "@tanstack/react-query";
 import { ClassCategory } from "@shared/schema";
+import { useLocation } from "wouter";
 
 interface SearchFiltersProps {
   onSearch: (filters: SearchFilters) => void;
@@ -40,7 +41,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     priceRange: [0, 100],
   });
   
-  const { latitude, longitude, getUserLocation, loading } = useLocation();
+  const { latitude, longitude, getUserLocation, loading } = useGeoLocation();
   
   // Fetch class categories from database
   const { data: categories, isLoading: isLoadingCategories } = useQuery<ClassCategory[]>({
@@ -51,6 +52,28 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
         throw new Error('Failed to fetch categories');
       }
       return response.json();
+    },
+  });
+  
+  // Fetch price range data from classes
+  const { data: classes } = useQuery({
+    queryKey: ['/api/classes'],
+    queryFn: async () => {
+      const response = await fetch('/api/classes');
+      if (!response.ok) {
+        throw new Error('Failed to fetch classes');
+      }
+      return response.json();
+    },
+    select: (data) => {
+      if (data && data.length > 0) {
+        // Calculate min and max price from all classes
+        const prices = data.map((classItem: any) => classItem.price);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        return { minPrice, maxPrice, classes: data };
+      }
+      return { minPrice: 0, maxPrice: 100, classes: data };
     },
   });
   
@@ -212,14 +235,15 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   <div className="px-2">
                     <Slider 
                       defaultValue={searchParams.priceRange} 
-                      max={100} 
+                      max={classes?.maxPrice || 100} 
+                      min={classes?.minPrice || 0}
                       step={5}
                       onValueChange={handlePriceChange}
                     />
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>${searchParams.priceRange?.[0]}</span>
-                    <span>${searchParams.priceRange?.[1]}</span>
+                    <span>${searchParams.priceRange?.[1] || (classes?.maxPrice || 100)}</span>
                   </div>
                 </div>
               </PopoverContent>
