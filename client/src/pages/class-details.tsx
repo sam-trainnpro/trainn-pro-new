@@ -37,6 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { Helmet } from "react-helmet";
 
 export default function ClassDetailsPage() {
@@ -100,17 +101,21 @@ export default function ClassDetailsPage() {
     booking.classId === classId && (booking.status === 'pending' || booking.status === 'confirmed')
   );
   
-  // Format dates
+  // Format dates using Pacific Time Zone
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'Date not available';
     const date = new Date(dateString);
-    return format(date, "EEEE, MMMM d, yyyy");
+    // Use Pacific Time for all dates
+    const timeZone = 'America/Los_Angeles';
+    return formatInTimeZone(date, timeZone, "EEEE, MMMM d, yyyy");
   };
   
   const formatTime = (dateString: string | null | undefined) => {
     if (!dateString) return 'Time not available';
     const date = new Date(dateString);
-    return format(date, "h:mm a");
+    // Use Pacific Time for all times
+    const timeZone = 'America/Los_Angeles';
+    return formatInTimeZone(date, timeZone, "h:mm a") + " PT";
   };
   
   // Handler for booking a class
