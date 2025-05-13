@@ -92,7 +92,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     onSearch({
       ...searchParams,
       latitude,
-      longitude
+      longitude,
+      priceRange: searchParams.priceRange as [number, number]
     });
   };
   
@@ -105,15 +106,17 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const handlePriceChange = (value: number[]) => {
     const newParams = {
       ...searchParams,
-      priceRange: [value[0], value[1]]
+      priceRange: [value[0], value[1]] as [number, number]
     };
     setSearchParams(newParams);
     // Only trigger search after a short delay to avoid too many requests while sliding
     const delayDebounceFn = setTimeout(() => {
-      onSearch({
+      // Cast to the correct type for the search
+    onSearch({
         ...newParams,
         latitude,
-        longitude
+        longitude,
+        priceRange: newParams.priceRange as [number, number]
       });
     }, 300);
     
@@ -400,9 +403,15 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
                     onClick={() => {
-                      setSearchParams({
+                      const newParams = {
                         ...searchParams, 
-                        priceRange: initialFilters.priceRange
+                        priceRange: initialFilters.priceRange as [number, number]
+                      };
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude,
+                        longitude
                       });
                     }}
                   />
