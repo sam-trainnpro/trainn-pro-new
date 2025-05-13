@@ -178,23 +178,18 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     setActiveFiltersCount(count);
   }, [searchParams, latitude, longitude]);
   
-  // Trigger search on component mount to apply default today filter
+  // Apply filters on initial mount and when search parameters change
   useEffect(() => {
-    // Only trigger on the first render and when classes data is ready
-    const initialSearchTriggered = sessionStorage.getItem('initialSearchTriggered');
-    if (!initialSearchTriggered) {
-      // Add a small delay to ensure initial render is complete
-      const timer = setTimeout(() => {
-        onSearch({
-          ...searchParams,
-          latitude,
-          longitude
-        });
-        sessionStorage.setItem('initialSearchTriggered', 'true');
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
+    // Add a small delay to ensure initial render is complete
+    const timer = setTimeout(() => {
+      onSearch({
+        ...searchParams,
+        latitude,
+        longitude
+      });
+    }, 100);
+    
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
@@ -251,7 +246,16 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   variant={searchParams.date ? "default" : "outline"} 
                   className="min-w-fit flex items-center gap-1"
                 >
-                  <span>Date: {searchParams.date?.toLocaleDateString() || "Select"}</span>
+                  <span>
+                    {searchParams.date 
+                      ? searchParams.date.toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })
+                      : "Date"
+                    }
+                  </span>
                   <Calendar className="h-4 w-4 ml-1" />
                 </Button>
               </PopoverTrigger>
@@ -367,7 +371,11 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
               
               {searchParams.date && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Date: {searchParams.date.toLocaleDateString()}
+                  Date: {searchParams.date.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
                   <X 
                     className="h-3 w-3 ml-1 cursor-pointer" 
                     onClick={() => {

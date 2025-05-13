@@ -22,9 +22,11 @@ export default function ClassesPage() {
   // Get search params from URL and ensure it's a string for queryString.parse
   const searchQuery: string = typeof window.location.search === 'string' ? window.location.search : '';
   const searchParams = queryString.parse(searchQuery);
+  // Initialize with today's date if not specified in URL
   const [filters, setFilters] = useState<SearchFiltersType>({
     query: typeof searchParams.q === 'string' ? searchParams.q : "",
     classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
+    date: searchParams.date ? new Date(searchParams.date as string) : new Date(),
     priceRange: [
       Number(searchParams.minPrice || 0),
       Number(searchParams.maxPrice || 100)
@@ -36,22 +38,20 @@ export default function ClassesPage() {
   // State to track the current view (list or map)
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
-  // Parse date from URL if it exists
+  // Apply default date filter on initial load
   useEffect(() => {
-    if (searchParams.date) {
-      try {
-        const dateParam = searchParams.date as string;
-        if (dateParam) {
-          setFilters(prev => ({
-            ...prev,
-            date: new Date(dateParam)
-          }));
-        }
-      } catch (error) {
-        console.error("Invalid date format in URL", error);
-      }
+    // Add the date to URL if not already present
+    if (!searchParams.date) {
+      const today = new Date();
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set('date', today.toISOString());
+      
+      // Update the URL without triggering a page reload
+      // This ensures the date filter is persisted in the URL
+      const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
+      window.history.replaceState(null, '', newUrl);
     }
-  }, [searchParams]);
+  }, []);
 
   // Fetch all classes with schedules
   const { 
@@ -106,15 +106,22 @@ export default function ClassesPage() {
       return false;
     }
 
-    // Date filter
-    if (filters.date && classItem.startTime) {
-      // Only filter classes that have a start time (either one-time classes or specific instances)
-      const filterDate = filters.date ? new Date(filters.date) : new Date();
-      const classDate = classItem.startTime ? new Date(classItem.startTime) : new Date();
+    // Date filter - improved to handle null/undefined startTime
+    if (filters.date) {
+      // Class must have a start time to be filtered by date
+      if (!classItem.startTime) {
+        return false;
+      }
       
-      if (filterDate.getFullYear() !== classDate.getFullYear() ||
-          filterDate.getMonth() !== classDate.getMonth() ||
-          filterDate.getDate() !== classDate.getDate()) {
+      // Normalize dates by setting hours to 0 to compare just the day
+      const filterDate = new Date(filters.date);
+      filterDate.setHours(0, 0, 0, 0);
+      
+      const classDate = new Date(classItem.startTime);
+      classDate.setHours(0, 0, 0, 0);
+      
+      // Compare dates with time component removed
+      if (filterDate.getTime() !== classDate.getTime()) {
         return false;
       }
     }
@@ -211,7 +218,11 @@ export default function ClassesPage() {
                   <div className="mt-2 flex items-center gap-2">
                     <span className="text-sm text-muted-foreground flex items-center">
                       <Calendar className="h-4 w-4 text-primary mr-1" />
-                      Showing classes for {filters.date.toLocaleDateString()}
+                      Showing classes for {filters.date.toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
                     </span>
                   </div>
                 )}
@@ -325,16 +336,7 @@ export default function ClassesPage() {
                   {/* Class List - Takes 2/3 of the space on large screens */}
                   <div className="lg:col-span-2">
                     <div className="bg-white rounded-xl shadow-sm h-full">
-                      <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-b flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        <h2 className="font-medium text-lg">
-                          {currentFilterDate.toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
-                        </h2>
-                      </div>
+                      {/* Header has been removed as requested */}
                       
                       <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
                         {sortedClasses.map((classItem) => (
