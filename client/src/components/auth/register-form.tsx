@@ -57,6 +57,9 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
   const [error, setError] = useState<string | null>(null);
   
   // Use effect for navigation instead of conditional rendering
+  // Commented out since AuthPage already handles this redirect
+  // This prevents double redirection which could cause runtime errors
+  /*
   React.useEffect(() => {
     if (user) {
       console.log("User already logged in, redirecting from registration form");
@@ -65,6 +68,7 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
       }, 0);
     }
   }, [user, navigate]);
+  */
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchemaBase),
@@ -90,15 +94,16 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
         const user = await registerMutation.mutateAsync(data);
         console.log("Registration successful:", user);
         
-        // Use setTimeout to ensure navigation happens in a separate task
+        // Use window.location.href for more reliable navigation
+        // after authentication state changes
         window.setTimeout(() => {
           if (onSuccess) {
             onSuccess();
           } else {
             console.log("Navigating to home after registration");
-            navigate("/");
+            window.location.href = "/";
           }
-        }, 50);
+        }, 100);
       } catch (mutationError: any) {
         console.error("Mutation error:", mutationError);
         setError(mutationError.message || "Registration failed. Please try again.");
