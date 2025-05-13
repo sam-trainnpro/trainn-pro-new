@@ -183,20 +183,8 @@ export default function ClassesPage() {
     navigate(`/classes/${classId}`);
   };
   
-  // Filter to today's classes
-  const handleFilterToday = () => {
-    const today = new Date();
-    const newFilters = {
-      ...filters,
-      date: today
-    };
-    setFilters(newFilters);
-    
-    // Create a new URL search params object from the current search string
-    const queryParams = new URLSearchParams(window.location.search);
-    queryParams.set('date', today.toISOString());
-    navigate(`/classes?${queryParams.toString()}`);
-  };
+  // This function has been removed as we now default to today's date
+  // in the search filter component
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -219,22 +207,14 @@ export default function ClassesPage() {
                     ? `Search Results for "${searchParams.q}"`
                     : "Browse All Classes"}
                 </h1>
-                <div className="mt-2 flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleFilterToday}
-                    className="flex items-center gap-1 bg-white"
-                  >
-                    <Calendar className="h-4 w-4 text-primary" />
-                    Today
-                  </Button>
-                  {filters.date && (
-                    <span className="text-sm text-muted-foreground">
+                {filters.date && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground flex items-center">
+                      <Calendar className="h-4 w-4 text-primary mr-1" />
                       Showing classes for {filters.date.toLocaleDateString()}
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center bg-white rounded-md shadow-sm p-1">
