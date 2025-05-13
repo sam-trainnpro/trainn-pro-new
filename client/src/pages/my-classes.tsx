@@ -80,7 +80,8 @@ export default function MyClassesPage() {
       if (!response.ok) {
         throw new Error('Failed to delete class');
       }
-      return response.json();
+      // Return nothing since the server sends a 204 No Content response
+      return;
     },
     onSuccess: () => {
       toast({
