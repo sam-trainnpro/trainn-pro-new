@@ -203,7 +203,7 @@ export default function ProfilePage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center mb-8">
             <Avatar className="h-20 w-20 mr-4">
-              <AvatarImage src={user.profileImage} alt={`${user.firstName} ${user.lastName}`} />
+              <AvatarImage src={user.profileImage ? user.profileImage : undefined} alt={`${user.firstName} ${user.lastName}`} />
               <AvatarFallback className="text-xl">{getUserInitials()}</AvatarFallback>
             </Avatar>
             <div>
@@ -236,12 +236,12 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center">
                     <CalendarClock className="h-5 w-5 mr-2 text-primary" />
-                    <span>{bookings?.length || 0} Bookings</span>
+                    <span>{Array.isArray(bookings) ? bookings.length : 0} Bookings</span>
                   </div>
                   {user.role === 'coach' && (
                     <div className="flex items-center">
                       <ClipboardList className="h-5 w-5 mr-2 text-primary" />
-                      <span>{userClasses?.length || 0} Classes</span>
+                      <span>{Array.isArray(userClasses) ? userClasses.length : 0} Classes</span>
                     </div>
                   )}
                 </CardContent>

@@ -36,6 +36,9 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   
   // Use effect for navigation instead of conditional rendering
+  // Commented out since AuthPage already handles this redirect
+  // This prevents double redirection which could cause runtime errors
+  /*
   React.useEffect(() => {
     if (user) {
       console.log("User already logged in, redirecting from login form");
@@ -44,6 +47,7 @@ export default function LoginForm() {
       }, 0);
     }
   }, [user, navigate]);
+  */
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -64,12 +68,12 @@ export default function LoginForm() {
         const user = await loginMutation.mutateAsync(data);
         console.log("Login successful:", user);
         
-        // Use setTimeout with a slight delay to ensure navigation happens 
-        // in a separate task to avoid race conditions with state updates
+        // Use window.location.href instead of navigate for more reliable navigation
+        // after authentication state changes
         window.setTimeout(() => {
           console.log("Navigating to home after login");
-          navigate("/");
-        }, 50);
+          window.location.href = "/";
+        }, 100);
       } catch (mutationError: any) {
         console.error("Mutation error:", mutationError);
         setError(mutationError.message || "Login failed. Please check your credentials and try again.");
