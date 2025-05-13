@@ -39,6 +39,7 @@ export interface SearchFilters {
 export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const initialFilters: SearchFilters = {
     query: '',
+    date: new Date(), // Default to today's date
     priceRange: [0, 100],
   };
   
@@ -177,6 +178,26 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     setActiveFiltersCount(count);
   }, [searchParams, latitude, longitude]);
   
+  // Trigger search on component mount to apply default today filter
+  useEffect(() => {
+    // Only trigger on the first render and when classes data is ready
+    const initialSearchTriggered = sessionStorage.getItem('initialSearchTriggered');
+    if (!initialSearchTriggered) {
+      // Add a small delay to ensure initial render is complete
+      const timer = setTimeout(() => {
+        onSearch({
+          ...searchParams,
+          latitude,
+          longitude
+        });
+        sessionStorage.setItem('initialSearchTriggered', 'true');
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
   return (
     <section className="bg-white py-6 shadow-sm sticky top-[61px] z-30">
       <div className="container mx-auto px-4">
@@ -226,9 +247,12 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
             
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="min-w-fit flex items-center gap-1">
-                  <span>Date</span>
-                  <Calendar className="h-4 w-4" />
+                <Button 
+                  variant={searchParams.date ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>Date: {searchParams.date?.toLocaleDateString() || "Select"}</span>
+                  <Calendar className="h-4 w-4 ml-1" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
