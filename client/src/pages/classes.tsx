@@ -18,8 +18,10 @@ import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export default function ClassesPage() {
-  const [location, navigate] = useLocation();
-  const searchParams = queryString.parse(location.search);
+  const [locationPath, navigate] = useLocation();
+  // Get search params from URL and ensure it's a string for queryString.parse
+  const searchQuery: string = typeof window.location.search === 'string' ? window.location.search : '';
+  const searchParams = queryString.parse(searchQuery);
   const [filters, setFilters] = useState<SearchFiltersType>({
     query: typeof searchParams.q === 'string' ? searchParams.q : "",
     classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
