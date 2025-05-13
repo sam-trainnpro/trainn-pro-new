@@ -82,9 +82,12 @@ export default function ClassesPage() {
       return false;
     }
 
-    // Class type filter
-    if (filters.classType && Number(filters.classType) !== classItem.categoryId) {
-      return false;
+    // Class type filter (by category ID from database)
+    if (filters.classType && classItem.categoryId !== undefined) {
+      const classTypeId = Number(filters.classType);
+      if (!isNaN(classTypeId) && classTypeId !== classItem.categoryId) {
+        return false;
+      }
     }
 
     // Category filter from URL

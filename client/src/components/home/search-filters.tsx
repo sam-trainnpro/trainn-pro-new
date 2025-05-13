@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, Filter, DollarSign } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { useLocation } from "@/hooks/use-location";
+import { useQuery } from "@tanstack/react-query";
+import { ClassCategory } from "@shared/schema";
 
 interface SearchFiltersProps {
   onSearch: (filters: SearchFilters) => void;
@@ -39,6 +41,18 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   });
   
   const { latitude, longitude, getUserLocation, loading } = useLocation();
+  
+  // Fetch class categories from database
+  const { data: categories, isLoading: isLoadingCategories } = useQuery<ClassCategory[]>({
+    queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const response = await fetch('/api/categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+      return response.json();
+    },
+  });
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchParams({
@@ -168,12 +182,17 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="hiit">HIIT</SelectItem>
-                      <SelectItem value="yoga">Yoga</SelectItem>
-                      <SelectItem value="strength">Strength</SelectItem>
-                      <SelectItem value="cardio">Cardio</SelectItem>
-                      <SelectItem value="pilates">Pilates</SelectItem>
-                      <SelectItem value="crossfit">CrossFit</SelectItem>
+                      {isLoadingCategories ? (
+                        <SelectItem value="" disabled>Loading categories...</SelectItem>
+                      ) : categories && categories.length > 0 ? (
+                        categories.map(category => (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>No categories available</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -192,7 +211,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   <h4 className="font-medium">Price range</h4>
                   <div className="px-2">
                     <Slider 
-                      defaultValue={[0, 100]} 
+                      defaultValue={searchParams.priceRange} 
                       max={100} 
                       step={5}
                       onValueChange={handlePriceChange}
