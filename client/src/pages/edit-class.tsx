@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -102,6 +102,9 @@ export default function EditClassPage() {
       // Log the times for debugging
       console.log('Original startTime (UTC):', startTime);
       
+      // Initialize recurring series state
+      setIsRecurringSeries(classData.isRecurring || false);
+      
       form.reset({
         title: classData.title,
         description: classData.description,
@@ -119,6 +122,10 @@ export default function EditClassPage() {
   
   // Check if user is authorized to edit this class
   const isAuthorized = user && classData && (user.id === classData.coachId || user.role === 'admin');
+  
+  // State for recurring class series
+  const [isRecurringSeries, setIsRecurringSeries] = useState(false);
+  const [updateSeries, setUpdateSeries] = useState(false);
   
   // Edit class mutation
   const editMutation = useMutation({
@@ -140,9 +147,22 @@ export default function EditClassPage() {
       
       console.log('Formatted data sent to server:', formattedData);
       
-      const response = await apiRequest("PUT", `/api/classes/${id}`, formattedData);
+      // Determine if we need to update the entire series or just this instance
+      const endpoint = updateSeries && classData?.isRecurring 
+        ? `/api/classes/${id}/series` 
+        : `/api/classes/${id}`;
+      
+      const response = await apiRequest("PUT", endpoint, formattedData);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Check if this is a recurring class error
+        if (errorData.isRecurring) {
+          setIsRecurringSeries(true);
+          throw new Error(errorData.message);
+        }
+        
         throw new Error(errorData.message || "Failed to update class");
       }
       return await response.json();
