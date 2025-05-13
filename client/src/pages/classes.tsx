@@ -8,8 +8,11 @@ import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 import SearchFilters, { SearchFilters as SearchFiltersType } from "@/components/home/search-filters";
 import ClassCard from "@/components/class/class-card";
+import MapView from "@/components/maps/map-view";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Helmet } from "react-helmet";
+import { ListFilter, Map, List } from "lucide-react";
 
 export default function ClassesPage() {
   const [location, navigate] = useLocation();
@@ -24,6 +27,9 @@ export default function ClassesPage() {
     latitude: searchParams.lat ? Number(searchParams.lat) : null,
     longitude: searchParams.lng ? Number(searchParams.lng) : null,
   });
+  
+  // State to track the current view (list or map)
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   // Parse date from URL if it exists
   useEffect(() => {
