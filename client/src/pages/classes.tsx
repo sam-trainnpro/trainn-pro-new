@@ -19,14 +19,14 @@ export default function ClassesPage() {
   const [location, navigate] = useLocation();
   const searchParams = queryString.parse(location.search);
   const [filters, setFilters] = useState<SearchFiltersType>({
-    query: searchParams.q as string || "",
-    classType: searchParams.type as string || undefined,
+    query: typeof searchParams.q === 'string' ? searchParams.q : "",
+    classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
     priceRange: [
       Number(searchParams.minPrice || 0),
       Number(searchParams.maxPrice || 100)
     ],
-    latitude: searchParams.lat ? Number(searchParams.lat) : null,
-    longitude: searchParams.lng ? Number(searchParams.lng) : null,
+    latitude: typeof searchParams.lat === 'string' ? Number(searchParams.lat) : null,
+    longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
   });
   
   // State to track the current view (list or map)

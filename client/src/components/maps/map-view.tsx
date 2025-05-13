@@ -79,7 +79,7 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
             key={marker.id}
             position={marker.position}
             onClick={() => onMarkerClick(marker.classItem)}
-            animation={isLoaded ? 2 : undefined} // 2 is for DROP animation
+            // No animation for now to avoid TypeScript errors
           />
         ))}
 
@@ -90,6 +90,7 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
               lng: selectedClass.longitude || defaultCenter.lng
             }}
             onCloseClick={() => setSelectedClass(null)}
+
           >
             <div className="max-w-xs">
               <h3 className="font-semibold text-lg">{selectedClass.title}</h3>
