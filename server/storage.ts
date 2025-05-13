@@ -393,7 +393,29 @@ export class DatabaseStorage implements IStorage {
   
   async deleteClass(id: number): Promise<boolean> {
     try {
-      await db.delete(classes).where(eq(classes.id, id));
+      // Get the class to see if it's part of a series
+      const classItem = await this.getClass(id);
+      if (!classItem) {
+        return false;
+      }
+      
+      // If the class is a recurring series, delete all related classes
+      if (classItem.isRecurring) {
+        // Delete all classes in the series
+        await db.delete(classes).where(eq(classes.parentClassId, id));
+      } else if (classItem.parentClassId) {
+        // This is just a single instance of a series, only delete this one
+        await db.delete(classes).where(eq(classes.id, id));
+      } else {
+        // This is a standalone class
+        await db.delete(classes).where(eq(classes.id, id));
+      }
+      
+      // If it's a recurring class, make sure to delete the parent as well
+      if (classItem.isRecurring) {
+        await db.delete(classes).where(eq(classes.id, id));
+      }
+      
       return true;
     } catch (error) {
       console.error("Error deleting class:", error);

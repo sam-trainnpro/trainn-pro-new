@@ -433,6 +433,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
       
+      // Check if the user is the coach of this class
+      if (classItem.coachId === userId) {
+        return res.status(400).json({ message: "You cannot book your own class" });
+      }
+      
       // Check if class has capacity
       const classBookings = await storage.getClassBookings(classId);
       const confirmedBookings = classBookings.filter(booking => 
