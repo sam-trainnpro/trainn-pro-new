@@ -26,7 +26,7 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
   const [selectedClass, setSelectedClass] = useState<ClassWithSchedules | null>(null);
   
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
   });
 
   const markers = useMemo(() => {
@@ -79,7 +79,7 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
             key={marker.id}
             position={marker.position}
             onClick={() => onMarkerClick(marker.classItem)}
-            animation={window.google.maps.Animation.DROP}
+            animation={isLoaded ? 2 : undefined} // 2 is for DROP animation
           />
         ))}
 
