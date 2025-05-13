@@ -36,7 +36,6 @@ import { Badge } from "@/components/ui/badge";
 export default function MyClassesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [classToDelete, setClassToDelete] = useState<number | null>(null);
   
   // Fetch classes created by this coach
   const { 
@@ -101,17 +100,6 @@ export default function MyClassesPage() {
       });
     }
   });
-  
-  const handleDeleteClass = (classId: number) => {
-    setClassToDelete(classId);
-  };
-  
-  const confirmDelete = () => {
-    if (classToDelete) {
-      deleteMutation.mutate(classToDelete);
-      setClassToDelete(null);
-    }
-  };
   
   // Function to determine if a class is a one-time class or a recurring series
   const getClassType = (classItem: Class) => {
@@ -222,9 +210,15 @@ export default function MyClassesPage() {
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction 
                             className="bg-red-600 text-white hover:bg-red-700"
-                            onClick={() => handleDeleteClass(classItem.id)}
+                            onClick={() => deleteMutation.mutate(classItem.id)}
+                            disabled={deleteMutation.isPending}
                           >
-                            Delete
+                            {deleteMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : "Delete"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -239,32 +233,6 @@ export default function MyClassesPage() {
       
       <Footer />
       <MobileNavigation />
-      
-      {/* Confirmation dialog for deletion */}
-      <AlertDialog open={!!classToDelete} onOpenChange={() => setClassToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Class</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this class? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-red-600 text-white hover:bg-red-700"
-              onClick={confirmDelete}
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
