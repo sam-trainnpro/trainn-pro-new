@@ -13,6 +13,7 @@ import { Helmet } from "react-helmet";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -91,8 +92,15 @@ export default function EditClassPage() {
   // Populate form when class data is loaded
   useEffect(() => {
     if (classData) {
+      // Use Pacific Time Zone for all class times
+      const timeZone = 'America/Los_Angeles';
+      
+      // Convert UTC times to Pacific Time for editing
       const startTime = classData.startTime ? new Date(classData.startTime) : null;
       const endTime = classData.endTime ? new Date(classData.endTime) : null;
+      
+      // Log the times for debugging
+      console.log('Original startTime (UTC):', startTime);
       
       form.reset({
         title: classData.title,
@@ -117,12 +125,20 @@ export default function EditClassPage() {
     mutationFn: async (data: EditClassFormValues) => {
       if (!id) throw new Error("Class ID is missing");
       
-      // Format the dates properly
+      // Log the received dates for debugging
+      console.log('Form submission data (dates):', {
+        startTime: data.startTime,
+        endTime: data.endTime
+      });
+      
+      // Format the dates properly, ensuring they are in UTC for storage
       const formattedData = {
         ...data,
         startTime: data.startTime ? data.startTime.toISOString() : null,
         endTime: data.endTime ? data.endTime.toISOString() : null,
       };
+      
+      console.log('Formatted data sent to server:', formattedData);
       
       const response = await apiRequest("PUT", `/api/classes/${id}`, formattedData);
       if (!response.ok) {

@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Class, User, ClassCategory, ClassSchedule, ClassWithSchedules } from "@shared/schema";
 import { MapPin, Clock, Star, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { format, formatInTimeZone } from "date-fns-tz";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -57,43 +57,25 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     const startDate = new Date(classItem.startTime);
     const endDate = new Date(classItem.endTime);
     
+    // Use Pacific Time for all classes in San Francisco
+    const timeZone = 'America/Los_Angeles'; // Pacific Time Zone
+    
     // If this is a child instance of a recurring class, show the date too
     const isClassInstance = 'parentClassId' in classItem && classItem.parentClassId;
-    
-    // Format options for time
-    const timeOptions: Intl.DateTimeFormatOptions = {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    };
-    
-    // If this is a class instance, show date and day
-    const dateOptions: Intl.DateTimeFormatOptions = {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    };
     
     let displayText = '';
     
     if (isClassInstance) {
-      // Format: "Mon, May 15 • 10:00 AM - 11:00 AM"
-      const dateFormatted = startDate.toLocaleDateString('en-US', dateOptions);
-      const startFormatted = startDate.toLocaleTimeString('en-US', timeOptions);
-      const endFormatted = endDate.toLocaleTimeString('en-US', timeOptions);
-      displayText = `${dateFormatted} • ${startFormatted} - ${endFormatted}`;
+      // Format: "Mon, May 15 • 10:00 AM - 11:00 AM" (PT)
+      const dateFormatted = formatInTimeZone(startDate, timeZone, 'EEE, MMM d');
+      const startFormatted = formatInTimeZone(startDate, timeZone, 'h:mm a');
+      const endFormatted = formatInTimeZone(endDate, timeZone, 'h:mm a');
+      displayText = `${dateFormatted} • ${startFormatted} - ${endFormatted} PT`;
     } else {
-      // Format: "Mon, 10:00 AM - 11:00 AM"
-      const options: Intl.DateTimeFormatOptions = {
-        weekday: 'short',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      };
-      
-      const startFormatted = startDate.toLocaleTimeString('en-US', options);
-      const endFormatted = endDate.toLocaleTimeString('en-US', timeOptions);
-      displayText = `${startFormatted} - ${endFormatted}`;
+      // Format: "Mon, 10:00 AM - 11:00 AM" (PT)
+      const startFormatted = formatInTimeZone(startDate, timeZone, 'EEE, h:mm a');
+      const endFormatted = formatInTimeZone(endDate, timeZone, 'h:mm a');
+      displayText = `${startFormatted} - ${endFormatted} PT`;
     }
     
     return displayText;
