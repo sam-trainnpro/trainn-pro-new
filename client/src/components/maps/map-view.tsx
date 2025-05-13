@@ -12,6 +12,7 @@ interface MapViewProps {
   onClassSelect?: (classId: number) => void;
 }
 
+// Default map container style
 const mapContainerStyle = {
   width: "100%",
   height: "600px",
@@ -24,6 +25,22 @@ const defaultCenter = {
 
 export default function MapView({ classes, onClassSelect }: MapViewProps) {
   const [selectedClass, setSelectedClass] = useState<ClassWithSchedules | null>(null);
+  
+  // Adjust map height based on container
+  const [mapHeight, setMapHeight] = useState("600px");
+  
+  // Use callback ref to measure parent container height
+  const mapContainerRef = useCallback((node: HTMLDivElement) => {
+    if (node) {
+      // Set height to match parent container or use a default
+      const parentHeight = node.parentElement?.clientHeight;
+      if (parentHeight && parentHeight > 400) {
+        setMapHeight(`${parentHeight}px`);
+      } else {
+        setMapHeight("600px");
+      }
+    }
+  }, []);
   
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
@@ -55,10 +72,16 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
     return <div className="p-4 flex justify-center items-center h-[600px] bg-gray-50 rounded-md">Loading map...</div>;
   }
 
+  // Dynamic map container style with the adaptive height
+  const dynamicMapContainerStyle = {
+    width: "100%",
+    height: mapHeight,
+  };
+
   return (
-    <div className="relative rounded-lg overflow-hidden border border-gray-200">
+    <div ref={mapContainerRef} className="relative rounded-lg overflow-hidden border border-gray-200">
       <GoogleMap
-        mapContainerStyle={mapContainerStyle}
+        mapContainerStyle={dynamicMapContainerStyle}
         zoom={12}
         center={defaultCenter}
         options={{
