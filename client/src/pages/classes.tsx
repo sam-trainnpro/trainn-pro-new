@@ -12,7 +12,8 @@ import MapView from "@/components/maps/map-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Helmet } from "react-helmet";
-import { ListFilter, Map, List } from "lucide-react";
+import { ListFilter, Map as MapIcon, List } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function ClassesPage() {
   const [location, navigate] = useLocation();
@@ -109,14 +110,13 @@ export default function ClassesPage() {
           filterDate.getDate() !== classDate.getDate()) {
         return false;
       }
-    } else if (filters.date && !classItem.startTime && classItem.isRecurring) {
-      // For recurring parent classes without a specific start time
-      // Filter them out as we want to show only specific instances when a date is selected
-      return false;
     }
 
-    // We could add distance-based filtering here if we had the user's coordinates
-    // and if the backend provided geospatial queries
+    // Location filter (within X miles)
+    if (filters.latitude && filters.longitude && classItem.latitude && classItem.longitude) {
+      // TODO: Add calculation to filter by distance once we have that data
+      // For now, we'll skip this filter
+    }
 
     return true;
   });
@@ -148,8 +148,18 @@ export default function ClassesPage() {
       queryParams.set('lng', newFilters.longitude.toString());
     }
     
-    const url = `/classes?${queryParams.toString()}`;
-    navigate(url, { replace: true });
+    // Preserve category if it's in the URL
+    if (searchParams.category) {
+      queryParams.set('category', searchParams.category as string);
+    }
+    
+    const queryString = queryParams.toString();
+    navigate(`/classes${queryString ? `?${queryString}` : ''}`);
+  };
+
+  // Handler for selecting a class on the map
+  const handleClassSelect = (classId: number) => {
+    navigate(`/classes/${classId}`);
   };
 
   return (
@@ -166,11 +176,34 @@ export default function ClassesPage() {
         
         <section className="py-8 bg-[#F7F7F7]">
           <div className="container mx-auto px-4">
-            <h1 className="text-2xl md:text-3xl font-heading font-bold mb-6">
-              {searchParams.q 
-                ? `Search Results for "${searchParams.q}"`
-                : "Browse All Classes"}
-            </h1>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+              <h1 className="text-2xl md:text-3xl font-heading font-bold">
+                {searchParams.q 
+                  ? `Search Results for "${searchParams.q}"`
+                  : "Browse All Classes"}
+              </h1>
+              
+              <div className="flex items-center bg-white rounded-md shadow-sm p-1">
+                <Button 
+                  variant={viewMode === "list" ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="flex items-center gap-1"
+                >
+                  <List className="h-4 w-4" />
+                  List
+                </Button>
+                <Button 
+                  variant={viewMode === "map" ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => setViewMode("map")}
+                  className="flex items-center gap-1"
+                >
+                  <MapIcon className="h-4 w-4" />
+                  Map
+                </Button>
+              </div>
+            </div>
             
             {/* Filters summary */}
             {(filters.classType || filters.date || searchParams.category) && (
@@ -224,11 +257,20 @@ export default function ClassesPage() {
                 <p>Error loading classes. Please try again later.</p>
               </div>
             ) : filteredClasses && filteredClasses.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredClasses.map((classItem) => (
-                  <ClassCard key={classItem.id} classItem={classItem} />
-                ))}
-              </div>
+              viewMode === "list" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredClasses.map((classItem) => (
+                    <ClassCard key={classItem.id} classItem={classItem} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white p-4 rounded-xl shadow-sm">
+                  <MapView 
+                    classes={filteredClasses} 
+                    onClassSelect={handleClassSelect} 
+                  />
+                </div>
+              )
             ) : (
               <div className="bg-white p-8 rounded-xl text-center shadow-sm">
                 <h3 className="text-xl font-medium mb-2">No classes found</h3>
