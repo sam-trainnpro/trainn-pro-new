@@ -8,11 +8,13 @@ import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 import SearchFilters, { SearchFilters as SearchFiltersType } from "@/components/home/search-filters";
 import ClassCard from "@/components/class/class-card";
+import ClassListItem from "@/components/class/class-list-item";
 import MapView from "@/components/maps/map-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Helmet } from "react-helmet";
-import { ListFilter, Map as MapIcon, List } from "lucide-react";
+import { ListFilter, Map as MapIcon, List, Calendar, Clock } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export default function ClassesPage() {
@@ -123,6 +125,20 @@ export default function ClassesPage() {
 
     return true;
   });
+  
+  // Default - use today's date if not specified
+  const currentFilterDate = filters.date || new Date();
+  
+  // Sort classes by start time
+  const sortedClasses = filteredClasses?.slice().sort((a, b) => {
+    // Classes without start times go to the end
+    if (!a.startTime) return 1;
+    if (!b.startTime) return -1;
+    
+    const aTime = new Date(a.startTime).getTime();
+    const bTime = new Date(b.startTime).getTime();
+    return aTime - bTime;
+  });
 
   const handleSearch = (newFilters: SearchFiltersType) => {
     setFilters(newFilters);
@@ -164,6 +180,21 @@ export default function ClassesPage() {
   const handleClassSelect = (classId: number) => {
     navigate(`/classes/${classId}`);
   };
+  
+  // Filter to today's classes
+  const handleFilterToday = () => {
+    const today = new Date();
+    const newFilters = {
+      ...filters,
+      date: today
+    };
+    setFilters(newFilters);
+    
+    // Create a new URL search params object from the current search string
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set('date', today.toISOString());
+    navigate(`/classes?${queryParams.toString()}`);
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -180,11 +211,29 @@ export default function ClassesPage() {
         <section className="py-8 bg-[#F7F7F7]">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <h1 className="text-2xl md:text-3xl font-heading font-bold">
-                {searchParams.q 
-                  ? `Search Results for "${searchParams.q}"`
-                  : "Browse All Classes"}
-              </h1>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-heading font-bold">
+                  {searchParams.q 
+                    ? `Search Results for "${searchParams.q}"`
+                    : "Browse All Classes"}
+                </h1>
+                <div className="mt-2 flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleFilterToday}
+                    className="flex items-center gap-1 bg-white"
+                  >
+                    <Calendar className="h-4 w-4 text-primary" />
+                    Today
+                  </Button>
+                  {filters.date && (
+                    <span className="text-sm text-muted-foreground">
+                      Showing classes for {filters.date.toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
               
               <div className="flex items-center bg-white rounded-md shadow-sm p-1">
                 <Button 
@@ -238,38 +287,66 @@ export default function ClassesPage() {
             )}
             
             {isLoadingClasses ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="bg-white rounded-xl shadow-sm p-4">
-                    <Skeleton className="h-48 w-full rounded-lg mb-4" />
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2 mb-4" />
-                    <div className="flex justify-between mb-4">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <Skeleton className="h-4 w-20" />
+              <div className="bg-white rounded-xl shadow-sm">
+                <div className="p-4 bg-gradient-to-r from-gray-100 to-gray-50 border-b">
+                  <Skeleton className="h-6 w-48" />
+                </div>
+                
+                <div className="divide-y divide-gray-100">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="p-4 flex flex-col md:flex-row gap-2 md:items-center">
+                      {/* Time and duration column */}
+                      <div className="w-32 mr-4">
+                        <Skeleton className="h-5 w-20 mb-2" />
+                        <Skeleton className="h-4 w-12" />
+                      </div>
+                      
+                      {/* Class title and coach info */}
+                      <div className="flex-1">
+                        <Skeleton className="h-5 w-3/4 mb-2" />
+                        <div className="flex items-center">
+                          <Skeleton className="h-4 w-32 mr-2" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                      </div>
+                      
+                      {/* Category */}
+                      <div className="flex flex-col items-end">
+                        <Skeleton className="h-6 w-20 mb-2" />
+                        <Skeleton className="h-5 w-12" />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Skeleton className="h-10 w-full" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : classesError ? (
               <div className="p-8 text-center text-red-500">
                 <p>Error loading classes. Please try again later.</p>
               </div>
-            ) : filteredClasses && filteredClasses.length > 0 ? (
+            ) : sortedClasses && sortedClasses.length > 0 ? (
               viewMode === "list" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredClasses.map((classItem) => (
-                    <ClassCard key={classItem.id} classItem={classItem} />
-                  ))}
+                <div className="bg-white rounded-xl shadow-sm">
+                  <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-b flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    <h2 className="font-medium text-lg">
+                      {currentFilterDate.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </h2>
+                  </div>
+                  
+                  <div className="divide-y divide-gray-100">
+                    {sortedClasses.map((classItem) => (
+                      <ClassListItem key={classItem.id} classItem={classItem} />
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="bg-white p-4 rounded-xl shadow-sm">
                   <MapView 
-                    classes={filteredClasses} 
+                    classes={sortedClasses} 
                     onClassSelect={handleClassSelect} 
                   />
                 </div>
