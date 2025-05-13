@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   CalendarIcon, 
   Loader2, 
@@ -599,6 +600,32 @@ export default function EditClassPage() {
                   </FormItem>
                 )}
               />
+              
+              {/* Add recurring series update option if applicable */}
+              {isRecurringSeries && (
+                <div className="pt-4 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h3 className="text-sm font-medium text-amber-800 mb-2">
+                    This is part of a recurring class series
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="update-series"
+                      checked={updateSeries}
+                      onCheckedChange={setUpdateSeries}
+                    />
+                    <Label htmlFor="update-series" className="text-sm text-amber-700">
+                      {updateSeries 
+                        ? "Update entire series (all future classes)" 
+                        : "Update only this class instance"}
+                    </Label>
+                  </div>
+                  <p className="text-xs text-amber-600 mt-2">
+                    {updateSeries 
+                      ? "Your changes will apply to all classes in this series." 
+                      : "Your changes will only apply to this specific class."}
+                  </p>
+                </div>
+              )}
               
               <div className="pt-4 flex justify-between">
                 <Button type="button" variant="outline" onClick={() => navigate("/my-classes")}>
