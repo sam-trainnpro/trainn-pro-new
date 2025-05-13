@@ -287,36 +287,50 @@ export default function ClassesPage() {
             )}
             
             {isLoadingClasses ? (
-              <div className="bg-white rounded-xl shadow-sm">
-                <div className="p-4 bg-gradient-to-r from-gray-100 to-gray-50 border-b">
-                  <Skeleton className="h-6 w-48" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Class list skeleton - 2/3 columns */}
+                <div className="lg:col-span-2">
+                  <div className="bg-white rounded-xl shadow-sm">
+                    <div className="p-4 bg-gradient-to-r from-gray-100 to-gray-50 border-b">
+                      <Skeleton className="h-6 w-48" />
+                    </div>
+                    
+                    <div className="divide-y divide-gray-100">
+                      {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="p-4 flex flex-col md:flex-row gap-2 md:items-center">
+                          {/* Time and duration column */}
+                          <div className="w-32 mr-4">
+                            <Skeleton className="h-5 w-20 mb-2" />
+                            <Skeleton className="h-4 w-12" />
+                          </div>
+                          
+                          {/* Class title and coach info */}
+                          <div className="flex-1">
+                            <Skeleton className="h-5 w-3/4 mb-2" />
+                            <div className="flex items-center">
+                              <Skeleton className="h-4 w-32 mr-2" />
+                              <Skeleton className="h-4 w-16" />
+                            </div>
+                          </div>
+                          
+                          {/* Category */}
+                          <div className="flex flex-col items-end">
+                            <Skeleton className="h-6 w-20 mb-2" />
+                            <Skeleton className="h-5 w-12" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="divide-y divide-gray-100">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="p-4 flex flex-col md:flex-row gap-2 md:items-center">
-                      {/* Time and duration column */}
-                      <div className="w-32 mr-4">
-                        <Skeleton className="h-5 w-20 mb-2" />
-                        <Skeleton className="h-4 w-12" />
-                      </div>
-                      
-                      {/* Class title and coach info */}
-                      <div className="flex-1">
-                        <Skeleton className="h-5 w-3/4 mb-2" />
-                        <div className="flex items-center">
-                          <Skeleton className="h-4 w-32 mr-2" />
-                          <Skeleton className="h-4 w-16" />
-                        </div>
-                      </div>
-                      
-                      {/* Category */}
-                      <div className="flex flex-col items-end">
-                        <Skeleton className="h-6 w-20 mb-2" />
-                        <Skeleton className="h-5 w-12" />
-                      </div>
+                {/* Map skeleton - 1/3 column */}
+                <div className="hidden lg:block">
+                  <div className="bg-white rounded-xl shadow-sm h-[600px]">
+                    <div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center">
+                      <MapIcon className="h-12 w-12 text-gray-300" />
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             ) : classesError ? (
@@ -325,22 +339,37 @@ export default function ClassesPage() {
               </div>
             ) : sortedClasses && sortedClasses.length > 0 ? (
               viewMode === "list" ? (
-                <div className="bg-white rounded-xl shadow-sm">
-                  <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-b flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <h2 className="font-medium text-lg">
-                      {currentFilterDate.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </h2>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Class List - Takes 2/3 of the space on large screens */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-white rounded-xl shadow-sm h-full">
+                      <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-b flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-primary" />
+                        <h2 className="font-medium text-lg">
+                          {currentFilterDate.toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </h2>
+                      </div>
+                      
+                      <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+                        {sortedClasses.map((classItem) => (
+                          <ClassListItem key={classItem.id} classItem={classItem} />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="divide-y divide-gray-100">
-                    {sortedClasses.map((classItem) => (
-                      <ClassListItem key={classItem.id} classItem={classItem} />
-                    ))}
+                  {/* Map View - Takes 1/3 of the space on large screens */}
+                  <div className="hidden lg:block">
+                    <div className="bg-white rounded-xl shadow-sm sticky top-20">
+                      <MapView 
+                        classes={sortedClasses} 
+                        onClassSelect={handleClassSelect} 
+                      />
+                    </div>
                   </div>
                 </div>
               ) : (
