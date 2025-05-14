@@ -9,6 +9,7 @@ import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation as useUserLocation } from "@/hooks/use-location";
 import PlacesAutocomplete from "@/components/maps/places-autocomplete";
+import LocationPreview from "@/components/maps/location-preview";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import {
@@ -37,7 +38,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, CalendarIcon, Lock, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { Loader2, CalendarIcon, Lock, AlertCircle, Plus, Trash2, MapPin } from "lucide-react";
 import { format, addHours } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet";
@@ -496,10 +497,88 @@ export default function CreateClassPage() {
                             }}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Start typing for suggestions from Google Maps
-                        </FormDescription>
+                        <div className="flex justify-between items-center">
+                          <FormDescription>
+                            Start typing for suggestions from Google Maps
+                          </FormDescription>
+                          
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={async () => {
+                              if (navigator.geolocation) {
+                                try {
+                                  navigator.geolocation.getCurrentPosition(async (position) => {
+                                    const { latitude, longitude } = position.coords;
+                                    
+                                    // Update form with coordinates
+                                    form.setValue('latitude', latitude);
+                                    form.setValue('longitude', longitude);
+                                    
+                                    // Get address from coordinates using reverse geocoding
+                                    try {
+                                      const response = await fetch(
+                                        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+                                      );
+                                      const data = await response.json();
+                                      
+                                      if (data.results && data.results.length > 0) {
+                                        const address = data.results[0].formatted_address;
+                                        form.setValue('address', address);
+                                        
+                                        // Set location name if empty
+                                        if (!form.getValues('location')) {
+                                          const addressParts = address.split(',');
+                                          if (addressParts.length > 0) {
+                                            form.setValue('location', addressParts[0].trim());
+                                          }
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error("Error during reverse geocoding:", error);
+                                    }
+                                  }, 
+                                  (error) => {
+                                    console.error("Error getting location:", error);
+                                    toast({
+                                      title: "Location error",
+                                      description: "Unable to get your current location. Please check your browser permissions.",
+                                      variant: "destructive"
+                                    });
+                                  });
+                                } catch (error) {
+                                  console.error("Geolocation error:", error);
+                                }
+                              } else {
+                                toast({
+                                  title: "Location not supported",
+                                  description: "Geolocation is not supported by your browser",
+                                  variant: "destructive"
+                                });
+                              }
+                            }}
+                            className="text-xs px-2 py-1"
+                          >
+                            <MapPin className="h-3 w-3 mr-1" />
+                            Use My Location
+                          </Button>
+                        </div>
                         <FormMessage />
+                        
+                        {/* Show map preview when coordinates are available */}
+                        {form.watch('latitude') && form.watch('longitude') && (
+                          <div className="mt-2">
+                            <LocationPreview 
+                              latitude={form.watch('latitude')} 
+                              longitude={form.watch('longitude')}
+                              height="200px"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Map preview of selected location
+                            </p>
+                          </div>
+                        )}
                       </FormItem>
                     )}
                   />
