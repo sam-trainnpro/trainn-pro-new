@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation as useUserLocation } from "@/hooks/use-location";
-import PlacesAutocomplete from "@/components/maps/places-autocomplete";
+import AddressAutocomplete from "@/components/maps/address-autocomplete";
+import GoogleMapsScript from "@/components/maps/google-maps-script";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import {
@@ -473,24 +474,29 @@ export default function CreateClassPage() {
                       <FormItem>
                         <FormLabel>Full Address</FormLabel>
                         <FormControl>
-                          <PlacesAutocomplete 
+                          <AddressAutocomplete 
                             placeholder="e.g. 123 Main St, New York, NY 10001" 
-                            defaultValue={field.value}
-                            onAddressSelect={(address, lat, lng) => {
+                            {...field}
+                            onPlaceSelect={(place) => {
                               // Update the address field
-                              field.onChange(address);
+                              field.onChange(place.formatted_address || '');
                               
-                              // Update latitude and longitude
-                              form.setValue('latitude', lat);
-                              form.setValue('longitude', lng);
-                              
-                              // Also update location name if it's empty
-                              const currentLocation = form.getValues('location');
-                              if (!currentLocation) {
-                                // Use the first part of the address as the location name
-                                const addressParts = address.split(',') || [];
-                                if (addressParts.length > 0) {
-                                  form.setValue('location', addressParts[0].trim());
+                              // Update latitude and longitude if available
+                              if (place.geometry?.location) {
+                                const lat = place.geometry.location.lat();
+                                const lng = place.geometry.location.lng();
+                                
+                                form.setValue('latitude', lat);
+                                form.setValue('longitude', lng);
+                                
+                                // Also update location name if it's empty
+                                const currentLocation = form.getValues('location');
+                                if (!currentLocation) {
+                                  // Use the first part of the address as the location name
+                                  const addressParts = place.formatted_address?.split(',') || [];
+                                  if (addressParts.length > 0) {
+                                    form.setValue('location', addressParts[0].trim());
+                                  }
                                 }
                               }
                             }}
