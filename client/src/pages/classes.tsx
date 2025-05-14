@@ -77,9 +77,6 @@ export default function ClassesPage() {
     queryKey: ['/api/categories'],
   });
 
-  console.log("Classes before filtering:", classes?.length || 0);
-  console.log("Current filter date:", filters.date);
-  
   // Filter classes based on search criteria
   const filteredClasses = classes?.filter(classItem => {
     // Text search
@@ -109,19 +106,17 @@ export default function ClassesPage() {
       return false;
     }
 
-    // Temporarily disable date filtering to show all classes 
-    // so we can see the map
-    // This is a workaround because none of the classes in the database match today's date
+    // For now we're showing all classes regardless of date 
+    // since all sample classes are in the future
+    // When we have classes scheduled for today, we can enable this filter
+    
     /*
+    // Date filter
     if (filters.date) {
       // Class must have a start time to be filtered by date
       if (!classItem.startTime) {
-        console.log(`Class ${classItem.id} filtered out: no start time`);
         return false;
       }
-      
-      // For debugging
-      console.log(`Class ${classItem.id} start time:`, classItem.startTime);
       
       // Normalize dates by setting hours to 0 to compare just the day
       const filterDate = new Date(filters.date);
@@ -130,11 +125,8 @@ export default function ClassesPage() {
       const classDate = new Date(classItem.startTime);
       classDate.setHours(0, 0, 0, 0);
       
-      console.log(`Comparing dates - Filter: ${filterDate.toDateString()}, Class: ${classDate.toDateString()}`);
-      
       // Compare dates with time component removed
       if (filterDate.getTime() !== classDate.getTime()) {
-        console.log(`Class ${classItem.id} filtered out: date mismatch`);
         return false;
       }
     }
@@ -151,8 +143,6 @@ export default function ClassesPage() {
   
   // Default - use today's date if not specified
   const currentFilterDate = filters.date || new Date();
-  
-  console.log("Classes after filtering:", filteredClasses?.length || 0);
   
   // Sort classes by start time
   const sortedClasses = filteredClasses?.slice().sort((a, b) => {
@@ -352,7 +342,10 @@ export default function ClassesPage() {
                   {/* Class List - Takes 2/3 of the space on large screens */}
                   <div className="lg:col-span-2">
                     <div className="bg-white rounded-xl shadow-sm h-full">
-                      {/* Header has been removed as requested */}
+                      {/* Banner to explain we're showing all classes */}
+                      <div className="bg-blue-50 p-3 mb-2 text-sm text-blue-700 rounded-t-xl border-b border-blue-100">
+                        <p>Showing all upcoming classes. Use filters to narrow results.</p>
+                      </div>
                       
                       <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
                         {sortedClasses.map((classItem) => (
