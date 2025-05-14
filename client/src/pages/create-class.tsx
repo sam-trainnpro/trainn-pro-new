@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet';
+import { useLocation } from 'wouter';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { z } from "zod";
+import { useMutation } from '@tanstack/react-query';
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { format, addWeeks, addMinutes } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -23,450 +24,394 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import { useToast } from "@/hooks/use-toast";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, CalendarIcon, Lock, AlertCircle, Plus, Trash2, MapPin } from "lucide-react";
-import { format, addHours } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { Helmet } from "react-helmet";
-import { 
+import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import {
+  Separator
+} from "@/components/ui/separator";
+import {
+  CalendarIcon,
+  X,
+  Plus,
+  Loader2,
+  MapPin
+} from "lucide-react";
+import * as z from "zod";
 
-// Schedule schema for recurring classes
-const scheduleSchema = z.object({
-  dayOfWeek: z.coerce.number({
-    required_error: "Day of week is required",
-    invalid_type_error: "Day of week must be a number",
+// Form validation schema
+const createClassSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  categoryId: z.string().min(1, "Please select a category"),
+  location: z.string().min(1, "Location name is required"),
+  address: z.string().min(1, "Full address is required"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  price: z.coerce.number().min(1, "Price must be at least 1"),
+  duration: z.coerce.number().min(15, "Duration must be at least 15 minutes"),
+  capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
+  startDate: z.date({
+    required_error: "Start date and time is required",
   }),
-  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Start time must be in HH:MM format"),
-  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "End time must be in HH:MM format"),
+  isRecurring: z.boolean().default(false),
+  endDate: z.date().optional(),
+  image: z.string().url("Please enter a valid image URL").optional(),
+  schedules: z.array(
+    z.object({
+      dayOfWeek: z.string().min(1, "Day of week is required"),
+      startTime: z.string().min(1, "Start time is required"),
+    })
+  ).optional(),
 });
 
-// Form schema with validation
-const createClassSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  categoryId: z.coerce.number({
-    required_error: "Please select a category",
-    invalid_type_error: "Please select a valid category",
-  }),
-  price: z.coerce.number().positive("Price must be a positive number"),
-  capacity: z.coerce.number().int().positive("Capacity must be a positive integer"),
-  location: z.string().min(3, "Location name is required"),
-  address: z.string().min(5, "Full address is required"),
-  latitude: z.coerce.number().optional(),
-  longitude: z.coerce.number().optional(),
-  image: z.string().optional(),
-  // New field to toggle between single vs recurring class
-  isRecurring: z.boolean().default(false),
-  // For single occurrence classes
-  startTime: z.date({
-    required_error: "Start time is required",
-    invalid_type_error: "Start time must be a date",
-  }).optional().or(z.literal(undefined)),
-  endTime: z.date({
-    required_error: "End time is required",
-    invalid_type_error: "End time must be a date",
-  }).optional().or(z.literal(undefined)),
-  // For recurring classes
-  seriesStartDate: z.date({
-    required_error: "Series start date is required",
-    invalid_type_error: "Series start date must be a date",
-  }).optional().or(z.literal(undefined)),
-  seriesEndDate: z.date({
-    required_error: "Series end date is required",
-    invalid_type_error: "Series end date must be a date",
-  }).optional().or(z.literal(undefined)),
-  // For recurring classes - array of schedules
-  schedules: z.array(scheduleSchema).optional(),
-}).superRefine((data, ctx) => {
-  // Validation: either single occurrence or recurring with schedules
-  if (data.isRecurring) {
-    // Validate schedules for recurring classes
-    if (!data.schedules || data.schedules.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "At least one schedule must be added for recurring classes",
-        path: ["schedules"],
+// Schedule form schema
+const scheduleSchema = z.object({
+  dayOfWeek: z.string().min(1, "Day of week is required"),
+  startTime: z.string().min(1, "Start time is required"),
+});
+
+// Days of the week options
+const daysOfWeek = [
+  { value: "0", label: "Sunday" },
+  { value: "1", label: "Monday" },
+  { value: "2", label: "Tuesday" },
+  { value: "3", label: "Wednesday" },
+  { value: "4", label: "Thursday" },
+  { value: "5", label: "Friday" },
+  { value: "6", label: "Saturday" },
+];
+
+// Time slots for the day
+const generateTimeSlots = () => {
+  const slots = [];
+  const totalMinutesInDay = 24 * 60;
+  const intervalMinutes = 30;
+  
+  for (let minutes = 0; minutes < totalMinutesInDay; minutes += intervalMinutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const timeString = `${displayHours}:${mins.toString().padStart(2, '0')} ${period}`;
+    slots.push({
+      value: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`,
+      label: timeString
+    });
+  }
+  
+  return slots;
+};
+
+const timeSlots = generateTimeSlots();
+
+// CreateClassPage component
+export default function CreateClassPage() {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);
+  const [categories, setCategories] = useState<ClassCategory[]>([]);
+  const { getUserLocation } = useUserLocation();
+
+  // Handle getting user's current location
+  const handleGetLocation = async () => {
+    try {
+      await getUserLocation();
+      
+      if (latitude && longitude) {
+        form.setValue('latitude', latitude);
+        form.setValue('longitude', longitude);
+        toast({
+          title: "Location captured",
+          description: "Your coordinates have been set successfully."
+        });
+      }
+    } catch (error) {
+      console.error("Error getting location:", error);
+      toast({
+        title: "Location error",
+        description: "Unable to get your location. Please check your browser permissions.",
+        variant: "destructive"
       });
+    }
+  };
+
+  // Load categories on mount
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error("Error loading categories:", error);
+      }
     }
     
-    // Validate date range for recurring classes
-    if (!data.seriesStartDate || !data.seriesEndDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Start date and end date are required for recurring classes",
-        path: ["seriesStartDate"],
-      });
-    } else if (data.seriesStartDate >= data.seriesEndDate) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "End date must be after start date",
-        path: ["seriesEndDate"],
-      });
-    }
-  } else {
-    // Validate for single occurrence classes
-    if (!data.startTime || !data.endTime) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Start time and end time are required for single occurrence classes",
-        path: ["startTime"],
-      });
-    }
-  }
-});
+    loadCategories();
+  }, []);
 
-type CreateClassFormValues = z.infer<typeof createClassSchema>;
-type ScheduleFormValues = z.infer<typeof scheduleSchema>;
-
-export default function CreateClassPage() {
-  const [, navigate] = useLocation();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { latitude, longitude, getUserLocation } = useUserLocation();
-  const [submitting, setSubmitting] = useState(false);
-  
-  // Redirect if not logged in or not a coach
-  if (!user) {
-    navigate("/auth");
-    return null;
-  }
-  
-  if (user.role !== "coach") {
-    navigate("/");
-    return null;
-  }
-  
-  if (!user.isApproved) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="container mx-auto px-4 py-12 text-center max-w-md">
-            <Lock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Approval Pending</h1>
-            <p className="text-muted-foreground mb-6">
-              Your coach account is waiting for admin approval. You'll be able to create classes once approved.
-            </p>
-            <Button asChild>
-              <a href="/">Return to Home</a>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-  
-  // Get categories
-  const { data: categories, isLoading: isLoadingCategories } = useQuery<ClassCategory[]>({
-    queryKey: ['/api/categories'],
-  });
-  
-  // Create a class mutation
-  const createClassMutation = useMutation({
-    mutationFn: async (data: CreateClassFormValues) => {
-      const response = await apiRequest("POST", "/api/classes", data);
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/coaches/${user.id}/classes`] });
-      
-      toast({
-        title: "Class created successfully",
-        description: "Your class has been created and is now visible to customers",
-      });
-      
-      // Redirect to classes list
-      navigate("/classes");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to create class",
-        description: error.message || "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-      setSubmitting(false);
-    }
-  });
-  
-  // Set up form with validation
-  const form = useForm<CreateClassFormValues>({
+  // Form definition
+  const form = useForm<z.infer<typeof createClassSchema>>({
     resolver: zodResolver(createClassSchema),
     defaultValues: {
       title: "",
       description: "",
-      categoryId: undefined,
-      price: undefined,
-      capacity: 10,
+      categoryId: "",
       location: "",
       address: "",
-      latitude: latitude || undefined,
-      longitude: longitude || undefined,
-      startTime: new Date(new Date().setHours(new Date().getHours() + 24, 0, 0, 0)), // Tomorrow at current hour
-      endTime: new Date(new Date().setHours(new Date().getHours() + 25, 0, 0, 0)),   // Tomorrow at current hour + 1
-      image: "",
+      latitude: undefined,
+      longitude: undefined,
+      price: 0,
+      duration: 60,
+      capacity: 10,
+      startDate: new Date(),
       isRecurring: false,
-      // Series date range for recurring classes
-      seriesStartDate: new Date(new Date().setHours(0, 0, 0, 0)), // Today at midnight
-      seriesEndDate: new Date(new Date().setDate(new Date().getDate() + 30)), // 30 days from today
+      endDate: addWeeks(new Date(), 4),
+      image: "",
       schedules: [],
     },
   });
-  
-  // Setup field array for schedules
+
+  // Setup schedule field array
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "schedules",
   });
-  
-  // Update coordinates when user requests location
-  const handleGetLocation = async () => {
-    await getUserLocation();
-    if (latitude && longitude) {
-      form.setValue("latitude", latitude);
-      form.setValue("longitude", longitude);
-      toast({
-        title: "Location updated",
-        description: "Your current coordinates have been added to the class",
-      });
-    }
-  };
-  
-  // Helper to add a new schedule
+
+  // Add a new schedule
   const addNewSchedule = () => {
-    append({
-      dayOfWeek: 1, // Monday by default
-      startTime: "17:00", // 5:00 PM
-      endTime: "18:00", // 6:00 PM
-    });
+    append({ dayOfWeek: "", startTime: "" });
   };
-  
-  // Convert day of week number to string
-  const getDayName = (dayNum: number): string => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[dayNum];
-  };
-  
-  // Submit handler
-  async function onSubmit(data: CreateClassFormValues) {
+
+  // Create class mutation
+  const { mutateAsync: createClass } = useMutation({
+    mutationFn: async (data: z.infer<typeof createClassSchema>) => {
+      const response = await apiRequest("POST", "/api/classes", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coaches"] });
+      toast({
+        title: "Class created",
+        description: "Your class has been created successfully.",
+      });
+      navigate("/my-classes");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating class",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Form submission handler
+  async function onSubmit(data: z.infer<typeof createClassSchema>) {
+    // Prevent submission if coordinates are missing
+    if (!data.latitude || !data.longitude) {
+      toast({
+        title: "Location required",
+        description: "Please provide a valid location on the map.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSubmitting(true);
     
-    // Validation for single occurrence classes
-    if (!data.isRecurring && data.startTime && data.endTime) {
-      if (data.endTime <= data.startTime) {
-        form.setError("endTime", {
-          type: "manual",
-          message: "End time must be after start time",
-        });
-        setSubmitting(false);
-        return;
-      }
-    }
-    
-    // For recurring classes, validate each schedule's times
-    if (data.isRecurring && data.schedules) {
-      for (const schedule of data.schedules) {
-        const startTimeParts = schedule.startTime.split(':').map(Number);
-        const endTimeParts = schedule.endTime.split(':').map(Number);
-        
-        const startTimeMinutes = startTimeParts[0] * 60 + startTimeParts[1];
-        const endTimeMinutes = endTimeParts[0] * 60 + endTimeParts[1];
-        
-        if (endTimeMinutes <= startTimeMinutes) {
-          toast({
-            title: "Invalid Schedule",
-            description: `End time must be after start time for ${getDayName(schedule.dayOfWeek)}`,
-            variant: "destructive",
-          });
-          setSubmitting(false);
-          return;
-        }
-      }
-    }
-    
-    // Process and submit the class data
     try {
-      console.log("Submitting class data:", data);
-      await createClassMutation.mutateAsync(data);
+      // Format the data
+      const formattedData = {
+        ...data,
+        categoryId: parseInt(data.categoryId),
+      };
+      
+      // Submit the data
+      await createClass(formattedData);
     } catch (error) {
-      console.error("Error submitting class:", error);
+      console.error("Error creating class:", error);
+    } finally {
       setSubmitting(false);
     }
   }
-  
+
+  // If not a coach, redirect to home
+  if (user && user.role !== "coach") {
+    navigate("/");
+    return null;
+  }
+
+  // If not approved as a coach, show message
+  if (user && user.role === "coach" && !user.isApproved) {
+    return (
+      <>
+        <Header />
+        <main className="container mx-auto py-8 px-4">
+          <div className="max-w-3xl mx-auto">
+            <h1 className="text-2xl font-bold mb-6">Create a Class</h1>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+              <h2 className="text-lg font-semibold text-yellow-800">Awaiting Approval</h2>
+              <p className="text-yellow-700 mt-1">
+                Your coach account is still pending approval by an administrator. 
+                You'll be able to create classes once your account has been approved.
+              </p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <Helmet>
-        <title>Create a Class - Elevate Fitness</title>
-        <meta name="description" content="Create a new fitness class as a coach on Elevate. Set details, pricing, capacity, and more for your fitness sessions." />
+        <title>Create a Class | Elevate</title>
+        <meta name="description" content="Create a new fitness class to share your expertise with students. Set up class details, schedule, and location." />
       </Helmet>
-      
       <Header />
-      
-      <main className="flex-grow bg-[#F7F7F7] py-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-2xl md:text-3xl font-heading font-bold mb-6">Create a New Class</h1>
+      <main className="container mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6">Create a Class</h1>
           
-          <div className="bg-white rounded-xl shadow-sm p-6 max-w-3xl mx-auto">
+          <div className="bg-card rounded-lg shadow-sm p-6 border">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Class Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Intense HIIT Workout" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        A catchy title that describes your class
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describe what participants can expect from your class..." 
-                          className="min-h-32"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Include details about the class format, intensity, equipment needed, etc.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="categoryId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value?.toString()}
-                        >
+                  <div className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class Title <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
+                            <Input placeholder="e.g. Morning Yoga Flow" {...field} />
                           </FormControl>
-                          <SelectContent>
-                            {isLoadingCategories ? (
-                              <div className="flex items-center justify-center p-4">
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                <span>Loading categories...</span>
-                              </div>
-                            ) : categories && categories.length > 0 ? (
-                              categories.map((category) => (
-                                <SelectItem 
-                                  key={category.id} 
-                                  value={category.id.toString()}
-                                >
+                          <FormDescription>
+                            The name of your class as it will appear to students
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe your class, what to expect, who it's for, etc." 
+                              className="min-h-32" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Provide details about your class, benefits, and what students should bring
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category <span className="text-destructive">*</span></FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
                                   {category.name}
                                 </SelectItem>
-                              ))
-                            ) : (
-                              <div className="p-4 text-center text-muted-foreground">
-                                No categories available
-                              </div>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose the category that best fits your class
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="image"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Image URL</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. https://example.com/image.jpg" 
+                              {...field} 
+                              value={field.value || ""}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Provide a URL to an image representing your class
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price ($)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" step="0.01" placeholder="e.g. 25" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Price per participant in USD
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="capacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Class Capacity</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="1" placeholder="e.g. 10" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Maximum number of participants
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Central Park, FitZone Gym" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Name of the venue or area
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Central Park" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            The name of the venue or location
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   
                   <FormField
                     control={form.control}
@@ -509,113 +454,118 @@ export default function CreateClassPage() {
                             Start typing for suggestions from Google Maps
                           </FormDescription>
                           
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            onClick={async () => {
-                              if (navigator.geolocation) {
-                                try {
-                                  navigator.geolocation.getCurrentPosition(async (position) => {
-                                    const { latitude, longitude } = position.coords;
-                                    
-                                    // Update form with coordinates
-                                    form.setValue('latitude', latitude);
-                                    form.setValue('longitude', longitude);
-                                    
-                                    // Use Google Maps Geocoder directly for reverse geocoding
-                                    try {
-                                      // Load Google Maps API if not loaded
-                                      if (!window.google || !window.google.maps) {
-                                        // Wait for Maps API to load - we can't do direct geocoding without it
-                                        toast({
-                                          title: "Location captured",
-                                          description: "Your coordinates have been set. Please provide the address manually.",
-                                        });
-                                        return;
-                                      }
+                          <GoogleMapsScript>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              onClick={async () => {
+                                if (navigator.geolocation) {
+                                  try {
+                                    navigator.geolocation.getCurrentPosition(async (position) => {
+                                      const { latitude, longitude } = position.coords;
                                       
-                                      const geocoder = new window.google.maps.Geocoder();
-                                      geocoder.geocode(
-                                        { location: { lat: latitude, lng: longitude } },
-                                        (results, status) => {
-                                          if (status === 'OK' && results && results.length > 0) {
-                                            const address = results[0].formatted_address;
-                                            form.setValue('address', address);
-                                            
-                                            // Set location name if empty
-                                            if (!form.getValues('location')) {
-                                              const addressParts = address.split(',');
-                                              if (addressParts.length > 0) {
-                                                form.setValue('location', addressParts[0].trim());
-                                              }
-                                            }
-                                          } else {
-                                            toast({
-                                              title: "Geocoding failed",
-                                              description: "We couldn't determine your address. Please enter it manually.",
-                                              variant: "destructive"
-                                            });
-                                          }
+                                      // Update form with coordinates
+                                      form.setValue('latitude', latitude);
+                                      form.setValue('longitude', longitude);
+                                      
+                                      // Use Google Maps Geocoder directly for reverse geocoding
+                                      try {
+                                        // Maps API should now be loaded via GoogleMapsScript
+                                        if (!window.google || !window.google.maps) {
+                                          // Fallback in case script isn't loaded yet
+                                          toast({
+                                            title: "Location captured",
+                                            description: "Your coordinates have been set. Please provide the address manually.",
+                                          });
+                                          return;
                                         }
-                                      );
-                                    } catch (error) {
-                                      console.error("Error during reverse geocoding:", error);
+                                        
+                                        const geocoder = new window.google.maps.Geocoder();
+                                        geocoder.geocode(
+                                          { location: { lat: latitude, lng: longitude } },
+                                          (results, status) => {
+                                            if (status === 'OK' && results && results.length > 0) {
+                                              const address = results[0].formatted_address;
+                                              form.setValue('address', address);
+                                              
+                                              // Set location name if empty
+                                              if (!form.getValues('location')) {
+                                                const addressParts = address.split(',');
+                                                if (addressParts.length > 0) {
+                                                  form.setValue('location', addressParts[0].trim());
+                                                }
+                                              }
+                                            } else {
+                                              toast({
+                                                title: "Geocoding failed",
+                                                description: "We couldn't determine your address. Please enter it manually.",
+                                                variant: "destructive"
+                                              });
+                                            }
+                                          }
+                                        );
+                                      } catch (error) {
+                                        console.error("Error during reverse geocoding:", error);
+                                        toast({
+                                          title: "Location error",
+                                          description: "Your coordinates were captured, but we couldn't get your address. Please enter it manually.",
+                                          variant: "destructive"
+                                        });
+                                      }
+                                    }, 
+                                    (error) => {
+                                      console.error("Error getting location:", error);
                                       toast({
                                         title: "Location error",
-                                        description: "Your coordinates were captured, but we couldn't get your address. Please enter it manually.",
+                                        description: "Unable to get your current location. Please check your browser permissions.",
                                         variant: "destructive"
                                       });
-                                    }
-                                  }, 
-                                  (error) => {
-                                    console.error("Error getting location:", error);
-                                    toast({
-                                      title: "Location error",
-                                      description: "Unable to get your current location. Please check your browser permissions.",
-                                      variant: "destructive"
                                     });
+                                  } catch (error) {
+                                    console.error("Geolocation error:", error);
+                                  }
+                                } else {
+                                  toast({
+                                    title: "Location not supported",
+                                    description: "Geolocation is not supported by your browser",
+                                    variant: "destructive"
                                   });
-                                } catch (error) {
-                                  console.error("Geolocation error:", error);
                                 }
-                              } else {
-                                toast({
-                                  title: "Location not supported",
-                                  description: "Geolocation is not supported by your browser",
-                                  variant: "destructive"
-                                });
-                              }
-                            }}
-                            className="text-xs px-2 py-1"
-                          >
-                            <MapPin className="h-3 w-3 mr-1" />
-                            Use My Location
-                          </Button>
+                              }}
+                              className="text-xs px-2 py-1"
+                            >
+                              <MapPin className="h-3 w-3 mr-1" />
+                              Use My Location
+                            </Button>
+                          </GoogleMapsScript>
                         </div>
                         <FormMessage />
                         
                         {/* Show map preview when coordinates are available */}
                         {form.watch('latitude') && form.watch('longitude') && (
                           <div className="mt-2">
-                            <LocationPreview 
-                              latitude={form.watch('latitude')} 
-                              longitude={form.watch('longitude')}
-                              height="250px"
-                              onLocationUpdate={(lat, lng, address) => {
-                                form.setValue('latitude', lat);
-                                form.setValue('longitude', lng);
-                                form.setValue('address', address);
-                                
-                                // If location name is empty, try to set it from the address
-                                if (!form.getValues('location')) {
-                                  const addressParts = address.split(',');
-                                  if (addressParts.length > 0) {
-                                    form.setValue('location', addressParts[0].trim());
+                            <GoogleMapsScript>
+                              <LocationPreview 
+                                latitude={form.watch('latitude')} 
+                                longitude={form.watch('longitude')}
+                                height="250px"
+                                interactive={true}
+                                onLocationUpdate={(lat, lng, address) => {
+                                  form.setValue('latitude', lat);
+                                  form.setValue('longitude', lng);
+                                  form.setValue('address', address);
+                                  
+                                  // If location name is empty, try to set it from the address
+                                  if (!form.getValues('location')) {
+                                    const addressParts = address.split(',');
+                                    if (addressParts.length > 0) {
+                                      form.setValue('location', addressParts[0].trim());
+                                    }
                                   }
-                                }
-                              }}
-                            />
+                                }}
+                              />
+                            </GoogleMapsScript>
                           </div>
                         )}
                       </FormItem>
@@ -623,37 +573,25 @@ export default function CreateClassPage() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
-                    name="latitude"
+                    name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Latitude</FormLabel>
+                        <FormLabel>Price ($) <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
-                            step="any" 
-                            placeholder="e.g. 40.7128" 
+                            min="0" 
+                            step="0.01" 
+                            placeholder="e.g. 25.00" 
                             {...field}
-                            value={field.value || ""}
-                            onChange={e => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))}
                           />
                         </FormControl>
-                        <div className="flex justify-between">
-                          <FormDescription>
-                            GPS coordinate (optional)
-                          </FormDescription>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={handleGetLocation}
-                            className="h-7 text-xs"
-                          >
-                            Use Current Location
-                          </Button>
-                        </div>
+                        <FormDescription>
+                          Cost per session in USD
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -661,22 +599,43 @@ export default function CreateClassPage() {
                   
                   <FormField
                     control={form.control}
-                    name="longitude"
+                    name="duration"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Longitude</FormLabel>
+                        <FormLabel>Duration (min) <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
-                            step="any" 
-                            placeholder="e.g. -74.0060" 
+                            min="15" 
+                            step="5" 
+                            placeholder="e.g. 60" 
                             {...field}
-                            value={field.value || ""}
-                            onChange={e => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value))}
                           />
                         </FormControl>
                         <FormDescription>
-                          GPS coordinate (optional)
+                          Length of each session in minutes
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            placeholder="e.g. 10" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Maximum number of students
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -684,39 +643,15 @@ export default function CreateClassPage() {
                   />
                 </div>
                 
-                {/* Class Schedule Type Selection */}
-                <FormField
-                  control={form.control}
-                  name="isRecurring"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Recurring Class
-                        </FormLabel>
-                        <FormDescription>
-                          Enable to create a class that occurs on multiple days and times
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                {/* Show either single occurrence or recurring schedule UI */}
-                {!form.watch("isRecurring") ? (
-                  /* Single Occurrence Class */
+                <Separator />
+                
+                <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="startTime"
+                      name="startDate"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem>
                           <FormLabel>Start Date & Time</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
@@ -748,51 +683,36 @@ export default function CreateClassPage() {
                                         field.value.getMinutes()
                                       );
                                       field.onChange(newDate);
-                                      
-                                      // Also update end time to maintain duration
-                                      const endTime = form.getValues("endTime");
-                                      if (endTime) {
-                                        const currentDuration = endTime.getTime() - field.value.getTime();
-                                        const newEndTime = new Date(newDate.getTime() + currentDuration);
-                                        form.setValue("endTime", newEndTime);
-                                      }
                                     }
                                   }}
-                                  disabled={(date) => date < new Date()}
+                                  initialFocus
                                 />
                               </div>
-                              <div className="p-4 border-t flex justify-between items-center">
-                                <div>
-                                  <div className="text-sm font-medium">Time</div>
-                                  <div className="flex items-center mt-2">
-                                    <Input
-                                      type="time"
-                                      value={field.value ? format(field.value, "HH:mm") : ""}
-                                      onChange={(e) => {
-                                        if (field.value) {
-                                          const [hours, minutes] = e.target.value.split(":");
-                                          const newDate = new Date(field.value);
-                                          newDate.setHours(parseInt(hours), parseInt(minutes));
-                                          field.onChange(newDate);
-                                          
-                                          // Also update end time to maintain duration
-                                          const endTime = form.getValues("endTime");
-                                          if (endTime) {
-                                            const currentDuration = endTime.getTime() - field.value.getTime();
-                                            const newEndTime = new Date(newDate.getTime() + currentDuration);
-                                            form.setValue("endTime", newEndTime);
-                                          }
-                                        }
-                                      }}
-                                      className="w-full"
-                                    />
-                                  </div>
+                              <div className="p-3 border-t">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm font-medium">Time:</div>
+                                  <select
+                                    value={format(field.value, "HH:mm")}
+                                    onChange={(e) => {
+                                      const [hours, minutes] = e.target.value.split(':');
+                                      const newDate = new Date(field.value);
+                                      newDate.setHours(parseInt(hours), parseInt(minutes));
+                                      field.onChange(newDate);
+                                    }}
+                                    className="border border-input bg-background px-3 py-1 rounded-md text-sm"
+                                  >
+                                    {timeSlots.map((slot) => (
+                                      <option key={slot.value} value={slot.value}>
+                                        {slot.label}
+                                      </option>
+                                    ))}
+                                  </select>
                                 </div>
                               </div>
                             </PopoverContent>
                           </Popover>
                           <FormDescription>
-                            When the class will begin
+                            When will your class start?
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -801,128 +721,35 @@ export default function CreateClassPage() {
                     
                     <FormField
                       control={form.control}
-                      name="endTime"
+                      name="isRecurring"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>End Date & Time</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  className="w-full pl-3 text-left font-normal justify-start"
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value ? (
-                                    format(field.value, "PPP p")
-                                  ) : (
-                                    <span>Select date and time</span>
-                                  )}
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <div className="p-4 border-b">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={(date) => {
-                                    if (date && field.value) {
-                                      // Preserve the time
-                                      const newDate = new Date(date);
-                                      newDate.setHours(
-                                        field.value.getHours(),
-                                        field.value.getMinutes()
-                                      );
-                                      field.onChange(newDate);
-                                    }
-                                  }}
-                                  disabled={(date) => {
-                                    const startTime = form.getValues("startTime");
-                                    return date < (startTime || new Date());
-                                  }}
-                                />
-                              </div>
-                              <div className="p-4 border-t flex justify-between items-center">
-                                <div>
-                                  <div className="text-sm font-medium">Time</div>
-                                  <div className="flex items-center mt-2">
-                                    <Input
-                                      type="time"
-                                      value={field.value ? format(field.value, "HH:mm") : ""}
-                                      onChange={(e) => {
-                                        if (field.value) {
-                                          const [hours, minutes] = e.target.value.split(":");
-                                          const newDate = new Date(field.value);
-                                          newDate.setHours(parseInt(hours), parseInt(minutes));
-                                          field.onChange(newDate);
-                                        }
-                                      }}
-                                      className="w-full"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <FormDescription>
-                            When the class will end
-                          </FormDescription>
-                          <FormMessage />
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Recurring Class</FormLabel>
+                            <FormDescription>
+                              Is this a recurring class with regular schedule?
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
                   </div>
-                ) : (
-                  /* Recurring Schedule UI */
-                  <div className="space-y-6">
-                    {/* Series Date Range */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b">
+                  
+                  {/* Show end date picker and schedule if isRecurring is true */}
+                  {form.watch('isRecurring') && (
+                    <>
                       <FormField
                         control={form.control}
-                        name="seriesStartDate"
+                        name="endDate"
                         render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Series Start Date</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className="w-full pl-3 text-left font-normal justify-start"
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {field.value ? (
-                                      format(field.value, "PPP")
-                                    ) : (
-                                      <span>Select start date</span>
-                                    )}
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormDescription>
-                              First date the class series will run
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="seriesEndDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Series End Date</FormLabel>
+                          <FormItem>
+                            <FormLabel>End Date</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <FormControl>
@@ -944,161 +771,129 @@ export default function CreateClassPage() {
                                   mode="single"
                                   selected={field.value}
                                   onSelect={field.onChange}
+                                  disabled={(date) => date < form.getValues('startDate')}
                                   initialFocus
-                                  disabled={(date) => {
-                                    const startDate = form.getValues("seriesStartDate");
-                                    return startDate ? date < startDate : false;
-                                  }}
                                 />
                               </PopoverContent>
                             </Popover>
                             <FormDescription>
-                              Last date the class series will run
+                              When will the recurring class end?
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Weekly Schedule</h3>
-                      <Button 
-                        type="button" 
-                        onClick={addNewSchedule} 
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center"
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add Schedule
-                      </Button>
-                    </div>
-                    
-                    {fields.length === 0 ? (
-                      <div className="text-center p-6 border rounded-md bg-muted/20">
-                        <p className="text-muted-foreground mb-2">No schedules added yet</p>
-                        <Button 
-                          type="button" 
-                          onClick={addNewSchedule} 
-                          variant="secondary"
-                          size="sm"
-                        >
-                          <Plus className="h-4 w-4 mr-1" /> Add a Schedule
-                        </Button>
-                      </div>
-                    ) : (
+                      
                       <div className="space-y-4">
-                        {fields.map((item, index) => (
-                          <Card key={item.id} className="overflow-hidden">
-                            <CardHeader className="p-4 pb-2">
-                              <div className="flex justify-between items-center">
-                                <CardTitle className="text-md font-medium">
-                                  Schedule #{index + 1}
-                                </CardTitle>
-                                <Button 
-                                  type="button" 
-                                  onClick={() => remove(index)} 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="h-8 w-8 p-0 rounded-full"
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <FormField
-                                  control={form.control}
-                                  name={`schedules.${index}.dayOfWeek`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Day of Week</FormLabel>
-                                      <Select 
-                                        onValueChange={(value) => field.onChange(parseInt(value))} 
-                                        defaultValue={field.value.toString()}>
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select day" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          <SelectItem value="0">Sunday</SelectItem>
-                                          <SelectItem value="1">Monday</SelectItem>
-                                          <SelectItem value="2">Tuesday</SelectItem>
-                                          <SelectItem value="3">Wednesday</SelectItem>
-                                          <SelectItem value="4">Thursday</SelectItem>
-                                          <SelectItem value="5">Friday</SelectItem>
-                                          <SelectItem value="6">Saturday</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                
-                                <FormField
-                                  control={form.control}
-                                  name={`schedules.${index}.startTime`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Start Time</FormLabel>
-                                      <FormControl>
-                                        <Input 
-                                          type="time" 
-                                          {...field} 
-                                        />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                
-                                <FormField
-                                  control={form.control}
-                                  name={`schedules.${index}.endTime`}
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>End Time</FormLabel>
-                                      <FormControl>
-                                        <Input 
-                                          type="time" 
-                                          {...field} 
-                                        />
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-medium">Weekly Schedule</h3>
+                          <Button 
+                            type="button" 
+                            onClick={addNewSchedule} 
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center"
+                          >
+                            <Plus className="h-4 w-4 mr-1" /> Add Schedule
+                          </Button>
+                        </div>
+                        
+                        {fields.length === 0 ? (
+                          <div className="text-center p-6 border rounded-md bg-muted/20">
+                            <p className="text-muted-foreground mb-2">No schedules added yet</p>
+                            <Button 
+                              type="button" 
+                              onClick={addNewSchedule} 
+                              variant="secondary"
+                              size="sm"
+                            >
+                              <Plus className="h-4 w-4 mr-1" /> Add a Schedule
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {fields.map((item, index) => (
+                              <Card key={item.id} className="overflow-hidden">
+                                <CardHeader className="p-4 pb-2">
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="text-sm font-medium">Schedule #{index + 1}</h4>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => remove(index)}
+                                      className="h-7 w-7 p-0"
+                                    >
+                                      <X className="h-4 w-4" />
+                                      <span className="sr-only">Remove</span>
+                                    </Button>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <FormField
+                                    control={form.control}
+                                    name={`schedules.${index}.dayOfWeek`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Day of Week</FormLabel>
+                                        <Select
+                                          onValueChange={field.onChange}
+                                          defaultValue={field.value}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select day" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {daysOfWeek.map((day) => (
+                                              <SelectItem key={day.value} value={day.value}>
+                                                {day.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  
+                                  <FormField
+                                    control={form.control}
+                                    name={`schedules.${index}.startTime`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Start Time</FormLabel>
+                                        <Select
+                                          onValueChange={field.onChange}
+                                          defaultValue={field.value}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select time" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {timeSlots.map((time) => (
+                                              <SelectItem key={time.value} value={time.value}>
+                                                {time.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    <div className="text-sm text-muted-foreground">
-                      <p>The class will be scheduled on the selected days every week.</p>
-                    </div>
-                  </div>
-                )}
-                
-                <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/image.jpg" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        URL to an image that represents your class
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                    </>
                   )}
-                />
+                </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button 
@@ -1123,13 +918,13 @@ export default function CreateClassPage() {
                     )}
                   </Button>
                 </div>
+                </div> {/* Close the grid div */}
               </form>
             </Form>
           </div>
         </div>
       </main>
-      
       <Footer />
-    </div>
+    </>
   );
 }
