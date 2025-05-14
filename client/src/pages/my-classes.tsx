@@ -79,23 +79,35 @@ export default function MyClassesPage() {
       // Find the class to check if it's part of a series
       const classToDelete = classes?.find(c => c.id === classId);
       
+      // Log the class we're trying to delete
+      console.log("Original classToDelete:", classToDelete);
+      
+      // Find the parent ID, either from parentClassId or if this is a parent class
+      let parentId = classId;
+      
       if (classToDelete?.parentClassId) {
-        // If it's a child class, find the parent class to delete the entire series
-        const parentClass = classes?.find(c => c.id === classToDelete.parentClassId);
-        
-        if (parentClass && parentClass.isRecurring) {
-          // Delete the parent class instead, which will delete the entire series
-          console.log(`Deleting parent class ${parentClass.id} instead of child class ${classId}`);
-          classId = parentClass.id;
-        }
+        // If it's a child class, we need to delete the parent
+        parentId = classToDelete.parentClassId;
+        console.log(`Found child class with parent ID: ${parentId}`);
+      } else if (!classToDelete?.isRecurring) {
+        // If it's a standalone class, just delete it normally
+        console.log(`Deleting standalone class: ${classId}`);
+      } else {
+        // It's already a parent/recurring class
+        console.log(`Deleting parent recurring class: ${classId}`);
       }
       
-      const response = await apiRequest("DELETE", `/api/classes/${classId}`);
+      // Find the actual parent class or the original class if it's standalone
+      const classIdToDelete = parentId;
+      console.log(`Will attempt to delete class ID: ${classIdToDelete}`);
+      
+      const response = await apiRequest("DELETE", `/api/classes/${classIdToDelete}`);
       if (!response.ok) {
         throw new Error('Failed to delete class');
       }
-      // Return nothing since the server sends a 204 No Content response
-      return;
+      
+      // Return the class ID that was actually deleted
+      return classIdToDelete;
     },
     onSuccess: (_, classId) => {
       // Find the class that was deleted
@@ -119,6 +131,9 @@ export default function MyClassesPage() {
       // Invalidate queries to refresh the class list
       queryClient.invalidateQueries({ queryKey: ['/api/coaches', user?.id, 'classes'] });
       queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      
+      // Force immediate refetch to update the UI
+      classesQuery.refetch();
     },
     onError: (error: Error) => {
       toast({
