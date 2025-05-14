@@ -131,20 +131,55 @@ export default function CreateClassPage() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<ClassCategory[]>([]);
-  const { getUserLocation } = useUserLocation();
+  const { latitude, longitude, getUserLocation } = useUserLocation();
 
   // Handle getting user's current location
   const handleGetLocation = async () => {
     try {
+      // getUserLocation will update the latitude and longitude values from the hook
       await getUserLocation();
       
+      // Access the updated values from the hook
       if (latitude && longitude) {
+        // Update form values
         form.setValue('latitude', latitude);
         form.setValue('longitude', longitude);
+        
+        // Show success message
         toast({
           title: "Location captured",
           description: "Your coordinates have been set successfully."
         });
+        
+        // If Google Maps API is loaded, try to get the address from coordinates
+        if (window.google && window.google.maps) {
+          try {
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode(
+              { location: { lat: latitude, lng: longitude } },
+              (results, status) => {
+                if (status === 'OK' && results && results.length > 0) {
+                  const address = results[0].formatted_address;
+                  
+                  // Update the address field
+                  form.setValue('address', address);
+                  
+                  // Also update location name if it's empty
+                  const currentLocation = form.getValues('location');
+                  if (!currentLocation) {
+                    // Use the first part of the address as the location name
+                    const addressParts = address.split(',') || [];
+                    if (addressParts.length > 0) {
+                      form.setValue('location', addressParts[0].trim());
+                    }
+                  }
+                }
+              }
+            );
+          } catch (geoError) {
+            console.error("Error during geocoding:", geoError);
+          }
+        }
       }
     } catch (error) {
       console.error("Error getting location:", error);
@@ -245,14 +280,8 @@ export default function CreateClassPage() {
     setSubmitting(true);
     
     try {
-      // Format the data
-      const formattedData = {
-        ...data,
-        categoryId: parseInt(data.categoryId),
-      };
-      
-      // Submit the data
-      await createClass(formattedData);
+      // Submit the data - leave categoryId as string as expected by the API
+      await createClass(data);
     } catch (error) {
       console.error("Error creating class:", error);
     } finally {
