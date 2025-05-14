@@ -519,7 +519,7 @@ export default function CreateClassPage() {
                                     // Get address from coordinates using reverse geocoding
                                     try {
                                       const response = await fetch(
-                                        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+                                        `/api/maps/geocode?latlng=${latitude},${longitude}`
                                       );
                                       const data = await response.json();
                                       
