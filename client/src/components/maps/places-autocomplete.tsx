@@ -48,8 +48,7 @@ const PlacesAutocomplete = ({
   const getPlaceDetails = async (placeId: string) => {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_address,geometry&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`,
-        { mode: 'cors' }
+        `/api/maps/places/details?place_id=${placeId}`
       );
       
       if (!response.ok) {

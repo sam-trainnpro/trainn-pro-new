@@ -135,7 +135,7 @@ const LocationPreview = ({
   // Function to get address from coordinates using reverse geocoding
   const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+      `/api/maps/geocode?latlng=${lat},${lng}`
     );
     
     const data = await response.json();
