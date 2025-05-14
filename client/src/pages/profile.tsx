@@ -63,11 +63,31 @@ const passwordFormSchema = z.object({
 
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
+// Payment settings form schema for coaches
+const paymentSettingsSchema = z.object({
+  accountType: z.enum(["individual", "company"], {
+    required_error: "Please select account type",
+  }),
+  accountHolderName: z.string().min(2, "Account holder name is required"),
+  accountNumber: z.string().min(8, "Valid account number is required")
+    .max(17, "Account number cannot exceed 17 characters"),
+  routingNumber: z.string().min(9, "Routing number must be 9 digits")
+    .max(9, "Routing number must be 9 digits")
+    .regex(/^\d+$/, "Routing number must contain only digits"),
+  bankName: z.string().min(2, "Bank name is required"),
+  acceptTerms: z.boolean().refine(val => val === true, {
+    message: "You must accept the terms to continue",
+  }),
+});
+
+type PaymentSettingsValues = z.infer<typeof paymentSettingsSchema>;
+
 export default function ProfilePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isUpdatingPaymentSettings, setIsUpdatingPaymentSettings] = useState(false);
 
   // Form for profile data
   const profileForm = useForm<ProfileFormValues>({
