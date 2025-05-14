@@ -134,17 +134,24 @@ const LocationPreview = ({
   
   // Function to get address from coordinates using reverse geocoding
   const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
-    const response = await fetch(
-      `/api/maps/geocode?latlng=${lat},${lng}`
-    );
-    
-    const data = await response.json();
-    
-    if (data.results && data.results.length > 0) {
-      return data.results[0].formatted_address;
-    }
-    
-    return "Unknown location";
+    return new Promise((resolve, reject) => {
+      if (!window.google || !window.google.maps) {
+        reject("Google Maps API not loaded");
+        return;
+      }
+      
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode(
+        { location: { lat, lng } },
+        (results, status) => {
+          if (status === 'OK' && results && results.length > 0) {
+            resolve(results[0].formatted_address);
+          } else {
+            resolve("Unknown location");
+          }
+        }
+      );
+    });
   };
   
   if (!latitude || !longitude) {

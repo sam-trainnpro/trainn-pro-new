@@ -1,58 +1,124 @@
 import { useEffect, useState } from 'react';
 
+type GoogleMapsScriptLoadStatus = 'loading' | 'ready' | 'error';
+
 interface GoogleMapsScriptProps {
   children: React.ReactNode;
   onLoad?: () => void;
+  onError?: () => void;
 }
 
-const GoogleMapsScript = ({ children, onLoad }: GoogleMapsScriptProps) => {
-  const [loaded, setLoaded] = useState(false);
+let isLoading = false;
+let isLoaded = false;
+
+// This component loads the Google Maps script and provides a loading status
+export default function GoogleMapsScript({ children, onLoad, onError }: GoogleMapsScriptProps) {
+  const [status, setStatus] = useState<GoogleMapsScriptLoadStatus>(
+    // If the script is already loaded in a previous render, set the status to ready
+    window.google && window.google.maps ? 'ready' : 'loading'
+  );
   
   useEffect(() => {
-    // If Google Maps is already loaded, don't load it again
-    if (window.google && window.google.maps) {
-      setLoaded(true);
-      if (onLoad) onLoad();
+    // Skip if already loaded or loading
+    if (isLoaded || (window.google && window.google.maps)) {
+      setStatus('ready');
+      onLoad?.();
       return;
     }
     
-    // Create script element to load Google Maps API
-    const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    
-    if (!googleMapsApiKey) {
-      console.error('Google Maps API key not found. Make sure VITE_GOOGLE_MAPS_API_KEY is set in your environment.');
+    if (isLoading) {
       return;
     }
     
+    isLoading = true;
+    
+    // Create the script element
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
+    script.id = 'google-maps-script';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places,geocoding`;
     script.async = true;
     script.defer = true;
     
+    // Set up callbacks
     script.onload = () => {
-      setLoaded(true);
-      if (onLoad) onLoad();
+      isLoaded = true;
+      isLoading = false;
+      setStatus('ready');
+      onLoad?.();
     };
     
     script.onerror = () => {
-      console.error('Error loading Google Maps API');
+      isLoading = false;
+      setStatus('error');
+      onError?.();
     };
     
+    // Append the script to the head
     document.head.appendChild(script);
     
+    // Clean up the script on unmount
     return () => {
-      // Clean up script if component unmounts before script loads
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
+      // Don't remove the script element as it might be used by other components
     };
-  }, [onLoad]);
+  }, [onLoad, onError]);
   
-  // Show nothing while script is loading
-  if (!loaded) return null;
-  
-  // Render children once Google Maps is loaded
-  return <>{children}</>;
-};
+  return (
+    <>
+      {status === 'ready' && children}
+      {status === 'loading' && (
+        <div className="flex items-center justify-center p-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+          <span className="ml-2">Loading Maps...</span>
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="p-4 text-center text-destructive">
+          Failed to load Google Maps. Please refresh the page and try again.
+        </div>
+      )}
+    </>
+  );
+}
 
-export default GoogleMapsScript;
+// Hook to use Google Maps script
+export function useGoogleMapsScript() {
+  const [status, setStatus] = useState<GoogleMapsScriptLoadStatus>(
+    window.google && window.google.maps ? 'ready' : 'loading'
+  );
+  
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      setStatus('ready');
+      return;
+    }
+    
+    // Create a script element
+    const script = document.createElement('script');
+    script.id = 'google-maps-script';
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places,geocoding`;
+    script.async = true;
+    script.defer = true;
+    
+    // Set up callbacks
+    script.onload = () => {
+      setStatus('ready');
+    };
+    
+    script.onerror = () => {
+      setStatus('error');
+    };
+    
+    // Check if script is already in the document
+    if (!document.getElementById('google-maps-script')) {
+      // Append the script to the head
+      document.head.appendChild(script);
+    }
+    
+    // Clean up
+    return () => {
+      // Don't remove the script
+    };
+  }, []);
+  
+  return status;
+}

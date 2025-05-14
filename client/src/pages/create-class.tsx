@@ -10,6 +10,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation as useUserLocation } from "@/hooks/use-location";
 import PlacesAutocomplete from "@/components/maps/places-autocomplete";
 import LocationPreview from "@/components/maps/location-preview";
+import GoogleMapsScript from "@/components/maps/google-maps-script";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import {
@@ -472,7 +473,7 @@ export default function CreateClassPage() {
                     name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Address</FormLabel>
+                        <FormLabel>Full Address <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <PlacesAutocomplete 
                             placeholder="e.g. 123 Main St, New York, NY 10001" 
@@ -482,8 +483,12 @@ export default function CreateClassPage() {
                               field.onChange(address);
                               
                               // Update latitude and longitude
+                              form.setValue('address', address);
                               form.setValue('latitude', lat);
                               form.setValue('longitude', lng);
+                              
+                              // Trigger validation
+                              form.trigger('address');
                               
                               // Also update location name if it's empty
                               const currentLocation = form.getValues('location');
@@ -516,27 +521,49 @@ export default function CreateClassPage() {
                                     form.setValue('latitude', latitude);
                                     form.setValue('longitude', longitude);
                                     
-                                    // Get address from coordinates using reverse geocoding
+                                    // Use Google Maps Geocoder directly for reverse geocoding
                                     try {
-                                      const response = await fetch(
-                                        `/api/maps/geocode?latlng=${latitude},${longitude}`
-                                      );
-                                      const data = await response.json();
+                                      // Load Google Maps API if not loaded
+                                      if (!window.google || !window.google.maps) {
+                                        // Wait for Maps API to load - we can't do direct geocoding without it
+                                        toast({
+                                          title: "Location captured",
+                                          description: "Your coordinates have been set. Please provide the address manually.",
+                                        });
+                                        return;
+                                      }
                                       
-                                      if (data.results && data.results.length > 0) {
-                                        const address = data.results[0].formatted_address;
-                                        form.setValue('address', address);
-                                        
-                                        // Set location name if empty
-                                        if (!form.getValues('location')) {
-                                          const addressParts = address.split(',');
-                                          if (addressParts.length > 0) {
-                                            form.setValue('location', addressParts[0].trim());
+                                      const geocoder = new window.google.maps.Geocoder();
+                                      geocoder.geocode(
+                                        { location: { lat: latitude, lng: longitude } },
+                                        (results, status) => {
+                                          if (status === 'OK' && results && results.length > 0) {
+                                            const address = results[0].formatted_address;
+                                            form.setValue('address', address);
+                                            
+                                            // Set location name if empty
+                                            if (!form.getValues('location')) {
+                                              const addressParts = address.split(',');
+                                              if (addressParts.length > 0) {
+                                                form.setValue('location', addressParts[0].trim());
+                                              }
+                                            }
+                                          } else {
+                                            toast({
+                                              title: "Geocoding failed",
+                                              description: "We couldn't determine your address. Please enter it manually.",
+                                              variant: "destructive"
+                                            });
                                           }
                                         }
-                                      }
+                                      );
                                     } catch (error) {
                                       console.error("Error during reverse geocoding:", error);
+                                      toast({
+                                        title: "Location error",
+                                        description: "Your coordinates were captured, but we couldn't get your address. Please enter it manually.",
+                                        variant: "destructive"
+                                      });
                                     }
                                   }, 
                                   (error) => {
