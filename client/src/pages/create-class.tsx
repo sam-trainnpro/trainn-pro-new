@@ -475,32 +475,34 @@ export default function CreateClassPage() {
                       <FormItem>
                         <FormLabel>Full Address <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <PlacesAutocomplete 
-                            placeholder="e.g. 123 Main St, New York, NY 10001" 
-                            defaultValue={field.value}
-                            onAddressSelect={(address, lat, lng) => {
-                              // Update the address field
-                              field.onChange(address);
-                              
-                              // Update latitude and longitude
-                              form.setValue('address', address);
-                              form.setValue('latitude', lat);
-                              form.setValue('longitude', lng);
-                              
-                              // Trigger validation
-                              form.trigger('address');
-                              
-                              // Also update location name if it's empty
-                              const currentLocation = form.getValues('location');
-                              if (!currentLocation) {
-                                // Use the first part of the address as the location name
-                                const addressParts = address.split(',') || [];
-                                if (addressParts.length > 0) {
-                                  form.setValue('location', addressParts[0].trim());
+                          <GoogleMapsScript>
+                            <PlacesAutocomplete 
+                              placeholder="e.g. 123 Main St, New York, NY 10001" 
+                              defaultValue={field.value}
+                              onAddressSelect={(address, lat, lng) => {
+                                // Update the address field
+                                field.onChange(address);
+                                
+                                // Update latitude and longitude
+                                form.setValue('address', address);
+                                form.setValue('latitude', lat);
+                                form.setValue('longitude', lng);
+                                
+                                // Trigger validation
+                                form.trigger('address');
+                                
+                                // Also update location name if it's empty
+                                const currentLocation = form.getValues('location');
+                                if (!currentLocation) {
+                                  // Use the first part of the address as the location name
+                                  const addressParts = address.split(',') || [];
+                                  if (addressParts.length > 0) {
+                                    form.setValue('location', addressParts[0].trim());
+                                  }
                                 }
-                              }
-                            }}
-                          />
+                              }}
+                            />
+                          </GoogleMapsScript>
                         </FormControl>
                         <div className="flex justify-between items-center">
                           <FormDescription>
