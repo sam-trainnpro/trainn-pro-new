@@ -76,6 +76,20 @@ export default function MyClassesPage() {
   // Mutation to delete a class
   const deleteMutation = useMutation({
     mutationFn: async (classId: number) => {
+      // Find the class to check if it's part of a series
+      const classToDelete = classes?.find(c => c.id === classId);
+      
+      if (classToDelete?.parentClassId) {
+        // If it's a child class, find the parent class to delete the entire series
+        const parentClass = classes?.find(c => c.id === classToDelete.parentClassId);
+        
+        if (parentClass && parentClass.isRecurring) {
+          // Delete the parent class instead, which will delete the entire series
+          console.log(`Deleting parent class ${parentClass.id} instead of child class ${classId}`);
+          classId = parentClass.id;
+        }
+      }
+      
       const response = await apiRequest("DELETE", `/api/classes/${classId}`);
       if (!response.ok) {
         throw new Error('Failed to delete class');
@@ -84,12 +98,20 @@ export default function MyClassesPage() {
       return;
     },
     onSuccess: (_, classId) => {
-      // Find the class that was deleted to determine the correct message
+      // Find the class that was deleted
       const deletedClass = classes?.find(c => c.id === classId);
       
+      // Check if it's a child class that triggered a parent deletion
+      const isPartOfSeries = deletedClass?.parentClassId != null;
+      const isRecurringSeries = deletedClass?.isRecurring ?? false;
+      
+      // For the toast message, consider both actual recurring series and child classes
+      // that triggered parent deletions as "series deletions"
+      const isSeriesDeletion = isRecurringSeries || isPartOfSeries;
+      
       toast({
-        title: deletedClass?.isRecurring ? "Class series deleted" : "Class deleted",
-        description: deletedClass?.isRecurring 
+        title: isSeriesDeletion ? "Class series deleted" : "Class deleted",
+        description: isSeriesDeletion
           ? "Your class series and all its sessions have been deleted successfully" 
           : "Your class has been deleted successfully",
       });
@@ -202,13 +224,13 @@ export default function MyClassesPage() {
                       <AlertDialogTrigger asChild>
                         <Button 
                           variant="outline" 
-                          className={classItem.isRecurring 
+                          className={(classItem.isRecurring || classItem.parentClassId)
                             ? "px-3 text-red-700 border-red-300 hover:bg-red-50 hover:text-red-800 font-medium"
                             : "px-3 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                           }
                         >
                           <Trash2 className="h-4 w-4" />
-                          {classItem.isRecurring && (
+                          {(classItem.isRecurring || classItem.parentClassId) && (
                             <span className="ml-1 text-xs">All</span>
                           )}
                         </Button>
@@ -220,7 +242,7 @@ export default function MyClassesPage() {
                             {classItem.isRecurring 
                               ? "This will permanently delete this entire recurring class series and all of its sessions."
                               : classItem.parentClassId
-                                ? "This will permanently delete this individual class session."
+                                ? "This will permanently delete this entire recurring class series and all of its sessions, not just this individual session."
                                 : "This will permanently delete this class."
                             } 
                             This action cannot be undone.
@@ -240,11 +262,9 @@ export default function MyClassesPage() {
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Deleting...
                               </>
-                            ) : classItem.isRecurring 
+                            ) : classItem.isRecurring || classItem.parentClassId
                                 ? "Delete Entire Series" 
-                                : classItem.parentClassId
-                                  ? "Delete Session"
-                                  : "Delete Class"
+                                : "Delete Class"
                             }
                           </AlertDialogAction>
                         </AlertDialogFooter>
