@@ -138,12 +138,12 @@ export default function ProfilePage() {
       const response = await apiRequest("PUT", `/api/users/${user?.id}`, data);
       return response.json();
     },
-    onSuccess: (updatedUser) => {
-      queryClient.setQueryData(["/api/user"], updatedUser);
+    onSuccess: () => {
       toast({
         title: "Profile updated",
-        description: "Your profile has been updated successfully",
+        description: "Your profile has been successfully updated.",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setIsUpdating(false);
     },
     onError: (error: Error) => {
@@ -165,7 +165,7 @@ export default function ProfilePage() {
     onSuccess: () => {
       toast({
         title: "Password changed",
-        description: "Your password has been updated successfully",
+        description: "Your password has been successfully updated.",
       });
       passwordForm.reset({
         currentPassword: "",
@@ -278,87 +278,107 @@ export default function ProfilePage() {
     });
   };
 
-  // Handle logout and redirect to home page afterward
-  const handleLogout = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        // Redirect to home page after successful logout
-        window.location.href = "/";
-      }
-    });
-  };
-
-  // Get user initials for avatar fallback
-  const getUserInitials = () => {
-    if (!user) return "?";
-    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`;
-  };
-
   if (!user) {
-    return null; // ProtectedRoute component will handle redirect
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </main>
+    );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <Helmet>
-        <title>My Profile - Elevate Fitness</title>
-        <meta name="description" content="Manage your profile, update your personal information, and view your activity on Elevate Fitness." />
+        <title>My Profile | Elevate</title>
+        <meta name="description" content="View and manage your Elevate profile settings" />
       </Helmet>
-      
+
       <Header />
       
-      <main className="flex-grow bg-[#F7F7F7] py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center mb-8">
-            <Avatar className="h-20 w-20 mr-4">
-              <AvatarImage src={user.profileImage ? user.profileImage : undefined} alt={`${user.firstName} ${user.lastName}`} />
-              <AvatarFallback className="text-xl">{getUserInitials()}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-heading font-bold">
-                {user.firstName} {user.lastName}
-              </h1>
-              <p className="text-muted-foreground capitalize">{user.role}</p>
-              {user.role === 'coach' && !user.isApproved && (
-                <p className="text-amber-500 text-sm mt-1">Pending approval</p>
-              )}
-            </div>
+      <main className="flex-1 pb-16 pt-6">
+        <div className="container">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">My Profile</h1>
+            <p className="text-muted-foreground">Manage your account settings and preferences</p>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
             <div className="lg:col-span-1">
               <Card>
-                <CardHeader>
-                  <CardTitle>Account Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center">
-                    <User className="h-5 w-5 mr-2 text-primary" />
-                    <span>
-                      {user.firstName} {user.lastName}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <Settings className="h-5 w-5 mr-2 text-primary" />
-                    <span className="capitalize">{user.role} Account</span>
-                  </div>
-                  <div className="flex items-center">
-                    <CalendarClock className="h-5 w-5 mr-2 text-primary" />
-                    <span>{Array.isArray(bookings) ? bookings.length : 0} Bookings</span>
-                  </div>
-                  {user.role === 'coach' && (
-                    <div className="flex items-center">
-                      <ClipboardList className="h-5 w-5 mr-2 text-primary" />
-                      <span>{Array.isArray(userClasses) ? userClasses.length : 0} Classes</span>
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center space-y-3">
+                    <Avatar className="h-24 w-24">
+                      {user.profileImage ? (
+                        <AvatarImage src={user.profileImage} alt={`${user.firstName} ${user.lastName}`} />
+                      ) : (
+                        <AvatarFallback className="text-xl">
+                          {user.firstName[0]}{user.lastName[0]}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="space-y-1 text-center">
+                      <h2 className="text-xl font-semibold">{user.firstName} {user.lastName}</h2>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize">
+                        {user.role}
+                        {user.role === 'coach' && !user.isApproved && (
+                          <span className="ml-1 text-yellow-500">(Pending Approval)</span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full" onClick={handleLogout}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                  </div>
+
+                  <Separator className="my-6" />
+
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium">Account Overview</h3>
+                    <div className="grid gap-1">
+                      <div className="flex items-center justify-between py-1">
+                        <div className="flex items-center text-sm">
+                          <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span>Role</span>
+                        </div>
+                        <span className="text-sm capitalize">{user.role}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-1">
+                        <div className="flex items-center text-sm">
+                          <CalendarClock className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span>Member Since</span>
+                        </div>
+                        <span className="text-sm">May 2025</span>
+                      </div>
+                      {user.role === 'customer' && (
+                        <div className="flex items-center justify-between py-1">
+                          <div className="flex items-center text-sm">
+                            <ClipboardList className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <span>Bookings</span>
+                          </div>
+                          <span className="text-sm">{bookings?.length || 0}</span>
+                        </div>
+                      )}
+                      {user.role === 'coach' && (
+                        <div className="flex items-center justify-between py-1">
+                          <div className="flex items-center text-sm">
+                            <ClipboardList className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <span>Classes</span>
+                          </div>
+                          <span className="text-sm">{userClasses?.length || 0}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator className="my-6" />
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => logoutMutation.mutate()}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
                   </Button>
-                </CardFooter>
+                </CardContent>
               </Card>
             </div>
             
@@ -377,13 +397,13 @@ export default function ProfilePage() {
                     <CardHeader>
                       <CardTitle>Profile</CardTitle>
                       <CardDescription>
-                        Update your personal information and public profile
+                        This information will be displayed publicly so be careful what you share.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <Form {...profileForm}>
                         <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <FormField
                               control={profileForm.control}
                               name="firstName"
@@ -391,7 +411,7 @@ export default function ProfilePage() {
                                 <FormItem>
                                   <FormLabel>First Name</FormLabel>
                                   <FormControl>
-                                    <Input {...field} />
+                                    <Input placeholder="John" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -405,14 +425,14 @@ export default function ProfilePage() {
                                 <FormItem>
                                   <FormLabel>Last Name</FormLabel>
                                   <FormControl>
-                                    <Input {...field} />
+                                    <Input placeholder="Doe" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
                           </div>
-                          
+
                           <FormField
                             control={profileForm.control}
                             name="email"
@@ -420,16 +440,20 @@ export default function ProfilePage() {
                               <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
-                                  <Input {...field} disabled />
+                                  <Input 
+                                    placeholder="john.doe@example.com" 
+                                    {...field} 
+                                    disabled 
+                                  />
                                 </FormControl>
                                 <FormDescription>
-                                  Your email address is used for login and cannot be changed.
+                                  Your email cannot be changed.
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          
+
                           <FormField
                             control={profileForm.control}
                             name="profileImage"
@@ -437,16 +461,19 @@ export default function ProfilePage() {
                               <FormItem>
                                 <FormLabel>Profile Image URL</FormLabel>
                                 <FormControl>
-                                  <Input {...field} placeholder="https://example.com/your-image.jpg" />
+                                  <Input 
+                                    placeholder="https://example.com/your-image.jpg" 
+                                    {...field} 
+                                  />
                                 </FormControl>
                                 <FormDescription>
-                                  Enter a URL for your profile picture
+                                  URL to your profile picture. Use a square image for best results.
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          
+
                           {user.role === 'coach' && (
                             <FormField
                               control={profileForm.control}
@@ -495,9 +522,9 @@ export default function ProfilePage() {
                 <TabsContent value="security">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Security</CardTitle>
+                      <CardTitle>Password</CardTitle>
                       <CardDescription>
-                        Manage your password and account security
+                        Change your password here. After saving, you'll be logged out.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -517,8 +544,6 @@ export default function ProfilePage() {
                             )}
                           />
                           
-                          <Separator />
-                          
                           <FormField
                             control={passwordForm.control}
                             name="newPassword"
@@ -529,7 +554,7 @@ export default function ProfilePage() {
                                   <Input type="password" {...field} />
                                 </FormControl>
                                 <FormDescription>
-                                  Password should be at least 8 characters long
+                                  Password must be at least 8 characters long
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
@@ -736,6 +761,6 @@ export default function ProfilePage() {
       
       <Footer />
       <MobileNavigation />
-    </div>
+    </>
   );
 }

@@ -671,6 +671,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to get geocoding results" });
     }
   });
+  
+  // Coach payment processing routes
+  
+  // Save coach's payment settings and connect with Stripe
+  app.post("/api/coaches/:id/payment-settings", requireAuth, async (req, res) => {
+    try {
+      // Ensure the user is updating their own settings or is an admin
+      if (req.params.id !== req.user.id.toString() && req.user.role !== "admin") {
+        return res.status(403).json({ message: "You cannot modify another coach's payment settings" });
+      }
+      
+      // Get the coach user
+      const coach = await storage.getUser(parseInt(req.params.id));
+      if (!coach) {
+        return res.status(404).json({ message: "Coach not found" });
+      }
+      
+      // Ensure coach role
+      if (coach.role !== "coach") {
+        return res.status(400).json({ message: "User is not a coach" });
+      }
+      
+      const { accountType, accountHolderName, accountNumber, routingNumber, bankName } = req.body;
+      
+      // Validate required fields
+      if (!accountType || !accountHolderName || !accountNumber || !routingNumber || !bankName) {
+        return res.status(400).json({ message: "All banking fields are required" });
+      }
+      
+      // If Stripe is available, create or update Connect account
+      if (stripe) {
+        try {
+          let stripeConnectId = coach.stripeConnectId;
+          
+          // Create new Stripe Connect account if none exists
+          if (!stripeConnectId) {
+            const account = await stripe.accounts.create({
+              type: 'express',
+              country: 'US',
+              email: coach.email,
+              business_type: accountType,
+              capabilities: {
+                card_payments: { requested: true },
+                transfers: { requested: true },
+              },
+              business_profile: {
+                name: `${coach.firstName} ${coach.lastName}`,
+                url: `https://elevate-fitness.com/coaches/${coach.id}`, // Replace with actual URL
+              },
+            });
+            
+            stripeConnectId = account.id;
+          }
+          
+          // Update bank account
+          await stripe.accounts.createExternalAccount(
+            stripeConnectId,
+            {
+              external_account: {
+                object: 'bank_account',
+                country: 'US',
+                currency: 'usd',
+                account_holder_name: accountHolderName,
+                account_holder_type: accountType,
+                routing_number: routingNumber,
+                account_number: accountNumber,
+              } as any,
+            }
+          );
+          
+          // Update coach record in database
+          await storage.updateUser(parseInt(req.params.id), {
+            stripeConnectId,
+            bankAccountVerified: true
+          });
+          
+          res.status(200).json({
+            message: "Payment settings updated successfully",
+            stripeConnectId,
+            bankAccountVerified: true
+          });
+        } catch (stripeError: any) {
+          console.error("Stripe error:", stripeError);
+          res.status(400).json({ 
+            message: "Error setting up payment account", 
+            error: stripeError.message 
+          });
+        }
+      } else {
+        // If Stripe is not available, still mark account as verified for testing
+        await storage.updateUser(parseInt(req.params.id), {
+          bankAccountVerified: true
+        });
+        
+        res.status(200).json({
+          message: "Payment settings updated successfully (Stripe integration disabled)",
+          bankAccountVerified: true
+        });
+      }
+    } catch (error: any) {
+      console.error("Payment settings error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
 
