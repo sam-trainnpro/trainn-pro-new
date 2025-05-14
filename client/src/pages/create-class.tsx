@@ -572,11 +572,21 @@ export default function CreateClassPage() {
                             <LocationPreview 
                               latitude={form.watch('latitude')} 
                               longitude={form.watch('longitude')}
-                              height="200px"
+                              height="250px"
+                              onLocationUpdate={(lat, lng, address) => {
+                                form.setValue('latitude', lat);
+                                form.setValue('longitude', lng);
+                                form.setValue('address', address);
+                                
+                                // If location name is empty, try to set it from the address
+                                if (!form.getValues('location')) {
+                                  const addressParts = address.split(',');
+                                  if (addressParts.length > 0) {
+                                    form.setValue('location', addressParts[0].trim());
+                                  }
+                                }
+                              }}
                             />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Map preview of selected location
-                            </p>
                           </div>
                         )}
                       </FormItem>
