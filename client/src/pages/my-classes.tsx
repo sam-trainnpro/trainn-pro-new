@@ -83,10 +83,15 @@ export default function MyClassesPage() {
       // Return nothing since the server sends a 204 No Content response
       return;
     },
-    onSuccess: () => {
+    onSuccess: (_, classId) => {
+      // Find the class that was deleted to determine the correct message
+      const deletedClass = classes?.find(c => c.id === classId);
+      
       toast({
-        title: "Class deleted",
-        description: "Your class has been deleted successfully",
+        title: deletedClass?.isRecurring ? "Class series deleted" : "Class deleted",
+        description: deletedClass?.isRecurring 
+          ? "Your class series and all its sessions have been deleted successfully" 
+          : "Your class has been deleted successfully",
       });
       
       // Invalidate queries to refresh the class list
@@ -195,22 +200,38 @@ export default function MyClassesPage() {
                     </Link>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="px-3 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                        <Button 
+                          variant="outline" 
+                          className={classItem.isRecurring 
+                            ? "px-3 text-red-700 border-red-300 hover:bg-red-50 hover:text-red-800 font-medium"
+                            : "px-3 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                          }
+                        >
                           <Trash2 className="h-4 w-4" />
+                          {classItem.isRecurring && (
+                            <span className="ml-1 text-xs">All</span>
+                          )}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will permanently delete this class{classItem.isRecurring ? ' and all of its sessions' : ''}. 
+                            {classItem.isRecurring 
+                              ? "This will permanently delete this entire recurring class series and all of its sessions."
+                              : classItem.parentClassId
+                                ? "This will permanently delete this individual class session."
+                                : "This will permanently delete this class."
+                            } 
                             This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction 
-                            className="bg-red-600 text-white hover:bg-red-700"
+                            className={classItem.isRecurring 
+                              ? "bg-red-700 text-white hover:bg-red-800 font-medium" 
+                              : "bg-red-600 text-white hover:bg-red-700"}
                             onClick={() => deleteMutation.mutate(classItem.id)}
                             disabled={deleteMutation.isPending}
                           >
@@ -219,7 +240,12 @@ export default function MyClassesPage() {
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Deleting...
                               </>
-                            ) : "Delete"}
+                            ) : classItem.isRecurring 
+                                ? "Delete Entire Series" 
+                                : classItem.parentClassId
+                                  ? "Delete Session"
+                                  : "Delete Class"
+                            }
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
