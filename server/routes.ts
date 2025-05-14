@@ -726,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const coachPayout = amountInCents - platformFee;
           
           // Create payment intent
-          const paymentIntent = await stripe.paymentIntents.create({
+          let paymentIntentParams: any = {
             amount: amountInCents,
             currency: "usd",
             description: `Booking for ${classDetails.title}`,
@@ -736,13 +736,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               coachId: coach.id.toString(),
               platformFee,
               coachPayout
-            },
-            application_fee_amount: platformFee,
-            // If coach has a connected account, transfer funds
-            transfer_data: coach.stripeConnectId ? {
+            }
+          };
+          
+          // If coach has a connected account, add transfer_data and application_fee
+          if (coach.stripeConnectId) {
+            paymentIntentParams.application_fee_amount = platformFee;
+            paymentIntentParams.transfer_data = {
               destination: coach.stripeConnectId,
-            } : undefined,
-          });
+            };
+          }
+          
+          const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
           
           res.status(200).json({
             clientSecret: paymentIntent.client_secret,
