@@ -14,7 +14,10 @@ export const users = pgTable("users", {
   profileImage: text("profile_image"),
   isApproved: boolean("is_approved").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-  stripeCustomerId: text("stripe_customer_id"), 
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeConnectId: text("stripe_connect_id"), // For coaches to receive payments
+  stripeConnectOnboarded: boolean("stripe_connect_onboarded").default(false), // Track if they've completed onboarding
+  bankAccountVerified: boolean("bank_account_verified").default(false), // Track if bank account is verified
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -119,9 +122,19 @@ export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   classId: integer("class_id").notNull(),
-  status: text("status").notNull().default("pending"), // pending, confirmed, cancelled
+  status: text("status").notNull().default("pending"), // pending, confirmed, cancelled, refunded
   stripePaymentId: text("stripe_payment_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeTransferId: text("stripe_transfer_id"), // For tracking coach payouts
+  paymentMethod: text("payment_method"), // stripe, paypal
+  amount: integer("amount"), // Amount in cents
+  currency: text("currency").default("usd"),
+  platformFee: integer("platform_fee"), // 15% fee in cents
+  coachPayout: integer("coach_payout"), // 85% payout in cents
+  payoutStatus: text("payout_status").default("pending"), // pending, paid, failed
   createdAt: timestamp("created_at").defaultNow(),
+  paymentDate: timestamp("payment_date"),
+  payoutDate: timestamp("payout_date"),
 });
 
 export const insertBookingSchema = createInsertSchema(bookings).pick({
