@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 type PlacesAutocompleteProps = {
   onAddressSelect: (address: string, lat: number, lng: number) => void;
@@ -7,113 +8,94 @@ type PlacesAutocompleteProps = {
   defaultValue?: string;
 };
 
-// Create a custom implementation that doesn't rely on the Places Autocomplete directly
 const PlacesAutocomplete = ({ 
   onAddressSelect, 
   placeholder = "Enter an address", 
   defaultValue = ""
 }: PlacesAutocompleteProps) => {
-  const [inputValue, setInputValue] = useState(defaultValue);
-  const [predictions, setPredictions] = useState<{ description: string, place_id: string }[]>([]);
-  const [showPredictions, setShowPredictions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(defaultValue);
+  const { toast } = useToast();
   
-  // Function to fetch address predictions
-  const getAddressPredictions = async (input: string) => {
-    if (!input || input.length < 3) {
-      setPredictions([]);
+  // Load Google Maps script if needed
+  useEffect(() => {
+    const loadGoogleMapsScript = () => {
+      if (window.google && window.google.maps && window.google.maps.places) {
+        return; // Already loaded
+      }
+      
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = () => {
+        initializeAutocomplete();
+      };
+      
+      document.head.appendChild(script);
+    };
+    
+    loadGoogleMapsScript();
+    
+    return () => {
+      // Clean up event listeners if needed
+    };
+  }, []);
+  
+  // Initialize autocomplete once Google Maps is loaded
+  const initializeAutocomplete = () => {
+    if (!inputRef.current || !window.google || !window.google.maps || !window.google.maps.places) {
       return;
     }
     
     try {
-      // Use our API proxy to get predictions
-      const response = await fetch(
-        `/api/maps/places/autocomplete?input=${encodeURIComponent(input)}`
-      );
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['address'],
+        fields: ['formatted_address', 'geometry']
+      });
       
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      
-      const data = await response.json();
-      if (data.predictions) {
-        setPredictions(data.predictions);
-      }
-    } catch (error) {
-      console.error('Error fetching address predictions:', error);
-      setPredictions([]);
-    }
-  };
-  
-  // Function to get place details when a prediction is selected
-  const getPlaceDetails = async (placeId: string) => {
-    try {
-      const response = await fetch(
-        `/api/maps/places/details?place_id=${placeId}`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      
-      const data = await response.json();
-      if (data.result) {
-        const { formatted_address, geometry } = data.result;
-        if (formatted_address && geometry && geometry.location) {
-          onAddressSelect(
-            formatted_address,
-            geometry.location.lat,
-            geometry.location.lng
-          );
-          setInputValue(formatted_address);
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        
+        if (!place.geometry || !place.geometry.location) {
+          toast({
+            title: "Invalid Location",
+            description: "Please select a location from the dropdown",
+            variant: "destructive"
+          });
+          return;
         }
-      }
+        
+        // Get coordinates
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const address = place.formatted_address || '';
+        
+        // Pass data back to parent component
+        onAddressSelect(address, lat, lng);
+        setValue(address);
+      });
     } catch (error) {
-      console.error('Error fetching place details:', error);
+      console.error('Error initializing Google Places Autocomplete:', error);
     }
   };
   
-  // Handle input change with debounce
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (inputValue && inputValue !== defaultValue) {
-        getAddressPredictions(inputValue);
-      }
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [inputValue, defaultValue]);
+    // Wait for Google Maps to load then initialize
+    if (window.google && window.google.maps && window.google.maps.places) {
+      initializeAutocomplete();
+    }
+  }, [inputRef.current]);
   
   return (
-    <div className="relative">
-      <Input
-        type="text"
-        value={inputValue}
-        onChange={(e) => {
-          setInputValue(e.target.value);
-          setShowPredictions(true);
-        }}
-        onFocus={() => setShowPredictions(true)}
-        placeholder={placeholder}
-      />
-      
-      {/* Predictions dropdown */}
-      {showPredictions && predictions.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full bg-background rounded-md border shadow-lg">
-          {predictions.map((prediction) => (
-            <div
-              key={prediction.place_id}
-              className="px-4 py-2 hover:bg-muted cursor-pointer"
-              onClick={() => {
-                getPlaceDetails(prediction.place_id);
-                setShowPredictions(false);
-              }}
-            >
-              {prediction.description}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <Input
+      ref={inputRef}
+      type="text"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      placeholder={placeholder}
+    />
   );
 };
 
