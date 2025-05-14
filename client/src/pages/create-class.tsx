@@ -248,7 +248,11 @@ export default function CreateClassPage() {
 
   // Add a new schedule
   const addNewSchedule = () => {
-    append({ dayOfWeek: "", startTime: "" });
+    append({ 
+      dayOfWeek: "", 
+      startTime: "",
+      endTime: "" // This will be calculated during form submission
+    });
   };
 
   // Create class mutation
@@ -302,7 +306,7 @@ export default function CreateClassPage() {
     
     if (!data.isRecurring) {
       // SINGLE CLASS
-      // Get the date part from startDate
+      // Format the startTime from the startDate field
       const startDate = new Date(data.startDate);
       
       // Format the startTime field as an ISO string
@@ -312,17 +316,25 @@ export default function CreateClassPage() {
       const endDate = new Date(startDate.getTime() + data.duration * 60000);
       formattedData.endTime = endDate.toISOString();
       
-      // Remove recurring class fields
+      console.log("Single class - Start time:", formattedData.startTime);
+      console.log("Single class - End time:", formattedData.endTime);
+      
+      // Remove recurring class fields to avoid confusion
       delete formattedData.schedules;
+      delete formattedData.seriesStartDate;
+      delete formattedData.seriesEndDate;
       
     } else {
       // RECURRING CLASS
-      // Rename fields for the server
+      // The server expects seriesStartDate and seriesEndDate for recurring classes
       formattedData.seriesStartDate = data.startDate;
       formattedData.seriesEndDate = data.endDate;
       
+      console.log("Recurring class - Series start date:", formattedData.seriesStartDate);
+      console.log("Recurring class - Series end date:", formattedData.seriesEndDate);
+      
       // Process schedules to include end times based on duration
-      if (formattedData.schedules) {
+      if (formattedData.schedules && formattedData.schedules.length > 0) {
         formattedData.schedules = formattedData.schedules.map(schedule => {
           // Parse the time string (HH:MM)
           const [hours, minutes] = schedule.startTime.split(':').map(Number);
@@ -334,6 +346,8 @@ export default function CreateClassPage() {
           
           // Format end time as HH:MM
           const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+          
+          console.log(`Schedule - Day: ${schedule.dayOfWeek}, Start: ${schedule.startTime}, End: ${endTime}`);
           
           return {
             ...schedule,
