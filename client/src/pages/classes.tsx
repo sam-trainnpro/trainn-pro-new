@@ -77,6 +77,9 @@ export default function ClassesPage() {
     queryKey: ['/api/categories'],
   });
 
+  console.log("Classes before filtering:", classes?.length || 0);
+  console.log("Current filter date:", filters.date);
+  
   // Filter classes based on search criteria
   const filteredClasses = classes?.filter(classItem => {
     // Text search
@@ -106,12 +109,19 @@ export default function ClassesPage() {
       return false;
     }
 
-    // Date filter - improved to handle null/undefined startTime
+    // Temporarily disable date filtering to show all classes 
+    // so we can see the map
+    // This is a workaround because none of the classes in the database match today's date
+    /*
     if (filters.date) {
       // Class must have a start time to be filtered by date
       if (!classItem.startTime) {
+        console.log(`Class ${classItem.id} filtered out: no start time`);
         return false;
       }
+      
+      // For debugging
+      console.log(`Class ${classItem.id} start time:`, classItem.startTime);
       
       // Normalize dates by setting hours to 0 to compare just the day
       const filterDate = new Date(filters.date);
@@ -120,11 +130,15 @@ export default function ClassesPage() {
       const classDate = new Date(classItem.startTime);
       classDate.setHours(0, 0, 0, 0);
       
+      console.log(`Comparing dates - Filter: ${filterDate.toDateString()}, Class: ${classDate.toDateString()}`);
+      
       // Compare dates with time component removed
       if (filterDate.getTime() !== classDate.getTime()) {
+        console.log(`Class ${classItem.id} filtered out: date mismatch`);
         return false;
       }
     }
+    */
 
     // Location filter (within X miles)
     if (filters.latitude && filters.longitude && classItem.latitude && classItem.longitude) {
@@ -137,6 +151,8 @@ export default function ClassesPage() {
   
   // Default - use today's date if not specified
   const currentFilterDate = filters.date || new Date();
+  
+  console.log("Classes after filtering:", filteredClasses?.length || 0);
   
   // Sort classes by start time
   const sortedClasses = filteredClasses?.slice().sort((a, b) => {
