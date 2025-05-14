@@ -611,6 +611,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Maps proxy endpoints to avoid CORS issues and permission prompts
+  app.get("/api/maps/places/autocomplete", async (req, res) => {
+    try {
+      const input = req.query.input as string;
+      if (!input) {
+        return res.status(400).json({ error: "Input is required" });
+      }
+      
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=address&key=${apiKey}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      res.json(data);
+    } catch (error) {
+      console.error("Error proxying places autocomplete:", error);
+      res.status(500).json({ error: "Failed to get places suggestions" });
+    }
+  });
+  
+  app.get("/api/maps/places/details", async (req, res) => {
+    try {
+      const placeId = req.query.place_id as string;
+      if (!placeId) {
+        return res.status(400).json({ error: "Place ID is required" });
+      }
+      
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_address,geometry&key=${apiKey}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      res.json(data);
+    } catch (error) {
+      console.error("Error proxying place details:", error);
+      res.status(500).json({ error: "Failed to get place details" });
+    }
+  });
+  
+  app.get("/api/maps/geocode", async (req, res) => {
+    try {
+      const latlng = req.query.latlng as string;
+      if (!latlng) {
+        return res.status(400).json({ error: "Latitude and longitude are required" });
+      }
+      
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latlng}&key=${apiKey}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      res.json(data);
+    } catch (error) {
+      console.error("Error proxying geocoding:", error);
+      res.status(500).json({ error: "Failed to get geocoding results" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
