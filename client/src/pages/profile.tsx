@@ -110,6 +110,19 @@ export default function ProfilePage() {
       confirmPassword: "",
     },
   });
+  
+  // Payment settings form (for coaches)
+  const paymentSettingsForm = useForm<PaymentSettingsValues>({
+    resolver: zodResolver(paymentSettingsSchema),
+    defaultValues: {
+      accountType: "individual",
+      accountHolderName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : "",
+      accountNumber: "",
+      routingNumber: "",
+      bankName: "",
+      acceptTerms: false,
+    },
+  });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
@@ -162,6 +175,46 @@ export default function ProfilePage() {
       setIsChangingPassword(false);
     },
   });
+  
+  // Update payment settings mutation
+  const updatePaymentSettingsMutation = useMutation({
+    mutationFn: async (data: {
+      accountType: string;
+      accountHolderName: string;
+      accountNumber: string;
+      routingNumber: string;
+      bankName: string;
+    }) => {
+      // This will be connected to Stripe Connect in a secure way
+      const response = await apiRequest("POST", `/api/coaches/${user?.id}/payment-settings`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment settings updated",
+        description: "Your bank account information has been securely saved.",
+      });
+      
+      // Mark user's bank account as verified
+      queryClient.setQueryData(["/api/user"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          bankAccountVerified: true
+        };
+      });
+      
+      setIsUpdatingPaymentSettings(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Payment setup failed",
+        description: error.message || "Could not update your payment information. Please try again.",
+        variant: "destructive",
+      });
+      setIsUpdatingPaymentSettings(false);
+    },
+  });
 
   // Get user's bookings (for count display)
   const { data: bookings } = useQuery({
@@ -187,6 +240,33 @@ export default function ProfilePage() {
     changePasswordMutation.mutate({
       currentPassword: data.currentPassword,
       newPassword: data.newPassword,
+    });
+  };
+  
+  // Handle payment settings form submission
+  const onPaymentSettingsSubmit = (data: PaymentSettingsValues) => {
+    if (!user) return;
+    
+    setIsUpdatingPaymentSettings(true);
+    
+    // Only proceed if the user has accepted the terms
+    if (!data.acceptTerms) {
+      toast({
+        title: "Terms Required",
+        description: "You must accept the terms to continue.",
+        variant: "destructive",
+      });
+      setIsUpdatingPaymentSettings(false);
+      return;
+    }
+    
+    // Submit payment information to update the coach's bank details
+    updatePaymentSettingsMutation.mutate({
+      accountType: data.accountType,
+      accountHolderName: data.accountHolderName,
+      accountNumber: data.accountNumber,
+      routingNumber: data.routingNumber,
+      bankName: data.bankName
     });
   };
 
@@ -279,6 +359,9 @@ export default function ProfilePage() {
                 <TabsList className="mb-6">
                   <TabsTrigger value="profile">Profile Information</TabsTrigger>
                   <TabsTrigger value="security">Security</TabsTrigger>
+                  {user.role === 'coach' && (
+                    <TabsTrigger value="payment">Payment Settings</TabsTrigger>
+                  )}
                 </TabsList>
                 
                 <TabsContent value="profile">
