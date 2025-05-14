@@ -23,6 +23,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -563,6 +571,163 @@ export default function ProfilePage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
+                
+                {/* Payment Settings Tab - Only visible for coaches */}
+                {user.role === 'coach' && (
+                  <TabsContent value="payment">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Payment Settings</CardTitle>
+                        <CardDescription>
+                          Set up your bank account to receive payments for your classes. Elevate takes a 15% platform fee, and you receive 85% of each booking.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...paymentSettingsForm}>
+                          <form onSubmit={paymentSettingsForm.handleSubmit(onPaymentSettingsSubmit)} className="space-y-6">
+                            <FormField
+                              control={paymentSettingsForm.control}
+                              name="accountType"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Account Type</FormLabel>
+                                  <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select account type" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="individual">Individual</SelectItem>
+                                      <SelectItem value="company">Company</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormDescription>
+                                    Select whether this is a personal or business account
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={paymentSettingsForm.control}
+                              name="accountHolderName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Account Holder Name</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="John Doe" />
+                                  </FormControl>
+                                  <FormDescription>
+                                    The name on your bank account
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <FormField
+                                control={paymentSettingsForm.control}
+                                name="accountNumber"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Account Number</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} type="password" placeholder="XXXXXXXX" />
+                                    </FormControl>
+                                    <FormDescription>
+                                      Your bank account number
+                                    </FormDescription>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={paymentSettingsForm.control}
+                                name="routingNumber"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Routing Number</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="XXXXXXXXX" />
+                                    </FormControl>
+                                    <FormDescription>
+                                      Your bank's 9-digit routing number
+                                    </FormDescription>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            
+                            <FormField
+                              control={paymentSettingsForm.control}
+                              name="bankName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Bank Name</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="Bank of America" />
+                                  </FormControl>
+                                  <FormDescription>
+                                    The name of your banking institution
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={paymentSettingsForm.control}
+                              name="acceptTerms"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel>
+                                      Accept Terms and Conditions
+                                    </FormLabel>
+                                    <FormDescription>
+                                      I agree to the <a href="#" className="text-primary underline">terms of service</a> and authorize Elevate to process payments on my behalf and transfer funds to my bank account.
+                                    </FormDescription>
+                                  </div>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <div className="flex justify-end">
+                              <Button 
+                                type="submit" 
+                                className="bg-primary text-white"
+                                disabled={isUpdatingPaymentSettings}
+                              >
+                                {isUpdatingPaymentSettings ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  "Save Payment Information"
+                                )}
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                )}
               </Tabs>
             </div>
           </div>
