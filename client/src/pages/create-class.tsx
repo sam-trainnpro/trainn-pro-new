@@ -73,13 +73,18 @@ const createClassSchema = z.object({
   startDate: z.date({
     required_error: "Start date and time is required",
   }),
+  startTime: z.string().optional(), // Will be calculated from startDate
+  endTime: z.string().optional(),   // Will be calculated from startDate + duration
   isRecurring: z.boolean().default(false),
   endDate: z.date().optional(),
+  seriesStartDate: z.date().optional(), // For recurring classes - use startDate
+  seriesEndDate: z.date().optional(),   // For recurring classes - use endDate
   image: z.string().url("Please enter a valid image URL").optional(),
   schedules: z.array(
     z.object({
       dayOfWeek: z.string().min(1, "Day of week is required"),
       startTime: z.string().min(1, "Start time is required"),
+      endTime: z.string().optional(), // Will be calculated based on startTime + duration
     })
   ).optional(),
 });
@@ -88,6 +93,7 @@ const createClassSchema = z.object({
 const scheduleSchema = z.object({
   dayOfWeek: z.string().min(1, "Day of week is required"),
   startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().optional(),
 });
 
 // Days of the week options
@@ -223,8 +229,12 @@ export default function CreateClassPage() {
       duration: 60,
       capacity: 10,
       startDate: new Date(),
+      startTime: "",
+      endTime: "",
       isRecurring: false,
       endDate: addWeeks(new Date(), 4),
+      seriesStartDate: new Date(),
+      seriesEndDate: addWeeks(new Date(), 4),
       image: "",
       schedules: [],
     },
@@ -277,13 +287,85 @@ export default function CreateClassPage() {
       return;
     }
     
+    // Check for recurring classes without schedules
+    if (data.isRecurring && (!data.schedules || data.schedules.length === 0)) {
+      toast({
+        title: "Schedule required",
+        description: "Please add at least one schedule for recurring classes",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create a copy of the data to modify
+    const formattedData = { ...data };
+    
+    if (!data.isRecurring) {
+      // SINGLE CLASS
+      // Get the date part from startDate
+      const startDate = new Date(data.startDate);
+      
+      // Format the startTime field as an ISO string
+      formattedData.startTime = startDate.toISOString();
+      
+      // Calculate end time by adding duration in minutes
+      const endDate = new Date(startDate.getTime() + data.duration * 60000);
+      formattedData.endTime = endDate.toISOString();
+      
+      // Remove recurring class fields
+      delete formattedData.schedules;
+      
+    } else {
+      // RECURRING CLASS
+      // Rename fields for the server
+      formattedData.seriesStartDate = data.startDate;
+      formattedData.seriesEndDate = data.endDate;
+      
+      // Process schedules to include end times based on duration
+      if (formattedData.schedules) {
+        formattedData.schedules = formattedData.schedules.map(schedule => {
+          // Parse the time string (HH:MM)
+          const [hours, minutes] = schedule.startTime.split(':').map(Number);
+          
+          // Calculate end time based on duration
+          const startDate = new Date();
+          startDate.setHours(hours, minutes, 0, 0);
+          const endDate = new Date(startDate.getTime() + data.duration * 60000);
+          
+          // Format end time as HH:MM
+          const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+          
+          return {
+            ...schedule,
+            endTime
+          };
+        });
+      }
+    }
+    
     setSubmitting(true);
     
     try {
-      // Submit the data - leave categoryId as string as expected by the API
-      await createClass(data);
+      console.log("Submitting class with data:", formattedData);
+      
+      // Submit the processed data
+      await createClass(formattedData);
+      
+      // Show success message
+      toast({
+        title: "Class created",
+        description: "Your class has been created successfully",
+      });
+      
+      // Redirect to my-classes page
+      navigate('/my-classes');
     } catch (error) {
       console.error("Error creating class:", error);
+      toast({
+        title: "Error creating class",
+        description: "There was an error creating your class. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
