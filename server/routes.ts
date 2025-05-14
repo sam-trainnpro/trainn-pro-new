@@ -672,7 +672,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Coach payment processing routes
+  // Payment processing routes
+  
+  // Create a payment intent for booking a class
+  app.post("/api/payment/create-intent", requireAuth, async (req, res) => {
+    try {
+      const { classId, amount } = req.body;
+      
+      if (!classId || !amount) {
+        return res.status(400).json({ message: "Missing required parameters: classId, amount" });
+      }
+      
+      // Create a pending booking
+      const bookingData = {
+        userId: req.user.id,
+        classId: classId,
+        status: "pending",
+        paymentMethod: "stripe"
+      };
+      
+      // Check if booking already exists
+      const userBookings = await storage.getUserBookings(req.user.id);
+      const existingBooking = userBookings.find(b => 
+        b.classId === classId && 
+        (b.status === "pending" || b.status === "confirmed")
+      );
+      
+      // If booking doesn't exist, create it
+      if (!existingBooking) {
+        await storage.createBooking(bookingData);
+      }
+      
+      // Get class details for the payment description
+      const classDetails = await storage.getClass(classId);
+      if (!classDetails) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      // Get coach details for payment recipient
+      const coach = await storage.getUser(classDetails.coachId);
+      if (!coach) {
+        return res.status(404).json({ message: "Coach not found" });
+      }
+      
+      // Create payment intent through Stripe
+      if (stripe) {
+        try {
+          // Convert amount to cents
+          const amountInCents = Math.round(parseFloat(amount) * 100);
+          
+          // Calculate platform fee (15%) and coach payout (85%)
+          const platformFee = Math.round(amountInCents * 0.15);
+          const coachPayout = amountInCents - platformFee;
+          
+          // Create payment intent
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: amountInCents,
+            currency: "usd",
+            description: `Booking for ${classDetails.title}`,
+            metadata: {
+              classId: classId.toString(),
+              userId: req.user.id.toString(),
+              coachId: coach.id.toString(),
+              platformFee,
+              coachPayout
+            },
+            application_fee_amount: platformFee,
+            // If coach has a connected account, transfer funds
+            transfer_data: coach.stripeConnectId ? {
+              destination: coach.stripeConnectId,
+            } : undefined,
+          });
+          
+          res.status(200).json({
+            clientSecret: paymentIntent.client_secret,
+            paymentIntentId: paymentIntent.id,
+            amount: amountInCents,
+            platformFee,
+            coachPayout
+          });
+        } catch (stripeError: any) {
+          console.error("Stripe payment error:", stripeError);
+          res.status(400).json({ 
+            message: "Error creating payment intent", 
+            error: stripeError.message 
+          });
+        }
+      } else {
+        // For testing when Stripe is not available
+        res.status(200).json({
+          clientSecret: "dummy_client_secret_for_testing",
+          paymentIntentId: `dummy_pi_${Date.now()}`,
+          amount: parseFloat(amount) * 100,
+          platformFee: Math.round(parseFloat(amount) * 100 * 0.15),
+          coachPayout: Math.round(parseFloat(amount) * 100 * 0.85)
+        });
+      }
+    } catch (error: any) {
+      console.error("Payment creation error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Handle payment webhook from Stripe
+  app.post("/api/payment/webhook", async (req, res) => {
+    // If Stripe is not available, return success for testing
+    if (!stripe) {
+      return res.status(200).json({ received: true });
+    }
+    
+    let event;
+    
+    try {
+      // Get webhook event data
+      const payload = req.body;
+      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      // Verify webhook signature if secret is available
+      if (endpointSecret) {
+        const signature = req.headers['stripe-signature'] as string;
+        
+        try {
+          event = stripe.webhooks.constructEvent(
+            payload,
+            signature,
+            endpointSecret
+          );
+        } catch (err: any) {
+          console.error(`Webhook signature verification failed: ${err.message}`);
+          return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
+      } else {
+        // Fallback if no webhook secret is configured
+        event = req.body;
+      }
+      
+      // Handle different webhook events
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object;
+          console.log(`PaymentIntent ${paymentIntent.id} succeeded`);
+          
+          // Update booking status to confirmed
+          if (paymentIntent.metadata && paymentIntent.metadata.classId && paymentIntent.metadata.userId) {
+            const bookings = await storage.getUserBookings(parseInt(paymentIntent.metadata.userId));
+            const matchingBooking = bookings.find(b => 
+              b.classId === parseInt(paymentIntent.metadata.classId) && 
+              b.status === "pending"
+            );
+            
+            if (matchingBooking) {
+              await storage.updateBooking(matchingBooking.id, {
+                status: "confirmed",
+                stripePaymentIntentId: paymentIntent.id,
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency,
+                platformFee: parseInt(paymentIntent.metadata.platformFee),
+                coachPayout: parseInt(paymentIntent.metadata.coachPayout),
+                paymentDate: new Date(),
+                paymentMethod: "stripe"
+              });
+            }
+          }
+          break;
+          
+        case 'payment_intent.payment_failed':
+          console.log(`Payment failed: ${event.data.object.id}`);
+          break;
+          
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
+      }
+      
+      res.status(200).json({ received: true });
+    } catch (error: any) {
+      console.error(`Webhook error: ${error.message}`);
+      res.status(500).send(`Webhook Error: ${error.message}`);
+    }
+  });
   
   // Save coach's payment settings and connect with Stripe
   app.post("/api/coaches/:id/payment-settings", requireAuth, async (req, res) => {

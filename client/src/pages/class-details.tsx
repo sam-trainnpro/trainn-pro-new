@@ -402,10 +402,9 @@ export default function ClassDetailsPage() {
                         ) : (
                           <Button 
                             className="w-full bg-primary hover:bg-primary/90 text-white"
-                            onClick={handleBookClass}
-                            disabled={bookingStatus === "loading"}
+                            onClick={() => navigate(`/checkout/${classItem.id}`)}
                           >
-                            {bookingStatus === "loading" ? "Processing..." : "Book Now"}
+                            Book Now - ${classItem.price.toFixed(2)}
                           </Button>
                         )}
                       </div>

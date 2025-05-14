@@ -200,8 +200,15 @@ export default function CheckoutPage() {
         setIsLoading(true);
         setError(null);
         
+        if (!classItem) {
+          throw new Error("Class information not available");
+        }
+        
         // Create a payment intent
-        const res = await apiRequest("POST", "/api/create-payment-intent", { classId });
+        const res = await apiRequest("POST", "/api/payment/create-intent", { 
+          classId, 
+          amount: classItem.price * 1.05 // Include 5% service fee
+        });
         const data = await res.json();
         
         setClientSecret(data.clientSecret);
@@ -220,16 +227,18 @@ export default function CheckoutPage() {
     if (classItem && !userBooking) {
       createPaymentIntent();
     }
-  }, [classItem, userBooking]);
+  }, [classItem, userBooking, classId, toast]);
   
   // Format dates
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateString: string | Date | null) => {
+    if (!dateString) return "";
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return format(date, "EEEE, MMMM d, yyyy");
   };
   
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatTime = (dateString: string | Date | null) => {
+    if (!dateString) return "";
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return format(date, "h:mm a");
   };
   
