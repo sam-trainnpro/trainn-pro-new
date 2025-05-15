@@ -545,59 +545,59 @@ export default function CreateClassPage() {
                       <FormItem>
                         <FormLabel>Full Address <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <GoogleMapsScript>
-                            <PlacesAutocomplete 
-                              placeholder="e.g. 123 Main St, New York, NY 10001" 
-                              defaultValue={field.value}
-                              onAddressSelect={(address, lat, lng) => {
-                                // Update the address field
-                                field.onChange(address);
-                                
-                                // Update latitude and longitude
-                                form.setValue('address', address);
-                                form.setValue('latitude', lat);
-                                form.setValue('longitude', lng);
-                                
-                                // Trigger validation
-                                form.trigger('address');
-                                
-                                // Also update location name if it's empty
-                                const currentLocation = form.getValues('location');
-                                if (!currentLocation) {
-                                  // Use the first part of the address as the location name
-                                  const addressParts = address.split(',') || [];
-                                  if (addressParts.length > 0) {
-                                    form.setValue('location', addressParts[0].trim());
-                                  }
-                                }
-                              }}
-                            />
-                          </GoogleMapsScript>
-                          
-                          {/* Manual input option as fallback */}
-                          {!field.value && (
-                            <div className="text-sm text-muted-foreground mt-2">
-                              <button 
-                                type="button" 
-                                className="text-primary hover:underline"
-                                onClick={() => {
-                                  // Create dialog to manually enter address
-                                  const address = prompt("Please enter the full address manually:");
-                                  if (address) {
-                                    field.onChange(address);
-                                    form.setValue('address', address);
-                                    // Set default coordinates for manual entry
-                                    form.setValue('latitude', 40.7128);  // NYC default
-                                    form.setValue('longitude', -74.0060);
-                                    form.trigger('address');
+                          <div>
+                            <GoogleMapsScript>
+                              <PlacesAutocomplete 
+                                placeholder="e.g. 123 Main St, New York, NY 10001" 
+                                defaultValue={field.value}
+                                onAddressSelect={(address, lat, lng) => {
+                                  // Update the address field
+                                  field.onChange(address);
+                                  
+                                  // Update latitude and longitude
+                                  form.setValue('address', address);
+                                  form.setValue('latitude', lat);
+                                  form.setValue('longitude', lng);
+                                  
+                                  // Trigger validation
+                                  form.trigger('address');
+                                  
+                                  // Also update location name if it's empty
+                                  const currentLocation = form.getValues('location');
+                                  if (!currentLocation) {
+                                    // Use the first part of the address as the location name
+                                    const addressParts = address.split(',') || [];
+                                    if (addressParts.length > 0) {
+                                      form.setValue('location', addressParts[0].trim());
+                                    }
                                   }
                                 }}
-                              >
-                                Having trouble? Enter address manually
-                              </button>
-                            </div>
-                          )}
+                              />
+                            </GoogleMapsScript>
+                          </div>
                         </FormControl>
+                        
+                        {/* Manual input option as fallback */}
+                        <div className="text-sm text-muted-foreground mt-2">
+                          <button 
+                            type="button" 
+                            className="text-primary hover:underline"
+                            onClick={() => {
+                              // Create dialog to manually enter address
+                              const address = prompt("Please enter the full address manually:");
+                              if (address) {
+                                field.onChange(address);
+                                form.setValue('address', address);
+                                // Set default coordinates for manual entry
+                                form.setValue('latitude', 40.7128);  // NYC default
+                                form.setValue('longitude', -74.0060);
+                                form.trigger('address');
+                              }
+                            }}
+                          >
+                            Having trouble? Enter address manually
+                          </button>
+                        </div>
                         <div className="flex justify-between items-center">
                           <FormDescription>
                             Start typing for suggestions from Google Maps
