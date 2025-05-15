@@ -485,6 +485,7 @@ export class DatabaseStorage implements IStorage {
       else {
         console.log(`Deleting standalone class ${id}`);
         await deleteBookingsForClass(id);
+        await deleteSchedulesForClass(id);
         await db.delete(classes).where(eq(classes.id, id));
       }
       
