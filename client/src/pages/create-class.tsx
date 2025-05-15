@@ -573,6 +573,30 @@ export default function CreateClassPage() {
                               }}
                             />
                           </GoogleMapsScript>
+                          
+                          {/* Manual input option as fallback */}
+                          {!field.value && (
+                            <div className="text-sm text-muted-foreground mt-2">
+                              <button 
+                                type="button" 
+                                className="text-primary hover:underline"
+                                onClick={() => {
+                                  // Create dialog to manually enter address
+                                  const address = prompt("Please enter the full address manually:");
+                                  if (address) {
+                                    field.onChange(address);
+                                    form.setValue('address', address);
+                                    // Set default coordinates for manual entry
+                                    form.setValue('latitude', 40.7128);  // NYC default
+                                    form.setValue('longitude', -74.0060);
+                                    form.trigger('address');
+                                  }
+                                }}
+                              >
+                                Having trouble? Enter address manually
+                              </button>
+                            </div>
+                          )}
                         </FormControl>
                         <div className="flex justify-between items-center">
                           <FormDescription>
