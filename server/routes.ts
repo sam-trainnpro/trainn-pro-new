@@ -483,6 +483,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
+  
+  // Get booking count for a class
+  app.get("/api/classes/:id/bookings/count", async (req, res) => {
+    try {
+      const classId = parseInt(req.params.id);
+      
+      // Validate class exists
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      const classBookings = await storage.getClassBookings(classId);
+      const confirmedBookings = classBookings.filter(booking => 
+        booking.status === "confirmed" || booking.status === "pending"
+      );
+      
+      res.json({
+        total: classBookings.length,
+        active: confirmedBookings.length,
+        capacity: classItem.capacity,
+        spotsLeft: classItem.capacity - confirmedBookings.length
+      });
+    } catch (error) {
+      console.error("Error getting booking count:", error);
+      res.status(500).json({ message: "Failed to fetch booking count" });
+    }
+  });
 
   // Cancel booking
   app.put("/api/bookings/:id/cancel", requireAuth, async (req, res) => {

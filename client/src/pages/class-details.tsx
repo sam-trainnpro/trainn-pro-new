@@ -97,6 +97,15 @@ export default function ClassDetailsPage() {
     enabled: !!user,
   });
   
+  // Get class booking count data for capacity display
+  const {
+    data: bookingCount,
+    isLoading: isLoadingBookingCount
+  } = useQuery({
+    queryKey: [`/api/classes/${classId}/bookings/count`],
+    enabled: !!classId,
+  });
+  
   const userBooking = bookings?.find(booking => 
     booking.classId === classId && (booking.status === 'pending' || booking.status === 'confirmed')
   );
@@ -388,7 +397,17 @@ export default function ClassDetailsPage() {
                     <CardContent>
                       <div className="mb-6">
                         <div className="text-center py-2 bg-[#F7F7F7] rounded-lg text-sm mb-4">
-                          <span className="font-medium">8/12</span> spots left
+                          {isLoadingBookingCount ? (
+                            <Skeleton className="h-4 w-20 mx-auto" />
+                          ) : bookingCount ? (
+                            <span>
+                              <span className="font-medium">
+                                {bookingCount.spotsLeft}/{bookingCount.capacity}
+                              </span> spots left
+                            </span>
+                          ) : (
+                            <span className="font-medium">{classItem.capacity} total spots</span>
+                          )}
                         </div>
                         
                         {userBooking ? (
