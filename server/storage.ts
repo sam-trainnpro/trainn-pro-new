@@ -408,23 +408,31 @@ export class DatabaseStorage implements IStorage {
         await db.delete(bookings).where(eq(bookings.classId, classId));
       };
       
+      // Helper function to delete class schedules for a class
+      const deleteSchedulesForClass = async (classId: number) => {
+        console.log(`Deleting schedules for class ${classId}`);
+        await db.delete(classSchedules).where(eq(classSchedules.classId, classId));
+      };
+      
       // If this is a parent class (recurring series)
       if (classItem.isRecurring) {
         // Get all child classes in the series
         const childClasses = await this.getClassesByParentId(id);
         console.log(`Found ${childClasses.length} child classes for series ${id}`);
         
-        // Delete bookings for all child classes
+        // Delete bookings and schedules for all child classes
         for (const childClass of childClasses) {
           await deleteBookingsForClass(childClass.id);
+          await deleteSchedulesForClass(childClass.id);
         }
         
         // Delete all child classes in the series
         console.log(`Deleting child classes for series ${id}`);
         await db.delete(classes).where(eq(classes.parentClassId, id));
         
-        // Delete bookings for the parent class
+        // Delete bookings and schedules for the parent class
         await deleteBookingsForClass(id);
+        await deleteSchedulesForClass(id);
         
         // Then delete the parent class itself
         console.log(`Deleting parent class ${id}`);
@@ -443,16 +451,18 @@ export class DatabaseStorage implements IStorage {
             // Get all child classes
             const childClasses = await this.getClassesByParentId(parentClass.id);
             
-            // Delete bookings for all child classes
+            // Delete bookings and schedules for all child classes
             for (const childClass of childClasses) {
               await deleteBookingsForClass(childClass.id);
+              await deleteSchedulesForClass(childClass.id);
             }
             
             // Delete all child classes
             await db.delete(classes).where(eq(classes.parentClassId, parentClass.id));
             
-            // Delete bookings for parent
+            // Delete bookings and schedules for parent
             await deleteBookingsForClass(parentClass.id);
+            await deleteSchedulesForClass(parentClass.id);
             
             // Delete the parent class
             await db.delete(classes).where(eq(classes.id, parentClass.id));
@@ -460,12 +470,14 @@ export class DatabaseStorage implements IStorage {
             // Just delete this single instance
             console.log(`Deleting single instance ${id} from series ${parentClass.id}`);
             await deleteBookingsForClass(id);
+            await deleteSchedulesForClass(id);
             await db.delete(classes).where(eq(classes.id, id));
           }
         } else {
           // Just delete this instance (parent might be gone already)
           console.log(`Deleting instance ${id}`);
           await deleteBookingsForClass(id);
+          await deleteSchedulesForClass(id);
           await db.delete(classes).where(eq(classes.id, id));
         }
       } 
