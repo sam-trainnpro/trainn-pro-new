@@ -3,8 +3,8 @@ import { Helmet } from 'react-helmet';
 import { useLocation } from 'wouter';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from '@tanstack/react-query';
-import { useForm, useFieldArray, Controller } from "react-hook-form";
-import { format, addWeeks, addMinutes } from "date-fns";
+import { useForm } from "react-hook-form";
+import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -41,20 +41,11 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import {
   Separator
 } from "@/components/ui/separator";
 import {
   CalendarIcon,
-  X,
-  Plus,
-  Loader2,
-  MapPin
+  Loader2
 } from "lucide-react";
 import * as z from "zod";
 
@@ -71,34 +62,13 @@ const createClassSchema = z.object({
   duration: z.coerce.number().min(15, "Duration must be at least 15 minutes"),
   capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
   startDate: z.date({
-    required_error: "Start date and time is required",
+    required_error: "Start date is required",
   }),
-  startTime: z.string().optional(), // Will be calculated from startDate
-  endTime: z.string().optional(),   // Will be calculated from startDate + duration
-  whatToBring: z.string().optional(), // What to bring for the class
-  image: z.string().url("Please enter a valid image URL").optional(),
-  // These fields remain for backward compatibility but will be hidden from the UI
-  isRecurring: z.boolean().default(false),
-  endDate: z.date().optional(),
-});
-
-// Schedule form schema
-const scheduleSchema = z.object({
-  dayOfWeek: z.string().min(1, "Day of week is required"),
   startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().optional(),
+  whatToBring: z.string().optional(),
+  image: z.string().url("Please enter a valid image URL").optional(),
+  isRecurring: z.boolean().default(false),
 });
-
-// Days of the week options
-const daysOfWeek = [
-  { value: "0", label: "Sunday" },
-  { value: "1", label: "Monday" },
-  { value: "2", label: "Tuesday" },
-  { value: "3", label: "Wednesday" },
-  { value: "4", label: "Thursday" },
-  { value: "5", label: "Friday" },
-  { value: "6", label: "Saturday" },
-];
 
 // Time slots for the day
 const generateTimeSlots = () => {
@@ -222,30 +192,12 @@ export default function CreateClassPage() {
       duration: 60,
       capacity: 10,
       startDate: new Date(),
-      startTime: "",
-      endTime: "",
+      startTime: "09:00",
       whatToBring: "",
       image: "",
-      // These fields are kept for backward compatibility but will be fixed values
       isRecurring: false,
-      endDate: addWeeks(new Date(), 4),
     },
   });
-
-  // Setup schedule field array
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "schedules",
-  });
-
-  // Add a new schedule
-  const addNewSchedule = () => {
-    append({ 
-      dayOfWeek: "", 
-      startTime: "",
-      endTime: "" // This will be calculated during form submission
-    });
-  };
 
   // Create class mutation
   const { mutateAsync: createClass } = useMutation({
@@ -288,6 +240,8 @@ export default function CreateClassPage() {
     
     // Format the startTime from the startDate field
     const startDate = new Date(data.startDate);
+    const [hours, minutes] = data.startTime.split(':').map(Number);
+    startDate.setHours(hours, minutes, 0, 0);
     
     // Format the startTime field as an ISO string
     formattedData.startTime = startDate.toISOString();
@@ -298,9 +252,6 @@ export default function CreateClassPage() {
     
     console.log("Class - Start time:", formattedData.startTime);
     console.log("Class - End time:", formattedData.endTime);
-    
-    // Ensure isRecurring is always false (removing recurring functionality)
-    formattedData.isRecurring = false;
     
     setSubmitting(true);
     
@@ -405,7 +356,7 @@ export default function CreateClassPage() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Provide details about your class, benefits, and what students should bring
+                            Provide details about your class, benefits, and experience level
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -448,7 +399,7 @@ export default function CreateClassPage() {
                       name="image"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Image URL</FormLabel>
+                          <FormLabel>Image URL (optional)</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="e.g. https://example.com/image.jpg" 
@@ -468,277 +419,168 @@ export default function CreateClassPage() {
                   <div className="space-y-6">
                     <FormField
                       control={form.control}
-                      name="location"
+                      name="price"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
+                          <FormLabel>Price <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Central Park" {...field} />
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                className="pl-7" 
+                                placeholder="e.g. 25.00" 
+                                {...field}
+                              />
+                            </div>
                           </FormControl>
                           <FormDescription>
-                            The name of the venue or location
+                            How much will each participant pay?
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Address <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <div>
-                            <GoogleMapsScript>
-                              <PlacesAutocomplete 
-                                placeholder="e.g. 123 Main St, New York, NY 10001" 
-                                defaultValue={field.value}
-                                onAddressSelect={(address, lat, lng) => {
-                                  // Update the address field
-                                  field.onChange(address);
-                                  
-                                  // Update latitude and longitude
-                                  form.setValue('address', address);
-                                  form.setValue('latitude', lat);
-                                  form.setValue('longitude', lng);
-                                  
-                                  // Trigger validation
-                                  form.trigger('address');
-                                  
-                                  // Also update location name if it's empty
-                                  const currentLocation = form.getValues('location');
-                                  if (!currentLocation) {
-                                    // Use the first part of the address as the location name
-                                    const addressParts = address.split(',') || [];
-                                    if (addressParts.length > 0) {
-                                      form.setValue('location', addressParts[0].trim());
-                                    }
-                                  }
-                                }}
-                              />
-                            </GoogleMapsScript>
-                          </div>
-                        </FormControl>
-                        
-                        {/* Manual input option as fallback */}
-                        <div className="text-sm text-muted-foreground mt-2">
-                          <button 
-                            type="button" 
-                            className="text-primary hover:underline"
-                            onClick={() => {
-                              // Create dialog to manually enter address
-                              const address = prompt("Please enter the full address manually:");
-                              if (address) {
-                                field.onChange(address);
-                                form.setValue('address', address);
-                                // Set default coordinates for manual entry
-                                form.setValue('latitude', 40.7128);  // NYC default
-                                form.setValue('longitude', -74.0060);
-                                form.trigger('address');
-                              }
-                            }}
-                          >
-                            Having trouble? Enter address manually
-                          </button>
-                        </div>
-                        <div className="flex justify-between items-center">
+                    
+                    <FormField
+                      control={form.control}
+                      name="capacity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              placeholder="e.g. 10" 
+                              {...field}
+                            />
+                          </FormControl>
                           <FormDescription>
-                            Start typing for suggestions from Google Maps
+                            Maximum number of participants allowed
                           </FormDescription>
-                          
-                          <GoogleMapsScript>
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm"
-                              onClick={async () => {
-                                if (navigator.geolocation) {
-                                  try {
-                                    navigator.geolocation.getCurrentPosition(async (position) => {
-                                      const { latitude, longitude } = position.coords;
-                                      
-                                      // Update form with coordinates
-                                      form.setValue('latitude', latitude);
-                                      form.setValue('longitude', longitude);
-                                      
-                                      // Use Google Maps Geocoder directly for reverse geocoding
-                                      try {
-                                        // Maps API should now be loaded via GoogleMapsScript
-                                        if (!window.google || !window.google.maps) {
-                                          // Fallback in case script isn't loaded yet
-                                          toast({
-                                            title: "Location captured",
-                                            description: "Your coordinates have been set. Please provide the address manually.",
-                                          });
-                                          return;
-                                        }
-                                        
-                                        const geocoder = new window.google.maps.Geocoder();
-                                        geocoder.geocode(
-                                          { location: { lat: latitude, lng: longitude } },
-                                          (results, status) => {
-                                            if (status === 'OK' && results && results.length > 0) {
-                                              const address = results[0].formatted_address;
-                                              form.setValue('address', address);
-                                              
-                                              // Set location name if empty
-                                              if (!form.getValues('location')) {
-                                                const addressParts = address.split(',');
-                                                if (addressParts.length > 0) {
-                                                  form.setValue('location', addressParts[0].trim());
-                                                }
-                                              }
-                                            } else {
-                                              toast({
-                                                title: "Geocoding failed",
-                                                description: "We couldn't determine your address. Please enter it manually.",
-                                                variant: "destructive"
-                                              });
-                                            }
-                                          }
-                                        );
-                                      } catch (error) {
-                                        console.error("Error during reverse geocoding:", error);
-                                        toast({
-                                          title: "Location error",
-                                          description: "Your coordinates were captured, but we couldn't get your address. Please enter it manually.",
-                                          variant: "destructive"
-                                        });
-                                      }
-                                    }, 
-                                    (error) => {
-                                      console.error("Error getting location:", error);
-                                      toast({
-                                        title: "Location error",
-                                        description: "Unable to get your current location. Please check your browser permissions.",
-                                        variant: "destructive"
-                                      });
-                                    });
-                                  } catch (error) {
-                                    console.error("Geolocation error:", error);
-                                  }
-                                } else {
-                                  toast({
-                                    title: "Location not supported",
-                                    description: "Geolocation is not supported by your browser",
-                                    variant: "destructive"
-                                  });
-                                }
-                              }}
-                              className="text-xs px-2 py-1"
-                            >
-                              <MapPin className="h-3 w-3 mr-1" />
-                              Use My Location
-                            </Button>
-                          </GoogleMapsScript>
-                        </div>
-                        <FormMessage />
-                        
-                        {/* Show map preview when coordinates are available */}
-                        {form.watch('latitude') && form.watch('longitude') && (
-                          <div className="mt-2">
-                            <GoogleMapsScript>
-                              <LocationPreview 
-                                latitude={form.watch('latitude')} 
-                                longitude={form.watch('longitude')}
-                                height="250px"
-                                interactive={true}
-                                onLocationUpdate={(lat, lng, address) => {
-                                  form.setValue('latitude', lat);
-                                  form.setValue('longitude', lng);
-                                  form.setValue('address', address);
-                                  
-                                  // If location name is empty, try to set it from the address
-                                  if (!form.getValues('location')) {
-                                    const addressParts = address.split(',');
-                                    if (addressParts.length > 0) {
-                                      form.setValue('location', addressParts[0].trim());
-                                    }
-                                  }
-                                }}
-                              />
-                            </GoogleMapsScript>
-                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="duration"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Duration (minutes) <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="15" 
+                              step="5" 
+                              placeholder="e.g. 60" 
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            How long will your class last?
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex flex-col space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Central Park" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              A short name for the location (e.g. park name, gym name)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price ($) <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="0" 
-                            step="0.01" 
-                            placeholder="e.g. 25.00" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Cost per session in USD
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="duration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Duration (min) <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="15" 
-                            step="5" 
-                            placeholder="e.g. 60" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Length of each session in minutes
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            placeholder="e.g. 10" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Maximum number of students
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <GoogleMapsScript>
+                                <PlacesAutocomplete 
+                                  value={field.value} 
+                                  onChange={(value) => {
+                                    field.onChange(value);
+                                  }}
+                                  onPlaceSelect={(place) => {
+                                    if (place && place.geometry && place.geometry.location) {
+                                      // Update form values with selected place details
+                                      form.setValue('latitude', place.geometry.location.lat());
+                                      form.setValue('longitude', place.geometry.location.lng());
+                                      form.setValue('address', place.formatted_address || '');
+                                      
+                                      // If location name is empty, use the place name
+                                      if (!form.getValues('location')) {
+                                        form.setValue('location', place.name || '');
+                                      }
+                                      
+                                      // Show success message
+                                      toast({
+                                        title: "Location selected",
+                                        description: "Coordinates have been set based on the selected address."
+                                      });
+                                    }
+                                  }}
+                                />
+                              </GoogleMapsScript>
+                            </FormControl>
+                            <div className="text-sm text-muted-foreground mt-2">
+                              Start typing to search for an address, or{" "}
+                              <Button 
+                                type="button" 
+                                variant="link" 
+                                className="h-auto p-0 text-primary" 
+                                onClick={handleGetLocation}
+                              >
+                                use your current location
+                              </Button>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-medium">Preview:</p>
+                        <p className="text-sm text-muted-foreground">
+                          {form.getValues('latitude') && form.getValues('longitude') 
+                            ? `${form.getValues('latitude').toFixed(6)}, ${form.getValues('longitude').toFixed(6)}`
+                            : 'No coordinates set'
+                          }
+                        </p>
+                      </div>
+                      
+                      <GoogleMapsScript>
+                        <LocationPreview 
+                          latitude={form.watch('latitude')} 
+                          longitude={form.watch('longitude')}
+                        />
+                      </GoogleMapsScript>
+                    </div>
+                  </div>
                 </div>
                 
                 <Separator />
                 
+                {/* Split Start Date & Time into separate fields */}
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
@@ -746,7 +588,7 @@ export default function CreateClassPage() {
                       name="startDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Start Date & Time</FormLabel>
+                          <FormLabel>Start Date <span className="text-destructive">*</span></FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
@@ -756,64 +598,77 @@ export default function CreateClassPage() {
                                 >
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   {field.value ? (
-                                    format(field.value, "PPP p")
+                                    format(field.value, "PPP")
                                   ) : (
-                                    <span>Select date and time</span>
+                                    <span>Select date</span>
                                   )}
                                 </Button>
                               </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <div className="p-4 border-b">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={(date) => {
-                                    if (date && field.value) {
-                                      // Preserve the time
-                                      const newDate = new Date(date);
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    // Preserve the time when changing date
+                                    const newDate = new Date(date);
+                                    if (field.value) {
                                       newDate.setHours(
                                         field.value.getHours(),
                                         field.value.getMinutes()
                                       );
-                                      field.onChange(newDate);
                                     }
-                                  }}
-                                  initialFocus
-                                />
-                              </div>
-                              <div className="p-3 border-t">
-                                <div className="flex items-center justify-between">
-                                  <div className="text-sm font-medium">Time:</div>
-                                  <select
-                                    value={format(field.value, "HH:mm")}
-                                    onChange={(e) => {
-                                      const [hours, minutes] = e.target.value.split(':');
-                                      const newDate = new Date(field.value);
-                                      newDate.setHours(parseInt(hours), parseInt(minutes));
-                                      field.onChange(newDate);
-                                    }}
-                                    className="border border-input bg-background px-3 py-1 rounded-md text-sm"
-                                  >
-                                    {timeSlots.map((slot) => (
-                                      <option key={slot.value} value={slot.value}>
-                                        {slot.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
+                                    field.onChange(newDate);
+                                  }
+                                }}
+                                initialFocus
+                              />
                             </PopoverContent>
                           </Popover>
                           <FormDescription>
-                            When will your class start?
+                            Select the date when your class will take place
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     
-                    {/* What to Bring Section */}
+                    <FormField
+                      control={form.control}
+                      name="startTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Start Time <span className="text-destructive">*</span></FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select time" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {timeSlots.map((slot) => (
+                                <SelectItem key={slot.value} value={slot.value}>
+                                  {slot.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Select the time when your class will start
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* What to Bring Section - moved to its own row */}
+                  <div>
                     <FormField
                       control={form.control}
                       name="whatToBring"
@@ -835,192 +690,13 @@ export default function CreateClassPage() {
                       )}
                     />
                   </div>
-                  
-                  {/* Image URL field */}
-                  <FormField
-                    control={form.control}
-                    name="image"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter image URL" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Link to an image for your class (optional)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Hidden section - no longer used */}
-                  {false && (
-                    <>
-                      <FormField
-                        control={form.control}
-                        name="endDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>End Date</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    className="w-full pl-3 text-left font-normal justify-start"
-                                  >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {field.value ? (
-                                      format(field.value, "PPP")
-                                    ) : (
-                                      <span>Select end date</span>
-                                    )}
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) => date < form.getValues('startDate')}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormDescription>
-                              When will the recurring class end?
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-medium">Weekly Schedule</h3>
-                          <Button 
-                            type="button" 
-                            onClick={addNewSchedule} 
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center"
-                          >
-                            <Plus className="h-4 w-4 mr-1" /> Add Schedule
-                          </Button>
-                        </div>
-                        
-                        {fields.length === 0 ? (
-                          <div className="text-center p-6 border rounded-md bg-muted/20">
-                            <p className="text-muted-foreground mb-2">No schedules added yet</p>
-                            <Button 
-                              type="button" 
-                              onClick={addNewSchedule} 
-                              variant="secondary"
-                              size="sm"
-                            >
-                              <Plus className="h-4 w-4 mr-1" /> Add a Schedule
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {fields.map((item, index) => (
-                              <Card key={item.id} className="overflow-hidden">
-                                <CardHeader className="p-4 pb-2">
-                                  <div className="flex justify-between items-center">
-                                    <h4 className="text-sm font-medium">Schedule #{index + 1}</h4>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => remove(index)}
-                                      className="h-7 w-7 p-0"
-                                    >
-                                      <X className="h-4 w-4" />
-                                      <span className="sr-only">Remove</span>
-                                    </Button>
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <FormField
-                                    control={form.control}
-                                    name={`schedules.${index}.dayOfWeek`}
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Day of Week</FormLabel>
-                                        <Select
-                                          onValueChange={field.onChange}
-                                          defaultValue={field.value}
-                                        >
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select day" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            {daysOfWeek.map((day) => (
-                                              <SelectItem key={day.value} value={day.value}>
-                                                {day.label}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  
-                                  <FormField
-                                    control={form.control}
-                                    name={`schedules.${index}.startTime`}
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Start Time</FormLabel>
-                                        <Select
-                                          onValueChange={field.onChange}
-                                          defaultValue={field.value}
-                                        >
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select time" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            {timeSlots.map((time) => (
-                                              <SelectItem key={time.value} value={time.value}>
-                                                {time.label}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => navigate("/")}
-                  >
+                  <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
-                    className="bg-primary text-white"
-                    disabled={submitting}
-                  >
+                  <Button type="submit" disabled={submitting}>
                     {submitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1031,7 +707,6 @@ export default function CreateClassPage() {
                     )}
                   </Button>
                 </div>
-                </div> {/* Close the grid div */}
               </form>
             </Form>
           </div>
