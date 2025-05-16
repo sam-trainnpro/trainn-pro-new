@@ -131,16 +131,7 @@ export default function CoachDetailsPage() {
                       </p>
                     )}
                     
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                      <Button className="bg-primary text-white">
-                        <Mail className="mr-2 h-4 w-4" />
-                        Contact
-                      </Button>
-                      <Button variant="outline">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Book a Class
-                      </Button>
-                    </div>
+                    {/* Buttons removed as requested */}
                   </div>
                 </div>
               </div>
