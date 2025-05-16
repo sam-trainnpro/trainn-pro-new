@@ -241,6 +241,13 @@ export default function ClassDetailsPage() {
                       <h2 className="text-xl font-bold mb-4">About This Class</h2>
                       <p className="mb-6 whitespace-pre-line">{classItem.description}</p>
                       
+                      {classItem.whatToBring && (
+                        <div className="mb-6">
+                          <h3 className="text-lg font-semibold mb-2">What to Bring</h3>
+                          <p className="whitespace-pre-line">{classItem.whatToBring}</p>
+                        </div>
+                      )}
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {classItem.isRecurring && classItem.schedules && classItem.schedules.length > 0 ? (
                           <div className="flex flex-col col-span-2">
