@@ -875,6 +875,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update user profile
+  app.put("/api/users/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Only allow users to update their own profile
+      if (userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this user" });
+      }
+      
+      // Get allowed fields based on the request body
+      const allowedFields = ['firstName', 'lastName', 'bio', 'profileImage'];
+      const updateData: Record<string, any> = {};
+      
+      for (const field of allowedFields) {
+        if (field in req.body) {
+          updateData[field] = req.body[field];
+        }
+      }
+      
+      // Update the user
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive information
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user profile" });
+    }
+  });
+
   // Save coach's payment settings and connect with Stripe
   app.post("/api/coaches/:id/payment-settings", requireAuth, async (req, res) => {
     try {
