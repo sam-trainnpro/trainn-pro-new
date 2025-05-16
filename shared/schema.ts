@@ -73,12 +73,11 @@ export const classes = pgTable("classes", {
   // For single occurrence classes
   startTime: timestamp("start_time"), // Made optional
   endTime: timestamp("end_time"), // Made optional
-  // For recurring classes
+  // For backward compatibility (we'll be removing this functionality)
   isRecurring: boolean("is_recurring").default(false),
-  // For child instances of recurring classes
+  // For backward compatibility (we'll be removing this functionality)
   parentClassId: integer("parent_class_id"),
-  // What to bring information
-  whatToBring: text("what_to_bring"),
+  // Storage for what to bring information (using description for now)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -98,7 +97,6 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   endTime: true,
   isRecurring: true,
   parentClassId: true,
-  whatToBring: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;

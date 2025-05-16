@@ -77,6 +77,9 @@ const createClassSchema = z.object({
   endTime: z.string().optional(),   // Will be calculated from startDate + duration
   whatToBring: z.string().optional(), // What to bring for the class
   image: z.string().url("Please enter a valid image URL").optional(),
+  // These fields remain for backward compatibility but will be hidden from the UI
+  isRecurring: z.boolean().default(false),
+  endDate: z.date().optional(),
 });
 
 // Schedule form schema
@@ -221,12 +224,11 @@ export default function CreateClassPage() {
       startDate: new Date(),
       startTime: "",
       endTime: "",
+      whatToBring: "",
+      image: "",
+      // These fields are kept for backward compatibility but will be fixed values
       isRecurring: false,
       endDate: addWeeks(new Date(), 4),
-      seriesStartDate: new Date(),
-      seriesEndDate: addWeeks(new Date(), 4),
-      image: "",
-      schedules: [],
     },
   });
 
@@ -281,71 +283,24 @@ export default function CreateClassPage() {
       return;
     }
     
-    // Check for recurring classes without schedules
-    if (data.isRecurring && (!data.schedules || data.schedules.length === 0)) {
-      toast({
-        title: "Schedule required",
-        description: "Please add at least one schedule for recurring classes",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     // Create a copy of the data to modify
     const formattedData = { ...data };
     
-    if (!data.isRecurring) {
-      // SINGLE CLASS
-      // Format the startTime from the startDate field
-      const startDate = new Date(data.startDate);
-      
-      // Format the startTime field as an ISO string
-      formattedData.startTime = startDate.toISOString();
-      
-      // Calculate end time by adding duration in minutes
-      const endDate = new Date(startDate.getTime() + data.duration * 60000);
-      formattedData.endTime = endDate.toISOString();
-      
-      console.log("Single class - Start time:", formattedData.startTime);
-      console.log("Single class - End time:", formattedData.endTime);
-      
-      // Remove recurring class fields to avoid confusion
-      delete formattedData.schedules;
-      delete formattedData.seriesStartDate;
-      delete formattedData.seriesEndDate;
-      
-    } else {
-      // RECURRING CLASS
-      // The server expects seriesStartDate and seriesEndDate for recurring classes
-      formattedData.seriesStartDate = data.startDate;
-      formattedData.seriesEndDate = data.endDate;
-      
-      console.log("Recurring class - Series start date:", formattedData.seriesStartDate);
-      console.log("Recurring class - Series end date:", formattedData.seriesEndDate);
-      
-      // Process schedules to include end times based on duration
-      if (formattedData.schedules && formattedData.schedules.length > 0) {
-        formattedData.schedules = formattedData.schedules.map(schedule => {
-          // Parse the time string (HH:MM)
-          const [hours, minutes] = schedule.startTime.split(':').map(Number);
-          
-          // Calculate end time based on duration
-          const startDate = new Date();
-          startDate.setHours(hours, minutes, 0, 0);
-          const endDate = new Date(startDate.getTime() + data.duration * 60000);
-          
-          // Format end time as HH:MM
-          const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
-          
-          console.log(`Schedule - Day: ${schedule.dayOfWeek}, Start: ${schedule.startTime}, End: ${endTime}`);
-          
-          return {
-            ...schedule,
-            endTime
-          };
-        });
-      }
-    }
+    // Format the startTime from the startDate field
+    const startDate = new Date(data.startDate);
+    
+    // Format the startTime field as an ISO string
+    formattedData.startTime = startDate.toISOString();
+    
+    // Calculate end time by adding duration in minutes
+    const endDate = new Date(startDate.getTime() + data.duration * 60000);
+    formattedData.endTime = endDate.toISOString();
+    
+    console.log("Class - Start time:", formattedData.startTime);
+    console.log("Class - End time:", formattedData.endTime);
+    
+    // Ensure isRecurring is always false (removing recurring functionality)
+    formattedData.isRecurring = false;
     
     setSubmitting(true);
     
