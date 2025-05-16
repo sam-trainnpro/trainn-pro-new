@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <h3 className="text-xl font-heading font-bold mb-4">Elevate</h3>
-            <p className="text-gray-400 mb-4">Connecting fitness enthusiasts with top coaches for personalized outdoor and gym training sessions.</p>
+            <p className="text-gray-400 mb-4">Connecting fitness enthusiasts and kids with top coaches for personalized outdoor workouts, sports, and gym training sessions.</p>
             <div className="flex space-x-4">
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
                 <Instagram className="h-5 w-5" />
@@ -30,9 +30,6 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="/classes" className="text-gray-400 hover:text-white transition">Find Classes</Link></li>
               <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Coaches</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Gift Cards</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Membership Plans</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Refer a Friend</Link></li>
             </ul>
           </div>
           
@@ -53,7 +50,6 @@ export default function Footer() {
               <li><Link href="#" className="text-gray-400 hover:text-white transition">About Us</Link></li>
               <li><Link href="#" className="text-gray-400 hover:text-white transition">Careers</Link></li>
               <li><Link href="#" className="text-gray-400 hover:text-white transition">Press</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Blog</Link></li>
               <li><Link href="#" className="text-gray-400 hover:text-white transition">Contact Us</Link></li>
             </ul>
           </div>
