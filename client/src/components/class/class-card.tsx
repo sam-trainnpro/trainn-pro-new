@@ -60,23 +60,18 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     // Use Pacific Time for all classes in San Francisco
     const timeZone = 'America/Los_Angeles'; // Pacific Time Zone
     
-    // If this is a child instance of a recurring class, show the date too
-    const isClassInstance = 'parentClassId' in classItem && classItem.parentClassId;
+    // Format date as "Sun 5/18"
+    const dayOfWeek = formatInTimeZone(startDate, timeZone, 'EEE');
+    const month = startDate.getMonth() + 1; // getMonth is 0-indexed
+    const day = startDate.getDate();
+    const formattedDate = `${dayOfWeek} ${month}/${day}`;
     
-    let displayText = '';
+    // Format times
+    const startFormatted = formatInTimeZone(startDate, timeZone, 'h:mm a');
+    const endFormatted = formatInTimeZone(endDate, timeZone, 'h:mm a');
     
-    if (isClassInstance) {
-      // Format: "Mon, May 15 • 10:00 AM - 11:00 AM" (PT)
-      const dateFormatted = formatInTimeZone(startDate, timeZone, 'EEE, MMM d');
-      const startFormatted = formatInTimeZone(startDate, timeZone, 'h:mm a');
-      const endFormatted = formatInTimeZone(endDate, timeZone, 'h:mm a');
-      displayText = `${dateFormatted} • ${startFormatted} - ${endFormatted} PT`;
-    } else {
-      // Format: "Mon, 10:00 AM - 11:00 AM" (PT)
-      const startFormatted = formatInTimeZone(startDate, timeZone, 'EEE, h:mm a');
-      const endFormatted = formatInTimeZone(endDate, timeZone, 'h:mm a');
-      displayText = `${startFormatted} - ${endFormatted} PT`;
-    }
+    // Combine date and time: "Sun 5/18 9:00 AM - 10:00 AM PT"
+    const displayText = `${formattedDate} ${startFormatted} - ${endFormatted} PT`;
     
     return displayText;
   };
