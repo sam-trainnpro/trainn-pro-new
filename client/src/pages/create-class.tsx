@@ -75,18 +75,8 @@ const createClassSchema = z.object({
   }),
   startTime: z.string().optional(), // Will be calculated from startDate
   endTime: z.string().optional(),   // Will be calculated from startDate + duration
-  isRecurring: z.boolean().default(false),
-  endDate: z.date().optional(),
-  seriesStartDate: z.date().optional(), // For recurring classes - use startDate
-  seriesEndDate: z.date().optional(),   // For recurring classes - use endDate
+  whatToBring: z.string().optional(), // What to bring for the class
   image: z.string().url("Please enter a valid image URL").optional(),
-  schedules: z.array(
-    z.object({
-      dayOfWeek: z.string().min(1, "Day of week is required"),
-      startTime: z.string().min(1, "Start time is required"),
-      endTime: z.string().optional(), // Will be calculated based on startTime + duration
-    })
-  ).optional(),
 });
 
 // Schedule form schema
