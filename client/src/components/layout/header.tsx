@@ -52,7 +52,7 @@ export default function Header() {
           <Link href="/coaches" className={`text-foreground hover:text-primary transition font-medium ${location === '/coaches' ? 'text-primary' : ''}`}>
             Coaches
           </Link>
-          <Link href="/#how-it-works" className="text-foreground hover:text-primary transition font-medium">
+          <Link href="/" className="text-foreground hover:text-primary transition font-medium">
             How It Works
           </Link>
           
