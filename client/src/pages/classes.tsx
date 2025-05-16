@@ -106,12 +106,7 @@ export default function ClassesPage() {
       return false;
     }
 
-    // For now we're showing all classes regardless of date 
-    // since all sample classes are in the future
-    // When we have classes scheduled for today, we can enable this filter
-    
-    /*
-    // Date filter
+    // Date filter - show classes only for the selected date
     if (filters.date) {
       // Class must have a start time to be filtered by date
       if (!classItem.startTime) {
@@ -130,7 +125,6 @@ export default function ClassesPage() {
         return false;
       }
     }
-    */
 
     // Location filter (within X miles)
     if (filters.latitude && filters.longitude && classItem.latitude && classItem.longitude) {
