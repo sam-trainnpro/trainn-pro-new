@@ -836,8 +836,26 @@ export default function CreateClassPage() {
                     />
                   </div>
                   
-                  {/* Show end date picker and schedule if isRecurring is true */}
-                  {form.watch('isRecurring') && (
+                  {/* Image URL field */}
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter image URL" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Link to an image for your class (optional)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Hidden section - no longer used */}
+                  {false && (
                     <>
                       <FormField
                         control={form.control}
