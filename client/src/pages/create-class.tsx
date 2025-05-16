@@ -55,7 +55,12 @@ const createClassSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   categoryId: z.string().min(1, "Please select a category"),
   location: z.string().min(1, "Location name is required"),
-  address: z.string().min(1, "Full address is required"),
+  addressLine1: z.string().min(1, "Address line 1 is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zipCode: z.string().min(1, "ZIP code is required"),
+  // Keep address field for backwards compatibility
+  address: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   price: z.coerce.number().min(1, "Price must be at least 1"),
@@ -65,6 +70,7 @@ const createClassSchema = z.object({
     required_error: "Start date is required",
   }),
   startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().optional(), // Added for API compatibility
   whatToBring: z.string().optional(),
   image: z.string().url("Please enter a valid image URL").optional(),
   isRecurring: z.boolean().default(false),
@@ -185,6 +191,10 @@ export default function CreateClassPage() {
       description: "",
       categoryId: "",
       location: "",
+      addressLine1: "",
+      city: "",
+      state: "",
+      zipCode: "",
       address: "",
       latitude: undefined,
       longitude: undefined,
@@ -193,6 +203,7 @@ export default function CreateClassPage() {
       capacity: 10,
       startDate: new Date(),
       startTime: "09:00",
+      endTime: "",
       whatToBring: "",
       image: "",
       isRecurring: false,
@@ -225,18 +236,28 @@ export default function CreateClassPage() {
 
   // Form submission handler
   async function onSubmit(data: z.infer<typeof createClassSchema>) {
-    // Prevent submission if coordinates are missing
-    if (!data.latitude || !data.longitude) {
-      toast({
-        title: "Location required",
-        description: "Please provide a valid location on the map.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     // Create a copy of the data to modify
     const formattedData = { ...data };
+    
+    // Combine address fields into a single address string for API compatibility
+    formattedData.address = `${data.addressLine1}, ${data.city}, ${data.state} ${data.zipCode}`;
+    
+    // If coordinates are not set, we'll use the combined address string
+    // The backend can handle classes with just the address string
+    // This approach is more resilient when the Maps API has issues
+    if (!data.latitude || !data.longitude) {
+      console.log("No coordinates set, using address string only");
+      
+      toast({
+        title: "Using address only",
+        description: "Your class will be created with the address you provided.",
+        variant: "default"
+      });
+      
+      // Set default coordinates if needed (these can be zeroed out on the backend)
+      if (!formattedData.latitude) formattedData.latitude = 0;
+      if (!formattedData.longitude) formattedData.longitude = 0;
+    }
     
     // Format the startTime from the startDate field
     const startDate = new Date(data.startDate);
@@ -248,10 +269,12 @@ export default function CreateClassPage() {
     
     // Calculate end time by adding duration in minutes
     const endDate = new Date(startDate.getTime() + data.duration * 60000);
+    // Add endTime to formattedData as it's expected by the API
     formattedData.endTime = endDate.toISOString();
     
     console.log("Class - Start time:", formattedData.startTime);
     console.log("Class - End time:", formattedData.endTime);
+    console.log("Class - Address:", formattedData.address);
     
     setSubmitting(true);
     
@@ -507,56 +530,82 @@ export default function CreateClassPage() {
                         )}
                       />
                       
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Address <span className="text-destructive">*</span></FormLabel>
-                            <FormControl>
-                              <GoogleMapsScript>
-                                <PlacesAutocomplete 
-                                  value={field.value} 
-                                  onChange={(value) => {
-                                    field.onChange(value);
-                                  }}
-                                  onPlaceSelect={(place) => {
-                                    if (place && place.geometry && place.geometry.location) {
-                                      // Update form values with selected place details
-                                      form.setValue('latitude', place.geometry.location.lat());
-                                      form.setValue('longitude', place.geometry.location.lng());
-                                      form.setValue('address', place.formatted_address || '');
-                                      
-                                      // If location name is empty, use the place name
-                                      if (!form.getValues('location')) {
-                                        form.setValue('location', place.name || '');
-                                      }
-                                      
-                                      // Show success message
-                                      toast({
-                                        title: "Location selected",
-                                        description: "Coordinates have been set based on the selected address."
-                                      });
-                                    }
-                                  }}
-                                />
-                              </GoogleMapsScript>
-                            </FormControl>
-                            <div className="text-sm text-muted-foreground mt-2">
-                              Start typing to search for an address, or{" "}
-                              <Button 
-                                type="button" 
-                                variant="link" 
-                                className="h-auto p-0 text-primary" 
-                                onClick={handleGetLocation}
-                              >
-                                use your current location
-                              </Button>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="border rounded-md p-4 space-y-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium">Address Details</h4>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            className="h-8" 
+                            onClick={handleGetLocation}
+                          >
+                            Use Current Location
+                          </Button>
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="addressLine1"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Address Line 1 <span className="text-destructive">*</span></FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. 123 Main St" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>City <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g. New York" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>State <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g. NY" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="zipCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>ZIP Code <span className="text-destructive">*</span></FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. 10001" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="text-sm text-muted-foreground mt-2">
+                          To help users find your class, ensure your address is accurate and complete.
+                        </div>
+                      </div>
                       
                       <div className="flex justify-between items-center">
                         <p className="text-sm font-medium">Preview:</p>
