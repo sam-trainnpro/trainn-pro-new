@@ -52,9 +52,6 @@ export default function Header() {
           <Link href="/coaches" className={`text-foreground hover:text-primary transition font-medium ${location === '/coaches' ? 'text-primary' : ''}`}>
             Coaches
           </Link>
-          <Link href="/" className="text-foreground hover:text-primary transition font-medium">
-            How It Works
-          </Link>
           
           {/* Not logged in state */}
           {!user ? (
