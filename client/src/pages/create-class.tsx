@@ -813,23 +813,24 @@ export default function CreateClassPage() {
                       )}
                     />
                     
+                    {/* What to Bring Section */}
                     <FormField
                       control={form.control}
-                      name="isRecurring"
+                      name="whatToBring"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Recurring Class</FormLabel>
-                            <FormDescription>
-                              Is this a recurring class with regular schedule?
-                            </FormDescription>
-                          </div>
+                        <FormItem>
+                          <FormLabel>What to Bring</FormLabel>
                           <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
+                            <Textarea 
+                              placeholder="List items participants should bring to class (e.g., yoga mat, water bottle, comfortable clothes)" 
+                              className="min-h-24" 
+                              {...field} 
                             />
                           </FormControl>
+                          <FormDescription>
+                            Help participants prepare by listing what they should bring to your class
+                          </FormDescription>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
