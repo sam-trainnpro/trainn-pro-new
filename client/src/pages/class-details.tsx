@@ -28,6 +28,7 @@ import {
   Users, 
   DollarSign, 
   Star,
+  PackageOpen,
   MapIcon,
   Share2,
   Heart,
@@ -315,6 +316,16 @@ export default function ClassDetailsPage() {
                             <p className="font-medium">{classItem.address}</p>
                           </div>
                         </div>
+                        
+                        {classItem.whatToBring && (
+                          <div className="flex items-center">
+                            <PackageOpen className="h-5 w-5 mr-3 text-primary" />
+                            <div>
+                              <p className="text-sm text-muted-foreground">What to Bring</p>
+                              <p className="font-medium">{classItem.whatToBring}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </TabsContent>
                     
