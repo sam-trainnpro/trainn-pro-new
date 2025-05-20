@@ -41,7 +41,7 @@ export default function Header() {
     <header className="bg-white shadow-sm sticky top-0 z-40">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center">
-          <span className="text-primary text-2xl font-heading font-bold">Elevate</span>
+          <span className="text-primary text-2xl font-heading font-bold">Trainn</span>
         </Link>
         
         {/* Desktop Navigation */}
