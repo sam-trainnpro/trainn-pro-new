@@ -323,7 +323,7 @@ export default function ClassesPage() {
                     <div className="bg-white rounded-xl shadow-sm h-full">
                       {/* Banner to explain we're showing all classes */}
                       <div className="bg-blue-50 p-3 mb-2 text-sm text-blue-700 rounded-t-xl border-b border-blue-100">
-                        <p>Showing all upcoming classes. Use filters to narrow results.</p>
+                        <p>Showing all available classes. Use filters to narrow results.</p>
                       </div>
                       
                       <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
