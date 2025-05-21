@@ -889,11 +889,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allowedFields = ['firstName', 'lastName', 'bio', 'profileImage'];
       const updateData: Record<string, any> = {};
       
-      for (const field of allowedFields) {
-        if (field in req.body) {
-          updateData[field] = req.body[field];
-        }
-      }
+      // Use explicit property assignment to avoid prototype pollution
+      if ('firstName' in req.body) updateData.firstName = req.body.firstName;
+      if ('lastName' in req.body) updateData.lastName = req.body.lastName;
+      if ('bio' in req.body) updateData.bio = req.body.bio;
+      if ('profileImage' in req.body) updateData.profileImage = req.body.profileImage;
       
       // Update the user
       const updatedUser = await storage.updateUser(userId, updateData);
