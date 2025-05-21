@@ -39,7 +39,6 @@ export interface SearchFilters {
 export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const initialFilters: SearchFilters = {
     query: '',
-    date: new Date(), // Default to today's date
     priceRange: [0, 100],
   };
   
