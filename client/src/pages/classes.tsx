@@ -62,8 +62,20 @@ export default function ClassesPage() {
     queryKey: ['/api/categories'],
   });
 
+  // Get today's date with time set to start of day
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
   // Filter classes based on search criteria
   const filteredClasses = classes?.filter(classItem => {
+    // First filter: only show classes with dates greater than or equal to today
+    if (classItem.startTime) {
+      const classDate = new Date(classItem.startTime);
+      if (classDate < today) {
+        return false;
+      }
+    }
+    
     // Text search
     if (filters.query && 
         !classItem.title.toLowerCase().includes(filters.query.toLowerCase()) &&
