@@ -22,11 +22,11 @@ export default function ClassesPage() {
   // Get search params from URL and ensure it's a string for queryString.parse
   const searchQuery: string = typeof window.location.search === 'string' ? window.location.search : '';
   const searchParams = queryString.parse(searchQuery);
-  // Initialize with today's date if not specified in URL
+  // Initialize filters from URL params, but don't set a default date
   const [filters, setFilters] = useState<SearchFiltersType>({
     query: typeof searchParams.q === 'string' ? searchParams.q : "",
     classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
-    date: searchParams.date ? new Date(searchParams.date as string) : new Date(),
+    date: searchParams.date ? new Date(searchParams.date as string) : undefined,
     priceRange: [
       Number(searchParams.minPrice || 0),
       Number(searchParams.maxPrice || 100)
@@ -37,21 +37,6 @@ export default function ClassesPage() {
   
   // State to track the current view (list or map)
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
-
-  // Apply default date filter on initial load
-  useEffect(() => {
-    // Add the date to URL if not already present
-    if (!searchParams.date) {
-      const today = new Date();
-      const queryParams = new URLSearchParams(window.location.search);
-      queryParams.set('date', today.toISOString());
-      
-      // Update the URL without triggering a page reload
-      // This ensures the date filter is persisted in the URL
-      const newUrl = `${window.location.pathname}?${queryParams.toString()}`;
-      window.history.replaceState(null, '', newUrl);
-    }
-  }, []);
 
   // Fetch all classes with schedules
   const { 
@@ -135,8 +120,8 @@ export default function ClassesPage() {
     return true;
   });
   
-  // Default - use today's date if not specified
-  const currentFilterDate = filters.date || new Date();
+  // Only use date if explicitly specified in filters
+  const currentFilterDate = filters.date;
   
   // Sort classes by start time
   const sortedClasses = filteredClasses?.slice().sort((a, b) => {
