@@ -151,7 +151,7 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>Admin Dashboard - Elevate Fitness</title>
+        <title>Admin Dashboard - Trainn Fitness</title>
         <meta name="description" content="Manage coach approvals and monitor platform activity in the admin dashboard." />
       </Helmet>
       

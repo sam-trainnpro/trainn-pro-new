@@ -89,7 +89,7 @@ export default function LoginForm() {
       <CardHeader>
         <CardTitle className="text-2xl">Sign In</CardTitle>
         <CardDescription>
-          Welcome back to Elevate
+          Welcome back to Trainn
         </CardDescription>
       </CardHeader>
       <CardContent>

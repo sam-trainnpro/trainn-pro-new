@@ -50,8 +50,8 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       <Helmet>
-        <title>Sign In or Join - Elevate Fitness</title>
-        <meta name="description" content="Sign in to your Elevate account or join our fitness community to find and book fitness classes with top coaches in your area." />
+        <title>Sign In or Join - Trainn Fitness</title>
+        <meta name="description" content="Sign in to your Trainn account or join our fitness community to find and book fitness classes with top coaches in your area." />
       </Helmet>
       
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
@@ -82,7 +82,7 @@ export default function AuthPage() {
           <div className="relative z-10 text-white max-w-lg text-center">
             <h1 className="text-4xl font-bold mb-4">Transform Your Fitness Journey</h1>
             <p className="text-xl mb-6">
-              Connect with top coaches, book personalized classes, and achieve your fitness goals with Elevate.
+              Connect with top coaches, book personalized classes, and achieve your fitness goals with Trainn.
             </p>
             <div className="grid grid-cols-2 gap-4 my-8">
               <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
@@ -95,9 +95,9 @@ export default function AuthPage() {
               </div>
             </div>
             <p className="text-lg font-light">
-              "Elevate has transformed how I find fitness classes and coaches. The platform is intuitive and the classes are amazing!"
+              "Trainn has transformed how I find fitness classes and coaches. The platform is intuitive and the classes are amazing!"
             </p>
-            <p className="mt-2 font-medium">— Jennifer K., Elevate Member</p>
+            <p className="mt-2 font-medium">— Jennifer K., Trainn Member</p>
           </div>
         </div>
       </div>
