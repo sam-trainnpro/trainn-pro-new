@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
+import RegisterPage from "@/pages/register";
 import ClassesPage from "@/pages/classes";
 import CoachesPage from "@/pages/coaches";
 import ClassDetailsPage from "@/pages/class-details";
@@ -25,6 +26,9 @@ function Router() {
       </Route>
       <Route path="/auth">
         <AuthPage />
+      </Route>
+      <Route path="/register">
+        <RegisterPage />
       </Route>
       <Route path="/classes">
         <ClassesPage />

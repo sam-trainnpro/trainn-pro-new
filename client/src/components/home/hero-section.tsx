@@ -25,7 +25,7 @@ export default function HeroSection() {
                   </Button>
                 </Link>
                 {!user && (
-                  <Link href="/auth?register=true&role=coach">
+                  <Link href="/register?role=coach">
                     <Button size="lg" variant="outline" className="bg-white text-primary hover:bg-white/90 w-full sm:w-auto">
                       Become a Coach
                     </Button>
