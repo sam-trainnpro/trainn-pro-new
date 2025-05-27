@@ -282,8 +282,8 @@ export default function ProfilePage() {
   return (
     <>
       <Helmet>
-        <title>My Profile | Elevate</title>
-        <meta name="description" content="View and manage your Elevate profile settings" />
+        <title>My Profile | Trainn</title>
+        <meta name="description" content="View and manage your Trainn profile settings" />
       </Helmet>
 
       <Header />
@@ -597,7 +597,7 @@ export default function ProfilePage() {
                       <CardHeader>
                         <CardTitle>Payment Settings</CardTitle>
                         <CardDescription>
-                          Set up your bank account to receive payments for your classes. Elevate takes a 15% platform fee, and you receive 85% of each booking.
+                          Set up your bank account to receive payments for your classes. Trainn takes a 15% platform fee, and you receive 85% of each booking.
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -776,7 +776,7 @@ export default function ProfilePage() {
                                       Accept Terms and Conditions
                                     </FormLabel>
                                     <FormDescription>
-                                      I agree to the <a href="#" className="text-primary underline">terms of service</a> and authorize Elevate to process payments on my behalf and transfer funds to my bank account.
+                                      I agree to the <a href="#" className="text-primary underline">terms of service</a> and authorize Trainn to process payments on my behalf and transfer funds to my bank account.
                                     </FormDescription>
                                   </div>
                                 </FormItem>

@@ -58,7 +58,7 @@ export default function CoachDetailsPage() {
     <div className="flex flex-col min-h-screen">
       {coach && (
         <Helmet>
-          <title>Coach {coach.firstName} {coach.lastName} - Elevate Fitness</title>
+          <title>Coach {coach.firstName} {coach.lastName} - Trainn Fitness</title>
           <meta 
             name="description" 
             content={coach.bio || `Book fitness classes with Coach ${coach.firstName} ${coach.lastName}. View upcoming classes, specialties, and more.`} 

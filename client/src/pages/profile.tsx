@@ -464,7 +464,7 @@ export default function ProfilePage() {
                       <CardHeader>
                         <CardTitle>Payment Settings</CardTitle>
                         <CardDescription>
-                          Set up your bank account to receive payments for your classes. Elevate takes a 15% platform fee, and you receive 85% of each booking.
+                          Set up your bank account to receive payments for your classes. Trainn takes a 15% platform fee, and you receive 85% of each booking.
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
