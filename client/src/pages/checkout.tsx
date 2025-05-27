@@ -73,16 +73,34 @@ const CheckoutForm = ({ classItem }: { classItem: Class }) => {
       });
       setPaymentStatus("error");
     } else {
-      toast({
-        title: "Payment Successful",
-        description: "Your booking has been confirmed!",
-      });
-      setPaymentStatus("success");
-      
-      // Redirect to bookings page after successful payment
-      setTimeout(() => {
-        navigate("/bookings");
-      }, 1500);
+      // Payment succeeded, now confirm the booking
+      try {
+        const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
+          paymentIntentId: clientSecret?.split('_secret_')[0],
+          classId: classItem.id
+        });
+        
+        if (confirmResponse.ok) {
+          toast({
+            title: "Payment Successful",
+            description: "Your booking has been confirmed!",
+          });
+          setPaymentStatus("success");
+          
+          // Redirect to bookings page after successful payment
+          setTimeout(() => {
+            navigate("/bookings");
+          }, 1500);
+        } else {
+          throw new Error("Failed to confirm booking");
+        }
+      } catch (confirmError) {
+        toast({
+          title: "Payment Processed",
+          description: "Payment successful, but there was an issue confirming your booking. Please contact support.",
+          variant: "destructive",
+        });
+      }
     }
     
     setIsProcessing(false);
