@@ -753,9 +753,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const platformFee = Math.round(amountInCents * 0.15);
           const coachPayout = amountInCents - platformFee;
           
-          // For test mode, create a simple payment intent without platform fees
-          // We'll implement the fee structure once basic payment flow works
-          const paymentIntent = await stripe.paymentIntents.create({
+          // Create payment intent with Stripe Connect
+          const paymentIntentData: any = {
             amount: amountInCents,
             currency: "usd",
             description: `Booking for ${classDetails.title}`,
@@ -766,7 +765,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               platformFee: platformFee.toString(),
               coachPayout: coachPayout.toString()
             }
-          });
+          };
+
+          // If coach has connected Stripe account, use destination charges
+          if (coach.stripeConnectId && coach.stripeConnectOnboarded) {
+            paymentIntentData.transfer_data = {
+              destination: coach.stripeConnectId,
+              amount: coachPayout
+            };
+            paymentIntentData.application_fee_amount = platformFee;
+          }
+
+          const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
           
           res.status(200).json({
             clientSecret: paymentIntent.client_secret,
@@ -909,6 +919,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user:", error);
       res.status(500).json({ message: "Failed to update user profile" });
+    }
+  });
+
+  // Create Stripe Connect onboarding link for coaches
+  app.post("/api/coaches/:id/stripe-onboarding", requireAuth, async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not configured" });
+    }
+
+    try {
+      const coachId = parseInt(req.params.id);
+      
+      // Ensure the user is updating their own settings or is an admin
+      if (coachId !== req.user.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "You cannot modify another coach's payment settings" });
+      }
+      
+      // Get the coach user
+      const coach = await storage.getUser(coachId);
+      if (!coach) {
+        return res.status(404).json({ message: "Coach not found" });
+      }
+      
+      // Ensure coach role
+      if (coach.role !== "coach") {
+        return res.status(400).json({ message: "User is not a coach" });
+      }
+
+      let stripeConnectId = coach.stripeConnectId;
+
+      // Create new Stripe Connect account if none exists
+      if (!stripeConnectId) {
+        const account = await stripe.accounts.create({
+          type: 'express',
+          country: 'US',
+          email: coach.email,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+          business_profile: {
+            name: `${coach.firstName} ${coach.lastName}`,
+            product_description: 'Fitness coaching and training services',
+          },
+        });
+        
+        stripeConnectId = account.id;
+        
+        // Update coach record with Stripe Connect ID
+        await storage.updateUser(coachId, {
+          stripeConnectId
+        });
+      }
+
+      // Create onboarding link
+      const accountLink = await stripe.accountLinks.create({
+        account: stripeConnectId,
+        refresh_url: `${req.get('origin')}/profile?tab=payment&refresh=true`,
+        return_url: `${req.get('origin')}/profile?tab=payment&success=true`,
+        type: 'account_onboarding',
+      });
+
+      res.json({ 
+        onboardingUrl: accountLink.url,
+        stripeConnectId 
+      });
+    } catch (error: any) {
+      console.error("Stripe onboarding error:", error);
+      res.status(500).json({ 
+        message: "Error creating onboarding link", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Check Stripe Connect account status
+  app.get("/api/coaches/:id/stripe-status", requireAuth, async (req, res) => {
+    if (!stripe) {
+      return res.status(500).json({ message: "Stripe is not configured" });
+    }
+
+    try {
+      const coachId = parseInt(req.params.id);
+      
+      // Ensure the user is checking their own status or is an admin
+      if (coachId !== req.user.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "You cannot view another coach's payment status" });
+      }
+      
+      const coach = await storage.getUser(coachId);
+      if (!coach || !coach.stripeConnectId) {
+        return res.json({ 
+          connected: false, 
+          onboarded: false,
+          canReceivePayments: false 
+        });
+      }
+
+      // Get account details from Stripe
+      const account = await stripe.accounts.retrieve(coach.stripeConnectId);
+      
+      const connected = !!account;
+      const onboarded = account.details_submitted && account.charges_enabled;
+      
+      // Update database if onboarding status changed
+      if (onboarded !== coach.stripeConnectOnboarded) {
+        await storage.updateUser(coachId, {
+          stripeConnectOnboarded: onboarded
+        });
+      }
+
+      res.json({
+        connected,
+        onboarded,
+        canReceivePayments: onboarded && account.payouts_enabled,
+        accountId: coach.stripeConnectId
+      });
+    } catch (error: any) {
+      console.error("Stripe status check error:", error);
+      res.status(500).json({ 
+        message: "Error checking Stripe status", 
+        error: error.message 
+      });
     }
   });
 

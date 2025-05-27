@@ -33,10 +33,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 
 // Initialize Stripe
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLISHABLE_KEY');
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
 const CheckoutForm = ({ classItem }: { classItem: Class }) => {
