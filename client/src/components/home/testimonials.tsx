@@ -15,21 +15,21 @@ export default function Testimonials() {
       name: "Jennifer K.",
       image: "https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
       rating: 5,
-      comment: "I've tried many fitness platforms before, but Elevate has been a game-changer. The coaches are top-notch and I love being able to work out outdoors. The booking process is seamless and I've seen amazing results!"
+      comment: "I've tried many fitness platforms before, but Trainn has been a game-changer. The coaches are top-notch and I love being able to work out outdoors. The booking process is seamless and I've seen amazing results!"
     },
     {
       id: 2,
       name: "Marcus T.",
       image: "https://images.unsplash.com/photo-1504257432389-52343af06ae3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
       rating: 5,
-      comment: "As someone who travels a lot for work, Elevate has been perfect for me. I can find great workouts wherever I am, and the coaches are extremely professional. The app makes it easy to stay consistent with my fitness routine."
+      comment: "As someone who travels a lot for work, Trainn has been perfect for me. I can find great workouts wherever I am, and the coaches are extremely professional. The app makes it easy to stay consistent with my fitness routine."
     },
     {
       id: 3,
       name: "Sophia L.",
       image: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
       rating: 4.5,
-      comment: "I joined Elevate to find yoga classes, but ended up trying so many different fitness styles thanks to the variety of coaches. The outdoor classes are my favorite - there's nothing like exercising in the fresh air with an amazing instructor!"
+      comment: "I joined Trainn to find yoga classes, but ended up trying so many different fitness styles thanks to the variety of coaches. The outdoor classes are my favorite - there's nothing like exercising in the fresh air with an amazing instructor!"
     }
   ];
 

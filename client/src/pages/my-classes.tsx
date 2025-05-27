@@ -135,7 +135,7 @@ export default function MyClassesPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>My Classes - Elevate</title>
+        <title>My Classes - Trainn</title>
         <meta name="description" content="Manage your fitness classes. View, edit, or create new classes." />
       </Helmet>
       

@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         queryClient.setQueryData(["/api/user"], user);
         toast({
           title: "Registration successful",
-          description: `Welcome to Elevate, ${user.firstName}!`,
+          description: `Welcome to Trainn, ${user.firstName}!`,
         });
       } catch (error) {
         console.error("Error in registerMutation onSuccess:", error);

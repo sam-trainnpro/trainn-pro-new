@@ -277,7 +277,7 @@ export default function EditClassPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>Edit Class - Elevate</title>
+        <title>Edit Class - Trainn</title>
         <meta name="description" content="Edit your class details, schedule, pricing, and more." />
       </Helmet>
       

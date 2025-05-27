@@ -119,7 +119,7 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
       <CardHeader>
         <CardTitle className="text-2xl">Create Account</CardTitle>
         <CardDescription>
-          Join Elevate to find or host fitness classes
+          Join Trainn to find or host fitness classes
         </CardDescription>
       </CardHeader>
       <CardContent>
