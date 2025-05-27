@@ -305,7 +305,7 @@ export default function CheckoutPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>Complete Booking - Elevate Fitness</title>
+        <title>Complete Booking - Trainn Fitness</title>
         <meta name="description" content="Complete your fitness class booking. Secure checkout with payment processing." />
       </Helmet>
       

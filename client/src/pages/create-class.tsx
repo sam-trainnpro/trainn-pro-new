@@ -335,7 +335,7 @@ export default function CreateClassPage() {
   return (
     <>
       <Helmet>
-        <title>Create a Class | Elevate</title>
+        <title>Create a Class | Trainn</title>
         <meta name="description" content="Create a new fitness class to share your expertise with students. Set up class details, schedule, and location." />
       </Helmet>
       <Header />

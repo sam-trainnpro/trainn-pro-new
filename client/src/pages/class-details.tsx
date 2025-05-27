@@ -166,7 +166,7 @@ export default function ClassDetailsPage() {
     <div className="flex flex-col min-h-screen">
       {classItem && (
         <Helmet>
-          <title>{classItem.title} - Elevate Fitness</title>
+          <title>{classItem.title} - Trainn Fitness</title>
           <meta name="description" content={classItem.description} />
         </Helmet>
       )}

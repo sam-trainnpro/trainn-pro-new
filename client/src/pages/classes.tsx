@@ -193,7 +193,7 @@ export default function ClassesPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>Browse Fitness Classes - Elevate</title>
+        <title>Browse Fitness Classes - Trainn</title>
         <meta name="description" content="Discover and book fitness classes from top coaches. Filter by class type, location, price, and date to find the perfect workout for your needs." />
       </Helmet>
       
