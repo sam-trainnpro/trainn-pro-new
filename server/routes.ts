@@ -818,13 +818,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Find the pending booking for this user and class
       const userBookings = await storage.getUserBookings(req.user.id);
+      console.log("User bookings:", userBookings);
+      console.log("Looking for classId:", classId, "status: pending");
+      
       const pendingBooking = userBookings.find(b => 
         b.classId === parseInt(classId) && 
         b.status === "pending"
       );
       
+      console.log("Found pending booking:", pendingBooking);
+      
       if (!pendingBooking) {
-        return res.status(404).json({ message: "No pending booking found for this class" });
+        return res.status(404).json({ 
+          message: "No pending booking found for this class",
+          debug: { classId, userBookings: userBookings.length }
+        });
       }
       
       // Update booking status to confirmed
