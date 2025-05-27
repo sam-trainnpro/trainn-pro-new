@@ -157,8 +157,13 @@ export default function ProfilePage() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Redirect to Stripe onboarding
-      window.location.href = data.onboardingUrl;
+      // Open Stripe onboarding in new window to avoid iframe restrictions
+      window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
+      
+      toast({
+        title: "Opening Stripe setup",
+        description: "Complete your payment setup in the new window, then return here to continue.",
+      });
     },
     onError: (error: Error) => {
       toast({
