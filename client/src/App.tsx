@@ -5,6 +5,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/register";
+import AboutPage from "@/pages/about";
 import ClassesPage from "@/pages/classes";
 import CoachesPage from "@/pages/coaches";
 import ClassDetailsPage from "@/pages/class-details";
@@ -29,6 +30,9 @@ function Router() {
       </Route>
       <Route path="/register">
         <RegisterPage />
+      </Route>
+      <Route path="/about">
+        <AboutPage />
       </Route>
       <Route path="/classes">
         <ClassesPage />
