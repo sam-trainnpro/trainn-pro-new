@@ -57,7 +57,7 @@ const CheckoutForm = ({ classItem }: { classItem: Class }) => {
     setIsProcessing(true);
     setPaymentStatus("processing");
 
-    const { error } = await stripe.confirmPayment({
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
         return_url: window.location.origin + "/bookings",
@@ -76,7 +76,7 @@ const CheckoutForm = ({ classItem }: { classItem: Class }) => {
       // Payment succeeded, now confirm the booking
       try {
         const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
-          paymentIntentId: clientSecret?.split('_secret_')[0],
+          paymentIntentId: paymentIntent?.id,
           classId: classItem.id
         });
         
