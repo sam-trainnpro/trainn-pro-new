@@ -770,8 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If coach has connected Stripe account, use destination charges
           if (coach.stripeConnectId && coach.stripeConnectOnboarded) {
             paymentIntentData.transfer_data = {
-              destination: coach.stripeConnectId,
-              amount: coachPayout
+              destination: coach.stripeConnectId
             };
             paymentIntentData.application_fee_amount = platformFee;
           }
