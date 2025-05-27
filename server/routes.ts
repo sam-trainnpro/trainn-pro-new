@@ -807,6 +807,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Confirm payment and update booking status
+  app.post("/api/payment/confirm", requireAuth, async (req, res) => {
+    try {
+      const { paymentIntentId, classId } = req.body;
+      
+      if (!paymentIntentId || !classId) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Find the pending booking for this user and class
+      const userBookings = await storage.getUserBookings(req.user.id);
+      const pendingBooking = userBookings.find(b => 
+        b.classId === parseInt(classId) && 
+        b.status === "pending"
+      );
+      
+      if (!pendingBooking) {
+        return res.status(404).json({ message: "No pending booking found for this class" });
+      }
+      
+      // Update booking status to confirmed
+      const updatedBooking = await storage.updateBooking(pendingBooking.id, {
+        status: "confirmed",
+        stripePaymentIntentId: paymentIntentId,
+        paymentDate: new Date(),
+        paymentMethod: "stripe"
+      });
+      
+      res.json({ 
+        success: true, 
+        booking: updatedBooking,
+        message: "Booking confirmed successfully" 
+      });
+    } catch (error: any) {
+      console.error("Payment confirmation error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Handle payment webhook from Stripe
   app.post("/api/payment/webhook", async (req, res) => {
     // If Stripe is not available, return success for testing
