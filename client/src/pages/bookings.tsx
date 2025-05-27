@@ -96,7 +96,7 @@ export default function BookingsPage() {
   
   // Filter bookings by status
   const upcomingBookings = bookings?.filter(booking => 
-    (booking.status === 'pending' || booking.status === 'confirmed') && 
+    booking.status === 'confirmed' && 
     (booking.class && new Date(booking.class.startTime) > new Date())
   );
   
