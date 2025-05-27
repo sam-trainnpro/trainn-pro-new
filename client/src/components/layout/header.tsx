@@ -210,7 +210,7 @@ export default function Header() {
                       Sign In
                     </Button>
                   </Link>
-                  <Link href="/auth?register=true" onClick={() => setMobileMenuOpen(false)}>
+                  <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full bg-primary text-white">
                       Join Now
                     </Button>
