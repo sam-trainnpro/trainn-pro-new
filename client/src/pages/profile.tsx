@@ -247,8 +247,8 @@ export default function ProfilePage() {
   return (
     <>
       <Helmet>
-        <title>My Profile | Elevate</title>
-        <meta name="description" content="View and manage your Elevate profile settings" />
+        <title>My Profile | Trainn</title>
+        <meta name="description" content="View and manage your Trainn profile settings" />
       </Helmet>
 
       <Header />

@@ -6,7 +6,7 @@ export default function HowItWorks() {
   return (
     <section id="how-it-works" className="py-8 md:py-12 bg-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-heading font-bold text-center mb-10">How Elevate Works</h2>
+        <h2 className="text-2xl md:text-3xl font-heading font-bold text-center mb-10">How Trainn Works</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="text-center">

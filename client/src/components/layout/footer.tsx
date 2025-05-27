@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="text-xl font-heading font-bold mb-4">Elevate</h3>
+            <h3 className="text-xl font-heading font-bold mb-4">Trainn</h3>
             <p className="text-gray-400 mb-4">Connecting fitness enthusiasts and kids with top coaches for personalized outdoor workouts, sports, and gym training sessions.</p>
             <div className="flex space-x-4">
               <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
@@ -57,7 +57,7 @@ export default function Footer() {
         
         <div className="border-t border-gray-800 pt-6 mt-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2023 Elevate. All rights reserved.</p>
+            <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2023 Trainn. All rights reserved.</p>
             <div className="flex space-x-6">
               <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Privacy Policy</Link>
               <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Terms of Service</Link>

@@ -141,7 +141,7 @@ export default function BookingsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>My Bookings - Elevate Fitness</title>
+        <title>My Bookings - Trainn Fitness</title>
         <meta name="description" content="View and manage your fitness class bookings. Track upcoming classes, past sessions, and booking status." />
       </Helmet>
       

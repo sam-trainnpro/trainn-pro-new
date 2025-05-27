@@ -8,7 +8,7 @@ export default function DownloadApp() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-8 md:mb-0">
-            <h2 className="text-2xl md:text-3xl font-heading font-bold mb-4">Take Elevate On The Go</h2>
+            <h2 className="text-2xl md:text-3xl font-heading font-bold mb-4">Take Trainn On The Go</h2>
             <p className="text-gray-600 mb-6">Download our mobile app to easily find, book, and manage your fitness classes anywhere. Get exclusive app-only deals and notifications for your favorite coaches.</p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -33,7 +33,7 @@ export default function DownloadApp() {
           <div className="md:w-1/2 flex justify-center">
             <img 
               src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=1000" 
-              alt="Elevate Mobile App Interface" 
+              alt="Trainn Mobile App Interface" 
               className="max-w-full h-auto rounded-xl shadow-xl"
               style={{ maxHeight: '500px' }}
             />
