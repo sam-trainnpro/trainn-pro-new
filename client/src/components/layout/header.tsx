@@ -11,7 +11,8 @@ import {
   Calendar, 
   Home, 
   Search,
-  UserCircle
+  UserCircle,
+  Heart
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -51,6 +52,9 @@ export default function Header() {
           </Link>
           <Link href="/coaches" className={`text-foreground hover:text-primary transition font-medium ${location === '/coaches' ? 'text-primary' : ''}`}>
             Coaches
+          </Link>
+          <Link href="/about" className={`text-foreground hover:text-primary transition font-medium ${location === '/about' ? 'text-primary' : ''}`}>
+            About
           </Link>
           
           {/* Not logged in state */}
@@ -159,6 +163,12 @@ export default function Header() {
                 <Button variant="ghost" className="w-full justify-start">
                   <User className="mr-2 h-5 w-5" />
                   Coaches
+                </Button>
+              </Link>
+              <Link href="/about" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Heart className="mr-2 h-5 w-5" />
+                  About
                 </Button>
               </Link>
               
