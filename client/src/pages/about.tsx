@@ -21,7 +21,7 @@ export default function AboutPage() {
             About Trainn
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Building stronger communities through fitness and connection
+            Building stronger communities through fitness and play
           </p>
         </div>
 
