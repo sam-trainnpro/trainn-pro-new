@@ -35,7 +35,9 @@ import {
   Share2,
   Heart,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Minus
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +51,7 @@ export default function ClassDetailsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [bookingStatus, setBookingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [quantity, setQuantity] = useState(1);
   
   if (!params) {
     navigate("/classes");
@@ -443,27 +446,63 @@ export default function ClassDetailsPage() {
                             </p>
                           </div>
                         ) : (
-                          <Button 
-                            className="w-full bg-primary hover:bg-primary/90 text-white"
-                            onClick={() => navigate(`/checkout/${classItem.id}`)}
-                          >
-                            Book Now - ${classItem.price.toFixed(2)}
-                          </Button>
+                          <div className="space-y-4">
+                            {/* Quantity Selector */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Number of spots</label>
+                              <div className="flex items-center justify-center space-x-3">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                  disabled={quantity <= 1}
+                                  className="h-8 w-8"
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <span className="min-w-[60px] text-center font-medium text-lg">
+                                  {quantity}
+                                </span>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => {
+                                    const maxSpots = bookingCount?.spotsLeft || classItem.capacity;
+                                    setQuantity(Math.min(maxSpots, quantity + 1));
+                                  }}
+                                  disabled={quantity >= (bookingCount?.spotsLeft || classItem.capacity)}
+                                  className="h-8 w-8"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground text-center">
+                                Book for yourself and your guests
+                              </p>
+                            </div>
+                            
+                            <Button 
+                              className="w-full bg-primary hover:bg-primary/90 text-white"
+                              onClick={() => navigate(`/checkout/${classItem.id}?quantity=${quantity}`)}
+                            >
+                              Book {quantity > 1 ? `${quantity} Spots` : 'Now'} - ${(classItem.price * quantity).toFixed(2)}
+                            </Button>
+                          </div>
                         )}
                       </div>
                       
                       <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
-                          <span>Class price</span>
-                          <span>${classItem.price.toFixed(2)}</span>
+                          <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
+                          <span>${(classItem.price * quantity).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Service fee</span>
-                          <span>${(classItem.price * 0.05).toFixed(2)}</span>
+                          <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
                         </div>
                         <div className="border-t pt-3 flex justify-between font-medium">
                           <span>Total</span>
-                          <span>${(classItem.price * 1.05).toFixed(2)}</span>
+                          <span>${(classItem.price * quantity * 1.05).toFixed(2)}</span>
                         </div>
                       </div>
                     </CardContent>
