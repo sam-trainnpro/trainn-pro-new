@@ -346,8 +346,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Clean the request body to match database schema
+      const cleanedData = {
+        title: req.body.title,
+        description: req.body.description,
+        categoryId: req.body.categoryId,
+        price: req.body.price,
+        capacity: req.body.capacity,
+        location: req.body.location,
+        latitude: req.body.latitude || null,
+        longitude: req.body.longitude || null,
+        address: req.body.address,
+        image: req.body.image,
+        startTime: req.body.startTime,
+        endTime: req.body.endTime,
+        whatToBring: req.body.whatToBring || null
+      };
+
       // Update the class
-      const updatedClass = await storage.updateClass(classId, req.body);
+      const updatedClass = await storage.updateClass(classId, cleanedData);
       res.json(updatedClass);
     } catch (error) {
       console.error("Error updating class:", error);
