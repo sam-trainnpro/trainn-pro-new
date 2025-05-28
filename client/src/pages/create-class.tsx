@@ -259,6 +259,7 @@ export default function CreateClassPage() {
   // Form submission handler
   async function onSubmit(data: z.infer<typeof createClassSchema>) {
     try {
+      setSubmitting(true);
       setUploadingImage(true);
       
       // Create a copy of the data to modify
@@ -266,7 +267,18 @@ export default function CreateClassPage() {
 
       // Upload image if selected
       if (selectedImage) {
-        formattedData.image = await uploadImage(selectedImage);
+        try {
+          console.log("Uploading image:", selectedImage.name);
+          formattedData.image = await uploadImage(selectedImage);
+          console.log("Image uploaded successfully:", formattedData.image);
+        } catch (uploadError) {
+          console.error("Image upload failed:", uploadError);
+          toast({
+            title: "Image upload failed",
+            description: "Your class will be created without an image",
+            variant: "destructive",
+          });
+        }
       }
     
       // Combine address fields into a single address string for API compatibility
@@ -306,9 +318,8 @@ export default function CreateClassPage() {
       console.log("Class - End time:", formattedData.endTime);
       console.log("Class - Address:", formattedData.address);
       
-      setSubmitting(true);
-      
       // Submit the processed data
+      console.log("Submitting class with data:", formattedData);
       await createClass(formattedData);
       
       // Show success message
