@@ -342,12 +342,21 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined> {
-    const result = await db.update(classes)
-      .set(classData)
-      .where(eq(classes.id, id))
-      .returning();
-    
-    return result[0];
+    try {
+      console.log("Updating class with ID:", id);
+      console.log("Class data to update:", classData);
+      
+      const result = await db.update(classes)
+        .set(classData)
+        .where(eq(classes.id, id))
+        .returning();
+      
+      console.log("Update result:", result);
+      return result[0];
+    } catch (error) {
+      console.error("Error in updateClass:", error);
+      throw error;
+    }
   }
   
   async getClassesByParentId(parentClassId: number): Promise<Class[]> {
