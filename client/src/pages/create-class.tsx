@@ -694,6 +694,21 @@ export default function CreateClassPage() {
                         />
                       </GoogleMapsScript>
                     </div>
+                    
+                    {/* Interactive Map for Pin Adjustment */}
+                    {showLocationMap && selectedLocation && (
+                      <div className="border rounded-md p-4 space-y-4">
+                        <h4 className="text-sm font-medium">Adjust Exact Location</h4>
+                        <GoogleMapsScript>
+                          <InteractiveLocationPicker
+                            latitude={selectedLocation.lat}
+                            longitude={selectedLocation.lng}
+                            onLocationChange={handleLocationChange}
+                            height="300px"
+                          />
+                        </GoogleMapsScript>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
