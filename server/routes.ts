@@ -527,36 +527,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       const bookings = await storage.getUserBookings(userId);
       
-      // Group bookings by class and status
-      const groupedBookings = new Map();
-      
-      for (const booking of bookings) {
-        const key = `${booking.classId}-${booking.status}`;
-        if (!groupedBookings.has(key)) {
+      // Add class details to each booking
+      const bookingsWithClass = await Promise.all(
+        bookings.map(async (booking) => {
           const classItem = await storage.getClass(booking.classId);
-          groupedBookings.set(key, {
-            id: booking.id, // Use the first booking ID as the group ID
-            classId: booking.classId,
-            userId: booking.userId,
-            status: booking.status,
-            paymentMethod: booking.paymentMethod,
-            paymentDate: booking.paymentDate,
-            stripePaymentIntentId: booking.stripePaymentIntentId,
-            createdAt: booking.createdAt,
-            class: classItem,
-            quantity: 1
-          });
-        } else {
-          // Increment quantity for multiple bookings of the same class with same status
-          const existingGroup = groupedBookings.get(key);
-          existingGroup.quantity += 1;
-        }
-      }
+          return {
+            ...booking,
+            class: classItem
+          };
+        })
+      );
       
-      // Convert back to array
-      const groupedBookingsArray = Array.from(groupedBookings.values());
-      
-      res.json(groupedBookingsArray);
+      res.json(bookingsWithClass);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch bookings" });
     }
@@ -578,11 +560,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         booking.status === "confirmed" || booking.status === "pending"
       );
       
+      // Calculate total spots booked by summing quantities
+      const totalSpotsBooked = confirmedBookings.reduce((sum, booking) => {
+        return sum + (booking.quantity || 1);
+      }, 0);
+      
       res.json({
         total: classBookings.length,
         active: confirmedBookings.length,
+        totalSpotsBooked: totalSpotsBooked,
         capacity: classItem.capacity,
-        spotsLeft: classItem.capacity - confirmedBookings.length
+        spotsLeft: classItem.capacity - totalSpotsBooked
       });
     } catch (error) {
       console.error("Error getting booking count:", error);
