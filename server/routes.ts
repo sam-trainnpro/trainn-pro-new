@@ -346,25 +346,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Clean the request body to match database schema
-      const cleanedData = {
-        title: req.body.title,
-        description: req.body.description,
-        categoryId: req.body.categoryId,
-        price: req.body.price,
-        capacity: req.body.capacity,
-        location: req.body.location,
-        latitude: req.body.latitude || null,
-        longitude: req.body.longitude || null,
-        address: req.body.address,
-        image: req.body.image,
-        startTime: req.body.startTime,
-        endTime: req.body.endTime,
-        whatToBring: req.body.whatToBring || null
-      };
+      // Only include defined fields to avoid null/undefined issues
+      const updateData: any = {};
+      
+      if (req.body.title !== undefined) updateData.title = req.body.title;
+      if (req.body.description !== undefined) updateData.description = req.body.description;
+      if (req.body.categoryId !== undefined) updateData.categoryId = parseInt(req.body.categoryId);
+      if (req.body.price !== undefined) updateData.price = parseFloat(req.body.price);
+      if (req.body.capacity !== undefined) updateData.capacity = parseInt(req.body.capacity);
+      if (req.body.location !== undefined) updateData.location = req.body.location;
+      if (req.body.address !== undefined) updateData.address = req.body.address;
+      if (req.body.image !== undefined) updateData.image = req.body.image;
+      if (req.body.startTime !== undefined) updateData.startTime = req.body.startTime;
+      if (req.body.endTime !== undefined) updateData.endTime = req.body.endTime;
+      if (req.body.latitude !== undefined) updateData.latitude = req.body.latitude;
+      if (req.body.longitude !== undefined) updateData.longitude = req.body.longitude;
+      if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring;
 
       // Update the class
-      const updatedClass = await storage.updateClass(classId, cleanedData);
+      const updatedClass = await storage.updateClass(classId, updateData);
       res.json(updatedClass);
     } catch (error) {
       console.error("Error updating class:", error);
