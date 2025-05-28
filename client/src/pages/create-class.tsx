@@ -72,7 +72,7 @@ const createClassSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().optional(), // Added for API compatibility
   whatToBring: z.string().optional(),
-  image: z.string().url("Please enter a valid image URL").optional(),
+  image: z.string().optional(),
   isRecurring: z.boolean().default(false),
 });
 
