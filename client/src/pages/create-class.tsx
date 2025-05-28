@@ -258,6 +258,10 @@ export default function CreateClassPage() {
 
   // Form submission handler
   async function onSubmit(data: z.infer<typeof createClassSchema>) {
+    console.log("=== FORM SUBMISSION STARTED ===");
+    console.log("Form data received:", data);
+    console.log("Form errors:", form.formState.errors);
+    
     try {
       setSubmitting(true);
       setUploadingImage(true);
@@ -785,11 +789,19 @@ export default function CreateClassPage() {
                   <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting ? (
+                  <Button 
+                    type="submit" 
+                    disabled={submitting || uploadingImage}
+                    onClick={() => {
+                      console.log("=== CREATE CLASS BUTTON CLICKED ===");
+                      console.log("Form valid:", form.formState.isValid);
+                      console.log("Form errors:", form.formState.errors);
+                    }}
+                  >
+                    {submitting || uploadingImage ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
+                        {uploadingImage ? "Uploading..." : "Creating..."}
                       </>
                     ) : (
                       "Create Class"
