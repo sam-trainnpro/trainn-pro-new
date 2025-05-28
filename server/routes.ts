@@ -363,14 +363,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.longitude !== undefined) updateData.longitude = req.body.longitude;
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring;
 
-      // Debug: Log the update data
+      // Try a direct database update to bypass potential ORM issues
+      const { db } = require('./db');
+      const { classes } = require('../shared/schema');
+      const { eq } = require('drizzle-orm');
+      
       console.log("About to update class with data:", JSON.stringify(updateData, null, 2));
       
-      // Update the class
-      const updatedClass = await storage.updateClass(classId, updateData);
+      const result = await db.update(classes)
+        .set(updateData)
+        .where(eq(classes.id, classId))
+        .returning();
       
-      console.log("Update successful, result:", updatedClass);
-      res.json(updatedClass);
+      console.log("Update successful, result:", result);
+      res.json(result[0]);
     } catch (error) {
       console.error("Error updating class:", error);
       res.status(500).json({ message: "Failed to update class" });
