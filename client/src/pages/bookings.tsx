@@ -340,7 +340,7 @@ export default function BookingsPage() {
                             </div>
                             <div className="flex items-center">
                               <Calendar className="h-5 w-5 mr-2 text-primary" />
-                              <span>Booking #{booking.id}</span>
+                              <span>{booking.quantity || 1} {(booking.quantity || 1) === 1 ? 'spot' : 'spots'} booked</span>
                             </div>
                           </div>
                         </CardContent>
@@ -411,7 +411,7 @@ export default function BookingsPage() {
                             </div>
                             <div className="flex items-center">
                               <Calendar className="h-5 w-5 mr-2 text-primary" />
-                              <span>Booking #{booking.id}</span>
+                              <span>{booking.quantity || 1} {(booking.quantity || 1) === 1 ? 'spot' : 'spots'} booked</span>
                             </div>
                           </div>
                         </CardContent>
