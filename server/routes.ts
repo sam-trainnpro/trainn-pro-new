@@ -765,30 +765,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a payment intent for booking a class
   app.post("/api/payment/create-intent", requireAuth, async (req, res) => {
     try {
-      const { classId, amount } = req.body;
+      const { classId, amount, quantity = 1 } = req.body;
       
       if (!classId || !amount) {
         return res.status(400).json({ message: "Missing required parameters: classId, amount" });
       }
       
-      // Create a pending booking
-      const bookingData = {
-        userId: req.user.id,
-        classId: classId,
-        status: "pending",
-        paymentMethod: "stripe"
-      };
-      
-      // Check if booking already exists
+      // Check if user already has bookings for this class
       const userBookings = await storage.getUserBookings(req.user.id);
-      const existingBooking = userBookings.find(b => 
+      const existingBookings = userBookings.filter(b => 
         b.classId === classId && 
         (b.status === "pending" || b.status === "confirmed")
       );
       
-      // If booking doesn't exist, create it
-      if (!existingBooking) {
-        await storage.createBooking(bookingData);
+      // If no existing bookings, create pending bookings for the requested quantity
+      if (existingBookings.length === 0) {
+        for (let i = 0; i < quantity; i++) {
+          const bookingData = {
+            userId: req.user.id,
+            classId: classId,
+            status: "pending",
+            paymentMethod: "stripe"
+          };
+          await storage.createBooking(bookingData);
+        }
       }
       
       // Get class details for the payment description
@@ -870,43 +870,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Confirm payment and update booking status
   app.post("/api/payment/confirm", requireAuth, async (req, res) => {
     try {
-      const { paymentIntentId, classId } = req.body;
+      const { paymentIntentId, classId, quantity = 1 } = req.body;
       
       if (!paymentIntentId || !classId) {
         return res.status(400).json({ message: "Missing required fields" });
       }
       
-      // Find the pending booking for this user and class
+      // Find all pending bookings for this user and class
       const userBookings = await storage.getUserBookings(req.user.id);
       console.log("User bookings:", userBookings);
       console.log("Looking for classId:", classId, "status: pending");
       
-      const pendingBooking = userBookings.find(b => 
+      const pendingBookings = userBookings.filter(b => 
         b.classId === parseInt(classId) && 
         b.status === "pending"
       );
       
-      console.log("Found pending booking:", pendingBooking);
+      console.log("Found pending bookings:", pendingBookings.length);
       
-      if (!pendingBooking) {
+      if (pendingBookings.length === 0) {
         return res.status(404).json({ 
-          message: "No pending booking found for this class",
+          message: "No pending bookings found for this class",
           debug: { classId, userBookings: userBookings.length }
         });
       }
       
-      // Update booking status to confirmed
-      const updatedBooking = await storage.updateBooking(pendingBooking.id, {
-        status: "confirmed",
-        stripePaymentIntentId: paymentIntentId,
-        paymentDate: new Date(),
-        paymentMethod: "stripe"
-      });
+      // Update all pending bookings to confirmed
+      const updatedBookings = [];
+      for (const booking of pendingBookings) {
+        const updatedBooking = await storage.updateBooking(booking.id, {
+          status: "confirmed",
+          stripePaymentIntentId: paymentIntentId,
+          paymentDate: new Date(),
+          paymentMethod: "stripe"
+        });
+        updatedBookings.push(updatedBooking);
+      }
       
       res.json({ 
         success: true, 
-        booking: updatedBooking,
-        message: "Booking confirmed successfully" 
+        bookings: updatedBookings,
+        count: updatedBookings.length,
+        message: `${updatedBookings.length} booking(s) confirmed successfully` 
       });
     } catch (error: any) {
       console.error("Payment confirmation error:", error);
