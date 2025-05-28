@@ -62,6 +62,10 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  
+  // State for profile image upload
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -84,12 +88,55 @@ export default function ProfilePage() {
     },
   });
 
+  // Handle image file selection
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  // Upload image and get URL
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload image');
+    }
+
+    const result = await response.json();
+    return result.imageUrl;
+  };
+
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
       if (!user) throw new Error("User not found");
       
-      const response = await apiRequest("PUT", `/api/users/${user.id}`, data);
+      let profileImageUrl = data.profileImage;
+      
+      // Upload new image if one was selected
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          profileImageUrl = await uploadImage(selectedImage);
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+      
+      const profileData = {
+        ...data,
+        profileImage: profileImageUrl,
+      };
+      
+      const response = await apiRequest("PUT", `/api/users/${user.id}`, profileData);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to update profile");
@@ -314,25 +361,53 @@ export default function ProfilePage() {
                             />
                           </div>
                           
-                          <FormField
-                            control={profileForm.control}
-                            name="profileImage"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Profile Image URL</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="https://example.com/your-image.jpg" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  URL to your profile picture. Use a square image for best results.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
+                          <div className="space-y-4">
+                            <label htmlFor="profileImage" className="text-sm font-medium">Profile Picture</label>
+                            
+                            {/* Current Image Preview */}
+                            {user.profileImage && !selectedImage && (
+                              <div className="mt-2">
+                                <p className="text-sm text-gray-600 mb-2">Current profile picture:</p>
+                                <img 
+                                  src={user.profileImage} 
+                                  alt="Current profile picture" 
+                                  className="w-24 h-24 object-cover rounded-full border"
+                                />
+                              </div>
                             )}
-                          />
+                            
+                            {/* New Image Preview */}
+                            {selectedImage && (
+                              <div className="mt-2">
+                                <p className="text-sm text-gray-600 mb-2">New profile picture preview:</p>
+                                <img 
+                                  src={URL.createObjectURL(selectedImage)} 
+                                  alt="New profile picture preview" 
+                                  className="w-24 h-24 object-cover rounded-full border"
+                                />
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="mt-2"
+                                  onClick={() => setSelectedImage(null)}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            )}
+                            
+                            <Input
+                              id="profileImage"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="cursor-pointer"
+                            />
+                            <p className="text-sm text-gray-600">
+                              Upload a profile picture. Square images work best. Accepted formats: JPG, PNG, GIF
+                            </p>
+                          </div>
 
                           {user.role === 'coach' && (
                             <FormField
@@ -361,12 +436,12 @@ export default function ProfilePage() {
                             <Button 
                               type="submit" 
                               className="bg-primary text-white"
-                              disabled={isUpdating}
+                              disabled={isUpdating || uploadingImage}
                             >
-                              {isUpdating ? (
+                              {(isUpdating || uploadingImage) ? (
                                 <>
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Saving...
+                                  {uploadingImage ? "Uploading image..." : "Saving..."}
                                 </>
                               ) : (
                                 "Save Changes"
