@@ -234,52 +234,79 @@ export default function CreateClassPage() {
     },
   });
 
+  // State for image upload
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Handle image file selection
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  // Upload image and get URL
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await apiRequest("POST", "/api/upload-image", formData);
+    const result = await response.json();
+    return result.imageUrl;
+  };
+
   // Form submission handler
   async function onSubmit(data: z.infer<typeof createClassSchema>) {
-    // Create a copy of the data to modify
-    const formattedData = { ...data };
-    
-    // Combine address fields into a single address string for API compatibility
-    formattedData.address = `${data.addressLine1}, ${data.city}, ${data.state} ${data.zipCode}`;
-    
-    // If coordinates are not set, we'll use the combined address string
-    // The backend can handle classes with just the address string
-    // This approach is more resilient when the Maps API has issues
-    if (!data.latitude || !data.longitude) {
-      console.log("No coordinates set, using address string only");
-      
-      toast({
-        title: "Using address only",
-        description: "Your class will be created with the address you provided.",
-        variant: "default"
-      });
-      
-      // Set default coordinates if needed (these can be zeroed out on the backend)
-      if (!formattedData.latitude) formattedData.latitude = 0;
-      if (!formattedData.longitude) formattedData.longitude = 0;
-    }
-    
-    // Format the startTime from the startDate field
-    const startDate = new Date(data.startDate);
-    const [hours, minutes] = data.startTime.split(':').map(Number);
-    startDate.setHours(hours, minutes, 0, 0);
-    
-    // Format the startTime field as an ISO string
-    formattedData.startTime = startDate.toISOString();
-    
-    // Calculate end time by adding duration in minutes
-    const endDate = new Date(startDate.getTime() + data.duration * 60000);
-    // Add endTime to formattedData as it's expected by the API
-    formattedData.endTime = endDate.toISOString();
-    
-    console.log("Class - Start time:", formattedData.startTime);
-    console.log("Class - End time:", formattedData.endTime);
-    console.log("Class - Address:", formattedData.address);
-    
-    setSubmitting(true);
-    
     try {
-      console.log("Submitting class with data:", formattedData);
+      setUploadingImage(true);
+      
+      // Create a copy of the data to modify
+      const formattedData = { ...data };
+
+      // Upload image if selected
+      if (selectedImage) {
+        formattedData.image = await uploadImage(selectedImage);
+      }
+    
+      // Combine address fields into a single address string for API compatibility
+      formattedData.address = `${data.addressLine1}, ${data.city}, ${data.state} ${data.zipCode}`;
+      
+      // If coordinates are not set, we'll use the combined address string
+      // The backend can handle classes with just the address string
+      // This approach is more resilient when the Maps API has issues
+      if (!data.latitude || !data.longitude) {
+        console.log("No coordinates set, using address string only");
+        
+        toast({
+          title: "Using address only",
+          description: "Your class will be created with the address you provided.",
+          variant: "default"
+        });
+        
+        // Set default coordinates if needed (these can be zeroed out on the backend)
+        if (!formattedData.latitude) formattedData.latitude = 0;
+        if (!formattedData.longitude) formattedData.longitude = 0;
+      }
+      
+      // Format the startTime from the startDate field
+      const startDate = new Date(data.startDate);
+      const [hours, minutes] = data.startTime.split(':').map(Number);
+      startDate.setHours(hours, minutes, 0, 0);
+      
+      // Format the startTime field as an ISO string
+      formattedData.startTime = startDate.toISOString();
+      
+      // Calculate end time by adding duration in minutes
+      const endDate = new Date(startDate.getTime() + data.duration * 60000);
+      // Add endTime to formattedData as it's expected by the API
+      formattedData.endTime = endDate.toISOString();
+      
+      console.log("Class - Start time:", formattedData.startTime);
+      console.log("Class - End time:", formattedData.endTime);
+      console.log("Class - Address:", formattedData.address);
+      
+      setSubmitting(true);
       
       // Submit the processed data
       await createClass(formattedData);
@@ -301,6 +328,7 @@ export default function CreateClassPage() {
       });
     } finally {
       setSubmitting(false);
+      setUploadingImage(false);
     }
   }
 
