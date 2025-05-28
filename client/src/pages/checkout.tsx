@@ -176,6 +176,10 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Get quantity from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const quantity = parseInt(urlParams.get('quantity') || '1');
+  
   // Redirect if not logged in
   if (!user) {
     navigate("/auth");
@@ -225,7 +229,8 @@ export default function CheckoutPage() {
         // Create a payment intent
         const res = await apiRequest("POST", "/api/payment/create-intent", { 
           classId, 
-          amount: classItem.price * 1.05 // Include 5% service fee
+          quantity,
+          amount: classItem.price * quantity * 1.05 // Include 5% service fee for multiple spots
         });
         const data = await res.json();
         
