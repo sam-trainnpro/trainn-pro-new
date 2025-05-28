@@ -363,8 +363,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.longitude !== undefined) updateData.longitude = req.body.longitude;
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring;
 
+      // Debug: Log the update data
+      console.log("About to update class with data:", JSON.stringify(updateData, null, 2));
+      
       // Update the class
       const updatedClass = await storage.updateClass(classId, updateData);
+      
+      console.log("Update successful, result:", updatedClass);
       res.json(updatedClass);
     } catch (error) {
       console.error("Error updating class:", error);
