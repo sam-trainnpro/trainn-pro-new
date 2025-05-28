@@ -796,17 +796,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (b.status === "pending" || b.status === "confirmed")
       );
       
-      // If no existing bookings, create pending bookings for the requested quantity
+      // If no existing bookings, create a single pending booking with the requested quantity
       if (existingBookings.length === 0) {
-        for (let i = 0; i < quantity; i++) {
-          const bookingData = {
-            userId: req.user.id,
-            classId: classId,
-            status: "pending",
-            paymentMethod: "stripe"
-          };
-          await storage.createBooking(bookingData);
-        }
+        const bookingData = {
+          userId: req.user.id,
+          classId: classId,
+          quantity: quantity,
+          status: "pending",
+          paymentMethod: "stripe"
+        };
+        await storage.createBooking(bookingData);
       }
       
       // Get class details for the payment description
@@ -913,23 +912,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update all pending bookings to confirmed
-      const updatedBookings = [];
-      for (const booking of pendingBookings) {
-        const updatedBooking = await storage.updateBooking(booking.id, {
-          status: "confirmed",
-          stripePaymentIntentId: paymentIntentId,
-          paymentDate: new Date(),
-          paymentMethod: "stripe"
-        });
-        updatedBookings.push(updatedBooking);
-      }
+      // Update the single pending booking to confirmed
+      const booking = pendingBookings[0]; // Should only be one booking now
+      const updatedBooking = await storage.updateBooking(booking.id, {
+        status: "confirmed",
+        stripePaymentIntentId: paymentIntentId,
+        paymentDate: new Date(),
+        paymentMethod: "stripe"
+      });
       
       res.json({ 
         success: true, 
-        bookings: updatedBookings,
-        count: updatedBookings.length,
-        message: `${updatedBookings.length} booking(s) confirmed successfully` 
+        booking: updatedBooking,
+        quantity: updatedBooking?.quantity || 1,
+        message: `Booking confirmed successfully for ${updatedBooking?.quantity || 1} spot(s)` 
       });
     } catch (error: any) {
       console.error("Payment confirmation error:", error);
