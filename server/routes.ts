@@ -346,37 +346,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Only include defined fields to avoid null/undefined issues
+      // Simplified update with just basic fields that we know work
       const updateData: any = {};
       
-      if (req.body.title !== undefined) updateData.title = req.body.title;
-      if (req.body.description !== undefined) updateData.description = req.body.description;
-      if (req.body.categoryId !== undefined) updateData.categoryId = parseInt(req.body.categoryId);
-      if (req.body.price !== undefined) updateData.price = parseFloat(req.body.price);
-      if (req.body.capacity !== undefined) updateData.capacity = parseInt(req.body.capacity);
-      if (req.body.location !== undefined) updateData.location = req.body.location;
-      if (req.body.address !== undefined) updateData.address = req.body.address;
-      if (req.body.image !== undefined) updateData.image = req.body.image;
-      if (req.body.startTime !== undefined) updateData.startTime = req.body.startTime;
-      if (req.body.endTime !== undefined) updateData.endTime = req.body.endTime;
-      if (req.body.latitude !== undefined) updateData.latitude = req.body.latitude;
-      if (req.body.longitude !== undefined) updateData.longitude = req.body.longitude;
-      if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring;
+      // Only add fields that definitely exist and have valid values
+      if (req.body.title) updateData.title = String(req.body.title);
+      if (req.body.description) updateData.description = String(req.body.description);
+      if (req.body.categoryId) updateData.categoryId = parseInt(req.body.categoryId);
+      if (req.body.price) updateData.price = parseFloat(req.body.price);
+      if (req.body.capacity) updateData.capacity = parseInt(req.body.capacity);
+      if (req.body.location) updateData.location = String(req.body.location);
+      if (req.body.address) updateData.address = String(req.body.address);
+      if (req.body.image) updateData.image = String(req.body.image);
+      
+      // Handle date fields carefully
+      if (req.body.startTime) {
+        updateData.startTime = new Date(req.body.startTime);
+      }
+      if (req.body.endTime) {
+        updateData.endTime = new Date(req.body.endTime);
+      }
 
-      // Try a direct database update to bypass potential ORM issues
-      const { db } = require('./db');
-      const { classes } = require('../shared/schema');
-      const { eq } = require('drizzle-orm');
+      // Update the class using storage method
+      const updatedClass = await storage.updateClass(classId, updateData);
       
-      console.log("About to update class with data:", JSON.stringify(updateData, null, 2));
+      if (!updatedClass) {
+        return res.status(404).json({ message: "Class not found or update failed" });
+      }
       
-      const result = await db.update(classes)
-        .set(updateData)
-        .where(eq(classes.id, classId))
-        .returning();
-      
-      console.log("Update successful, result:", result);
-      res.json(result[0]);
+      res.json(updatedClass);
     } catch (error) {
       console.error("Error updating class:", error);
       res.status(500).json({ message: "Failed to update class" });
