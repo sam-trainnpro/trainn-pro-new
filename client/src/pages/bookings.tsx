@@ -52,7 +52,6 @@ import { Helmet } from "react-helmet";
 
 interface BookingWithClass extends Booking {
   class?: Class;
-  quantity?: number;
 }
 
 export default function BookingsPage() {

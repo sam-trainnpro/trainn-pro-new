@@ -125,6 +125,7 @@ export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   classId: integer("class_id").notNull(),
+  quantity: integer("quantity").notNull().default(1), // Number of spots booked
   status: text("status").notNull().default("pending"), // pending, confirmed, cancelled, refunded
   stripePaymentId: text("stripe_payment_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
@@ -143,6 +144,7 @@ export const bookings = pgTable("bookings", {
 export const insertBookingSchema = createInsertSchema(bookings).pick({
   userId: true,
   classId: true,
+  quantity: true,
   status: true,
 });
 
