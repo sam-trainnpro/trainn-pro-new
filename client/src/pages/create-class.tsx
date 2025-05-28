@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation as useUserLocation } from "@/hooks/use-location";
 import PlacesAutocomplete from "@/components/maps/places-autocomplete";
 import LocationPreview from "@/components/maps/location-preview";
+import InteractiveLocationPicker from "@/components/maps/interactive-location-picker";
 import GoogleMapsScript from "@/components/maps/google-maps-script";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -237,6 +238,10 @@ export default function CreateClassPage() {
   // State for image upload
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // State for location selection
+  const [showLocationMap, setShowLocationMap] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
 
   // Handle image file selection
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,6 +249,29 @@ export default function CreateClassPage() {
     if (file) {
       setSelectedImage(file);
     }
+  };
+
+  // Handle address selection from Places autocomplete
+  const handleAddressSelect = (addressData: any) => {
+    // Update form fields with the selected address data
+    form.setValue('location', addressData.addressLine1 || '');
+    form.setValue('addressLine1', addressData.addressLine1 || '');
+    form.setValue('city', addressData.city || '');
+    form.setValue('state', addressData.state || '');
+    form.setValue('zipCode', addressData.zipCode || '');
+    form.setValue('latitude', addressData.lat || 0);
+    form.setValue('longitude', addressData.lng || 0);
+    
+    // Show the map for fine-tuning location
+    setSelectedLocation({ lat: addressData.lat, lng: addressData.lng });
+    setShowLocationMap(true);
+  };
+
+  // Handle location adjustment from interactive map
+  const handleLocationChange = (lat: number, lng: number) => {
+    form.setValue('latitude', lat);
+    form.setValue('longitude', lng);
+    setSelectedLocation({ lat, lng });
   };
 
   // Upload image and get URL
@@ -566,36 +594,25 @@ export default function CreateClassPage() {
                     />
                     
                     <div className="flex flex-col space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="location"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Central Park" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              A short name for the location (e.g. park name, gym name)
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div>
+                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Search for Location <span className="text-destructive">*</span>
+                        </label>
+                        <div className="mt-2">
+                          <GoogleMapsScript>
+                            <PlacesAutocomplete
+                              onAddressSelect={handleAddressSelect}
+                              placeholder="Search for parks, gyms, addresses..."
+                            />
+                          </GoogleMapsScript>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Start typing to search for locations. Select from the dropdown to auto-fill address details.
+                        </p>
+                      </div>
                       
                       <div className="border rounded-md p-4 space-y-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium">Address Details</h4>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            className="h-8" 
-                            onClick={handleGetLocation}
-                          >
-                            Use Current Location
-                          </Button>
-                        </div>
+                        <h4 className="text-sm font-medium">Address Details</h4>
                         
                         <FormField
                           control={form.control}
