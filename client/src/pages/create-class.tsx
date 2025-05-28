@@ -594,25 +594,36 @@ export default function CreateClassPage() {
                     />
                     
                     <div className="flex flex-col space-y-4">
-                      <div>
-                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          Search for Location <span className="text-destructive">*</span>
-                        </label>
-                        <div className="mt-2">
-                          <GoogleMapsScript>
-                            <PlacesAutocomplete
-                              onAddressSelect={handleAddressSelect}
-                              placeholder="Search for parks, gyms, addresses..."
-                            />
-                          </GoogleMapsScript>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Start typing to search for locations. Select from the dropdown to auto-fill address details.
-                        </p>
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Central Park, 24 Hour Fitness" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              A short name for the location (e.g. park name, gym name)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
                       <div className="border rounded-md p-4 space-y-4">
-                        <h4 className="text-sm font-medium">Address Details</h4>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium">Address Details</h4>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            className="h-8" 
+                            onClick={handleGetLocation}
+                          >
+                            Use Current Location
+                          </Button>
+                        </div>
                         
                         <FormField
                           control={form.control}
@@ -695,20 +706,7 @@ export default function CreateClassPage() {
                       </GoogleMapsScript>
                     </div>
                     
-                    {/* Interactive Map for Pin Adjustment */}
-                    {showLocationMap && selectedLocation && (
-                      <div className="border rounded-md p-4 space-y-4">
-                        <h4 className="text-sm font-medium">Adjust Exact Location</h4>
-                        <GoogleMapsScript>
-                          <InteractiveLocationPicker
-                            latitude={selectedLocation.lat}
-                            longitude={selectedLocation.lng}
-                            onLocationChange={handleLocationChange}
-                            height="300px"
-                          />
-                        </GoogleMapsScript>
-                      </div>
-                    )}
+
                   </div>
                 </div>
                 
