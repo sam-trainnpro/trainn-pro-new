@@ -43,8 +43,9 @@ const editClassSchema = z.object({
   location: z.string().min(3, "Location is required"),
   address: z.string().min(5, "Address is required"),
   image: z.string().optional().nullable(),
-  startTime: z.date().optional().nullable(),
-  endTime: z.date().optional().nullable(),
+  classDate: z.date(),
+  startTime: z.string().min(1, "Start time is required"),
+  duration: z.coerce.number().positive("Duration must be positive"),
 });
 
 type EditClassFormValues = z.infer<typeof editClassSchema>;
@@ -89,8 +90,9 @@ export default function EditClassPage() {
       location: "",
       address: "",
       image: "",
-      startTime: null,
-      endTime: null,
+      classDate: new Date(),
+      startTime: "09:00",
+      duration: 60,
     }
   });
   
@@ -110,6 +112,27 @@ export default function EditClassPage() {
       // Initialize recurring series state
       setIsRecurringSeries(classData.isRecurring || false);
       
+      // Extract date and time information from existing class data
+      const startDateTime = classData.startTime ? new Date(classData.startTime) : new Date();
+      const endDateTime = classData.endTime ? new Date(classData.endTime) : new Date();
+      
+      // Extract date (just the date part) - ensure it's a valid date
+      const classDate = new Date(startDateTime.getFullYear(), startDateTime.getMonth(), startDateTime.getDate());
+      
+      // Validate the date
+      if (isNaN(classDate.getTime())) {
+        classDate = new Date(); // Fallback to today if invalid
+      }
+      
+      // Extract time in HH:MM format
+      const hours = startDateTime.getHours().toString().padStart(2, '0');
+      const minutes = startDateTime.getMinutes().toString().padStart(2, '0');
+      const timeString = `${hours}:${minutes}`;
+      
+      // Calculate duration in minutes
+      const durationMs = endDateTime.getTime() - startDateTime.getTime();
+      const duration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
+
       form.reset({
         title: classData.title,
         description: classData.description,
@@ -118,9 +141,10 @@ export default function EditClassPage() {
         capacity: classData.capacity,
         location: classData.location,
         address: classData.address || "",
-        image: classData.image,
-        startTime,
-        endTime,
+        image: classData.image || "",
+        classDate: classDate,
+        startTime: timeString,
+        duration: duration > 0 ? duration : 60, // Default to 60 minutes if calculation fails
       });
     }
   }, [classData, form]);
@@ -175,18 +199,38 @@ export default function EditClassPage() {
         }
       }
       
-      // Log the received dates for debugging
+      // Convert the new date/time format back to startTime and endTime
+      const [hours, minutes] = data.startTime.split(':').map(Number);
+      
+      // Create start time by combining class date with start time
+      const startTime = new Date(data.classDate);
+      startTime.setHours(hours, minutes, 0, 0);
+      
+      // Create end time by adding duration to start time
+      const endTime = new Date(startTime);
+      endTime.setMinutes(endTime.getMinutes() + data.duration);
+      
+      // Log the calculated dates for debugging
       console.log('Form submission data (dates):', {
+        classDate: data.classDate,
         startTime: data.startTime,
-        endTime: data.endTime
+        duration: data.duration,
+        calculatedStartTime: startTime.toISOString(),
+        calculatedEndTime: endTime.toISOString()
       });
       
-      // Format the dates properly, ensuring they are in UTC for storage
+      // Format the data for the server
       const formattedData = {
-        ...data,
+        title: data.title,
+        description: data.description,
+        categoryId: data.categoryId,
+        price: data.price,
+        capacity: data.capacity,
+        location: data.location,
+        address: data.address,
         image: imageUrl,
-        startTime: data.startTime ? data.startTime.toISOString() : null,
-        endTime: data.endTime ? data.endTime.toISOString() : null,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
       };
       
       console.log('Formatted data sent to server:', formattedData);
