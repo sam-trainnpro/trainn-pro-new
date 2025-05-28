@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 type AddressComponents = {
@@ -23,19 +22,19 @@ const PlacesAutocomplete = ({
   placeholder = "Enter an address", 
   defaultValue = ""
 }: PlacesAutocompleteProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [value, setValue] = useState(defaultValue);
+  const autocompleteRef = useRef<any>(null);
   const { toast } = useToast();
   
   // Load Google Maps script if needed
   useEffect(() => {
     const loadGoogleMapsScript = () => {
       if (window.google && window.google.maps && window.google.maps.places) {
-        return; // Already loaded
+        initializeAutocomplete();
+        return;
       }
       
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
       script.async = true;
       script.defer = true;
       
@@ -47,28 +46,25 @@ const PlacesAutocomplete = ({
     };
     
     loadGoogleMapsScript();
-    
-    return () => {
-      // Clean up event listeners if needed
-    };
   }, []);
   
-  // Initialize autocomplete once Google Maps is loaded
+  // Initialize the new PlaceAutocompleteElement
   const initializeAutocomplete = () => {
-    if (!inputRef.current || !window.google || !window.google.maps || !window.google.maps.places) {
+    if (!window.google || !window.google.maps || !window.google.maps.places) {
       return;
     }
     
     try {
-      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-        types: ['establishment', 'geocode'],
-        fields: ['formatted_address', 'geometry', 'address_components', 'name']
-      });
+      // Create the new PlaceAutocompleteElement
+      const autocompleteElement = document.createElement('gmp-place-autocomplete') as any;
+      autocompleteElement.setAttribute('placeholder', placeholder);
+      autocompleteElement.setAttribute('type', 'establishment, geocode');
       
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
+      // Add event listener for place selection
+      autocompleteElement.addEventListener('gmp-placeselect', (event: any) => {
+        const place = event.place;
         
-        if (!place.geometry || !place.geometry.location) {
+        if (!place.location) {
           toast({
             title: "Invalid Location",
             description: "Please select a location from the dropdown",
@@ -78,11 +74,11 @@ const PlacesAutocomplete = ({
         }
         
         // Get coordinates
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
+        const lat = place.location.lat();
+        const lng = place.location.lng();
         
         // Parse address components
-        const addressComponents = place.address_components || [];
+        const addressComponents = place.addressComponents || [];
         let addressLine1 = '';
         let city = '';
         let state = '';
@@ -93,21 +89,21 @@ const PlacesAutocomplete = ({
           const types = component.types;
           
           if (types.includes('street_number')) {
-            addressLine1 = component.long_name + ' ';
+            addressLine1 = component.longText + ' ';
           } else if (types.includes('route')) {
-            addressLine1 += component.long_name;
+            addressLine1 += component.longText;
           } else if (types.includes('locality')) {
-            city = component.long_name;
+            city = component.longText;
           } else if (types.includes('administrative_area_level_1')) {
-            state = component.short_name;
+            state = component.shortText;
           } else if (types.includes('postal_code')) {
-            zipCode = component.long_name;
+            zipCode = component.longText;
           }
         });
         
         // If no street address found, use the place name
-        if (!addressLine1.trim() && place.name) {
-          addressLine1 = place.name;
+        if (!addressLine1.trim() && place.displayName) {
+          addressLine1 = place.displayName;
         }
         
         const addressData: AddressComponents = {
@@ -115,34 +111,35 @@ const PlacesAutocomplete = ({
           city: city,
           state: state,
           zipCode: zipCode,
-          fullAddress: place.formatted_address || '',
+          fullAddress: place.formattedAddress || '',
           lat: lat,
           lng: lng
         };
         
         // Pass data back to parent component
         onAddressSelect(addressData);
-        setValue(place.name || place.formatted_address || '');
       });
+      
+      // Replace the container content with the new element
+      if (autocompleteRef.current) {
+        autocompleteRef.current.innerHTML = '';
+        autocompleteRef.current.appendChild(autocompleteElement);
+      }
+      
     } catch (error) {
-      console.error('Error initializing Google Places Autocomplete:', error);
+      console.error('Error initializing Google PlaceAutocompleteElement:', error);
+      // Fallback to regular input if the new element fails
+      if (autocompleteRef.current) {
+        autocompleteRef.current.innerHTML = `<input type="text" placeholder="${placeholder}" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />`;
+      }
     }
   };
   
-  useEffect(() => {
-    // Wait for Google Maps to load then initialize
-    if (window.google && window.google.maps && window.google.maps.places) {
-      initializeAutocomplete();
-    }
-  }, [inputRef.current]);
-  
   return (
-    <Input
-      ref={inputRef}
-      type="text"
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      placeholder={placeholder}
+    <div 
+      ref={autocompleteRef}
+      className="w-full"
+      style={{ minHeight: '40px' }}
     />
   );
 };
