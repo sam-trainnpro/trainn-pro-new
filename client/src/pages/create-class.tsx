@@ -251,7 +251,16 @@ export default function CreateClassPage() {
     const formData = new FormData();
     formData.append('image', file);
     
-    const response = await apiRequest("POST", "/api/upload-image", formData);
+    const response = await fetch("/api/upload-image", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
+    }
+    
     const result = await response.json();
     return result.imageUrl;
   };
