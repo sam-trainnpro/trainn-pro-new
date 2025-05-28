@@ -39,7 +39,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const CheckoutForm = ({ classItem }: { classItem: Class }) => {
+const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: number }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -77,7 +77,8 @@ const CheckoutForm = ({ classItem }: { classItem: Class }) => {
       try {
         const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
           paymentIntentId: paymentIntent?.id,
-          classId: classItem.id
+          classId: classItem.id,
+          quantity: quantity
         });
         
         if (confirmResponse.ok) {
@@ -131,17 +132,17 @@ const CheckoutForm = ({ classItem }: { classItem: Class }) => {
       
       <div className="space-y-3">
         <div className="flex justify-between">
-          <span>Class price</span>
-          <span>${classItem.price.toFixed(2)}</span>
+          <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
+          <span>${(classItem.price * quantity).toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
           <span>Service fee</span>
-          <span>${(classItem.price * 0.05).toFixed(2)}</span>
+          <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
         </div>
         <Separator />
         <div className="flex justify-between font-medium">
           <span>Total</span>
-          <span>${(classItem.price * 1.05).toFixed(2)}</span>
+          <span>${(classItem.price * quantity * 1.05).toFixed(2)}</span>
         </div>
       </div>
       
@@ -156,7 +157,7 @@ const CheckoutForm = ({ classItem }: { classItem: Class }) => {
             Processing Payment...
           </>
         ) : (
-          `Pay $${(classItem.price * 1.05).toFixed(2)}`
+          `Pay $${(classItem.price * quantity * 1.05).toFixed(2)}`
         )}
       </Button>
       
@@ -441,7 +442,7 @@ export default function CheckoutPage() {
                     </div>
                   ) : clientSecret ? (
                     <Elements stripe={stripePromise} options={{ clientSecret }}>
-                      <CheckoutForm classItem={classItem} />
+                      <CheckoutForm classItem={classItem} quantity={quantity} />
                     </Elements>
                   ) : null}
                 </CardContent>
