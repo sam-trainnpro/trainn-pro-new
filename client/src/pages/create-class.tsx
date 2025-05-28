@@ -445,26 +445,27 @@ export default function CreateClassPage() {
                       )}
                     />
                     
-                    <FormField
-                      control={form.control}
-                      name="image"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Image URL (optional)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="e.g. https://example.com/image.jpg" 
-                              {...field} 
-                              value={field.value || ""}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Provide a URL to an image representing your class
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Class Image (optional)
+                      </label>
+                      <div className="mt-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                        />
+                        {selectedImage && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Selected: {selectedImage.name}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Upload an image that represents your class (max 5MB)
+                      </p>
+                    </div>
                   </div>
                   
                   <div className="space-y-6">
