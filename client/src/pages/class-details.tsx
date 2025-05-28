@@ -7,6 +7,8 @@ import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
+import GoogleMapsScript from "@/components/maps/google-maps-script";
+import LocationPreview from "@/components/maps/location-preview";
 import { 
   Card, 
   CardContent, 
@@ -331,11 +333,15 @@ export default function ClassDetailsPage() {
                     
                     <TabsContent value="location" className="bg-white rounded-xl p-6 shadow-sm min-h-[300px]">
                       <h2 className="text-xl font-bold mb-4">Location</h2>
-                      <div className="bg-[#F7F7F7] h-48 md:h-64 rounded-lg flex items-center justify-center mb-4">
-                        <MapIcon className="h-12 w-12 text-muted-foreground" />
-                        <p className="ml-2 text-muted-foreground">Map view</p>
-                      </div>
-                      <div>
+                      <GoogleMapsScript>
+                        <LocationPreview 
+                          latitude={classItem.latitude} 
+                          longitude={classItem.longitude}
+                          address={classItem.address}
+                          height="256px"
+                        />
+                      </GoogleMapsScript>
+                      <div className="mt-4">
                         <h3 className="font-medium mb-1">Address</h3>
                         <p className="text-muted-foreground">{classItem.address}</p>
                       </div>
