@@ -298,29 +298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update class (coaches only)
-  app.put("/api/classes/:id", requireCoach, async (req, res) => {
-    try {
-      const classId = parseInt(req.params.id);
-      const classData = req.body;
-      
-      // Check if the class belongs to the coach
-      const classItem = await storage.getClass(classId);
-      if (!classItem) {
-        return res.status(404).json({ message: "Class not found" });
-      }
-      
-      if (classItem.coachId !== req.user.id) {
-        return res.status(403).json({ message: "Not authorized to update this class" });
-      }
-      
-      const updatedClass = await storage.updateClass(classId, classData);
-      res.json(updatedClass);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update class" });
-    }
-  });
-
   // Delete class (coaches only)
   app.delete("/api/classes/:id", requireCoach, async (req, res) => {
     try {
