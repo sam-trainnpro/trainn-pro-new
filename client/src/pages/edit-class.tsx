@@ -42,7 +42,7 @@ const editClassSchema = z.object({
   capacity: z.coerce.number().int().positive("Capacity must be a positive integer"),
   location: z.string().min(3, "Location is required"),
   address: z.string().min(5, "Address is required"),
-  image: z.string().url("Must be a valid URL").optional().nullable(),
+  image: z.string().optional().nullable(),
   startTime: z.date().optional().nullable(),
   endTime: z.date().optional().nullable(),
 });
@@ -54,6 +54,10 @@ export default function EditClassPage() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // State for image upload
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   // Fetch the class to edit
   const {
@@ -128,10 +132,48 @@ export default function EditClassPage() {
   const [isRecurringSeries, setIsRecurringSeries] = useState(false);
   const [updateSeries, setUpdateSeries] = useState(false);
   
+  // Handle image file selection
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  // Upload image and get URL
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload image');
+    }
+
+    const result = await response.json();
+    return result.imageUrl;
+  };
+  
   // Edit class mutation
   const editMutation = useMutation({
     mutationFn: async (data: EditClassFormValues) => {
       if (!id) throw new Error("Class ID is missing");
+      
+      let imageUrl = data.image;
+      
+      // Upload new image if one was selected
+      if (selectedImage) {
+        setUploadingImage(true);
+        try {
+          imageUrl = await uploadImage(selectedImage);
+        } finally {
+          setUploadingImage(false);
+        }
+      }
       
       // Log the received dates for debugging
       console.log('Form submission data (dates):', {
@@ -142,6 +184,7 @@ export default function EditClassPage() {
       // Format the dates properly, ensuring they are in UTC for storage
       const formattedData = {
         ...data,
+        image: imageUrl,
         startTime: data.startTime ? data.startTime.toISOString() : null,
         endTime: data.endTime ? data.endTime.toISOString() : null,
       };
@@ -465,23 +508,55 @@ export default function EditClassPage() {
                 )}
               />
               
-              {/* Image URL */}
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} value={field.value || ""} />
-                    </FormControl>
-                    <FormDescription>
-                      Provide a URL to an image that represents your class
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+              {/* Class Image Upload */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="image-upload">Class Image (optional)</Label>
+                  <div className="mt-2">
+                    <input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload an image that represents your class (max 5MB)
+                  </p>
+                </div>
+                
+                {/* Show current image or selected image preview */}
+                {(selectedImage || (classData?.image && !selectedImage)) && (
+                  <div className="space-y-2">
+                    <Label>Image Preview</Label>
+                    <div className="relative w-full h-48 border rounded-md overflow-hidden">
+                      <img
+                        src={selectedImage ? URL.createObjectURL(selectedImage) : classData?.image || ''}
+                        alt="Class preview"
+                        className="w-full h-full object-cover"
+                      />
+                      {selectedImage && (
+                        <div className="absolute top-2 right-2">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setSelectedImage(null)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    {selectedImage && (
+                      <p className="text-sm text-green-600">
+                        Selected: {selectedImage.name}
+                      </p>
+                    )}
+                  </div>
                 )}
-              />
+              </div>
               
               {/* Start Time */}
               <FormField
@@ -634,12 +709,12 @@ export default function EditClassPage() {
                 <Button 
                   type="submit" 
                   className="bg-primary text-white"
-                  disabled={editMutation.isPending}
+                  disabled={editMutation.isPending || uploadingImage}
                 >
-                  {editMutation.isPending ? (
+                  {(editMutation.isPending || uploadingImage) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
+                      {uploadingImage ? "Uploading image..." : "Saving..."}
                     </>
                   ) : (
                     <>
