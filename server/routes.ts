@@ -161,6 +161,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image upload endpoint
+  app.post("/api/upload-image", requireAuth, upload.single('image'), (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      // Return the file path that can be used as the image URL
+      const imageUrl = `/uploads/${req.file.filename}`;
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "File upload failed" });
+    }
+  });
+
   // Create a new class (coaches only)
   app.post("/api/classes", requireCoach, async (req, res) => {
     try {
