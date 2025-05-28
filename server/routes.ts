@@ -900,20 +900,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update the single pending booking to confirmed
-      const booking = pendingBookings[0]; // Should only be one booking now
-      const updatedBooking = await storage.updateBooking(booking.id, {
-        status: "confirmed",
-        stripePaymentIntentId: paymentIntentId,
-        paymentDate: new Date(),
-        paymentMethod: "stripe"
-      });
+      // If we have multiple old-style bookings, update them all for now
+      // But in the future, new bookings will be single records with quantity
+      const updatedBookings = [];
+      for (const booking of pendingBookings) {
+        const updatedBooking = await storage.updateBooking(booking.id, {
+          status: "confirmed",
+          stripePaymentIntentId: paymentIntentId,
+          paymentDate: new Date(),
+          paymentMethod: "stripe"
+        });
+        updatedBookings.push(updatedBooking);
+      }
+      
+      // Calculate total quantity from all bookings
+      const totalQuantity = updatedBookings.reduce((sum, booking) => sum + (booking?.quantity || 1), 0);
       
       res.json({ 
         success: true, 
-        booking: updatedBooking,
-        quantity: updatedBooking?.quantity || 1,
-        message: `Booking confirmed successfully for ${updatedBooking?.quantity || 1} spot(s)` 
+        bookings: updatedBookings,
+        quantity: totalQuantity,
+        message: `Booking confirmed successfully for ${totalQuantity} spot(s)` 
       });
     } catch (error: any) {
       console.error("Payment confirmation error:", error);
