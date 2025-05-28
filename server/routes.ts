@@ -527,18 +527,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       const bookings = await storage.getUserBookings(userId);
       
-      // Get the class details for each booking
-      const bookingsWithDetails = await Promise.all(
-        bookings.map(async (booking) => {
-          const classItem = await storage.getClass(booking.classId);
-          return {
-            ...booking,
-            class: classItem
-          };
-        })
-      );
+      // Group bookings by class and status
+      const groupedBookings = new Map();
       
-      res.json(bookingsWithDetails);
+      for (const booking of bookings) {
+        const key = `${booking.classId}-${booking.status}`;
+        if (!groupedBookings.has(key)) {
+          const classItem = await storage.getClass(booking.classId);
+          groupedBookings.set(key, {
+            id: booking.id, // Use the first booking ID as the group ID
+            classId: booking.classId,
+            userId: booking.userId,
+            status: booking.status,
+            paymentMethod: booking.paymentMethod,
+            paymentDate: booking.paymentDate,
+            stripePaymentIntentId: booking.stripePaymentIntentId,
+            createdAt: booking.createdAt,
+            class: classItem,
+            quantity: 1
+          });
+        } else {
+          // Increment quantity for multiple bookings of the same class with same status
+          const existingGroup = groupedBookings.get(key);
+          existingGroup.quantity += 1;
+        }
+      }
+      
+      // Convert back to array
+      const groupedBookingsArray = Array.from(groupedBookings.values());
+      
+      res.json(groupedBookingsArray);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch bookings" });
     }
