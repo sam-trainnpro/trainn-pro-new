@@ -16,7 +16,7 @@ import ProfilePage from "@/pages/profile";
 import AdminPage from "@/pages/admin";
 import CreateClassPage from "@/pages/create-class";
 import MyClassesPage from "@/pages/my-classes";
-import EditClassPage from "@/pages/edit-class";
+import EditClassPage from "@/pages/edit-class-new";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {

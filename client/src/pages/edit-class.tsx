@@ -117,7 +117,7 @@ export default function EditClassPage() {
       const endDateTime = classData.endTime ? new Date(classData.endTime) : new Date();
       
       // Extract date (just the date part) - ensure it's a valid date
-      const classDate = new Date(startDateTime.getFullYear(), startDateTime.getMonth(), startDateTime.getDate());
+      let classDate = new Date(startDateTime.getFullYear(), startDateTime.getMonth(), startDateTime.getDate());
       
       // Validate the date
       if (isNaN(classDate.getTime())) {
