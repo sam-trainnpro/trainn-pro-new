@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Filter, DollarSign, X, RefreshCw } from 'lucide-react';
+import { Search, MapPin, Calendar, Filter, X, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -8,7 +8,6 @@ import {
   PopoverTrigger 
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Slider } from '@/components/ui/slider';
 import { 
   Select, 
   SelectContent, 
@@ -31,7 +30,6 @@ export interface SearchFilters {
   location?: string;
   date?: Date;
   classType?: string;
-  priceRange?: [number, number];
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -39,7 +37,6 @@ export interface SearchFilters {
 export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const initialFilters: SearchFilters = {
     query: '',
-    priceRange: [0, 100],
   };
   
   const [searchParams, setSearchParams] = useState<SearchFilters>(initialFilters);
@@ -59,27 +56,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     },
   });
   
-  // Fetch price range data from classes
-  const { data: classes } = useQuery({
-    queryKey: ['/api/classes'],
-    queryFn: async () => {
-      const response = await fetch('/api/classes');
-      if (!response.ok) {
-        throw new Error('Failed to fetch classes');
-      }
-      return response.json();
-    },
-    select: (data) => {
-      if (data && data.length > 0) {
-        // Calculate min and max price from all classes
-        const prices = data.map((classItem: any) => classItem.price);
-        const minPrice = Math.min(...prices);
-        const maxPrice = Math.max(...prices);
-        return { minPrice, maxPrice, classes: data };
-      }
-      return { minPrice: 0, maxPrice: 100, classes: data };
-    },
-  });
+
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchParams({
@@ -92,8 +69,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     onSearch({
       ...searchParams,
       latitude,
-      longitude,
-      priceRange: searchParams.priceRange as [number, number]
+      longitude
     });
   };
   
@@ -103,25 +79,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     }
   };
   
-  const handlePriceChange = (value: number[]) => {
-    const newParams = {
-      ...searchParams,
-      priceRange: [value[0], value[1]] as [number, number]
-    };
-    setSearchParams(newParams);
-    // Only trigger search after a short delay to avoid too many requests while sliding
-    const delayDebounceFn = setTimeout(() => {
-      // Cast to the correct type for the search
-    onSearch({
-        ...newParams,
-        latitude,
-        longitude,
-        priceRange: newParams.priceRange as [number, number]
-      });
-    }, 300);
-    
-    return () => clearTimeout(delayDebounceFn);
-  };
+
   
   const handleDateSelect = (date: Date | undefined) => {
     const newParams = {
@@ -167,12 +125,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     if (searchParams.classType) count++;
     if (latitude && longitude) count++;
     
-    // Only count price if it's different from initial values
-    if (searchParams.priceRange && 
-        (searchParams.priceRange[0] !== initialFilters.priceRange?.[0] || 
-         searchParams.priceRange[1] !== initialFilters.priceRange?.[1])) {
-      count++;
-    }
+
     
     setActiveFiltersCount(count);
   }, [searchParams, latitude, longitude]);
@@ -303,32 +256,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
               </PopoverContent>
             </Popover>
             
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="min-w-fit flex items-center gap-1">
-                  <span>Price</span>
-                  <DollarSign className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Price range</h4>
-                  <div className="px-2">
-                    <Slider 
-                      defaultValue={searchParams.priceRange} 
-                      max={classes?.maxPrice || 100} 
-                      min={classes?.minPrice || 0}
-                      step={5}
-                      onValueChange={handlePriceChange}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>${searchParams.priceRange?.[0]}</span>
-                    <span>${searchParams.priceRange?.[1] || (classes?.maxPrice || 100)}</span>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+
             
             <Button className="min-w-fit" onClick={handleSearch}>
               Search
