@@ -27,10 +27,6 @@ export default function ClassesPage() {
     query: typeof searchParams.q === 'string' ? searchParams.q : "",
     classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
     date: searchParams.date ? new Date(searchParams.date as string) : undefined,
-    priceRange: [
-      Number(searchParams.minPrice || 0),
-      Number(searchParams.maxPrice || 100)
-    ],
     latitude: typeof searchParams.lat === 'string' ? Number(searchParams.lat) : null,
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
   });
@@ -97,11 +93,7 @@ export default function ClassesPage() {
       return false;
     }
 
-    // Price range filter
-    if (filters.priceRange && 
-        (classItem.price < filters.priceRange[0] || classItem.price > filters.priceRange[1])) {
-      return false;
-    }
+
 
     // Date filter - show classes only for the selected date
     if (filters.date) {
@@ -161,11 +153,6 @@ export default function ClassesPage() {
     
     if (newFilters.date) {
       queryParams.set('date', newFilters.date.toISOString());
-    }
-    
-    if (newFilters.priceRange) {
-      queryParams.set('minPrice', newFilters.priceRange[0].toString());
-      queryParams.set('maxPrice', newFilters.priceRange[1].toString());
     }
     
     if (newFilters.latitude && newFilters.longitude) {
@@ -268,11 +255,7 @@ export default function ClassesPage() {
                   </div>
                 )}
                 
-                {filters.priceRange && (
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                    Price: ${filters.priceRange[0]} - ${filters.priceRange[1]}
-                  </div>
-                )}
+
               </div>
             )}
             

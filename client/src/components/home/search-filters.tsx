@@ -354,28 +354,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                 </Badge>
               )}
               
-              {searchParams.priceRange && 
-               (searchParams.priceRange[0] !== initialFilters.priceRange?.[0] || 
-                searchParams.priceRange[1] !== initialFilters.priceRange?.[1]) && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Price: ${searchParams.priceRange[0]} - ${searchParams.priceRange[1]}
-                  <X 
-                    className="h-3 w-3 ml-1 cursor-pointer" 
-                    onClick={() => {
-                      const newParams = {
-                        ...searchParams, 
-                        priceRange: initialFilters.priceRange as [number, number]
-                      };
-                      setSearchParams(newParams);
-                      onSearch({
-                        ...newParams,
-                        latitude,
-                        longitude
-                      });
-                    }}
-                  />
-                </Badge>
-              )}
+
             </div>
           )}
         </div>

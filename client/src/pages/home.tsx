@@ -32,10 +32,7 @@ export default function Home() {
       queryParams.set('date', filters.date.toISOString());
     }
     
-    if (filters.priceRange) {
-      queryParams.set('minPrice', filters.priceRange[0].toString());
-      queryParams.set('maxPrice', filters.priceRange[1].toString());
-    }
+
     
     if (filters.latitude && filters.longitude) {
       queryParams.set('lat', filters.latitude.toString());
