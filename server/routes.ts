@@ -919,26 +919,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send confirmation email after successful booking
       try {
-        // Get class details for email
-        const classDetails = await storage.getClass(parseInt(classId));
-        if (classDetails) {
-          // Get coach details
-          const coach = await storage.getUser(classDetails.coachId);
-          if (coach) {
-            // Use the first confirmed booking for email data
-            const confirmedBooking = updatedBookings.find(b => b?.status === "confirmed");
-            if (confirmedBooking) {
-              const emailSent = await sendBookingConfirmation({
-                booking: confirmedBooking,
-                classData: classDetails,
-                customer: req.user,
-                coach: coach
-              });
-              
-              if (emailSent) {
-                console.log(`Confirmation email sent to ${req.user.email} for class ${classDetails.title}`);
-              } else {
-                console.warn(`Failed to send confirmation email to ${req.user.email}`);
+        if (!req.user) {
+          console.warn("No user found for email confirmation");
+        } else {
+          // Get class details for email
+          const classDetails = await storage.getClass(parseInt(classId));
+          if (classDetails) {
+            // Get coach details
+            const coach = await storage.getUser(classDetails.coachId);
+            if (coach) {
+              // Use the first confirmed booking for email data
+              const confirmedBooking = updatedBookings.find(b => b?.status === "confirmed");
+              if (confirmedBooking) {
+                const emailSent = await sendBookingConfirmation({
+                  booking: confirmedBooking,
+                  classData: classDetails,
+                  customer: req.user,
+                  coach: coach
+                });
+                
+                if (emailSent) {
+                  console.log(`Confirmation email sent to ${req.user.email} for class ${classDetails.title}`);
+                } else {
+                  console.warn(`Failed to send confirmation email to ${req.user.email}`);
+                }
               }
             }
           }
