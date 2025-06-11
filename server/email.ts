@@ -18,6 +18,13 @@ interface BookingConfirmationData {
 export async function sendBookingConfirmation(
   data: BookingConfirmationData
 ): Promise<boolean> {
+  console.log('Starting email confirmation process...');
+  console.log('Email data:', {
+    customerEmail: data.customer.email,
+    className: data.classData.title,
+    bookingId: data.booking.id
+  });
+  
   try {
     const { booking, classData, customer, coach } = data;
     
