@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
@@ -55,6 +55,13 @@ export default function AuthPage() {
       </Helmet>
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-md">
+          <div className="mb-6">
+            <Link href="/classes">
+              <span className="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
+                ← Back to Classes
+              </span>
+            </Link>
+          </div>
           <Tabs defaultValue={authParams.defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Sign In</TabsTrigger>
