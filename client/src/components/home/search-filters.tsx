@@ -258,7 +258,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
             
 
             
-            <Button className="min-w-fit" onClick={handleSearch}>
+            <Button className="min-w-fit pl-[8px] pr-[8px]" onClick={handleSearch}>
               Search
             </Button>
             
