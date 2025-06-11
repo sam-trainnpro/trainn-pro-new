@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import ForgotPasswordForm from "./forgot-password-form";
 import {
   Form,
   FormControl,
@@ -34,6 +35,7 @@ export default function LoginForm() {
   const [, navigate] = useLocation();
   const { loginMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   // Use effect for navigation instead of conditional rendering
   // Commented out since AuthPage already handles this redirect
@@ -84,6 +86,12 @@ export default function LoginForm() {
     }
   }
   
+  if (showForgotPassword) {
+    return (
+      <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+    );
+  }
+  
   return (
     <Card className="w-full">
       <CardHeader>
@@ -119,9 +127,13 @@ export default function LoginForm() {
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
                   <div className="flex justify-end mt-1">
-                    <Link href="#" className="text-sm text-secondary hover:underline">
+                    <button 
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm text-secondary hover:underline"
+                    >
                       Forgot password?
-                    </Link>
+                    </button>
                   </div>
                   <FormMessage />
                 </FormItem>
