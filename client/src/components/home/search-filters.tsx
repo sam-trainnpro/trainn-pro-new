@@ -169,7 +169,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   className="min-w-fit flex items-center gap-1"
                   onClick={handleLocationClick}
                 >
-                  <span>Location</span>
+                  <span>City</span>
                   <MapPin className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
