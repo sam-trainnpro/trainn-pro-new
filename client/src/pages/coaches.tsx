@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import Header from "@/components/layout/header";
@@ -11,6 +11,10 @@ import { Search } from "lucide-react";
 import { Helmet } from "react-helmet";
 
 export default function CoachesPage() {
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const [searchQuery, setSearchQuery] = useState("");
   
   const { data: coaches, isLoading, error } = useQuery<User[]>({

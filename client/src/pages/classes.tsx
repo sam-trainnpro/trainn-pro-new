@@ -18,6 +18,11 @@ import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export default function ClassesPage() {
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [locationPath, navigate] = useLocation();
   // Get search params from URL and ensure it's a string for queryString.parse
   const searchQuery: string = typeof window.location.search === 'string' ? window.location.search : '';
