@@ -4,7 +4,8 @@ import {
   bookings, type Booking, type InsertBooking, 
   reviews, type Review, type InsertReview, 
   classCategories, type ClassCategory, type InsertClassCategory,
-  classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules
+  classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules,
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken
 } from "@shared/schema";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
