@@ -1305,9 +1305,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Test endpoint for email confirmation (development only)
   if (process.env.NODE_ENV === 'development') {
-    app.post("/api/test-email", requireAuth, async (req, res) => {
+    app.get("/api/test-email/:classId", async (req, res) => {
       try {
-        const { classId } = req.body;
+        const { classId } = req.params;
         
         if (!classId) {
           return res.status(400).json({ message: "Class ID is required" });
@@ -1325,10 +1325,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Coach not found" });
         }
         
+        // Get a test customer (first customer in database)
+        const users = await storage.getAllUsers();
+        const testCustomer = users.find(u => u.role === 'customer');
+        if (!testCustomer) {
+          return res.status(404).json({ message: "No test customer found" });
+        }
+        
         // Create a mock booking for testing
         const mockBooking = {
           id: 999,
-          userId: req.user!.id,
+          userId: testCustomer.id,
           classId: parseInt(classId),
           quantity: 1,
           status: "confirmed" as const,
@@ -1339,22 +1346,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "usd",
           platformFee: Math.round(classDetails.price * 100 * 0.15),
           coachPayout: Math.round(classDetails.price * 100 * 0.85),
-          createdAt: new Date()
+          createdAt: new Date(),
+          stripePaymentId: null,
+          stripeTransferId: null,
+          payoutStatus: null,
+          payoutDate: null
         };
         
         // Send test email
         const emailSent = await sendBookingConfirmation({
           booking: mockBooking,
           classData: classDetails,
-          customer: req.user!,
+          customer: testCustomer,
           coach: coach
         });
         
         if (emailSent) {
           res.json({ 
             success: true, 
-            message: `Test confirmation email sent to ${req.user!.email}`,
-            mockBooking: mockBooking
+            message: `Test confirmation email sent to ${testCustomer.email}`,
+            mockBooking: mockBooking,
+            emailDetails: {
+              to: testCustomer.email,
+              className: classDetails.title,
+              classDate: classDetails.startTime,
+              coach: `${coach.firstName} ${coach.lastName}`,
+              cost: classDetails.price
+            }
           });
         } else {
           res.status(500).json({ 

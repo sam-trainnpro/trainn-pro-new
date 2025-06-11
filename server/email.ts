@@ -133,9 +133,11 @@ If you need to cancel or reschedule, please contact us at least 24 hours in adva
 Questions? Contact us at support@trainn.com
     `;
 
+    // Note: The 'from' email must be verified in SendGrid before emails can be sent
+    // Go to SendGrid Dashboard > Settings > Sender Authentication to verify your sender email
     await mailService.send({
       to: customer.email,
-      from: 'noreply@trainn.com', // You'll need to verify this sender email in SendGrid
+      from: 'noreply@trainn.com', // Replace with your verified sender email from SendGrid
       subject: subject,
       text: textContent,
       html: htmlContent,
