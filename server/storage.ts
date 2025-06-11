@@ -67,6 +67,12 @@ export interface IStorage {
   
   // Stripe
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
+  
+  // Password reset
+  createPasswordResetToken(tokenData: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(token: string): Promise<boolean>;
+  updateUserPassword(id: number, hashedPassword: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -571,6 +577,48 @@ export class DatabaseStorage implements IStorage {
     if (result.length === 0) {
       throw new Error(`User with ID ${userId} not found`);
     }
+    
+    return result[0];
+  }
+  
+  // Password reset methods
+  async createPasswordResetToken(tokenData: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const result = await db.insert(passwordResetTokens)
+      .values({
+        ...tokenData,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return result[0];
+  }
+  
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const result = await db.select()
+      .from(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.token, token),
+        sql`${passwordResetTokens.usedAt} IS NULL`,
+        sql`${passwordResetTokens.expiresAt} > NOW()`
+      ));
+    
+    return result[0];
+  }
+  
+  async markPasswordResetTokenAsUsed(token: string): Promise<boolean> {
+    const result = await db.update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.token, token))
+      .returning();
+    
+    return result.length > 0;
+  }
+  
+  async updateUserPassword(id: number, hashedPassword: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id))
+      .returning();
     
     return result[0];
   }

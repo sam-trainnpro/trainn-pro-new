@@ -1041,6 +1041,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Password reset request
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.status(200).json({ 
+          message: "If an account with that email exists, a password reset link has been sent." 
+        });
+      }
+      
+      // Generate secure token
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      
+      // Token expires in 1 hour
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      
+      // Create reset token
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token,
+        expiresAt
+      });
+      
+      // Send email (import sendEmail function)
+      const { sendEmail } = require('./email');
+      const resetUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.get('host')}/reset-password?token=${token}`;
+      
+      const emailSent = await sendEmail({
+        to: user.email,
+        from: 'noreply@trainn.com',
+        subject: 'Reset Your Trainn Password',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Reset Your Password</h2>
+            <p>Hello ${user.firstName},</p>
+            <p>You requested to reset your password for your Trainn account. Click the button below to reset your password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+            <p><strong>This link will expire in 1 hour.</strong></p>
+            <p>If you didn't request this password reset, please ignore this email.</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 14px;">
+              Best regards,<br>
+              The Trainn Team
+            </p>
+          </div>
+        `,
+        text: `
+          Reset Your Password
+          
+          Hello ${user.firstName},
+          
+          You requested to reset your password for your Trainn account. 
+          
+          Click this link to reset your password: ${resetUrl}
+          
+          This link will expire in 1 hour.
+          
+          If you didn't request this password reset, please ignore this email.
+          
+          Best regards,
+          The Trainn Team
+        `
+      });
+      
+      if (emailSent) {
+        console.log(`Password reset email sent to ${email}`);
+      } else {
+        console.error(`Failed to send password reset email to ${email}`);
+      }
+      
+      res.status(200).json({ 
+        message: "If an account with that email exists, a password reset link has been sent." 
+      });
+      
+    } catch (error: any) {
+      console.error("Password reset request error:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+  
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+      
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
+      }
+      
+      // Get and validate token
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+      
+      // Hash new password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      // Update user password
+      const updatedUser = await storage.updateUserPassword(resetToken.userId, hashedPassword);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Mark token as used
+      await storage.markPasswordResetTokenAsUsed(token);
+      
+      res.status(200).json({ message: "Password has been successfully reset. You can now sign in with your new password." });
+      
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
   // Update user profile
   app.put("/api/users/:id", requireAuth, async (req, res) => {
     try {
