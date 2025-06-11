@@ -1303,6 +1303,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint for email confirmation (development only)
+  if (process.env.NODE_ENV === 'development') {
+    app.post("/api/test-email", requireAuth, async (req, res) => {
+      try {
+        const { classId } = req.body;
+        
+        if (!classId) {
+          return res.status(400).json({ message: "Class ID is required" });
+        }
+        
+        // Get class details
+        const classDetails = await storage.getClass(parseInt(classId));
+        if (!classDetails) {
+          return res.status(404).json({ message: "Class not found" });
+        }
+        
+        // Get coach details
+        const coach = await storage.getUser(classDetails.coachId);
+        if (!coach) {
+          return res.status(404).json({ message: "Coach not found" });
+        }
+        
+        // Create a mock booking for testing
+        const mockBooking = {
+          id: 999,
+          userId: req.user!.id,
+          classId: parseInt(classId),
+          quantity: 1,
+          status: "confirmed" as const,
+          stripePaymentIntentId: "test_pi_" + Date.now(),
+          paymentDate: new Date(),
+          paymentMethod: "stripe" as const,
+          amount: classDetails.price * 100, // In cents
+          currency: "usd",
+          platformFee: Math.round(classDetails.price * 100 * 0.15),
+          coachPayout: Math.round(classDetails.price * 100 * 0.85),
+          createdAt: new Date()
+        };
+        
+        // Send test email
+        const emailSent = await sendBookingConfirmation({
+          booking: mockBooking,
+          classData: classDetails,
+          customer: req.user!,
+          coach: coach
+        });
+        
+        if (emailSent) {
+          res.json({ 
+            success: true, 
+            message: `Test confirmation email sent to ${req.user!.email}`,
+            mockBooking: mockBooking
+          });
+        } else {
+          res.status(500).json({ 
+            success: false, 
+            message: "Failed to send test email" 
+          });
+        }
+      } catch (error: any) {
+        console.error("Test email error:", error);
+        res.status(500).json({ message: error.message });
+      }
+    });
+  }
+
   const httpServer = createServer(app);
 
   return httpServer;
