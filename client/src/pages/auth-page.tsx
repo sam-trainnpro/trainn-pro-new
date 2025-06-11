@@ -78,7 +78,7 @@ export default function AuthPage() {
             }}
           ></div>
           <div className="relative z-10 text-white max-w-lg text-center">
-            <h1 className="text-4xl font-bold mb-4">Transform Your Fitness Journey</h1>
+            <h1 className="text-4xl font-bold mb-4">Transform Your Health & Wellness Journey</h1>
             <p className="text-xl mb-6">
               Connect with top coaches, book personalized classes, and achieve your fitness goals with Trainn.
             </p>
