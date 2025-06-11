@@ -1060,7 +1060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate secure token
-      const crypto = require('crypto');
+      const crypto = await import('crypto');
       const token = crypto.randomBytes(32).toString('hex');
       
       // Token expires in 1 hour
@@ -1074,12 +1074,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Send email (import sendEmail function)
-      const { sendEmail } = require('./email');
+      const { sendEmail } = await import('./email');
       const resetUrl = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.get('host')}/reset-password?token=${token}`;
       
       const emailSent = await sendEmail({
         to: user.email,
-        from: 'noreply@trainn.com',
         subject: 'Reset Your Trainn Password',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -1154,8 +1153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Hash new password
-      const bcrypt = require('bcrypt');
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.default.hash(newPassword, 10);
       
       // Update user password
       const updatedUser = await storage.updateUserPassword(resetToken.userId, hashedPassword);
