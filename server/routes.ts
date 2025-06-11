@@ -3,6 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { sendBookingConfirmation } from "./email";
 import { z } from "zod";
 import Stripe from "stripe";
 import multer from "multer";
@@ -15,7 +16,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 // Initialize Stripe if secret key is available
 const stripe = process.env.STRIPE_SECRET_KEY ? 
-  new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
+  new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" }) : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create uploads directory if it doesn't exist
@@ -915,6 +916,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate total quantity from all bookings
       const totalQuantity = updatedBookings.reduce((sum, booking) => sum + (booking?.quantity || 1), 0);
+      
+      // Send confirmation email after successful booking
+      try {
+        // Get class details for email
+        const classDetails = await storage.getClass(parseInt(classId));
+        if (classDetails) {
+          // Get coach details
+          const coach = await storage.getUser(classDetails.coachId);
+          if (coach) {
+            // Use the first confirmed booking for email data
+            const confirmedBooking = updatedBookings.find(b => b?.status === "confirmed");
+            if (confirmedBooking) {
+              const emailSent = await sendBookingConfirmation({
+                booking: confirmedBooking,
+                classData: classDetails,
+                customer: req.user,
+                coach: coach
+              });
+              
+              if (emailSent) {
+                console.log(`Confirmation email sent to ${req.user.email} for class ${classDetails.title}`);
+              } else {
+                console.warn(`Failed to send confirmation email to ${req.user.email}`);
+              }
+            }
+          }
+        }
+      } catch (emailError) {
+        // Don't fail the booking if email fails
+        console.error("Email sending error:", emailError);
+      }
       
       res.json({ 
         success: true, 
