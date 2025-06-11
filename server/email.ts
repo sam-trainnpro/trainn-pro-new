@@ -150,3 +150,26 @@ Questions? Contact us at support@trainn.com
     return false;
   }
 }
+
+interface EmailParams {
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+}
+
+export async function sendEmail(params: EmailParams): Promise<boolean> {
+  try {
+    await mailService.send({
+      to: params.to,
+      from: 'noreply@trainn.com', // Replace with your verified sender email from SendGrid
+      subject: params.subject,
+      text: params.text,
+      html: params.html,
+    });
+    return true;
+  } catch (error) {
+    console.error('SendGrid email error:', error);
+    return false;
+  }
+}
