@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Helmet } from "react-helmet";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -5,6 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users, Target, Heart, Zap } from "lucide-react";
 
 export default function AboutPage() {
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
