@@ -53,7 +53,6 @@ export default function AuthPage() {
         <title>Sign In or Join - Trainn Fitness</title>
         <meta name="description" content="Sign in to your Trainn account or join our fitness community to find and book fitness classes with top coaches in your area." />
       </Helmet>
-      
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-md">
           <Tabs defaultValue={authParams.defaultTab} className="w-full">
@@ -70,7 +69,6 @@ export default function AuthPage() {
           </Tabs>
         </div>
       </div>
-      
       <div className="w-full md:w-1/2 bg-primary hidden md:block">
         <div className="h-full flex items-center justify-center p-8 relative">
           <div 
@@ -97,7 +95,7 @@ export default function AuthPage() {
             <p className="text-lg font-light">
               "Trainn has transformed how I find fitness classes and coaches. The platform is intuitive and the classes are amazing!"
             </p>
-            <p className="mt-2 font-medium">— Jennifer K., Trainn Member</p>
+            <p className="mt-2 font-medium">— Lea G., Trainn Member</p>
           </div>
         </div>
       </div>
