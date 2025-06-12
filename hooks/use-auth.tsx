@@ -5,8 +5,8 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { insertUserSchema, User, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { getQueryFn, apiRequest, queryClient } from "../client/src/lib/queryClient";
+import { useToast } from "./use-toast";
 
 type LoginData = {
   email: string;
