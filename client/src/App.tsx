@@ -6,6 +6,7 @@ import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/register";
 import AboutPage from "@/pages/about";
+import FAQPage from "@/pages/faq";
 import ClassesPage from "@/pages/classes";
 import CoachesPage from "@/pages/coaches";
 import ClassDetailsPage from "@/pages/class-details";
@@ -37,6 +38,9 @@ function Router() {
       </Route>
       <Route path="/about">
         <AboutPage />
+      </Route>
+      <Route path="/faq">
+        <FAQPage />
       </Route>
       <Route path="/classes">
         <ClassesPage />
