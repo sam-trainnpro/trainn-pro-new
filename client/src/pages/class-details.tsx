@@ -40,7 +40,7 @@ import {
   Minus
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { Helmet } from "react-helmet";

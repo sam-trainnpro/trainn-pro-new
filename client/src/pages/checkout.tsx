@@ -27,7 +27,7 @@ import {
   ArrowLeft,
   Loader2
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";

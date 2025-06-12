@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { useAuth } from "../../../hooks/use-auth";
 import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useLocation as useUserLocation } from "@/hooks/use-location";
+import { useLocation as useUserLocation } from "../../../hooks/use-location";
 import PlacesAutocomplete from "@/components/maps/places-autocomplete";
 import LocationPreview from "@/components/maps/location-preview";
 import InteractiveLocationPicker from "@/components/maps/interactive-location-picker";
@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../../hooks/use-toast";
 import {
   Popover,
   PopoverContent,
