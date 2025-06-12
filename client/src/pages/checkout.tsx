@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../../hooks/use-auth";
 import { Class, Booking } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
