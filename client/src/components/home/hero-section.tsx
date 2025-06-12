@@ -1,9 +1,9 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "../../../../hooks/use-auth-simple";
+import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 
 export default function HeroSection() {
-  const { user } = useAuth();
+  const { user } = useSafeAuth();
   
   return (
     <section className="relative">
