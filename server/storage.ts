@@ -74,6 +74,10 @@ export interface IStorage {
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   markPasswordResetTokenAsUsed(token: string): Promise<boolean>;
   updateUserPassword(id: number, hashedPassword: string): Promise<User | undefined>;
+  
+  // Contact messages
+  createContactMessage(messageData: InsertContactMessage): Promise<ContactMessage>;
+  getContactMessages(): Promise<ContactMessage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -622,6 +626,23 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return result[0];
+  }
+  
+  async createContactMessage(messageData: InsertContactMessage): Promise<ContactMessage> {
+    const result = await db.insert(contactMessages)
+      .values({
+        ...messageData,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return result[0];
+  }
+  
+  async getContactMessages(): Promise<ContactMessage[]> {
+    return await db.select()
+      .from(contactMessages)
+      .orderBy(desc(contactMessages.createdAt));
   }
 }
 
