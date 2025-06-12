@@ -1519,6 +1519,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // Contact message routes
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const { name, email, userType, message } = req.body;
+      
+      if (!name || !email || !userType || !message) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+      
+      // Create contact message in database
+      const contactMessage = await storage.createContactMessage({
+        name,
+        email,
+        userType,
+        message
+      });
+      
+      // Send email notification to support
+      const { sendEmail } = await import('./email');
+      const emailSent = await sendEmail({
+        to: "support@trainn.pro",
+        subject: `New Contact Message from ${userType}: ${name}`,
+        text: `Name: ${name}\nEmail: ${email}\nUser Type: ${userType}\n\nMessage:\n${message}`,
+        html: `
+          <h3>New Contact Message</h3>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>User Type:</strong> ${userType}</p>
+          <p><strong>Message:</strong></p>
+          <p>${message.replace(/\n/g, '<br>')}</p>
+        `
+      });
+      
+      if (!emailSent) {
+        console.error("Failed to send contact email notification");
+      }
+      
+      res.status(201).json({ 
+        message: "Your message has been sent successfully. We'll get back to you soon!",
+        id: contactMessage.id 
+      });
+    } catch (error: any) {
+      console.error("Contact message error:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+  
+  // Get all contact messages (admin only)
+  app.get("/api/contact", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const messages = await storage.getContactMessages();
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Error fetching contact messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

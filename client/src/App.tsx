@@ -7,6 +7,7 @@ import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/register";
 import AboutPage from "@/pages/about";
 import FAQPage from "@/pages/faq";
+import ContactPage from "@/pages/contact";
 import ClassesPage from "@/pages/classes";
 import CoachesPage from "@/pages/coaches";
 import ClassDetailsPage from "@/pages/class-details";
