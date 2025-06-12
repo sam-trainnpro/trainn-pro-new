@@ -43,6 +43,9 @@ function Router() {
       <Route path="/faq">
         <FAQPage />
       </Route>
+      <Route path="/contact">
+        <ContactPage />
+      </Route>
       <Route path="/classes">
         <ClassesPage />
       </Route>

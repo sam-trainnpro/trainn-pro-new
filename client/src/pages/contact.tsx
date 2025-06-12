@@ -11,23 +11,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { Mail, MessageSquare, Users } from "lucide-react";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
-  userType: z.enum(["customer", "coach"], {
-    required_error: "Please select your user type",
-  }),
+  subject: z.string().min(5, "Subject must be at least 5 characters"),
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
-  const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useForm<ContactFormData>({
@@ -35,33 +30,34 @@ export default function ContactPage() {
     defaultValues: {
       name: "",
       email: "",
-      userType: undefined,
+      subject: "",
       message: "",
     },
   });
 
   const submitMutation = useMutation({
     mutationFn: async (data: ContactFormData) => {
-      const response = await apiRequest("/api/contact", {
+      const response = await fetch("/api/contact", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
-      return response;
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to send message");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       setIsSubmitted(true);
       form.reset();
-      toast({
-        title: "Message sent successfully!",
-        description: "We'll get back to you soon.",
-      });
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to send message",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error) => {
+      console.error("Failed to send message:", error);
     },
   });
 
@@ -104,7 +100,6 @@ export default function ContactPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <main className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
-            {/* Header Section */}
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -114,7 +109,6 @@ export default function ContactPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Contact Info Cards */}
               <div className="lg:col-span-1 space-y-6">
                 <Card>
                   <CardContent className="p-6">
@@ -167,7 +161,6 @@ export default function ContactPage() {
                 </Card>
               </div>
 
-              {/* Contact Form */}
               <div className="lg:col-span-2">
                 <Card>
                   <CardHeader>
@@ -215,21 +208,13 @@ export default function ContactPage() {
 
                         <FormField
                           control={form.control}
-                          name="userType"
+                          name="subject"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>I am a</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select your user type" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="customer">Customer</SelectItem>
-                                  <SelectItem value="coach">Coach</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormLabel>Subject</FormLabel>
+                              <FormControl>
+                                <Input placeholder="What is this about?" {...field} />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -269,7 +254,6 @@ export default function ContactPage() {
           </main>
         </div>
         <Footer />
-      </div>
-    </>
-  );
+      </>
+    );
 }
