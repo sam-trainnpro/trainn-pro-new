@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../../hooks/use-auth";
 import { useLocation } from "wouter";
 import { User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -46,7 +46,7 @@ import {
   Lock,
   CheckCircle,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
 
 export default function AdminPage() {
