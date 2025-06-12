@@ -14,27 +14,27 @@ export default function FAQPage() {
     {
       id: "cancellation",
       question: "What is your cancellation policy?",
-      answer: "You can cancel your booking up to 24 hours before the scheduled class time for a full refund. Cancellations made less than 24 hours before the class will incur a 50% cancellation fee. No-shows will not receive a refund. For recurring bookings, each individual session follows the same cancellation policy."
+      answer: "You can cancel your booking up to 48 hours before the scheduled class time for a full refund. Cancellations made less than 48 hours before the class will not receive a refund. No-shows will not receive a refund. For recurring bookings, each individual session follows the same cancellation policy."
     },
     {
       id: "communication",
       question: "How do I communicate with my coach?",
-      answer: "You can communicate with your coach through several ways: view their profile page for contact information, send messages through our platform's booking system, or contact them directly using the phone number or email provided in your booking confirmation. Many coaches also provide WhatsApp or other messaging platform details for quick communication."
+      answer: "You can communicate with your coach through several ways: view their profile page for contact information or send messages through our platform's booking system."
     },
     {
       id: "no-slots",
       question: "What happens if there are no more slots available?",
-      answer: "If a class is fully booked, you can join the waitlist by clicking the 'Join Waitlist' button on the class page. You'll be automatically notified if a spot becomes available due to cancellations. You can also browse similar classes with the same coach or explore alternative time slots. We recommend booking early to secure your preferred spots."
+      answer: "If a class is fully booked, you can join the waitlist by clicking the 'Join Waitlist' button on the class page (feature pending). You'll be automatically notified if a spot becomes available due to cancellations. You can also browse similar classes with the same coach or explore alternative time slots. We recommend booking early to secure your preferred spots."
     },
     {
       id: "refund-issues",
       question: "What happens if I didn't get a refund?",
-      answer: "If you haven't received your expected refund, please check your payment method as refunds typically take 3-5 business days to process. Contact our customer support team with your booking reference number, and we'll investigate the issue immediately. We'll provide you with a tracking reference and expected resolution timeline. All eligible refunds are processed automatically according to our cancellation policy."
+      answer: "If you haven't received your expected refund, please check your payment method as refunds typically take 3-5 business days to process. Contact our customer support team (support@trainn.pro) with your booking information (class, date, price), and we'll investigate the issue immediately. We'll provide you with an expected resolution timeline."
     },
     {
       id: "insurance",
       question: "Does your company provide insurance?",
-      answer: "All classes on our platform are covered by comprehensive liability insurance for your protection. However, we strongly recommend that participants have their own personal health and accident insurance. Our coaches are required to maintain professional liability insurance. For specific coverage details or to report an incident, please contact our support team immediately."
+      answer: "We recommend that participants have their own personal health and accident insurance. Our coaches are expected and encouraged to maintain professional liability insurance."
     }
   ];
 
@@ -92,14 +92,10 @@ export default function FAQPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <h4 className="font-semibold mb-2">Email Support</h4>
-                  <p className="text-muted-foreground">support@trainn.com</p>
+                  <p className="text-muted-foreground">support@trainn.pro</p>
                   <p className="text-sm text-muted-foreground">Response within 24 hours</p>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-2">Phone Support</h4>
-                  <p className="text-muted-foreground">1-800-TRAINN</p>
-                  <p className="text-sm text-muted-foreground">Mon-Fri 9AM-6PM PST</p>
-                </div>
+                
               </div>
             </CardContent>
           </Card>
