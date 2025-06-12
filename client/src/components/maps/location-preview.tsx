@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { InfoIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../../../../hooks/use-toast';
 
 interface LocationPreviewProps {
   latitude: number | null | undefined;
