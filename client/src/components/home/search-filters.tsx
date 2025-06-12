@@ -15,7 +15,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { useLocation as useGeoLocation } from "@/hooks/use-location";
+import { useLocation as useGeoLocation } from "../../../../hooks/use-location";
 import { useQuery } from "@tanstack/react-query";
 import { ClassCategory } from "@shared/schema";
 import { useLocation } from "wouter";
