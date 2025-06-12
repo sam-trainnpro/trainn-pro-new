@@ -1522,9 +1522,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Contact message routes
   app.post("/api/contact", async (req, res) => {
     try {
-      const { name, email, userType, message } = req.body;
+      const { name, email, subject, message } = req.body;
       
-      if (!name || !email || !userType || !message) {
+      if (!name || !email || !subject || !message) {
         return res.status(400).json({ message: "All fields are required" });
       }
       
@@ -1532,7 +1532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contactMessage = await storage.createContactMessage({
         name,
         email,
-        userType,
+        subject,
         message
       });
       
@@ -1540,13 +1540,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sendEmail } = await import('./email');
       const emailSent = await sendEmail({
         to: "support@trainn.pro",
-        subject: `New Contact Message from ${userType}: ${name}`,
-        text: `Name: ${name}\nEmail: ${email}\nUser Type: ${userType}\n\nMessage:\n${message}`,
+        subject: `Contact Form: ${subject}`,
+        text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\nMessage:\n${message}`,
         html: `
-          <h3>New Contact Message</h3>
+          <h3>New Contact Form Message</h3>
           <p><strong>Name:</strong> ${name}</p>
           <p><strong>Email:</strong> ${email}</p>
-          <p><strong>User Type:</strong> ${userType}</p>
+          <p><strong>Subject:</strong> ${subject}</p>
           <p><strong>Message:</strong></p>
           <p>${message.replace(/\n/g, '<br>')}</p>
         `

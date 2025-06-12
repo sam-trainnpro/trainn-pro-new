@@ -203,7 +203,7 @@ export const contactMessages = pgTable("contact_messages", {
 export const insertContactMessageSchema = createInsertSchema(contactMessages).pick({
   name: true,
   email: true,
-  userType: true,
+  subject: true,
   message: true,
 });
 
