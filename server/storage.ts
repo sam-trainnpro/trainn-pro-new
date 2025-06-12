@@ -5,7 +5,8 @@ import {
   reviews, type Review, type InsertReview, 
   classCategories, type ClassCategory, type InsertClassCategory,
   classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules,
-  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
+  contactMessages, type ContactMessage, type InsertContactMessage
 } from "@shared/schema";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
