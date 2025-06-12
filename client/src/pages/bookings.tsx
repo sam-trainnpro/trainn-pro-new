@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useAuth } from "../../../hooks/use-auth";
+import { useSafeAuth } from "../../../hooks/use-auth-safe";
 import { Booking, Class } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
@@ -60,7 +60,7 @@ export default function BookingsPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  const { user } = useAuth();
+  const { user } = useSafeAuth();
   const { toast } = useToast();
   const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null);
   
