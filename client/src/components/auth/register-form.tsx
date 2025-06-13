@@ -19,6 +19,13 @@ import {
   RadioGroup, 
   RadioGroupItem 
 } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Card, 
   CardContent, 
@@ -27,12 +34,36 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 
+// Core country codes for the dropdown
+const countryCodes = [
+  { code: "+1", country: "US/Canada", flag: "🇺🇸" },
+  { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
+  { code: "+33", country: "France", flag: "🇫🇷" },
+  { code: "+49", country: "Germany", flag: "🇩🇪" },
+  { code: "+39", country: "Italy", flag: "🇮🇹" },
+  { code: "+34", country: "Spain", flag: "🇪🇸" },
+  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
+  { code: "+41", country: "Switzerland", flag: "🇨🇭" },
+  { code: "+46", country: "Sweden", flag: "🇸🇪" },
+  { code: "+47", country: "Norway", flag: "🇳🇴" },
+  { code: "+45", country: "Denmark", flag: "🇩🇰" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
+  { code: "+81", country: "Japan", flag: "🇯🇵" },
+  { code: "+82", country: "South Korea", flag: "🇰🇷" },
+  { code: "+86", country: "China", flag: "🇨🇳" },
+  { code: "+91", country: "India", flag: "🇮🇳" },
+  { code: "+55", country: "Brazil", flag: "🇧🇷" },
+  { code: "+52", country: "Mexico", flag: "🇲🇽" },
+  { code: "+27", country: "South Africa", flag: "🇿🇦" },
+];
+
 // Create a more robust schema with appropriate validation
 const registerSchemaBase = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters").max(50, "First name must not exceed 50 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters").max(50, "Last name must not exceed 50 characters"),
   email: z.string().email("Please enter a valid email address").max(100, "Email must not exceed 100 characters"),
-  phone: z.string().min(10, "Please enter a valid phone number").max(15, "Phone number must not exceed 15 digits"),
+  countryCode: z.string().min(1, "Please select a country code"),
+  phone: z.string().min(10, "Please enter a 10-digit phone number").max(10, "Phone number must be exactly 10 digits").regex(/^\d{10}$/, "Phone number must contain only digits"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -77,6 +108,8 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
       firstName: "",
       lastName: "",
       email: "",
+      countryCode: "+1",
+      phone: "",
       password: "",
       role: defaultRole as "customer" | "coach",
       termsAccepted: false,
@@ -89,10 +122,20 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
       setError(null);
       console.log("Submitting registration form:", { ...data, password: "***" });
       
+      // Combine country code and phone number
+      const fullPhoneNumber = `${data.countryCode}${data.phone}`;
+      const submitData = {
+        ...data,
+        phone: fullPhoneNumber,
+      };
+      
+      // Remove countryCode from the submit data since backend expects only phone
+      const { countryCode, ...backendData } = submitData;
+      
       // We need to prevent the runtime error that might be happening 
       // due to state updates during form submission
       try {
-        const user = await registerMutation.mutateAsync(data);
+        const user = await registerMutation.mutateAsync(backendData);
         console.log("Registration successful:", user);
         
         // Use window.location.href for more reliable navigation
@@ -209,6 +252,53 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-3 gap-3">
+              <FormField
+                control={form.control}
+                name="countryCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Code" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {countryCodes.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.flag} {country.code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="col-span-2">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="tel" 
+                          placeholder="1234567890" 
+                          maxLength={10}
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
             
             <FormField
               control={form.control}
