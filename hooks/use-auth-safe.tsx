@@ -1,9 +1,11 @@
-import { useAuth } from "./use-auth-simple";
+import { useContext } from "react";
+import { AuthContext } from "./use-auth-simple";
 
 export function useSafeAuth() {
-  try {
-    return useAuth();
-  } catch (error) {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    console.log("AuthProvider not available, using fallback");
     // Return a safe fallback when AuthProvider is not available
     return {
       user: null,
@@ -32,4 +34,6 @@ export function useSafeAuth() {
       },
     };
   }
+  
+  return context;
 }
