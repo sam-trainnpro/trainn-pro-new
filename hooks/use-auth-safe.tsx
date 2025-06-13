@@ -11,18 +11,21 @@ export function useSafeAuth() {
       error: null,
       loginMutation: {
         mutate: () => {},
+        mutateAsync: async () => { throw new Error("AuthProvider not available"); },
         isPending: false,
         isError: false,
         error: null,
       },
       logoutMutation: {
         mutate: () => {},
+        mutateAsync: async () => { throw new Error("AuthProvider not available"); },
         isPending: false,
         isError: false,
         error: null,
       },
       registerMutation: {
         mutate: () => {},
+        mutateAsync: async () => { throw new Error("AuthProvider not available"); },
         isPending: false,
         isError: false,
         error: null,
