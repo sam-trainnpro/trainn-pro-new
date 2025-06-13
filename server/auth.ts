@@ -80,7 +80,7 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName, role } = req.body;
+      const { email, password, firstName, lastName, phone, role } = req.body;
       
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
@@ -95,6 +95,7 @@ export function setupAuth(app: Express) {
         password: hashedPassword,
         firstName,
         lastName,
+        phone,
         role,
       });
 
