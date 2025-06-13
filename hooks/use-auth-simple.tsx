@@ -17,6 +17,7 @@ type RegisterData = {
   password: string;
   firstName: string;
   lastName: string;
+  phone: string;
   role: string;
   termsAccepted?: boolean;
 };
