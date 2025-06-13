@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
-import { useSafeAuth } from "../../../../hooks/use-auth-safe";
+import { useAuth } from "../../../../hooks/use-auth-simple";
 import {
   Form,
   FormControl,
@@ -85,7 +85,7 @@ interface RegisterFormProps {
 
 export default function RegisterForm({ defaultRole = "customer", onSuccess }: RegisterFormProps) {
   const [, navigate] = useLocation();
-  const { registerMutation, user } = useSafeAuth();
+  const { registerMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   
   // Use effect for navigation instead of conditional rendering
