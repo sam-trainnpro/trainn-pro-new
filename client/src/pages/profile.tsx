@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useSafeAuth } from "../../../hooks/use-auth-safe";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import { useToast } from "../../../hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ import { Helmet } from "react-helmet";
 const profileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().optional(),
   bio: z.string().optional(),
   profileImage: z.string().optional(),
 });
@@ -58,7 +59,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function ProfilePage() {
-  const { user } = useSafeAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -73,6 +74,7 @@ export default function ProfilePage() {
     defaultValues: {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
+      phone: user?.phone || "",
       bio: user?.bio || "",
       profileImage: user?.profileImage || "",
     },
@@ -360,6 +362,23 @@ export default function ProfilePage() {
                               )}
                             />
                           </div>
+
+                          <FormField
+                            control={profileForm.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Phone Number</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="e.g. +1234567890" />
+                                </FormControl>
+                                <FormDescription>
+                                  Include country code (e.g. +1 for US, +44 for UK)
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                           
                           <div className="space-y-4">
                             <label htmlFor="profileImage" className="text-sm font-medium">Profile Picture</label>
