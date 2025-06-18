@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { useLocation } from "wouter";
@@ -62,6 +62,16 @@ export default function AdminPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCoach, setSelectedCoach] = useState<User | null>(null);
   const [selectedClass, setSelectedClass] = useState<ClassWithSchedules | null>(null);
+  const [activeTab, setActiveTab] = useState("coaches");
+
+  // Handle URL parameters for tab navigation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'classes') {
+      setActiveTab('classes');
+    }
+  }, []);
   
   // Redirect if not logged in or not an admin
   if (!user) {
@@ -237,7 +247,7 @@ export default function AdminPage() {
             <p className="text-muted-foreground">Manage coach approvals and monitor platform activity</p>
           </div>
           
-          <Tabs defaultValue="coaches">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="coaches">
                 <UserIcon className="h-4 w-4 mr-2" />
@@ -346,6 +356,105 @@ export default function AdminPage() {
               </Card>
             </TabsContent>
             
+            <TabsContent value="classes">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <div>
+                      <CardTitle>Class Management</CardTitle>
+                      <CardDescription>
+                        View, edit, and delete classes created by coaches
+                      </CardDescription>
+                    </div>
+                    
+                    <div className="flex-1 md:max-w-sm">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                          placeholder="Search classes..."
+                          className="pl-10"
+                          value={classSearchQuery}
+                          onChange={(e) => setClassSearchQuery(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  {classesLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : classesError ? (
+                    <div className="text-center py-8 text-destructive">
+                      <AlertTriangle className="mx-auto h-8 w-8 mb-2" />
+                      <p>Failed to load classes. Please try again.</p>
+                    </div>
+                  ) : filteredClasses.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No classes found</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Class Title</TableHead>
+                            <TableHead>Coach</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Created</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredClasses.map((classItem) => {
+                            const coach = users?.find(u => u.id === classItem.coachId);
+                            return (
+                              <TableRow key={classItem.id}>
+                                <TableCell className="font-medium">
+                                  {classItem.title}
+                                </TableCell>
+                                <TableCell>
+                                  {coach ? `${coach.firstName} ${coach.lastName}` : 'Unknown Coach'}
+                                </TableCell>
+                                <TableCell>{classItem.location}</TableCell>
+                                <TableCell>${classItem.price}</TableCell>
+                                <TableCell>
+                                  {formatDate(classItem.createdAt)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditClass(classItem)}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => openDeleteDialog(classItem)}
+                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
             <TabsContent value="settings">
               <Card>
                 <CardHeader>
@@ -387,6 +496,39 @@ export default function AdminPage() {
               className="bg-green-600 text-white hover:bg-green-700"
             >
               Approve Coach
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedClass && (
+                <>
+                  Are you sure you want to delete <span className="font-medium">"{selectedClass.title}"</span>?
+                  This action cannot be undone and will also cancel any existing bookings for this class.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteClass}
+              className="bg-red-600 text-white hover:bg-red-700"
+              disabled={deleteClassMutation.isPending}
+            >
+              {deleteClassMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Class'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
