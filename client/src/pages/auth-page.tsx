@@ -17,21 +17,27 @@ export default function AuthPage() {
     defaultRole: "customer"
   });
   
+  const [activeTab, setActiveTab] = useState("login");
+  
   // Set URL params after component mount using useEffect
   useEffect(() => {
     try {
       // Safe URL param extraction
       const searchParams = new URLSearchParams(window.location.search);
-      const hasRegister = searchParams.has('register');
+      const hasRegister = searchParams.has('register') || searchParams.get('tab') === 'register';
       const role = searchParams.get('role') || "customer";
       
+      const tabValue = hasRegister ? "register" : "login";
+      
       setAuthParams({
-        defaultTab: hasRegister ? "register" : "login",
+        defaultTab: tabValue,
         defaultRole: role
       });
       
+      setActiveTab(tabValue);
+      
       console.log("Auth page path:", path);
-      console.log("Auth params set:", { tab: hasRegister ? "register" : "login", role });
+      console.log("Auth params set:", { tab: tabValue, role });
     } catch (err) {
       console.error("Error parsing URL params:", err);
     }
@@ -62,7 +68,7 @@ export default function AuthPage() {
               </span>
             </Link>
           </div>
-          <Tabs defaultValue={authParams.defaultTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Sign In</TabsTrigger>
               <TabsTrigger value="register">Create Account</TabsTrigger>
