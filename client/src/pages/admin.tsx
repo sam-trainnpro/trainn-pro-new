@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { useLocation } from "wouter";
-import { User } from "@shared/schema";
+import { User, Class, ClassWithSchedules } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -45,6 +45,9 @@ import {
   Loader2,
   Lock,
   CheckCircle,
+  BookOpen,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
@@ -54,8 +57,11 @@ export default function AdminPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [classSearchQuery, setClassSearchQuery] = useState("");
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCoach, setSelectedCoach] = useState<User | null>(null);
+  const [selectedClass, setSelectedClass] = useState<ClassWithSchedules | null>(null);
   
   // Redirect if not logged in or not an admin
   if (!user) {
@@ -93,6 +99,16 @@ export default function AdminPage() {
   } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
   });
+
+  // Get all classes for admin management
+  const { 
+    data: classes, 
+    isLoading: classesLoading, 
+    error: classesError,
+    refetch: refetchClasses
+  } = useQuery<ClassWithSchedules[]>({
+    queryKey: ['/api/classes'],
+  });
   
   // Approve coach mutation
   const approveCoachMutation = useMutation({
@@ -117,6 +133,31 @@ export default function AdminPage() {
       setApprovalDialogOpen(false);
     },
   });
+
+  // Delete class mutation
+  const deleteClassMutation = useMutation({
+    mutationFn: async (classId: number) => {
+      const response = await apiRequest("DELETE", `/api/classes/${classId}`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Class deleted",
+        description: "The class has been successfully deleted.",
+      });
+      refetchClasses();
+      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      setDeleteDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete class. Please try again.",
+        variant: "destructive",
+      });
+      setDeleteDialogOpen(false);
+    },
+  });
   
   // Handle coach approval
   const handleApproveCoach = () => {
@@ -125,10 +166,28 @@ export default function AdminPage() {
     }
   };
   
+  // Handle class deletion
+  const handleDeleteClass = () => {
+    if (selectedClass) {
+      deleteClassMutation.mutate(selectedClass.id);
+    }
+  };
+  
   // Open approval dialog
   const openApprovalDialog = (coach: User) => {
     setSelectedCoach(coach);
     setApprovalDialogOpen(true);
+  };
+
+  // Open delete dialog
+  const openDeleteDialog = (classItem: ClassWithSchedules) => {
+    setSelectedClass(classItem);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle edit class
+  const handleEditClass = (classItem: ClassWithSchedules) => {
+    navigate(`/create-class?edit=${classItem.id}`);
   };
   
   // Filter coaches based on search query
@@ -137,6 +196,13 @@ export default function AdminPage() {
     (searchQuery === "" || 
      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
      user.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  ) || [];
+  
+  // Filter classes based on search query
+  const filteredClasses = classes?.filter(classItem => 
+    classSearchQuery === "" || 
+    classItem.title.toLowerCase().includes(classSearchQuery.toLowerCase()) ||
+    classItem.location.toLowerCase().includes(classSearchQuery.toLowerCase())
   ) || [];
   
   // Get pending coaches count
@@ -176,6 +242,10 @@ export default function AdminPage() {
               <TabsTrigger value="coaches">
                 <UserIcon className="h-4 w-4 mr-2" />
                 Coaches
+              </TabsTrigger>
+              <TabsTrigger value="classes">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Class Management
               </TabsTrigger>
               <TabsTrigger value="settings">
                 <Shield className="h-4 w-4 mr-2" />
