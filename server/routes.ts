@@ -1184,12 +1184,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get allowed fields based on the request body
-      const allowedFields = ['firstName', 'lastName', 'bio', 'profileImage'];
+      const allowedFields = ['firstName', 'lastName', 'phone', 'bio', 'profileImage'];
       const updateData: Record<string, any> = {};
       
       // Use explicit property assignment to avoid prototype pollution
       if ('firstName' in req.body) updateData.firstName = req.body.firstName;
       if ('lastName' in req.body) updateData.lastName = req.body.lastName;
+      if ('phone' in req.body) updateData.phone = req.body.phone;
       if ('bio' in req.body) updateData.bio = req.body.bio;
       if ('profileImage' in req.body) updateData.profileImage = req.body.profileImage;
       
