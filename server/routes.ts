@@ -299,18 +299,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete class (coaches only)
-  app.delete("/api/classes/:id", requireCoach, async (req, res) => {
+  // Delete class (coaches can delete their own, admins can delete any)
+  app.delete("/api/classes/:id", requireAuth, async (req, res) => {
     try {
       const classId = parseInt(req.params.id);
       
-      // Check if the class belongs to the coach
+      // Check if the class exists
       const classItem = await storage.getClass(classId);
       if (!classItem) {
         return res.status(404).json({ message: "Class not found" });
       }
       
-      if (classItem.coachId !== req.user.id) {
+      // Check authorization: coach can delete their own classes, admin can delete any
+      const isCoachOwner = req.user.role === "coach" && classItem.coachId === req.user.id;
+      const isAdmin = req.user.role === "admin";
+      
+      if (!isCoachOwner && !isAdmin) {
         return res.status(403).json({ message: "Not authorized to delete this class" });
       }
       
