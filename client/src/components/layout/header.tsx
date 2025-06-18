@@ -12,7 +12,8 @@ import {
   Home, 
   Search,
   UserCircle,
-  Heart
+  Heart,
+  BookOpen
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -197,12 +198,20 @@ export default function Header() {
                     </Link>
                   )}
                   {user.role === 'admin' && (
-                    <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">
-                        <Settings className="mr-2 h-5 w-5" />
-                        Admin Panel
-                      </Button>
-                    </Link>
+                    <>
+                      <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Settings className="mr-2 h-5 w-5" />
+                          Admin Panel
+                        </Button>
+                      </Link>
+                      <Link href="/admin?tab=classes" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <BookOpen className="mr-2 h-5 w-5" />
+                          Class Management
+                        </Button>
+                      </Link>
+                    </>
                   )}
                   <Button 
                     variant="outline" 
