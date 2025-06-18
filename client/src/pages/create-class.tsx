@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation } from 'wouter';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { useAuth } from "../../../hooks/use-auth-simple";
@@ -108,6 +108,21 @@ export default function CreateClassPage() {
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<ClassCategory[]>([]);
   const { latitude, longitude, getUserLocation } = useUserLocation();
+  
+  // Check if we're in edit mode
+  const urlParams = new URLSearchParams(window.location.search);
+  const editClassId = urlParams.get('edit');
+  const isEditMode = !!editClassId;
+
+  // Fetch class data for editing
+  const { data: existingClass, isLoading: loadingClass } = useQuery({
+    queryKey: ['/api/classes', editClassId],
+    queryFn: ({ queryKey }) => {
+      if (!editClassId) return null;
+      return fetch(`/api/classes/${editClassId}`).then(res => res.json());
+    },
+    enabled: isEditMode && !!editClassId,
+  });
 
   // Handle getting user's current location
   const handleGetLocation = async () => {
