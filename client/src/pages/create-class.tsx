@@ -148,7 +148,7 @@ export default function CreateClassPage() {
             const geocoder = new window.google.maps.Geocoder();
             geocoder.geocode(
               { location: { lat: latitude, lng: longitude } },
-              (results, status) => {
+              (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
                 if (status === 'OK' && results && results.length > 0) {
                   const address = results[0].formatted_address;
                   
@@ -806,7 +806,7 @@ export default function CreateClassPage() {
                         <p className="text-sm font-medium">Preview:</p>
                         <p className="text-sm text-muted-foreground">
                           {form.getValues('latitude') && form.getValues('longitude') 
-                            ? `${form.getValues('latitude').toFixed(6)}, ${form.getValues('longitude').toFixed(6)}`
+                            ? `${form.getValues('latitude')?.toFixed(6)}, ${form.getValues('longitude')?.toFixed(6)}`
                             : 'No coordinates set'
                           }
                         </p>
@@ -939,7 +939,7 @@ export default function CreateClassPage() {
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                  <Button type="button" variant="outline" onClick={() => navigate("/admin")}>
                     Cancel
                   </Button>
                   <Button 
@@ -960,10 +960,10 @@ export default function CreateClassPage() {
                       isEditMode ? "Update Class" : "Create Class"
                     )}
                   </Button>
-                </div>
-              </form>
-            </Form>
-          </div>
+                  </div>
+                </form>
+              </Form>
+            </div>
             </>
           )}
         </div>
