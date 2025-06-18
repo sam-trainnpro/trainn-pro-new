@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
-import { useSafeAuth } from "../../../../hooks/use-auth-safe";
+import { useAuth } from "../../../../hooks/use-auth-simple";
 import ForgotPasswordForm from "./forgot-password-form";
 import {
   Form,
@@ -33,7 +33,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
   const [, navigate] = useLocation();
-  const { loginMutation, user } = useSafeAuth();
+  const { loginMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   
