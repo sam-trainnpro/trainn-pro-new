@@ -182,23 +182,6 @@ export default function CreateClassPage() {
     }
   };
 
-  // Load categories on mount
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const res = await fetch('/api/categories');
-        if (res.ok) {
-          const data = await res.json();
-          setCategories(data);
-        }
-      } catch (error) {
-        console.error("Error loading categories:", error);
-      }
-    }
-    
-    loadCategories();
-  }, []);
-
   // Form definition
   const form = useForm<z.infer<typeof createClassSchema>>({
     resolver: zodResolver(createClassSchema),
@@ -226,6 +209,51 @@ export default function CreateClassPage() {
     },
   });
 
+  // Load categories on mount
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error("Error loading categories:", error);
+      }
+    }
+    
+    loadCategories();
+  }, []);
+
+  // Populate form when editing existing class
+  useEffect(() => {
+    if (isEditMode && existingClass && !loadingClass) {
+      form.reset({
+        title: existingClass.title || "",
+        description: existingClass.description || "",
+        categoryId: existingClass.categoryId?.toString() || "",
+        location: existingClass.location || "",
+        addressLine1: existingClass.addressLine1 || "",
+        city: existingClass.city || "",
+        state: existingClass.state || "",
+        zipCode: existingClass.zipCode || "",
+        address: existingClass.address || "",
+        latitude: existingClass.latitude || undefined,
+        longitude: existingClass.longitude || undefined,
+        price: existingClass.price || 0,
+        duration: existingClass.duration || 60,
+        capacity: existingClass.capacity || 10,
+        startDate: existingClass.startDate ? new Date(existingClass.startDate) : new Date(),
+        startTime: existingClass.startTime || "09:00",
+        endTime: existingClass.endTime || "",
+        whatToBring: existingClass.whatToBring || "",
+        image: existingClass.image || "",
+        isRecurring: existingClass.isRecurring || false,
+      });
+    }
+  }, [existingClass, loadingClass, isEditMode, form]);
+
   // Create class mutation
   const { mutateAsync: createClass } = useMutation({
     mutationFn: async (data: z.infer<typeof createClassSchema>) => {
@@ -244,6 +272,30 @@ export default function CreateClassPage() {
     onError: (error: Error) => {
       toast({
         title: "Error creating class",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update class mutation
+  const { mutateAsync: updateClass } = useMutation({
+    mutationFn: async (data: z.infer<typeof createClassSchema>) => {
+      const response = await apiRequest("PUT", `/api/classes/${editClassId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coaches"] });
+      toast({
+        title: "Class updated",
+        description: "The class has been updated successfully.",
+      });
+      navigate(user?.role === "admin" ? "/admin?tab=classes" : "/my-classes");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating class",
         description: error.message,
         variant: "destructive",
       });
@@ -409,16 +461,12 @@ export default function CreateClassPage() {
       
       // Submit the processed data
       console.log("Submitting class with data:", formattedData);
-      await createClass(formattedData);
       
-      // Show success message
-      toast({
-        title: "Class created",
-        description: "Your class has been created successfully",
-      });
-      
-      // Redirect to my-classes page
-      navigate('/my-classes');
+      if (isEditMode) {
+        await updateClass(formattedData);
+      } else {
+        await createClass(formattedData);
+      }
     } catch (error) {
       console.error("Error creating class:", error);
       toast({
@@ -463,17 +511,24 @@ export default function CreateClassPage() {
   return (
     <>
       <Helmet>
-        <title>Create a Class | Trainn</title>
-        <meta name="description" content="Create a new fitness class to share your expertise with students. Set up class details, schedule, and location." />
+        <title>{isEditMode ? "Edit Class" : "Create a Class"} | Trainn</title>
+        <meta name="description" content={isEditMode ? "Edit your fitness class details, schedule, and location." : "Create a new fitness class to share your expertise with students. Set up class details, schedule, and location."} />
       </Helmet>
       <Header />
       <main className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">Create a Class</h1>
+          {loadingClass ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Loading class data...</span>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold mb-6">{isEditMode ? "Edit Class" : "Create a Class"}</h1>
           
-          <div className="bg-card rounded-lg shadow-sm p-6 border">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="bg-card rounded-lg shadow-sm p-6 border">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-6">
                     <FormField
@@ -902,13 +957,15 @@ export default function CreateClassPage() {
                         {uploadingImage ? "Uploading..." : "Creating..."}
                       </>
                     ) : (
-                      "Create Class"
+                      isEditMode ? "Update Class" : "Create Class"
                     )}
                   </Button>
                 </div>
               </form>
             </Form>
           </div>
+            </>
+          )}
         </div>
       </main>
       <Footer />
