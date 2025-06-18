@@ -148,7 +148,8 @@ export default function AdminPage() {
   const deleteClassMutation = useMutation({
     mutationFn: async (classId: number) => {
       const response = await apiRequest("DELETE", `/api/classes/${classId}`, {});
-      return response.json();
+      // DELETE returns 204 with no content, so don't try to parse JSON
+      return response.ok;
     },
     onSuccess: () => {
       toast({
