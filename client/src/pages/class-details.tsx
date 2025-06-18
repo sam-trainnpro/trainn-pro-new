@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
-import { useSafeAuth } from "../../../hooks/use-auth-safe";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import { Class, ClassCategory, User, Booking, ClassWithSchedules, ClassSchedule } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
@@ -48,7 +48,7 @@ import { Helmet } from "react-helmet";
 export default function ClassDetailsPage() {
   const [, navigate] = useLocation();
   const [_, params] = useRoute<{ id: string }>("/classes/:id");
-  const { user } = useSafeAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [bookingStatus, setBookingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [quantity, setQuantity] = useState(1);
