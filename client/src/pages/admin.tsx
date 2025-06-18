@@ -198,7 +198,7 @@ export default function AdminPage() {
 
   // Handle edit class
   const handleEditClass = (classItem: ClassWithSchedules) => {
-    navigate(`/create-class?edit=${classItem.id}`);
+    navigate(`/create-class?id=${classItem.id}`);
   };
   
   // Filter coaches based on search query
