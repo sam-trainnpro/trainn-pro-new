@@ -159,12 +159,7 @@ export default function LoginForm() {
               )}
             </Button>
             
-            <div className="text-center mt-4">
-              <span className="text-sm">Don't have an account?</span>{" "}
-              <Link href="/auth?register=true" className="text-sm text-secondary hover:underline">
-                Create account
-              </Link>
-            </div>
+            
           </form>
         </Form>
       </CardContent>

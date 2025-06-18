@@ -1,4 +1,4 @@
-import { useSafeAuth } from "../../../hooks/use-auth-safe";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import { ReactNode } from "react";
@@ -9,7 +9,7 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ path, children }: ProtectedRouteProps) {
-  const { user, isLoading } = useSafeAuth();
+  const { user, isLoading } = useAuth();
 
   return (
     <Route path={path}>
