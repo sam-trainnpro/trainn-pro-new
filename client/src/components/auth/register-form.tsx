@@ -357,12 +357,7 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
               )}
             </Button>
             
-            <div className="text-center mt-4">
-              <span className="text-sm">Already have an account?</span>{" "}
-              <Link href="/auth" className="text-sm text-secondary hover:underline">
-                Sign in
-              </Link>
-            </div>
+            
           </form>
         </Form>
       </CardContent>
