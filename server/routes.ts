@@ -486,10 +486,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Book a class (authenticated users)
-  app.post("/api/bookings", requireAuth, async (req, res) => {
+  // Check class availability (used before payment)
+  app.post("/api/classes/:id/check-availability", requireAuth, async (req, res) => {
     try {
-      const { classId } = req.body;
+      const classId = parseInt(req.params.id);
       const userId = req.user.id;
       
       // Validate class exists
@@ -513,16 +513,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Class is fully booked" });
       }
       
-      // Create booking
-      const booking = await storage.createBooking({
-        userId,
-        classId,
-        status: "pending"
+      // Return availability status
+      res.json({ 
+        available: true, 
+        spotsLeft: classItem.capacity - confirmedBookings.length 
       });
-      
-      res.status(201).json(booking);
     } catch (error) {
-      res.status(500).json({ message: "Failed to book class" });
+      res.status(500).json({ message: "Failed to check availability" });
     }
   });
 
@@ -782,23 +779,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required parameters: classId, amount" });
       }
       
-      // Check if user already has bookings for this class
+      // Check if user already has confirmed bookings for this class
       const userBookings = await storage.getUserBookings(req.user.id);
       const existingBookings = userBookings.filter(b => 
-        b.classId === classId && 
-        (b.status === "pending" || b.status === "confirmed")
+        b.classId === classId && b.status === "confirmed"
       );
       
-      // If no existing bookings, create a single pending booking with the requested quantity
-      if (existingBookings.length === 0) {
-        const bookingData = {
-          userId: req.user.id,
-          classId: classId,
-          quantity: quantity,
-          status: "pending",
-          paymentMethod: "stripe"
-        };
-        await storage.createBooking(bookingData);
+      // Check if user already has a confirmed booking for this class
+      if (existingBookings.length > 0) {
+        return res.status(400).json({ message: "You already have a booking for this class" });
       }
       
       // Get class details for the payment description
@@ -877,7 +866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Confirm payment and update booking status
+  // Confirm payment and create confirmed booking
   app.post("/api/payment/confirm", requireAuth, async (req, res) => {
     try {
       const { paymentIntentId, classId, quantity = 1 } = req.body;
@@ -886,40 +875,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
       
-      // Find all pending bookings for this user and class
-      const userBookings = await storage.getUserBookings(req.user.id);
-      console.log("User bookings:", userBookings);
-      console.log("Looking for classId:", classId, "status: pending");
+      // Validate class exists and check capacity
+      const classItem = await storage.getClass(parseInt(classId));
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
       
-      const pendingBookings = userBookings.filter(b => 
-        b.classId === parseInt(classId) && 
-        b.status === "pending"
+      // Check if class has capacity
+      const classBookings = await storage.getClassBookings(parseInt(classId));
+      const confirmedBookings = classBookings.filter(booking => 
+        booking.status === "confirmed"
       );
       
-      console.log("Found pending bookings:", pendingBookings.length);
-      
-      if (pendingBookings.length === 0) {
-        return res.status(404).json({ 
-          message: "No pending bookings found for this class",
-          debug: { classId, userBookings: userBookings.length }
-        });
+      if (confirmedBookings.length >= classItem.capacity) {
+        return res.status(400).json({ message: "Class is fully booked" });
       }
       
-      // If we have multiple old-style bookings, update them all for now
-      // But in the future, new bookings will be single records with quantity
-      const updatedBookings = [];
-      for (const booking of pendingBookings) {
-        const updatedBooking = await storage.updateBooking(booking.id, {
-          status: "confirmed",
-          stripePaymentIntentId: paymentIntentId,
-          paymentDate: new Date(),
-          paymentMethod: "stripe"
-        });
-        updatedBookings.push(updatedBooking);
-      }
+      // Create new confirmed booking directly (no pending status)
+      const booking = await storage.createBooking({
+        userId: req.user.id,
+        classId: parseInt(classId),
+        quantity: quantity,
+        status: "confirmed",
+        stripePaymentIntentId: paymentIntentId,
+        paymentDate: new Date(),
+        paymentMethod: "stripe"
+      });
       
-      // Calculate total quantity from all bookings
-      const totalQuantity = updatedBookings.reduce((sum, booking) => sum + (booking?.quantity || 1), 0);
+      const updatedBookings = [booking];
+      const totalQuantity = quantity;
       
       // Send confirmation email after successful booking
       try {
