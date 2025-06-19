@@ -506,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if class has capacity
       const classBookings = await storage.getClassBookings(classId);
       const confirmedBookings = classBookings.filter(booking => 
-        booking.status === "confirmed" || booking.status === "pending"
+        booking.status === "confirmed"
       );
       
       if (confirmedBookings.length >= classItem.capacity) {
@@ -562,7 +562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const classBookings = await storage.getClassBookings(classId);
       const confirmedBookings = classBookings.filter(booking => 
-        booking.status === "confirmed" || booking.status === "pending"
+        booking.status === "confirmed"
       );
       
       // Calculate total spots booked by summing quantities
