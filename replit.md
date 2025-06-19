@@ -49,6 +49,7 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 - Email confirmations for successful bookings
 - Cancellation policy management
 - Booking history and status tracking
+- Direct confirmed booking creation (no pending status)
 
 ### Payment Processing
 - Stripe Connect for coach payouts (infrastructure in place)
@@ -110,6 +111,7 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 19, 2025. Eliminated pending booking status - bookings only created after successful payment completion
 - June 18, 2025. Initial setup
 ```
 
