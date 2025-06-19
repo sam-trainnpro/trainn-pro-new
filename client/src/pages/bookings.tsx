@@ -106,17 +106,27 @@ export default function BookingsPage() {
     }
   });
   
-  // Filter bookings by status (only confirmed bookings exist now)
+  // Filter and sort bookings by status and date/time
   const upcomingBookings = bookings?.filter(booking => 
     booking.status === 'confirmed' && 
     booking.class && booking.class.startTime && 
     new Date(booking.class.startTime) > new Date()
-  );
+  ).sort((a, b) => {
+    // Sort by start time (earliest first)
+    const dateA = new Date(a.class!.startTime!);
+    const dateB = new Date(b.class!.startTime!);
+    return dateA.getTime() - dateB.getTime();
+  });
   
   const pastBookings = bookings?.filter(booking => 
     booking.class && booking.class.startTime && 
     new Date(booking.class.startTime) <= new Date()
-  );
+  ).sort((a, b) => {
+    // Sort by start time (most recent first)
+    const dateA = new Date(a.class!.startTime!);
+    const dateB = new Date(b.class!.startTime!);
+    return dateB.getTime() - dateA.getTime();
+  });
   
 
   
