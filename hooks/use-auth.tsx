@@ -32,14 +32,36 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-// Initialize context with a default empty value to prevent undefined errors
+// Create default mutation objects with all required properties
+const createDefaultMutation = <TData, TError, TVariables>(): UseMutationResult<TData, TError, TVariables> => ({
+  mutate: () => {},
+  mutateAsync: async () => {
+    throw new Error("Authentication not initialized");
+  },
+  reset: () => {},
+  isPending: false,
+  isError: false,
+  isSuccess: false,
+  isIdle: true,
+  error: null,
+  data: undefined,
+  failureCount: 0,
+  failureReason: null,
+  isPaused: false,
+  status: "idle",
+  variables: undefined,
+  submittedAt: 0,
+  context: undefined,
+});
+
+// Initialize context with properly structured default values
 const defaultAuthValue: AuthContextType = {
   user: null,
   isLoading: false,
   error: null,
-  loginMutation: {} as UseMutationResult<User, Error, LoginData>,
-  logoutMutation: {} as UseMutationResult<void, Error, void>,
-  registerMutation: {} as UseMutationResult<User, Error, RegisterData>,
+  loginMutation: createDefaultMutation<User, Error, LoginData>(),
+  logoutMutation: createDefaultMutation<void, Error, void>(),
+  registerMutation: createDefaultMutation<User, Error, RegisterData>(),
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthValue);
