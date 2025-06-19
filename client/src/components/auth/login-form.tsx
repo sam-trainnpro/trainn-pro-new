@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "../../../../hooks/use-auth-simple";
+import { useAuth } from "../../../../hooks/use-auth-working";
 import ForgotPasswordForm from "./forgot-password-form";
 import {
   Form,
