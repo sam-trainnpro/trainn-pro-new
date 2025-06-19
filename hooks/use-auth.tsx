@@ -4,22 +4,23 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User } from "../shared/schema";
+import { insertUserSchema, User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../client/src/lib/queryClient";
+import { useToast } from "./use-toast";
 
 type LoginData = {
   email: string;
   password: string;
 };
 
+// Make sure RegisterData includes all fields from the registration form, including termsAccepted
 type RegisterData = {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  phone: string;
   role: string;
-  termsAccepted?: boolean;
+  termsAccepted?: boolean; // Add termsAccepted as optional since it's only for validation
 };
 
 type AuthContextType = {
@@ -31,9 +32,11 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { toast } = useToast();
+  
   const {
     data: user,
     error,
@@ -41,108 +44,135 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
-    retry: false,
   });
+
+  // Use a try/catch wrapper for all API calls to prevent uncaught exceptions
+  const safeApiCall = async <T,>(fn: () => Promise<T>): Promise<T> => {
+    try {
+      return await fn();
+    } catch (error) {
+      console.error("API call error:", error);
+      throw error;
+    }
+  };
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Login failed");
-      }
-      return await res.json();
+      return safeApiCall(async () => {
+        const res = await apiRequest("POST", "/api/login", credentials);
+        return await res.json();
+      });
     },
     onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+      try {
+        queryClient.setQueryData(["/api/user"], user);
+        toast({
+          title: "Logged in successfully",
+          description: `Welcome back, ${user.firstName}!`,
+        });
+      } catch (error) {
+        console.error("Error in loginMutation onSuccess:", error);
+      }
     },
     onError: (error: Error) => {
-      console.error("Login error:", error);
+      try {
+        console.error("Login mutation error:", error);
+        toast({
+          title: "Login failed",
+          description: error.message || "An error occurred during login",
+          variant: "destructive",
+        });
+      } catch (err) {
+        console.error("Error in loginMutation onError:", err);
+      }
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      const { termsAccepted, ...dataToSend } = userData;
-      const res = await apiRequest("POST", "/api/register", dataToSend);
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Registration failed");
-      }
-      return await res.json();
+      return safeApiCall(async () => {
+        // Remove termsAccepted from the data sent to the server
+        const { termsAccepted, ...dataToSend } = userData;
+        const res = await apiRequest("POST", "/api/register", dataToSend);
+        return await res.json();
+      });
     },
     onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+      try {
+        queryClient.setQueryData(["/api/user"], user);
+        toast({
+          title: "Registration successful",
+          description: `Welcome to Trainn, ${user.firstName}!`,
+        });
+      } catch (error) {
+        console.error("Error in registerMutation onSuccess:", error);
+      }
     },
     onError: (error: Error) => {
-      console.error("Registration error:", error);
+      try {
+        console.error("Registration mutation error:", error);
+        toast({
+          title: "Registration failed",
+          description: error.message || "An error occurred during registration",
+          variant: "destructive",
+        });
+      } catch (err) {
+        console.error("Error in registerMutation onError:", err);
+      }
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout", {});
+      return safeApiCall(async () => {
+        await apiRequest("POST", "/api/logout");
+      });
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
-      queryClient.clear();
+      try {
+        queryClient.setQueryData(["/api/user"], null);
+        toast({
+          title: "Logged out successfully",
+          description: "You have been logged out of your account.",
+        });
+      } catch (error) {
+        console.error("Error in logoutMutation onSuccess:", error);
+      }
     },
     onError: (error: Error) => {
-      console.error("Logout error:", error);
+      try {
+        console.error("Logout mutation error:", error);
+        toast({
+          title: "Logout failed",
+          description: error.message || "An error occurred during logout",
+          variant: "destructive",
+        });
+      } catch (err) {
+        console.error("Error in logoutMutation onError:", err);
+      }
     },
   });
 
-  const value: AuthContextType = {
-    user: user ?? null,
-    isLoading,
-    error,
-    loginMutation,
-    logoutMutation,
-    registerMutation,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user: user ?? null,
+        isLoading,
+        error,
+        loginMutation,
+        logoutMutation,
+        registerMutation,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth(): AuthContextType {
+export function useAuth() {
   const context = useContext(AuthContext);
-  
-  if (context === undefined) {
-    // Provide safe fallback instead of throwing error to prevent app crashes
-    const safeMutation = {
-      mutate: () => {},
-      mutateAsync: async () => {
-        throw new Error("Authentication not available");
-      },
-      isPending: false,
-      isError: false,
-      isSuccess: false,
-      isIdle: true,
-      error: null,
-      data: undefined,
-      failureCount: 0,
-      failureReason: null,
-      isPaused: false,
-      status: "idle" as const,
-      variables: undefined,
-      submittedAt: 0,
-      reset: () => {},
-      context: undefined,
-    };
-    
-    return {
-      user: null,
-      isLoading: false,
-      error: null,
-      loginMutation: safeMutation as any,
-      logoutMutation: safeMutation as any,
-      registerMutation: safeMutation as any,
-    };
+  if (context === null || context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  
   return context;
 }

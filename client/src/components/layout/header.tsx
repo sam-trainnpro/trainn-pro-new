@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "../../../../hooks/use-auth-fixed";
+import { useAuth } from "../../../../hooks/use-auth-simple";
 import { 
   Bell, 
   User, 
@@ -28,7 +28,17 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 export default function Header() {
   const [location] = useLocation();
   
-  const { user, logoutMutation } = useAuth();
+  // Temporary fallback to prevent crashes
+  let user = null;
+  let logoutMutation = { mutate: () => {} };
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+    logoutMutation = auth.logoutMutation;
+  } catch (error) {
+    console.log("AuthProvider not available, using fallback");
+  }
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

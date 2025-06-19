@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "../../../../hooks/use-auth";
+import { useAuth } from "../../../../hooks/use-auth-simple";
 
 export default function HeroSection() {
   const { user } = useAuth();
