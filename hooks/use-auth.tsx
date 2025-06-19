@@ -34,8 +34,6 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  console.log("AuthProvider initializing");
-  
   const {
     data: user,
     error,
@@ -103,8 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     registerMutation,
   };
 
-  console.log("AuthProvider rendering with value:", { user: value.user?.email, isLoading: value.isLoading });
-
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -114,43 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  
-  console.log("useAuth called, context:", context ? "available" : "undefined");
-  
   if (context === undefined) {
-    console.warn("useAuth called outside AuthProvider - providing safe defaults");
-    
-    const safeMutation = {
-      mutate: () => {},
-      mutateAsync: async () => {
-        throw new Error("Authentication not available");
-      },
-      isPending: false,
-      isError: false,
-      isSuccess: false,
-      isIdle: true,
-      error: null,
-      data: undefined,
-      failureCount: 0,
-      failureReason: null,
-      isPaused: false,
-      status: "idle" as const,
-      variables: undefined,
-      submittedAt: 0,
-      reset: () => {},
-      context: undefined,
-    };
-    
-    return {
-      user: null,
-      isLoading: false,
-      error: null,
-      loginMutation: safeMutation as any,
-      logoutMutation: safeMutation as any,
-      registerMutation: safeMutation as any,
-    };
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  
-  console.log("useAuth returning real context with user:", context.user?.email);
   return context;
 }
