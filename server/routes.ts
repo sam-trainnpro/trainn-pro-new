@@ -1566,6 +1566,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Review endpoints
+  
+  // Create a new review
+  app.post("/api/reviews", requireAuth, async (req, res) => {
+    try {
+      const { classId, bookingId, rating, comment } = req.body;
+      
+      // Validate required fields
+      if (!classId || !bookingId || !rating) {
+        return res.status(400).json({ message: "Class ID, booking ID, and rating are required" });
+      }
+      
+      if (rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+      
+      // Verify the booking belongs to the user and class has occurred
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      if (booking.userId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only review your own bookings" });
+      }
+      
+      if (booking.classId !== classId) {
+        return res.status(400).json({ message: "Booking does not match the specified class" });
+      }
+      
+      // Check if class has occurred
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      if (new Date(classItem.startTime!) > new Date()) {
+        return res.status(400).json({ message: "Cannot review a class that hasn't occurred yet" });
+      }
+      
+      // Check if review already exists
+      const existingReviews = await storage.getUserReviews(req.user!.id);
+      const existingReview = existingReviews.find(review => review.classId === classId);
+      if (existingReview) {
+        return res.status(400).json({ message: "You have already reviewed this class" });
+      }
+      
+      // Create the review
+      const review = await storage.createReview({
+        userId: req.user!.id,
+        classId,
+        rating,
+        comment: comment || null
+      });
+      
+      res.status(201).json(review);
+    } catch (error: any) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ message: "Failed to create review" });
+    }
+  });
+  
+  // Update an existing review
+  app.put("/api/reviews/:reviewId", requireAuth, async (req, res) => {
+    try {
+      const reviewId = parseInt(req.params.reviewId);
+      const { rating, comment } = req.body;
+      
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Valid rating (1-5) is required" });
+      }
+      
+      // Get existing review to verify ownership
+      const existingReviews = await storage.getUserReviews(req.user!.id);
+      const existingReview = existingReviews.find(review => review.id === reviewId);
+      
+      if (!existingReview) {
+        return res.status(404).json({ message: "Review not found or not owned by you" });
+      }
+      
+      // Update review (this would need to be implemented in storage)
+      // For now, we'll create a simple update method
+      const updatedReview = await storage.updateReview(reviewId, {
+        rating,
+        comment: comment || null
+      });
+      
+      res.json(updatedReview);
+    } catch (error: any) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ message: "Failed to update review" });
+    }
+  });
+  
+  // Get reviews for a specific class
+  app.get("/api/reviews/class/:classId", async (req, res) => {
+    try {
+      const classId = parseInt(req.params.classId);
+      const reviews = await storage.getClassReviews(classId);
+      res.json(reviews);
+    } catch (error: any) {
+      console.error("Error fetching class reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+  
+  // Get reviews for a specific coach
+  app.get("/api/reviews/coach/:coachId", async (req, res) => {
+    try {
+      const coachId = parseInt(req.params.coachId);
+      
+      // Get all classes for this coach
+      const coachClasses = await storage.getClassesByCoach(coachId);
+      const classIds = coachClasses.map(c => c.id);
+      
+      // Get all reviews for these classes
+      let allReviews: any[] = [];
+      for (const classId of classIds) {
+        const classReviews = await storage.getClassReviews(classId);
+        allReviews = allReviews.concat(classReviews);
+      }
+      
+      // Calculate average rating
+      const averageRating = allReviews.length > 0 
+        ? allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length 
+        : 0;
+      
+      res.json({
+        reviews: allReviews,
+        averageRating: Math.round(averageRating * 10) / 10,
+        totalReviews: allReviews.length
+      });
+    } catch (error: any) {
+      console.error("Error fetching coach reviews:", error);
+      res.status(500).json({ message: "Failed to fetch coach reviews" });
+    }
+  });
+  
+  // Get reviews by a specific customer
+  app.get("/api/reviews/customer/:customerId", requireAuth, async (req, res) => {
+    try {
+      const customerId = parseInt(req.params.customerId);
+      
+      // Only allow users to view their own reviews or admin
+      if (req.user!.id !== customerId && req.user!.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const reviews = await storage.getUserReviews(customerId);
+      res.json(reviews);
+    } catch (error: any) {
+      console.error("Error fetching customer reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
