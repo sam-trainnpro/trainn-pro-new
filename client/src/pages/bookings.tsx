@@ -99,14 +99,16 @@ export default function BookingsPage() {
     }
   });
   
-  // Filter bookings by status
+  // Filter bookings by status (only confirmed bookings exist now)
   const upcomingBookings = bookings?.filter(booking => 
     booking.status === 'confirmed' && 
-    (booking.class && new Date(booking.class.startTime) > new Date())
+    booking.class && booking.class.startTime && 
+    new Date(booking.class.startTime) > new Date()
   );
   
   const pastBookings = bookings?.filter(booking => 
-    booking.class && new Date(booking.class.startTime) <= new Date()
+    booking.class && booking.class.startTime && 
+    new Date(booking.class.startTime) <= new Date()
   );
   
 
@@ -126,13 +128,17 @@ export default function BookingsPage() {
   };
   
   // Format the date
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "EEEE, MMMM d, yyyy");
+  const formatDate = (dateValue: string | Date | null) => {
+    if (!dateValue) return "Unknown date";
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    return format(date, "EEEE, MMMM d, yyyy");
   };
   
   // Format the time
-  const formatTime = (dateString: string) => {
-    return format(new Date(dateString), "h:mm a");
+  const formatTime = (dateValue: string | Date | null) => {
+    if (!dateValue) return "Unknown time";
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    return format(date, "h:mm a");
   };
   
   // Handle booking cancellation
