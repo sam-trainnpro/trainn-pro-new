@@ -9,7 +9,7 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ path, children }: ProtectedRouteProps) {
-  const { user, isLoading } = useSafeAuth();
+  const { user, isLoading } = useAuth();
 
   return (
     <Route path={path}>

@@ -28,7 +28,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 export default function Header() {
   const [location] = useLocation();
   
-  const { user, logoutMutation } = useSafeAuth();
+  const { user, logoutMutation } = useAuth();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

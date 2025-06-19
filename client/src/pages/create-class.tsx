@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
-import { useSafeAuth } from "../../../hooks/use-auth-safe";
+import { useAuth } from "../../../hooks/use-auth-unified";
 import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation as useUserLocation } from "../../../hooks/use-location";
@@ -102,7 +102,7 @@ const timeSlots = generateTimeSlots();
 
 // CreateClassPage component
 export default function CreateClassPage() {
-  const { user } = useSafeAuth();
+  const { user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
