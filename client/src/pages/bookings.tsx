@@ -43,7 +43,8 @@ import {
   CheckCircle, 
   AlertCircle,
   CalendarDays,
-  Loader2
+  Loader2,
+  Star
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
@@ -74,6 +75,12 @@ export default function BookingsPage() {
   // Fetch user bookings
   const { data: bookings, isLoading, error, refetch } = useQuery<BookingWithClass[]>({
     queryKey: ['/api/bookings'],
+    enabled: !!user,
+  });
+
+  // Fetch user reviews
+  const { data: userReviews } = useQuery<any[]>({
+    queryKey: [`/api/reviews/customer/${user?.id}`],
     enabled: !!user,
   });
   
@@ -162,6 +169,16 @@ export default function BookingsPage() {
   const handleCancelBooking = (bookingId: number) => {
     setCancelingBookingId(bookingId);
     cancelBookingMutation.mutate(bookingId);
+  };
+
+  // Check if a booking has been reviewed
+  const hasBeenReviewed = (classId: number) => {
+    return Array.isArray(userReviews) && userReviews.some((review: any) => review.classId === classId);
+  };
+
+  // Get existing review for a class
+  const getExistingReview = (classId: number) => {
+    return Array.isArray(userReviews) ? userReviews.find((review: any) => review.classId === classId) : undefined;
   };
   
   return (
@@ -363,7 +380,7 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="flex gap-3">
                           <Button 
                             asChild 
                             variant="outline"
@@ -372,6 +389,31 @@ export default function BookingsPage() {
                               View Class Details
                             </Link>
                           </Button>
+                          
+                          {booking.class && (
+                            hasBeenReviewed(booking.classId) ? (
+                              <Button 
+                                asChild 
+                                variant="outline" 
+                                className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                              >
+                                <Link href={`/review?classId=${booking.classId}&bookingId=${booking.id}`}>
+                                  <Star className="h-4 w-4 mr-2" />
+                                  View Review
+                                </Link>
+                              </Button>
+                            ) : (
+                              <Button 
+                                asChild 
+                                className="bg-primary text-white hover:bg-primary/90"
+                              >
+                                <Link href={`/review?classId=${booking.classId}&bookingId=${booking.id}`}>
+                                  <Star className="h-4 w-4 mr-2" />
+                                  Add Review
+                                </Link>
+                              </Button>
+                            )
+                          )}
                         </CardFooter>
                       </Card>
                     ))}
