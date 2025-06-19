@@ -34,6 +34,8 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log("AuthProvider initializing");
+  
   const {
     data: user,
     error,
@@ -100,6 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logoutMutation,
     registerMutation,
   };
+
+  console.log("AuthProvider rendering with value:", { user: value.user?.email, isLoading: value.isLoading });
 
   return (
     <AuthContext.Provider value={value}>
