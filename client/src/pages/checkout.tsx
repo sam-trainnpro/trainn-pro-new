@@ -92,9 +92,12 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
           });
           setPaymentStatus("success");
           
-          // Redirect to bookings page after successful payment
+          // Force refresh bookings data before navigating
+          await queryClient.refetchQueries({ queryKey: ['/api/bookings'] });
+          
+          // Redirect to bookings page with refresh parameter after successful payment
           setTimeout(() => {
-            navigate("/bookings");
+            navigate("/bookings?refresh=true");
           }, 1500);
         } else {
           throw new Error("Failed to confirm booking");
