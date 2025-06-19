@@ -55,14 +55,22 @@ interface BookingWithClass extends Booking {
 }
 
 export default function BookingsPage() {
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   const { user } = useAuth();
   const { toast } = useToast();
   const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null);
+  
+  // Check for refresh parameter and force refresh on payment completion
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('refresh') === 'true') {
+      // Force refresh bookings cache when arriving from payment
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      // Remove the refresh parameter from URL
+      window.history.replaceState({}, '', '/bookings');
+    }
+  }, []);
   
   // Fetch user bookings
   const { data: bookings, isLoading, error, refetch } = useQuery<BookingWithClass[]>({
