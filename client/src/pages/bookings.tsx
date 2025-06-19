@@ -59,16 +59,15 @@ export default function BookingsPage() {
   const { toast } = useToast();
   const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null);
   
-  // Check for refresh parameter and force refresh on payment completion
+  // Check for refresh parameter and force page reload on payment completion
   useEffect(() => {
     window.scrollTo(0, 0);
     
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('refresh') === 'true') {
-      // Force refresh bookings cache when arriving from payment
-      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-      // Remove the refresh parameter from URL
+      // Force complete page reload to ensure fresh data after payment
       window.history.replaceState({}, '', '/bookings');
+      window.location.reload();
     }
   }, []);
   
