@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
-import { useAuth } from "../../../hooks/use-auth-working";
+import { useAuth } from "../../../hooks/use-auth-fixed";
 import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation as useUserLocation } from "../../../hooks/use-location";

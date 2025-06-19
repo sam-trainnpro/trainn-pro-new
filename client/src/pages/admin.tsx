@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "../../../hooks/use-auth-working";
+import { useAuth } from "../../../hooks/use-auth-fixed";
 import { useLocation } from "wouter";
 import { User, Class, ClassWithSchedules } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
