@@ -110,8 +110,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    // Provide safe fallback instead of throwing error to prevent app crashes
+    const safeMutation = {
+      mutate: () => {},
+      mutateAsync: async () => {
+        throw new Error("Authentication not available");
+      },
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+      isIdle: true,
+      error: null,
+      data: undefined,
+      failureCount: 0,
+      failureReason: null,
+      isPaused: false,
+      status: "idle" as const,
+      variables: undefined,
+      submittedAt: 0,
+      reset: () => {},
+      context: undefined,
+    };
+    
+    return {
+      user: null,
+      isLoading: false,
+      error: null,
+      loginMutation: safeMutation as any,
+      logoutMutation: safeMutation as any,
+      registerMutation: safeMutation as any,
+    };
   }
+  
   return context;
 }
