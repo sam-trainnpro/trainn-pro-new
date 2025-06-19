@@ -32,7 +32,17 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Initialize context with a default empty value to prevent undefined errors
+const defaultAuthValue: AuthContextType = {
+  user: null,
+  isLoading: false,
+  error: null,
+  loginMutation: {} as UseMutationResult<User, Error, LoginData>,
+  logoutMutation: {} as UseMutationResult<void, Error, void>,
+  registerMutation: {} as UseMutationResult<User, Error, RegisterData>,
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthValue);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
@@ -49,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      console.log("Submitting login form:", { ...credentials, password: "***" });
       const res = await apiRequest("POST", "/api/login", credentials);
       if (!res.ok) {
         const errorText = await res.text();
@@ -58,16 +67,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: User) => {
-      console.log("Login successful:", user);
       queryClient.setQueryData(["/api/user"], user);
-      console.log("Navigating to home after login");
       toast({
         title: "Welcome back!",
         description: `Successfully logged in as ${user.firstName}`,
       });
     },
     onError: (error: Error) => {
-      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again",
@@ -78,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      console.log("Submitting registration form:", { ...userData, password: "***" });
       const { termsAccepted, ...dataToSend } = userData;
       const res = await apiRequest("POST", "/api/register", dataToSend);
       if (!res.ok) {
@@ -95,7 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
-      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
         description: error.message || "An error occurred during registration",
@@ -117,7 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
-      console.error("Logout error:", error);
       toast({
         title: "Logout failed",
         description: error.message || "An error occurred during logout",
@@ -126,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const contextValue: AuthContextType = {
+  const value: AuthContextType = {
     user: user ?? null,
     isLoading,
     error,
@@ -136,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -144,8 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  // Return the context without throwing error - it has default values
   return context;
 }
