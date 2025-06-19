@@ -32,39 +32,7 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-// Create default mutation objects with all required properties
-const createDefaultMutation = <TData, TError, TVariables>(): UseMutationResult<TData, TError, TVariables> => ({
-  mutate: () => {},
-  mutateAsync: async () => {
-    throw new Error("Authentication not initialized");
-  },
-  reset: () => {},
-  isPending: false,
-  isError: false,
-  isSuccess: false,
-  isIdle: true,
-  error: null,
-  data: undefined,
-  failureCount: 0,
-  failureReason: null,
-  isPaused: false,
-  status: "idle",
-  variables: undefined,
-  submittedAt: 0,
-  context: undefined,
-});
-
-// Initialize context with properly structured default values
-const defaultAuthValue: AuthContextType = {
-  user: null,
-  isLoading: false,
-  error: null,
-  loginMutation: createDefaultMutation<User, Error, LoginData>(),
-  logoutMutation: createDefaultMutation<void, Error, void>(),
-  registerMutation: createDefaultMutation<User, Error, RegisterData>(),
-};
-
-const AuthContext = createContext<AuthContextType>(defaultAuthValue);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
@@ -169,6 +137,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  // Return the context without throwing error - it has default values
+  
+  // Instead of throwing error, provide fallback with working mutations
+  if (!context) {
+    console.warn("useAuth called outside AuthProvider - providing fallback");
+    
+    const fallbackMutation = {
+      mutate: () => console.log("Auth not available"),
+      mutateAsync: async () => {
+        throw new Error("Authentication not available");
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      data: undefined,
+      isIdle: true,
+      isSuccess: false,
+      failureCount: 0,
+      failureReason: null,
+      isPaused: false,
+      status: "idle" as const,
+      variables: undefined,
+      submittedAt: 0,
+      reset: () => {},
+      context: undefined,
+    };
+    
+    return {
+      user: null,
+      isLoading: false,
+      error: null,
+      loginMutation: fallbackMutation as any,
+      logoutMutation: fallbackMutation as any,
+      registerMutation: fallbackMutation as any,
+    };
+  }
+  
   return context;
 }
