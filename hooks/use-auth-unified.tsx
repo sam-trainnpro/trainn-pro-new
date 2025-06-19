@@ -146,22 +146,67 @@ export function useAuth() {
       isLoading: false,
       error: null,
       loginMutation: {
-        mutate: () => console.log("AuthProvider not available"),
+        mutate: () => console.log("AuthProvider not available - login"),
+        mutateAsync: async () => {
+          console.log("AuthProvider not available - loginAsync");
+          throw new Error("Authentication not available");
+        },
         isPending: false,
         isError: false,
         error: null,
+        data: undefined,
+        isIdle: true,
+        isSuccess: false,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        status: "idle" as const,
+        variables: undefined,
+        submittedAt: 0,
+        reset: () => {},
+        context: undefined,
       },
       logoutMutation: {
-        mutate: () => console.log("AuthProvider not available"),
+        mutate: () => console.log("AuthProvider not available - logout"),
+        mutateAsync: async () => {
+          console.log("AuthProvider not available - logoutAsync");
+          throw new Error("Authentication not available");
+        },
         isPending: false,
         isError: false,
         error: null,
+        data: undefined,
+        isIdle: true,
+        isSuccess: false,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        status: "idle" as const,
+        variables: undefined,
+        submittedAt: 0,
+        reset: () => {},
+        context: undefined,
       },
       registerMutation: {
-        mutate: () => console.log("AuthProvider not available"),
+        mutate: () => console.log("AuthProvider not available - register"),
+        mutateAsync: async () => {
+          console.log("AuthProvider not available - registerAsync");
+          throw new Error("Authentication not available");
+        },
         isPending: false,
         isError: false,
         error: null,
+        data: undefined,
+        isIdle: true,
+        isSuccess: false,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        status: "idle" as const,
+        variables: undefined,
+        submittedAt: 0,
+        reset: () => {},
+        context: undefined,
       },
     } as any;
   }
