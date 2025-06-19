@@ -8,10 +8,10 @@ import { queryClient } from "./lib/queryClient";
 
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light">
-      <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider attribute="class" defaultTheme="light">
         <App />
-      </AuthProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );

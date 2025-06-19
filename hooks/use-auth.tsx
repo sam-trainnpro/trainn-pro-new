@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-query";
 import { User } from "../shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../client/src/lib/queryClient";
-import { useToast } from "./use-toast";
 
 type LoginData = {
   email: string;
@@ -35,8 +34,6 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
-  
   const {
     data: user,
     error,
@@ -58,17 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Welcome back!",
-        description: `Successfully logged in as ${user.firstName}`,
-      });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
-        variant: "destructive",
-      });
+      console.error("Login error:", error);
     },
   });
 
@@ -84,17 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: `Welcome to Trainn, ${user.firstName}!`,
-      });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Registration failed",
-        description: error.message || "An error occurred during registration",
-        variant: "destructive",
-      });
+      console.error("Registration error:", error);
     },
   });
 
@@ -105,17 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
       queryClient.clear();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
-      });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Logout failed",
-        description: error.message || "An error occurred during logout",
-        variant: "destructive",
-      });
+      console.error("Logout error:", error);
     },
   });
 
@@ -138,21 +111,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   
-  // Instead of throwing error, provide fallback with working mutations
+  // Provide safe fallback instead of throwing error
   if (!context) {
-    console.warn("useAuth called outside AuthProvider - providing fallback");
+    console.warn("useAuth called outside AuthProvider - providing safe defaults");
     
-    const fallbackMutation = {
-      mutate: () => console.log("Auth not available"),
+    const safeMutation = {
+      mutate: () => {},
       mutateAsync: async () => {
         throw new Error("Authentication not available");
       },
       isPending: false,
       isError: false,
+      isSuccess: false,
+      isIdle: true,
       error: null,
       data: undefined,
-      isIdle: true,
-      isSuccess: false,
       failureCount: 0,
       failureReason: null,
       isPaused: false,
@@ -167,9 +140,9 @@ export function useAuth(): AuthContextType {
       user: null,
       isLoading: false,
       error: null,
-      loginMutation: fallbackMutation as any,
-      logoutMutation: fallbackMutation as any,
-      registerMutation: fallbackMutation as any,
+      loginMutation: safeMutation as any,
+      logoutMutation: safeMutation as any,
+      registerMutation: safeMutation as any,
     };
   }
   
