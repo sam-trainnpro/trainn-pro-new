@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { Class, Booking } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import Header from "@/components/layout/header";
@@ -82,6 +82,10 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
         });
         
         if (confirmResponse.ok) {
+          // Invalidate bookings cache to refresh My Bookings page
+          queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/classes/${classItem.id}/bookings/count`] });
+          
           toast({
             title: "Payment Successful",
             description: "Your booking has been confirmed!",
