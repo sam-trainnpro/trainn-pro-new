@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
-import { useAuth } from "../../../hooks/use-auth-simple";
+import { useAuth } from "../../../hooks/use-auth";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
