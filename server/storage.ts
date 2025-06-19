@@ -65,6 +65,7 @@ export interface IStorage {
   createReview(review: InsertReview): Promise<Review>;
   getClassReviews(classId: number): Promise<Review[]>;
   getUserReviews(userId: number): Promise<Review[]>;
+  updateReview(id: number, review: Partial<Review>): Promise<Review | undefined>;
   
   // Stripe
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
