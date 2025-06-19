@@ -34,8 +34,6 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  console.log("AuthProvider initializing");
-  
   const {
     data: user,
     error,
@@ -103,8 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     registerMutation,
   };
 
-  console.log("AuthProvider rendering with value:", { user: value.user?.email, isLoading: value.isLoading });
-
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -115,11 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   
-  console.log("useAuth called, context:", context ? "available" : "undefined");
-  
   if (context === undefined) {
-    console.warn("useAuth called outside AuthProvider - providing safe defaults");
-    
+    // Provide safe fallback instead of throwing error to prevent app crashes
     const safeMutation = {
       mutate: () => {},
       mutateAsync: async () => {
@@ -151,6 +144,5 @@ export function useAuth(): AuthContextType {
     };
   }
   
-  console.log("useAuth returning real context with user:", context.user?.email);
   return context;
 }

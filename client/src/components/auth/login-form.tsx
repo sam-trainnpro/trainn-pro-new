@@ -64,25 +64,16 @@ export default function LoginForm() {
       setError(null);
       console.log("Submitting login form:", { email: data.email, password: "***" });
       
-      // We need to prevent the runtime error that might be happening 
-      // due to state updates during form submission
-      try {
-        const user = await loginMutation.mutateAsync(data);
-        console.log("Login successful:", user);
-        
-        // Use window.location.href instead of navigate for more reliable navigation
-        // after authentication state changes
-        window.setTimeout(() => {
-          console.log("Navigating to home after login");
-          window.location.href = "/";
-        }, 100);
-      } catch (mutationError: any) {
-        console.error("Mutation error:", mutationError);
-        setError(mutationError.message || "Login failed. Please check your credentials and try again.");
-      }
-    } catch (err: any) {
-      console.error("Form submission error:", err);
-      setError(err.message || "Login failed. Please check your credentials and try again.");
+      const user = await loginMutation.mutateAsync(data);
+      console.log("Login successful:", user);
+      
+      // Navigate after successful login
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      setError(error.message || "Login failed. Please check your credentials and try again.");
     }
   }
   
