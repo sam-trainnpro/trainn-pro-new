@@ -16,7 +16,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 // Initialize Stripe if secret key is available
 const stripe = process.env.STRIPE_SECRET_KEY ? 
-  new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" }) : null;
+  new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-04-30.basil" }) : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create uploads directory if it doesn't exist
@@ -242,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Check if there are any schedules for this day of the week
           const matchingSchedules = classData.schedules.filter(
-            schedule => schedule.dayOfWeek === currentDayOfWeek
+            (schedule: any) => schedule.dayOfWeek === currentDayOfWeek
           );
           
           // For each matching schedule, create a class instance
