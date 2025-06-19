@@ -206,13 +206,21 @@ export default function ProfilePage() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Open Stripe onboarding in new window to avoid iframe restrictions
-      window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
+      // For mobile devices, use location.href instead of window.open for better compatibility
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      toast({
-        title: "Opening Stripe setup",
-        description: "Complete your payment setup in the new window, then return here to continue.",
-      });
+      if (isMobile) {
+        // On mobile, navigate directly to the Stripe URL
+        window.location.href = data.onboardingUrl;
+      } else {
+        // On desktop, open in new window
+        window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
+        
+        toast({
+          title: "Opening Stripe setup",
+          description: "Complete your payment setup in the new window, then return here to continue.",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
