@@ -139,63 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    // Return a safe fallback instead of throwing error
-    return {
-      user: null,
-      isLoading: false,
-      error: null,
-      loginMutation: {
-        mutate: () => console.log("AuthProvider not available"),
-        mutateAsync: async () => { throw new Error("AuthProvider not available"); },
-        isPending: false,
-        isError: false,
-        error: null,
-        data: undefined,
-        isIdle: true,
-        isSuccess: false,
-        failureCount: 0,
-        failureReason: null,
-        isPaused: false,
-        status: "idle" as const,
-        variables: undefined,
-        submittedAt: 0,
-        reset: () => {},
-      },
-      logoutMutation: {
-        mutate: () => console.log("AuthProvider not available"),
-        mutateAsync: async () => { throw new Error("AuthProvider not available"); },
-        isPending: false,
-        isError: false,
-        error: null,
-        data: undefined,
-        isIdle: true,
-        isSuccess: false,
-        failureCount: 0,
-        failureReason: null,
-        isPaused: false,
-        status: "idle" as const,
-        variables: undefined,
-        submittedAt: 0,
-        reset: () => {},
-      },
-      registerMutation: {
-        mutate: () => console.log("AuthProvider not available"),
-        mutateAsync: async () => { throw new Error("AuthProvider not available"); },
-        isPending: false,
-        isError: false,
-        error: null,
-        data: undefined,
-        isIdle: true,
-        isSuccess: false,
-        failureCount: 0,
-        failureReason: null,
-        isPaused: false,
-        status: "idle" as const,
-        variables: undefined,
-        submittedAt: 0,
-        reset: () => {},
-      },
-    } as AuthContextType;
+    console.log("AuthProvider not available, using fallback");
+    // Throw error to ensure proper provider usage
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
