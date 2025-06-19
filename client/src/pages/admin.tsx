@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "../../../hooks/use-auth-simple";
+import { useSafeAuth } from "../../../hooks/use-auth-safe";
 import { useLocation } from "wouter";
 import { User, Class, ClassWithSchedules } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -54,7 +54,7 @@ import { format } from "date-fns";
 
 export default function AdminPage() {
   const [, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user } = useSafeAuth();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [classSearchQuery, setClassSearchQuery] = useState("");
