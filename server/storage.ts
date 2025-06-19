@@ -645,6 +645,15 @@ export class DatabaseStorage implements IStorage {
       .from(contactMessages)
       .orderBy(desc(contactMessages.createdAt));
   }
+  
+  async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
+    const result = await db.update(reviews)
+      .set(reviewData)
+      .where(eq(reviews.id, id))
+      .returning();
+    
+    return result[0];
+  }
 }
 
 export const storage = new DatabaseStorage();
