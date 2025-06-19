@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "../../../../hooks/use-auth-simple";
+import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { 
   Bell, 
   User, 
