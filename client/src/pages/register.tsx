@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "../../../hooks/use-auth";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import RegisterForm from "@/components/auth/register-form";
 import { Helmet } from "react-helmet";
 import { Link } from "wouter";
