@@ -445,6 +445,14 @@ export default function ClassDetailsPage() {
                               Status: {userBooking.status === 'confirmed' ? 'Confirmed' : 'Pending payment'}
                             </p>
                           </div>
+                        ) : bookingCount?.spotsLeft === 0 ? (
+                          <div className="bg-gray-100 p-4 rounded-lg text-center mb-4">
+                            <AlertCircle className="h-8 w-8 text-gray-500 mx-auto mb-2" />
+                            <p className="text-gray-700 font-medium">Class is Full</p>
+                            <p className="text-sm text-muted-foreground">
+                              This class is full, please check back again later in case there are cancellations.
+                            </p>
+                          </div>
                         ) : (
                           <div className="space-y-4">
                             {/* Quantity Selector */}

@@ -218,6 +218,20 @@ export default function CheckoutPage() {
     queryKey: ['/api/bookings'],
   });
   
+  // Fetch booking count to check availability
+  const { 
+    data: bookingCount,
+    isLoading: isLoadingBookingCount
+  } = useQuery<{
+    total: number;
+    active: number;
+    totalSpotsBooked: number;
+    capacity: number;
+    spotsLeft: number;
+  }>({
+    queryKey: [`/api/classes/${classId}/bookings/count`],
+  });
+  
   // Check if this class is already booked by the user
   const userBooking = bookings?.find(booking => 
     booking.classId === classId && booking.status === 'confirmed'
@@ -303,6 +317,48 @@ export default function CheckoutPage() {
                     </Button>
                     <Button asChild className="bg-primary text-white">
                       <Link href="/bookings">View My Bookings</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // If class is full (0 spots left)
+  if (bookingCount && bookingCount.spotsLeft === 0) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-grow bg-[#F7F7F7] py-8">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <div className="mb-6">
+              <Button 
+                variant="ghost" 
+                className="mb-4"
+                onClick={() => navigate(`/classes/${classId}`)}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Class
+              </Button>
+              
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <AlertCircle className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                  <h2 className="text-xl font-bold mb-2">Class is Full</h2>
+                  <p className="text-muted-foreground mb-6">
+                    This class is full, please check back again later in case there are cancellations.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button asChild variant="outline">
+                      <Link href={`/classes/${classId}`}>View Class Details</Link>
+                    </Button>
+                    <Button asChild className="bg-primary text-white">
+                      <Link href="/">Browse Other Classes</Link>
                     </Button>
                   </div>
                 </CardContent>

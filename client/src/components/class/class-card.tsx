@@ -29,6 +29,17 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     queryKey: [`/api/categories/${classItem.categoryId}`],
   });
   
+  // Get booking count data
+  const { data: bookingCount, isLoading: isLoadingBookingCount } = useQuery<{
+    total: number;
+    active: number;
+    totalSpotsBooked: number;
+    capacity: number;
+    spotsLeft: number;
+  }>({
+    queryKey: [`/api/classes/${classItem.id}/bookings/count`],
+  });
+  
   // Get day name from day number
   const getDayName = (dayNum: number): string => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -173,13 +184,27 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
         
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="text-center py-2 bg-[#F7F7F7] rounded-lg text-sm">
-            <span className="font-medium">8/12</span> spots left
+            {isLoadingBookingCount ? (
+              <Skeleton className="h-4 w-16 mx-auto" />
+            ) : bookingCount ? (
+              <span className="font-medium">
+                {bookingCount.spotsLeft}/{bookingCount.capacity}
+              </span>
+            ) : (
+              <span className="font-medium">{classItem.capacity}</span>
+            )} spots left
           </div>
-          <Link href={`/classes/${classItem.id}`}>
-            <Button className="w-full bg-primary text-white hover:bg-primary/90">
-              Book Now
+          {bookingCount?.spotsLeft === 0 ? (
+            <Button disabled className="w-full bg-gray-300 text-gray-500 cursor-not-allowed">
+              Class Full
             </Button>
-          </Link>
+          ) : (
+            <Link href={`/classes/${classItem.id}`}>
+              <Button className="w-full bg-primary text-white hover:bg-primary/90">
+                Book Now
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </div>
