@@ -148,6 +148,9 @@ export const insertBookingSchema = createInsertSchema(bookings).pick({
   classId: true,
   quantity: true,
   status: true,
+  stripePaymentIntentId: true,
+  paymentDate: true,
+  paymentMethod: true,
 });
 
 export type InsertBooking = z.infer<typeof insertBookingSchema>;

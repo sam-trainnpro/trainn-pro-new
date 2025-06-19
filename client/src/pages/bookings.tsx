@@ -109,9 +109,7 @@ export default function BookingsPage() {
     booking.class && new Date(booking.class.startTime) <= new Date()
   );
   
-  const pendingBookings = bookings?.filter(booking => 
-    booking.status === 'pending'
-  );
+
   
   // Get status badge
   const getStatusBadge = (status: string) => {
@@ -198,14 +196,7 @@ export default function BookingsPage() {
                     </span>
                   ) : null}
                 </TabsTrigger>
-                <TabsTrigger value="pending">
-                  Pending
-                  {pendingBookings?.length ? (
-                    <span className="ml-2 bg-amber-500/10 text-amber-500 rounded-full px-2 py-0.5 text-xs">
-                      {pendingBookings.length}
-                    </span>
-                  ) : null}
-                </TabsTrigger>
+
                 <TabsTrigger value="past">Past</TabsTrigger>
               </TabsList>
               
@@ -311,77 +302,7 @@ export default function BookingsPage() {
                   </Card>
                 )}
               </TabsContent>
-              
-              <TabsContent value="pending">
-                {pendingBookings && pendingBookings.length > 0 ? (
-                  <div className="space-y-4">
-                    {pendingBookings.map(booking => (
-                      <Card key={booking.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle>{booking.class?.title}</CardTitle>
-                              <CardDescription>
-                                {booking.class ? formatDate(booking.class.startTime) : "Unknown date"}
-                              </CardDescription>
-                            </div>
-                            {getStatusBadge(booking.status)}
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="flex items-center">
-                              <Clock className="h-5 w-5 mr-2 text-primary" />
-                              <span>
-                                {booking.class 
-                                  ? `${formatTime(booking.class.startTime)} - ${formatTime(booking.class.endTime)}`
-                                  : "Unknown time"}
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <MapPin className="h-5 w-5 mr-2 text-primary" />
-                              <span>{booking.class?.location || "Unknown location"}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Calendar className="h-5 w-5 mr-2 text-primary" />
-                              <span>{booking.quantity || 1} {(booking.quantity || 1) === 1 ? 'spot' : 'spots'} booked</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-between">
-                          <Button asChild variant="outline">
-                            <Link href={`/classes/${booking.classId}`}>
-                              View Class Details
-                            </Link>
-                          </Button>
-                          
-                          <Button 
-                            asChild 
-                            className="bg-primary text-white"
-                          >
-                            <Link href={`/checkout/${booking.classId}`}>
-                              Complete Payment
-                            </Link>
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h2 className="text-xl font-bold mb-2">No Pending Bookings</h2>
-                      <p className="text-muted-foreground mb-6">
-                        You don't have any bookings waiting for payment.
-                      </p>
-                      <Button asChild>
-                        <Link href="/classes">Browse Classes</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
+
               
               <TabsContent value="past">
                 {pastBookings && pastBookings.length > 0 ? (

@@ -991,22 +991,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const paymentIntent = event.data.object;
           console.log(`PaymentIntent ${paymentIntent.id} succeeded`);
           
-          // Update booking status to confirmed
+          // Create confirmed booking directly (no pending status)
           if (paymentIntent.metadata && paymentIntent.metadata.classId && paymentIntent.metadata.userId) {
-            const bookings = await storage.getUserBookings(parseInt(paymentIntent.metadata.userId));
-            const matchingBooking = bookings.find(b => 
+            // Check if booking already exists to avoid duplicates
+            const existingBookings = await storage.getUserBookings(parseInt(paymentIntent.metadata.userId));
+            const duplicate = existingBookings.find(b => 
               b.classId === parseInt(paymentIntent.metadata.classId) && 
-              b.status === "pending"
+              b.stripePaymentIntentId === paymentIntent.id
             );
             
-            if (matchingBooking) {
-              await storage.updateBooking(matchingBooking.id, {
+            if (!duplicate) {
+              await storage.createBooking({
+                userId: parseInt(paymentIntent.metadata.userId),
+                classId: parseInt(paymentIntent.metadata.classId),
+                quantity: 1,
                 status: "confirmed",
                 stripePaymentIntentId: paymentIntent.id,
-                amount: paymentIntent.amount,
-                currency: paymentIntent.currency,
-                platformFee: parseInt(paymentIntent.metadata.platformFee),
-                coachPayout: parseInt(paymentIntent.metadata.coachPayout),
                 paymentDate: new Date(),
                 paymentMethod: "stripe"
               });
