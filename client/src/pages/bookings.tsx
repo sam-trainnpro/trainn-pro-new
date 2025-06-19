@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useAuth } from "../../../hooks/use-auth-unified";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import { Booking, Class } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
