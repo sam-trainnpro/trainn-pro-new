@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "../../../../hooks/use-auth-working";
+import { useAuth } from "../../../../hooks/use-auth-fixed";
 import { 
   Bell, 
   User, 
