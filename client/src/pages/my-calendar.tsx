@@ -271,7 +271,12 @@ export default function MyCalendarPage() {
                 {classes
                   .filter(classItem => {
                     const classDate = parseISO(classItem.startTime);
-                    return isSameMonth(classDate, currentMonth);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+                    endOfMonth.setHours(23, 59, 59, 999);
+                    
+                    return classDate >= today && classDate <= endOfMonth;
                   })
                   .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
                   .slice(0, 10)
