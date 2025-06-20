@@ -1,0 +1,114 @@
+Implement a customer review system that allows users to rate and review classes they have attended. The system should be integrated into the existing "My Bookings" page under the "Past Classes" tab.
+Detailed Requirements
+1. Modify the My Bookings Page - Past Classes Tab
+Current State: The "My Bookings" page should have a "Past Classes" tab that displays classes the customer has already attended.
+Required Changes:
+	•	Add an "Add Review" button to each past class card/row
+	•	The button should only appear for classes that have already occurred (past date/time)
+	•	If a review already exists for that class, replace the "Add Review" button with "View/Edit Review" text or a different styled button
+	•	Include visual indicators showing if a class has been reviewed (e.g., star rating display, "Reviewed" badge)
+2. Create Review Input Interface
+When "Add Review" button is clicked:
+	•	Navigate to a new page/modal: /review/[classId] or open a modal overlay
+	•	The interface should include:
+	◦	Class information display (class name, coach name, date, location)
+	◦	Star rating component (0-5 stars, clickable/interactive)
+	◦	Text area for written review (optional, with character limit of 500-1000 characters)
+	◦	"Submit Review" button
+	◦	"Cancel" button to return to My Bookings
+Star Rating Component Requirements:
+	•	Interactive 5-star system (0-5 stars)
+	•	Visual feedback on hover and selection
+	•	Clear indication of selected rating
+	•	Required field (must select at least 1 star to submit)
+3. Review Submission and Storage
+Database Schema Requirements: Create a reviews table with the following fields:
+	•	id (primary key)
+	•	customer_id (foreign key to users table)
+	•	class_id (foreign key to classes table)
+	•	booking_id (foreign key to bookings table)
+	•	rating (integer, 1-5)
+	•	comment (text, optional)
+	•	created_at (timestamp)
+	•	updated_at (timestamp) - this is a new add to the table
+Validation Rules:
+	•	Ensure customer can only review classes they actually booked and attended
+	•	Prevent duplicate reviews (one review per customer per class)
+	•	Validate rating is between 1-5
+	•	Sanitize review text input
+	•	Check that the class date has passed before allowing review
+4. Review Display and Management
+On Successful Submission:
+	•	Show success message
+	•	Redirect back to My Bookings page
+	•	Update the Past Classes tab to show the review has been completed
+	•	Display the star rating next to the class
+Review Editing:
+	•	When editing, pre-populate the form with existing rating and text
+5. Integration Points
+Coach Profile Integration:
+	•	Aggregate reviews to show average rating on coach profiles - currently this appears to be hard coded or a random number
+	•	Display recent reviews on coach profile pages
+	•	Calculate total number of reviews for each coach next to the average rating in parenthases
+Class Listing Integration:
+	•	Show average rating for each coach instead of the current rating that appears to be a random number
+	•	Display review count alongside class listings instead of the current number shown that appears to be a random number
+6. Technical Implementation Notes
+Frontend Components Needed:
+	•	StarRating component (reusable)
+	•	ReviewForm component
+	•	ReviewDisplay component
+	•	Modified BookingCard component (to include review button)
+Backend Endpoints Needed: try to use the existing table called ‘reviews’
+	•	POST /api/reviews - Create new review
+	•	GET /api/reviews/class/:classId - Get reviews for a class
+	•	PUT /api/reviews/:reviewId - Update existing review
+	•	GET /api/reviews/customer/:customerId - Get customer's reviews
+	•	GET /api/reviews/coach/:coachId - Get reviews for a coach
+7. User Experience Flow
+	1	Customer navigates to My Bookings → Past Classes tab
+	2	Sees list of attended classes with "Add Review" buttons
+	3	Clicks "Add Review" for a specific class
+	4	Fills out star rating (required) and optional text review
+	5	Submits review
+	6	Sees confirmation message
+	7	Returns to My Bookings page where class now shows as reviewed
+8. Error Handling
+Handle these scenarios:
+	•	User tries to review a class they didn't attend
+	•	User tries to submit duplicate review
+	•	User tries to review a future class
+	•	Network errors during submission
+	•	Invalid rating values
+	•	Text exceeding character limits
+9. Success Criteria
+The implementation is complete when:
+	•	Customers can successfully add reviews to past classes
+	•	Reviews are properly stored and associated with the correct class and customer
+	•	Duplicate reviews are prevented
+	•	Reviews display correctly on relevant pages
+	•	All error cases are handled gracefully
+	•	The UI is intuitive and matches the existing design system
+Additional Considerations
+	•	Ensure the review system is responsive and works on mobile devices
+	•	Consider adding review moderation capabilities for admin users
+	•	Plan for future features like review replies from coaches
+	•	Implement proper loading states during review submission
+	•	Consider email notifications to coaches when they receive new reviews
+Files to Modify/Create
+Frontend:
+	•	/components/StarRating.jsx (new)
+	•	/components/ReviewForm.jsx (new)
+	•	/pages/review/[classId].jsx (new)
+	•	/components/BookingCard.jsx (modify)
+	•	/pages/my-bookings.jsx (modify)
+Backend:
+	•	/models/Review.js (new)
+	•	/routes/reviews.js (new)
+	•	/controllers/reviewController.js (new)
+	•	Database migration file for reviews table
+Styling:
+	•	Add CSS for star rating component
+	•	Style review form and display components
+	•	Ensure responsive design
+This implementation should provide a complete customer review system that enhances the Trainn platform's user experience and provides valuable feedback for coaches.
