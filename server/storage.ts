@@ -685,7 +685,13 @@ export class DatabaseStorage implements IStorage {
             userRole === 'admin' ? undefined : eq(classes.coachId, coachId)
           )
         )
-        .orderBy(desc(classes.startTime));
+        .orderBy(
+          classes.startTime, // Class date first
+          classes.startTime, // Class time second (same field for date/time)
+          classes.title,     // Class name third
+          users.firstName,   // Customer first name fourth
+          users.lastName     // Customer last name fifth
+        );
 
       return await query;
     } catch (error) {
