@@ -180,24 +180,8 @@ export async function sendPasswordResetEmail(
   resetToken: string, 
   firstName: string
 ): Promise<boolean> {
-  // Determine the correct base URL for password reset links
-  // Check if we have a custom domain set, otherwise use Replit domains
-  const customDomain = process.env.FRONTEND_URL;
-  const replitDomains = process.env.REPLIT_DOMAINS;
-  const devDomain = process.env.REPLIT_DEV_DOMAIN;
-  
-  let baseUrl;
-  if (customDomain) {
-    baseUrl = customDomain;
-  } else if (replitDomains) {
-    // Use the first domain from REPLIT_DOMAINS (this should be the deployed domain)
-    const primaryDomain = replitDomains.split(',')[0].trim();
-    baseUrl = `https://${primaryDomain}`;
-  } else {
-    // Fallback to dev domain
-    baseUrl = `https://${devDomain}`;
-  }
-  
+  // Use production domain for password reset links
+  const baseUrl = 'https://trainn.pro';
   const resetUrl = `${baseUrl}/auth?tab=reset&token=${resetToken}`;
   
   const htmlContent = `
@@ -257,7 +241,7 @@ The Trainn Team
   try {
     await mailService.send({
       to: email,
-      from: 'sam@trainn.pro',
+      from: 'noreply@trainn.pro',
       subject: 'Reset Your Password - Trainn',
       text: textContent,
       html: htmlContent,
