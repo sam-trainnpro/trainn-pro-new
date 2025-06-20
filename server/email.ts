@@ -238,10 +238,22 @@ Best regards,
 The Trainn Team
   `;
 
-  return await sendEmail({
-    to: email,
-    subject: 'Reset Your Password - Trainn',
-    text: textContent,
-    html: htmlContent,
-  });
+  try {
+    await mailService.send({
+      to: email,
+      from: 'sam@trainn.pro',
+      subject: 'Reset Your Password - Trainn',
+      text: textContent,
+      html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
+    });
+    return true;
+  } catch (error) {
+    console.error('SendGrid password reset email error:', error);
+    return false;
+  }
 }
