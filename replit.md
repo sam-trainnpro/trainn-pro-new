@@ -119,6 +119,9 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 20, 2025. Implemented complete customer management system for coaches and administrators
+- June 20, 2025. Added Customers page with booking table sorted by class date, time, name, and customer name
+- June 20, 2025. Added "Customers" navigation link in user dropdown menu for coaches and admins
 - June 20, 2025. Updated password reset sender email to noreply@trainn.pro for professional branding
 - June 20, 2025. Updated password reset emails to use production domain trainn.pro instead of Replit domains
 - June 20, 2025. Fixed password reset email links by integrating reset form into auth page and disabling SendGrid click tracking
