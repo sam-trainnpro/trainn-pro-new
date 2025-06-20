@@ -210,7 +210,7 @@ export default function MyCalendarPage() {
                           
                           const eventClasses = isPastEvent || isPastDay
                             ? "text-xs p-1 rounded bg-gray-100 text-gray-500 border border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors opacity-60"
-                            : "text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors";
+                            : "text-xs p-1 rounded bg-blue-50 text-black border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors";
                           
                           return (
                             <Link key={classItem.id} href={`/edit-class/${classItem.id}`}>
