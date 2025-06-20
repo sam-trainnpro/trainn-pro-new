@@ -137,7 +137,7 @@ Questions? Contact us at support@trainn.com
     // Go to SendGrid Dashboard > Settings > Sender Authentication to verify your sender email
     await mailService.send({
       to: customer.email,
-      from: 'noreply@trainn.com', // Replace with your verified sender email from SendGrid
+      from: 'samgroth@gmail.com', // Replace with your verified sender email from SendGrid
       subject: subject,
       text: textContent,
       html: htmlContent,
@@ -162,7 +162,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
     await mailService.send({
       to: params.to,
-      from: 'noreply@trainn.com', // Replace with your verified sender email from SendGrid
+      from: 'samgroth@gmail.com', // Replace with your verified sender email from SendGrid
       subject: params.subject,
       text: params.text || '',
       html: params.html || '',
