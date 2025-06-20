@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { Star, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
