@@ -9,9 +9,17 @@ import { Helmet } from "react-helmet";
 
 export default function ReviewPage() {
   const [location] = useLocation();
-  const params = new URLSearchParams(location.split('?')[1] || '');
+  const urlParts = location.split('?');
+  const queryString = urlParts.length > 1 ? urlParts[1] : '';
+  const params = new URLSearchParams(queryString);
   const classId = parseInt(params.get('classId') || '0');
   const bookingId = parseInt(params.get('bookingId') || '0');
+
+  // Debug logging
+  console.log('Review page location:', location);
+  console.log('Query string:', queryString);
+  console.log('Class ID:', classId);
+  console.log('Booking ID:', bookingId);
 
   const { data: classItem, isLoading: classLoading } = useQuery<Class>({
     queryKey: [`/api/classes/${classId}`],
