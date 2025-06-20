@@ -393,24 +393,20 @@ export default function BookingsPage() {
                           {booking.class && (
                             hasBeenReviewed(booking.classId) ? (
                               <Button 
-                                asChild 
                                 variant="outline" 
                                 className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                                onClick={() => window.location.href = `/review?classId=${booking.classId}&bookingId=${booking.id}`}
                               >
-                                <Link href={`/review?classId=${booking.classId}&bookingId=${booking.id}`}>
-                                  <Star className="h-4 w-4 mr-2" />
-                                  View Review
-                                </Link>
+                                <Star className="h-4 w-4 mr-2" />
+                                View Review
                               </Button>
                             ) : (
                               <Button 
-                                asChild 
                                 className="bg-primary text-white hover:bg-primary/90"
+                                onClick={() => window.location.href = `/review?classId=${booking.classId}&bookingId=${booking.id}`}
                               >
-                                <Link href={`/review?classId=${booking.classId}&bookingId=${booking.id}`}>
-                                  <Star className="h-4 w-4 mr-2" />
-                                  Add Review
-                                </Link>
+                                <Star className="h-4 w-4 mr-2" />
+                                Add Review
                               </Button>
                             )
                           )}
