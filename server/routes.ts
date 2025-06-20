@@ -1739,6 +1739,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get rating statistics for a specific class
+  app.get("/api/reviews/class/:classId/stats", async (req, res) => {
+    try {
+      const classId = parseInt(req.params.classId);
+      const stats = await storage.getClassRatingStats(classId);
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Error fetching class rating stats:", error);
+      res.status(500).json({ error: "Failed to fetch rating stats" });
+    }
+  });
+
+  // Get rating statistics for a specific coach
+  app.get("/api/reviews/coach/:coachId/stats", async (req, res) => {
+    try {
+      const coachId = parseInt(req.params.coachId);
+      const stats = await storage.getCoachRatingStats(coachId);
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Error fetching coach rating stats:", error);
+      res.status(500).json({ error: "Failed to fetch rating stats" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
