@@ -51,6 +51,14 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 - Booking history and status tracking
 - Direct confirmed booking creation (no pending status)
 
+### Review System
+- Customer review functionality for past bookings
+- 5-star rating system with optional text comments
+- Review editing capabilities with updated_at timestamps
+- Integration with My Bookings page (Add/View Review buttons)
+- Review validation preventing duplicate reviews per booking
+- Proper authentication and ownership verification
+
 ### Payment Processing
 - Stripe Connect for coach payouts (infrastructure in place)
 - Customer payment processing via Stripe Payment Intents
