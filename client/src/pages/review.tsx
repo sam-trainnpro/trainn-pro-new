@@ -8,18 +8,16 @@ import { Class, User } from "@shared/schema";
 import { Helmet } from "react-helmet";
 
 export default function ReviewPage() {
-  const [location] = useLocation();
-  const urlParts = location.split('?');
-  const queryString = urlParts.length > 1 ? urlParts[1] : '';
-  const params = new URLSearchParams(queryString);
-  const classId = parseInt(params.get('classId') || '0');
-  const bookingId = parseInt(params.get('bookingId') || '0');
+  // Use browser's native location instead of wouter's useLocation
+  const fullUrl = window.location.href;
+  const url = new URL(fullUrl);
+  const classId = parseInt(url.searchParams.get('classId') || '0');
+  const bookingId = parseInt(url.searchParams.get('bookingId') || '0');
 
   // Debug logging
-  console.log('Review page location:', location);
-  console.log('Query string:', queryString);
-  console.log('Class ID:', classId);
-  console.log('Booking ID:', bookingId);
+  console.log('Review page full URL:', fullUrl);
+  console.log('Class ID from URL:', classId);
+  console.log('Booking ID from URL:', bookingId);
 
   const { data: classItem, isLoading: classLoading } = useQuery<Class>({
     queryKey: [`/api/classes/${classId}`],
