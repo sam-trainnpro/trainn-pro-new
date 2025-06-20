@@ -395,7 +395,11 @@ export default function BookingsPage() {
                               <Button 
                                 variant="outline" 
                                 className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
-                                onClick={() => window.location.href = `/review?classId=${booking.classId}&bookingId=${booking.id}`}
+                                onClick={() => {
+                                  const url = `/review?classId=${booking.classId}&bookingId=${booking.id}`;
+                                  console.log('Navigating to view review URL:', url);
+                                  window.location.href = url;
+                                }}
                               >
                                 <Star className="h-4 w-4 mr-2" />
                                 View Review
@@ -403,7 +407,12 @@ export default function BookingsPage() {
                             ) : (
                               <Button 
                                 className="bg-primary text-white hover:bg-primary/90"
-                                onClick={() => window.location.href = `/review?classId=${booking.classId}&bookingId=${booking.id}`}
+                                onClick={() => {
+                                  const url = `/review?classId=${booking.classId}&bookingId=${booking.id}`;
+                                  console.log('Navigating to add review URL:', url);
+                                  console.log('Class ID:', booking.classId, 'Booking ID:', booking.id);
+                                  window.location.href = url;
+                                }}
                               >
                                 <Star className="h-4 w-4 mr-2" />
                                 Add Review
