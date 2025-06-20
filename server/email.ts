@@ -180,8 +180,24 @@ export async function sendPasswordResetEmail(
   resetToken: string, 
   firstName: string
 ): Promise<boolean> {
-  // Direct users to login page with reset token for simpler UX
-  const baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  // Determine the correct base URL for password reset links
+  // Check if we have a custom domain set, otherwise use Replit domains
+  const customDomain = process.env.FRONTEND_URL;
+  const replitDomains = process.env.REPLIT_DOMAINS;
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  
+  let baseUrl;
+  if (customDomain) {
+    baseUrl = customDomain;
+  } else if (replitDomains) {
+    // Use the first domain from REPLIT_DOMAINS (this should be the deployed domain)
+    const primaryDomain = replitDomains.split(',')[0].trim();
+    baseUrl = `https://${primaryDomain}`;
+  } else {
+    // Fallback to dev domain
+    baseUrl = `https://${devDomain}`;
+  }
+  
   const resetUrl = `${baseUrl}/auth?tab=reset&token=${resetToken}`;
   
   const htmlContent = `
