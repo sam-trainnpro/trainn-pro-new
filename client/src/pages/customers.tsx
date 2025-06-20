@@ -1,7 +1,5 @@
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../../hooks/use-auth-simple";
-import { Helmet } from "react-helmet";
 import {
   Table,
   TableBody,
@@ -11,14 +9,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// Badge component will be imported inline
 import { Users, Calendar, Clock, User, Phone, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 
 interface CustomerBooking {
   id: number;
-  classDate: string;
-  classTime: string;
+  classDate: string | Date;
+  classTime: string | Date;
   className: string;
   customerFirstName: string;
   customerLastName: string;
@@ -29,35 +26,48 @@ interface CustomerBooking {
   completedClasses: number;
 }
 
+// Simple Badge component
+const Badge = ({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "secondary" | "success" | "destructive" }) => {
+  const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
+  const variantClasses = {
+    default: "bg-primary text-primary-foreground",
+    secondary: "bg-secondary text-secondary-foreground",
+    success: "bg-green-100 text-green-800",
+    destructive: "bg-red-100 text-red-800"
+  };
+  
+  return (
+    <span className={`${baseClasses} ${variantClasses[variant]}`}>
+      {children}
+    </span>
+  );
+};
+
 export default function CustomersPage() {
   const { user } = useAuth();
 
   // Redirect if not coach or admin
   if (!user || (user.role !== 'coach' && user.role !== 'admin')) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              This page is only accessible to coaches and administrators.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">This page is only accessible to coaches and administrators.</p>
+        </div>
       </div>
     );
   }
 
-  const { data: customers, isLoading, error } = useQuery({
-    queryKey: ['/api/customers', user.id],
-    enabled: !!user && (user.role === 'coach' || user.role === 'admin')
+  const { data: customerBookings = [], isLoading, error } = useQuery<CustomerBooking[]>({
+    queryKey: ['/api/customers'],
+    enabled: !!(user && (user.role === 'coach' || user.role === 'admin')),
   });
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p className="text-gray-600">Loading customer data...</p>
         </div>
       </div>
     );
@@ -65,57 +75,68 @@ export default function CustomersPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-red-600">Error Loading Customers</CardTitle>
-            <CardDescription>
-              There was an error loading your customer data. Please try again later.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
+          <p className="text-red-600">Failed to load customer data. Please try again.</p>
+        </div>
       </div>
     );
   }
 
-  const customerBookings = customers || [];
-
-  // Calculate summary statistics
-  const totalBookings = customerBookings.length;
+  // Calculate stats
+  const totalCustomers = customerBookings.length;
   const uniqueCustomers = new Set(customerBookings.map((booking: CustomerBooking) => 
     `${booking.customerFirstName} ${booking.customerLastName}`
   )).size;
+  
   const totalCompletedClasses = customerBookings.reduce((sum: number, booking: CustomerBooking) => 
-    sum + booking.completedClasses, 0
+    sum + (booking.completedClasses || 0), 0
   );
 
-  return (
-    <div className="container mx-auto py-8 space-y-6">
-      <Helmet>
-        <title>My Customers - Trainn</title>
-        <meta name="description" content="View and manage your fitness class customers and their booking history." />
-      </Helmet>
+  const formatDateTime = (dateTime: string | Date) => {
+    if (!dateTime) return 'N/A';
+    try {
+      const date = new Date(dateTime);
+      return format(date, 'MMM dd, yyyy');
+    } catch {
+      return 'Invalid Date';
+    }
+  };
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Customers</h1>
-          <p className="text-muted-foreground">
-            View customers who have booked your fitness classes
-          </p>
-        </div>
+  const formatTime = (dateTime: string | Date) => {
+    if (!dateTime) return 'N/A';
+    try {
+      const date = new Date(dateTime);
+      return format(date, 'h:mm a');
+    } catch {
+      return 'Invalid Time';
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Management</h1>
+        <p className="text-gray-600">
+          {user.role === 'admin' 
+            ? 'View all customer bookings and class attendance data'
+            : 'View customers who have booked your classes'
+          }
+        </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalBookings}</div>
+            <div className="text-2xl font-bold">{totalCustomers}</div>
             <p className="text-xs text-muted-foreground">
-              All-time customer bookings
+              Active customer bookings
             </p>
           </CardContent>
         </Card>
@@ -135,13 +156,13 @@ export default function CustomersPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Classes Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">Completed Classes</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalCompletedClasses}</div>
             <p className="text-xs text-muted-foreground">
-              Total completed sessions
+              Total classes completed
             </p>
           </CardContent>
         </Card>
@@ -152,89 +173,74 @@ export default function CustomersPage() {
         <CardHeader>
           <CardTitle>Customer Bookings</CardTitle>
           <CardDescription>
-            Detailed view of all customers who have booked your classes
+            Overview of all customer bookings and class attendance
           </CardDescription>
         </CardHeader>
         <CardContent>
           {customerBookings.length === 0 ? (
             <div className="text-center py-8">
-              <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">No customers yet</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                When customers book your classes, they'll appear here.
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No customer bookings found</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Customer bookings will appear here once classes are booked
               </p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[120px]">
-                      <div className="flex items-center">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Date
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[100px]">
-                      <div className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4" />
-                        Time
-                      </div>
-                    </TableHead>
+                    <TableHead>Class Date</TableHead>
+                    <TableHead>Class Time</TableHead>
                     <TableHead>Class Name</TableHead>
-                    <TableHead>
-                      <div className="flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        Customer Name
-                      </div>
-                    </TableHead>
-                    <TableHead>
-                      <div className="flex items-center">
-                        <Phone className="mr-2 h-4 w-4" />
-                        Phone
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-center">Completed Classes</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead>Customer Name</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Completed Classes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {customerBookings.map((booking: CustomerBooking) => (
                     <TableRow key={booking.id}>
-                      <TableCell className="font-medium">
-                        {format(new Date(booking.classDate), 'MMM dd, yyyy')}
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 text-gray-400 mr-2" />
+                          {formatDateTime(booking.classDate)}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(`2000-01-01T${booking.classTime}`), 'h:mm a')}
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 text-gray-400 mr-2" />
+                          {formatTime(booking.classTime)}
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium">
                         {booking.className}
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {booking.customerFirstName} {booking.customerLastName}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {booking.customerEmail}
-                          </div>
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 text-gray-400 mr-2" />
+                          {booking.customerFirstName} {booking.customerLastName}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          {booking.customerPhone || 'Not provided'}
+                        <div className="flex items-center">
+                          <Phone className="h-4 w-4 text-gray-400 mr-2" />
+                          {booking.customerPhone || 'N/A'}
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary">
-                          {booking.completedClasses}
+                      <TableCell className="text-sm text-gray-600">
+                        {booking.customerEmail}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={booking.status === 'confirmed' ? 'success' : 'secondary'}>
+                          {booking.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge 
-                          variant={booking.status === 'confirmed' ? 'default' : 'secondary'}
-                        >
-                          {booking.status}
+                      <TableCell>
+                        <Badge variant="default">
+                          {booking.completedClasses || 0}
                         </Badge>
                       </TableCell>
                     </TableRow>
