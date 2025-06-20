@@ -1606,11 +1606,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot review a class that hasn't occurred yet" });
       }
       
-      // Check if review already exists
-      const existingReviews = await storage.getUserReviews(req.user!.id);
-      const existingReview = existingReviews.find(review => review.classId === classId);
+      // Check if review already exists for this specific booking
+      const existingReview = await storage.getReviewByClassAndBooking(classId, bookingId);
       if (existingReview) {
-        return res.status(400).json({ message: "You have already reviewed this class" });
+        return res.status(400).json({ message: "You have already reviewed this booking" });
       }
       
       // Create the review
