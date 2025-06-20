@@ -82,6 +82,9 @@ export interface IStorage {
   // Contact messages
   createContactMessage(messageData: InsertContactMessage): Promise<ContactMessage>;
   getContactMessages(): Promise<ContactMessage[]>;
+  
+  // Customer management
+  getCustomersForCoach(coachId: number, userRole: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -647,6 +650,48 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(contactMessages)
       .orderBy(desc(contactMessages.createdAt));
+  }
+
+  async getCustomersForCoach(coachId: number, userRole: string): Promise<any[]> {
+    try {
+      // For admins, show all customer bookings; for coaches, only their own classes
+      const query = db
+        .select({
+          id: bookings.id,
+          classDate: classes.startTime,
+          classTime: classes.startTime,
+          className: classes.title,
+          customerFirstName: users.firstName,
+          customerLastName: users.lastName,
+          customerPhone: users.phone,
+          customerEmail: users.email,
+          quantity: bookings.quantity,
+          status: bookings.status,
+          completedClasses: sql<number>`COALESCE((
+            SELECT COUNT(*)::int 
+            FROM ${bookings} b2 
+            INNER JOIN ${classes} c2 ON b2.class_id = c2.id 
+            WHERE b2.user_id = ${users.id} 
+            AND c2.start_time < NOW() 
+            AND b2.status = 'confirmed'
+          ), 0)`
+        })
+        .from(bookings)
+        .innerJoin(classes, eq(bookings.classId, classes.id))
+        .innerJoin(users, eq(bookings.userId, users.id))
+        .where(
+          and(
+            eq(bookings.status, 'confirmed'),
+            userRole === 'admin' ? undefined : eq(classes.coachId, coachId)
+          )
+        )
+        .orderBy(desc(classes.startTime));
+
+      return await query;
+    } catch (error) {
+      console.error('Error fetching customers for coach:', error);
+      return [];
+    }
   }
   
   async getReviewByClassAndBooking(classId: number, bookingId: number): Promise<Review | undefined> {

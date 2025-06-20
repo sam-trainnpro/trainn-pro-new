@@ -1627,6 +1627,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // Get customers for coach/admin
+  app.get("/api/customers", requireAuth, requireCoach, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      
+      // Get customer bookings based on role
+      const customers = await storage.getCustomersForCoach(userId, userRole);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
   // Contact message routes
   app.post("/api/contact", async (req, res) => {
     try {
