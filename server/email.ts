@@ -180,7 +180,9 @@ export async function sendPasswordResetEmail(
   resetToken: string, 
   firstName: string
 ): Promise<boolean> {
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+  // Use the actual Replit domain for password reset links
+  const baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -236,22 +238,10 @@ Best regards,
 The Trainn Team
   `;
 
-  try {
-    await mailService.send({
-      to: email,
-      from: 'sam@trainn.pro',
-      subject: 'Reset Your Password - Trainn',
-      text: textContent,
-      html: htmlContent,
-      trackingSettings: {
-        clickTracking: {
-          enable: false
-        }
-      }
-    });
-    return true;
-  } catch (error) {
-    console.error('SendGrid password reset email error:', error);
-    return false;
-  }
+  return await sendEmail({
+    to: email,
+    subject: 'Reset Your Password - Trainn',
+    text: textContent,
+    html: htmlContent,
+  });
 }
