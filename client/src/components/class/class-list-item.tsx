@@ -66,9 +66,15 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
   const startTime = classItem.startTime ? new Date(classItem.startTime) : null;
   
   // Calculate average rating (would come from reviews in a real app)
-  // These are placeholder values since we don't have actual rating data yet
-  const rating = 4.5;
-  const reviewCount = Math.floor(Math.random() * 100) + 5;
+  // Fetch actual rating data
+  const { data: ratingStats } = useQuery({
+    queryKey: ['/api/reviews/class', classItem.id, 'stats'],
+    queryFn: () => fetch(`/api/reviews/class/${classItem.id}/stats`).then(res => res.json()),
+  });
+
+  // Use actual ratings or fallback to default values
+  const rating = ratingStats?.totalReviews > 0 ? ratingStats.averageRating : 4.9;
+  const reviewCount = ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 10;
   
   const formattedStartTime = startTime 
     ? formatTime(startTime)

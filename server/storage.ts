@@ -67,6 +67,8 @@ export interface IStorage {
   getUserReviews(userId: number): Promise<Review[]>;
   getReviewByClassAndBooking(classId: number, bookingId: number): Promise<Review | undefined>;
   updateReview(id: number, review: Partial<Review>): Promise<Review | undefined>;
+  getClassRatingStats(classId: number): Promise<{ averageRating: number; totalReviews: number }>;
+  getCoachRatingStats(coachId: number): Promise<{ averageRating: number; totalReviews: number }>;
   
   // Stripe
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
@@ -665,6 +667,37 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return result[0];
+  }
+
+  async getClassRatingStats(classId: number): Promise<{ averageRating: number; totalReviews: number }> {
+    const result = await db.select({
+      averageRating: sql<number>`AVG(${reviews.rating})::float`,
+      totalReviews: sql<number>`COUNT(*)::int`
+    })
+    .from(reviews)
+    .where(eq(reviews.classId, classId));
+    
+    const stats = result[0];
+    return {
+      averageRating: stats?.averageRating || 0,
+      totalReviews: stats?.totalReviews || 0
+    };
+  }
+
+  async getCoachRatingStats(coachId: number): Promise<{ averageRating: number; totalReviews: number }> {
+    const result = await db.select({
+      averageRating: sql<number>`AVG(${reviews.rating})::float`,
+      totalReviews: sql<number>`COUNT(*)::int`
+    })
+    .from(reviews)
+    .innerJoin(classes, eq(reviews.classId, classes.id))
+    .where(eq(classes.coachId, coachId));
+    
+    const stats = result[0];
+    return {
+      averageRating: stats?.averageRating || 0,
+      totalReviews: stats?.totalReviews || 0
+    };
   }
 }
 
