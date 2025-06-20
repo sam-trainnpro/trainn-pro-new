@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
+import ResetPasswordForm from "@/components/auth/reset-password-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Helmet } from "react-helmet";
 
@@ -14,7 +15,8 @@ export default function AuthPage() {
   // Initialize with defaults and update after mount to avoid type errors
   const [authParams, setAuthParams] = useState({
     defaultTab: "login",
-    defaultRole: "customer"
+    defaultRole: "customer",
+    resetToken: ""
   });
   
   const [activeTab, setActiveTab] = useState("login");
@@ -24,20 +26,26 @@ export default function AuthPage() {
     try {
       // Safe URL param extraction
       const searchParams = new URLSearchParams(window.location.search);
-      const hasRegister = searchParams.has('register') || searchParams.get('tab') === 'register';
+      const tab = searchParams.get('tab');
+      const hasRegister = searchParams.has('register') || tab === 'register';
+      const isReset = tab === 'reset';
       const role = searchParams.get('role') || "customer";
+      const resetToken = searchParams.get('token') || "";
       
-      const tabValue = hasRegister ? "register" : "login";
+      let tabValue = "login";
+      if (hasRegister) tabValue = "register";
+      if (isReset) tabValue = "reset";
       
       setAuthParams({
         defaultTab: tabValue,
-        defaultRole: role
+        defaultRole: role,
+        resetToken: resetToken
       });
       
       setActiveTab(tabValue);
       
       console.log("Auth page path:", path);
-      console.log("Auth params set:", { tab: tabValue, role });
+      console.log("Auth params set:", { tab: tabValue, role, hasToken: !!resetToken });
     } catch (err) {
       console.error("Error parsing URL params:", err);
     }
@@ -68,18 +76,22 @@ export default function AuthPage() {
               </span>
             </Link>
           </div>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="register">Create Account</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <LoginForm />
-            </TabsContent>
-            <TabsContent value="register">
-              <RegisterForm defaultRole={authParams.defaultRole} />
-            </TabsContent>
-          </Tabs>
+          {activeTab === "reset" ? (
+            <ResetPasswordForm token={authParams.resetToken} />
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Sign In</TabsTrigger>
+                <TabsTrigger value="register">Create Account</TabsTrigger>
+              </TabsList>
+              <TabsContent value="login">
+                <LoginForm />
+              </TabsContent>
+              <TabsContent value="register">
+                <RegisterForm defaultRole={authParams.defaultRole} />
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </div>
       <div className="w-full md:w-1/2 bg-primary hidden md:block">

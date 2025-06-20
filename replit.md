@@ -119,6 +119,7 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 20, 2025. Fixed password reset email links by integrating reset form into auth page and disabling SendGrid click tracking
 - June 20, 2025. Implemented complete SendGrid password reset system with email templates and secure token handling
 - June 20, 2025. Completed customer review system implementation with star ratings and text reviews for past bookings
 - June 19, 2025. Eliminated pending booking status - bookings only created after successful payment completion

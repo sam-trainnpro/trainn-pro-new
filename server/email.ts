@@ -180,9 +180,9 @@ export async function sendPasswordResetEmail(
   resetToken: string, 
   firstName: string
 ): Promise<boolean> {
-  // Use the actual Replit domain for password reset links
+  // Direct users to login page with reset token for simpler UX
   const baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
-  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+  const resetUrl = `${baseUrl}/auth?tab=reset&token=${resetToken}`;
   
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
