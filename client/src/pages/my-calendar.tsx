@@ -195,10 +195,18 @@ export default function MyCalendarPage() {
                         !isCurrentMonth ? 'bg-gray-50' : 'bg-white'
                       } ${isDayToday ? 'bg-blue-50' : ''}`}
                     >
-                      <div className={`text-sm font-medium mb-1 ${
-                        !isCurrentMonth ? 'text-gray-400' : 'text-gray-900'
-                      } ${isDayToday ? 'text-blue-600 font-bold' : ''}`}>
-                        {format(day, 'd')}
+                      <div className="mb-1">
+                        {isDayToday ? (
+                          <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mx-auto">
+                            {format(day, 'd')}
+                          </div>
+                        ) : (
+                          <div className={`text-sm font-medium ${
+                            !isCurrentMonth ? 'text-gray-400' : 'text-gray-900'
+                          }`}>
+                            {format(day, 'd')}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="space-y-1">
