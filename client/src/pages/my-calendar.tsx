@@ -204,23 +204,30 @@ export default function MyCalendarPage() {
                       <div className="space-y-1">
                         {dayClasses.slice(0, 3).map(classItem => {
                           const bookingData = bookingCounts[classItem.id];
+                          const classDate = parseISO(classItem.startTime);
+                          const isPastEvent = classDate < new Date();
+                          const isPastDay = day < new Date() && !isSameDay(day, new Date());
+                          
+                          const eventClasses = isPastEvent || isPastDay
+                            ? "text-xs p-1 rounded bg-gray-100 text-gray-500 border border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors opacity-60"
+                            : "text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors";
+                          
                           return (
-                            <div
-                              key={classItem.id}
-                              className="text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
-                            >
-                              <div className="font-medium truncate">
-                                {classItem.title}
+                            <Link key={classItem.id} href={`/edit-class/${classItem.id}`}>
+                              <div className={eventClasses}>
+                                <div className="font-medium truncate">
+                                  {classItem.title}
+                                </div>
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Clock className="h-3 w-3" />
+                                  {formatTime(classItem.startTime)}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {bookingData?.active || 0}/{classItem.maxParticipants || classItem.capacity}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1 mt-1">
-                                <Clock className="h-3 w-3" />
-                                {formatTime(classItem.startTime)}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />
-                                {bookingData?.active || 0}/{classItem.maxParticipants || classItem.capacity}
-                              </div>
-                            </div>
+                            </Link>
                           );
                         })}
                         
@@ -268,40 +275,58 @@ export default function MyCalendarPage() {
                   })
                   .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
                   .slice(0, 10)
-                  .map(classItem => (
-                    <div key={classItem.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-medium text-gray-900">{classItem.title}</h4>
-                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {format(parseISO(classItem.startTime), 'MMM d, yyyy')}
+                  .map(classItem => {
+                    const classDate = parseISO(classItem.startTime);
+                    const isPastEvent = classDate < new Date();
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const classDay = new Date(classDate);
+                    classDay.setHours(0, 0, 0, 0);
+                    const isPastDay = classDay < today;
+                    
+                    const titleClasses = isPastEvent || isPastDay ? "font-medium text-gray-500" : "font-medium text-gray-900";
+                    const detailClasses = isPastEvent || isPastDay ? "text-sm text-gray-400" : "text-sm text-gray-600";
+                    const containerClasses = isPastEvent || isPastDay 
+                      ? "flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer opacity-60"
+                      : "flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer";
+                    
+                    return (
+                      <Link key={classItem.id} href={`/edit-class/${classItem.id}`}>
+                        <div className={containerClasses}>
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className={titleClasses}>{classItem.title}</h4>
+                                <div className={`flex items-center gap-4 mt-1 ${detailClasses}`}>
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-4 w-4" />
+                                    {format(parseISO(classItem.startTime), 'MMM d, yyyy')}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-4 w-4" />
+                                    {formatTime(classItem.startTime)}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-4 w-4" />
+                                    {classItem.location}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                {formatTime(classItem.startTime)}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-4 w-4" />
-                                {classItem.location}
+                              <div className="flex items-center gap-3">
+                                <Badge variant="secondary" className="text-xs">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  {bookingCounts[classItem.id]?.active || 0}/{classItem.maxParticipants || classItem.capacity}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  ${classItem.price}
+                                </Badge>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <Badge variant="secondary" className="text-xs">
-                              <Users className="h-3 w-3 mr-1" />
-                              {bookingCounts[classItem.id]?.active || 0}/{classItem.maxParticipants || classItem.capacity}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              ${classItem.price}
-                            </Badge>
-                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))
+                      </Link>
+                    );
+                  })
                 }
               </div>
             )}

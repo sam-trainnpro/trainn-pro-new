@@ -119,6 +119,9 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 20, 2025. Implemented interactive "My Calendar" page for coaches with Google Calendar-style monthly view and class editing functionality
+- June 20, 2025. Added calendar navigation with month browsing, class display on dates, and click-to-edit functionality
+- June 20, 2025. Added "My Calendar" navigation link in coach dropdown menu for easy calendar access
 - June 20, 2025. Fixed admin access control for customer management system - admins can now view all customer bookings with coach information
 - June 20, 2025. Implemented complete customer management system for coaches and administrators
 - June 20, 2025. Added Customers page with booking table sorted by class date, time, name, and customer name
