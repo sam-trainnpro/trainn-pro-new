@@ -25,6 +25,8 @@ interface CustomerBooking {
   quantity: number;
   status: string;
   completedClasses: number;
+  coachFirstName?: string;
+  coachLastName?: string;
 }
 
 // Simple Badge component
@@ -205,6 +207,7 @@ export default function CustomersPage() {
                       <TableHead>Class Date</TableHead>
                       <TableHead>Class Time</TableHead>
                       <TableHead>Class Name</TableHead>
+                      {user.role === 'admin' && <TableHead>Coach</TableHead>}
                       <TableHead>Customer Name</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Email</TableHead>
@@ -230,6 +233,14 @@ export default function CustomersPage() {
                         <TableCell className="font-medium">
                           {booking.className}
                         </TableCell>
+                        {user.role === 'admin' && (
+                          <TableCell>
+                            <div className="flex items-center">
+                              <User className="h-4 w-4 text-gray-400 mr-2" />
+                              {booking.coachFirstName} {booking.coachLastName}
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex items-center">
                             <User className="h-4 w-4 text-gray-400 mr-2" />
