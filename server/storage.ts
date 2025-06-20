@@ -657,7 +657,10 @@ export class DatabaseStorage implements IStorage {
 
   async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
     const result = await db.update(reviews)
-      .set(reviewData)
+      .set({
+        ...reviewData,
+        updatedAt: new Date()
+      })
       .where(eq(reviews.id, id))
       .returning();
     
