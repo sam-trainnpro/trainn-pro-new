@@ -78,9 +78,9 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
       if (response.ok) {
         setIsSuccess(true);
-        // Redirect to login after 3 seconds
+        // Redirect to production login after 3 seconds
         setTimeout(() => {
-          navigate("/auth?tab=login");
+          window.location.href = "https://trainn.pro/auth?tab=login";
         }, 3000);
       } else {
         setError(data.message || "Failed to reset password");
@@ -110,7 +110,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             Redirecting to login page in 3 seconds...
           </p>
           <Button 
-            onClick={() => navigate("/auth?tab=login")}
+            onClick={() => window.location.href = "https://trainn.pro/auth?tab=login"}
             className="w-full"
           >
             Continue to Login
@@ -225,7 +225,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => navigate("/auth?tab=login")}
+                onClick={() => window.location.href = "https://trainn.pro/auth?tab=login"}
                 className="text-blue-600"
               >
                 Back to Login
