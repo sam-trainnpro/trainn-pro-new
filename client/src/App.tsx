@@ -23,6 +23,7 @@ import EditClassPage from "@/pages/edit-class-new";
 import ResetPasswordPage from "@/pages/reset-password";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ReviewPage from "@/pages/review";
+import CustomersPage from "@/pages/customers";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -87,6 +88,9 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/review">
         <ReviewPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/customers">
+        <CustomersPage />
       </ProtectedRoute>
       <Route>
         <NotFound />
