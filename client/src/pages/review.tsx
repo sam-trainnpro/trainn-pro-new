@@ -29,6 +29,12 @@ export default function ReviewPage() {
     enabled: !!classItem?.coachId
   });
 
+  // Fetch existing review for this specific class/booking
+  const { data: existingReview } = useQuery({
+    queryKey: [`/api/reviews/class/${classId}/${bookingId}`],
+    enabled: !!classId && !!bookingId
+  });
+
   if (classLoading || coachLoading) {
     return (
       <div className="flex flex-col min-h-screen">

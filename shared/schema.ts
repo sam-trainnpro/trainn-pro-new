@@ -161,6 +161,7 @@ export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   classId: integer("class_id").notNull(),
+  bookingId: integer("booking_id").notNull(),
   rating: integer("rating").notNull(),
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -169,6 +170,7 @@ export const reviews = pgTable("reviews", {
 export const insertReviewSchema = createInsertSchema(reviews).pick({
   userId: true,
   classId: true,
+  bookingId: true,
   rating: true,
   comment: true,
 });
