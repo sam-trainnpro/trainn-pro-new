@@ -173,3 +173,73 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     return false;
   }
 }
+
+// Password reset email template
+export async function sendPasswordResetEmail(
+  email: string, 
+  resetToken: string, 
+  firstName: string
+): Promise<boolean> {
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+  
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+      <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+          <p style="color: #666; margin: 5px 0 0 0;">Your Fitness Journey Awaits</p>
+        </div>
+        
+        <h2 style="color: #333; margin-bottom: 20px;">Password Reset Request</h2>
+        
+        <p style="color: #333; line-height: 1.6;">Hello ${firstName},</p>
+        <p style="color: #333; line-height: 1.6;">We received a request to reset your password for your Trainn account. If you didn't make this request, you can safely ignore this email.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Reset Your Password</a>
+        </div>
+        
+        <p style="color: #333; line-height: 1.6;">Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 14px; color: #333;">${resetUrl}</p>
+        
+        <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #ffc107;">
+          <p style="color: #856404; margin: 0; font-weight: bold;">This link will expire in 1 hour for security reasons.</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+          <p style="color: #666; margin: 0; font-size: 14px;">
+            Questions? Contact us at support@trainn.com
+          </p>
+          <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">
+            This is an automated email from Trainn.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const textContent = `
+Password Reset Request - Trainn
+
+Hello ${firstName},
+
+We received a request to reset your password for your Trainn account. If you didn't make this request, you can safely ignore this email.
+
+To reset your password, click on the following link:
+${resetUrl}
+
+This link will expire in 1 hour for security reasons.
+
+If you have any questions, please contact our support team at support@trainn.com.
+
+Best regards,
+The Trainn Team
+  `;
+
+  return await sendEmail({
+    to: email,
+    subject: 'Reset Your Password - Trainn',
+    text: textContent,
+    html: htmlContent,
+  });
+}
