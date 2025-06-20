@@ -1722,6 +1722,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get specific review by class and booking ID
+  app.get("/api/reviews/class/:classId/:bookingId", requireAuth, async (req, res) => {
+    try {
+      const classId = parseInt(req.params.classId);
+      const bookingId = parseInt(req.params.bookingId);
+      const review = await storage.getReviewByClassAndBooking(classId, bookingId);
+      if (review) {
+        res.json(review);
+      } else {
+        res.status(404).json({ error: "Review not found" });
+      }
+    } catch (error: any) {
+      console.error("Error fetching specific review:", error);
+      res.status(500).json({ error: "Failed to fetch review" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

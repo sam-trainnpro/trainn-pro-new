@@ -65,6 +65,7 @@ export interface IStorage {
   createReview(review: InsertReview): Promise<Review>;
   getClassReviews(classId: number): Promise<Review[]>;
   getUserReviews(userId: number): Promise<Review[]>;
+  getReviewByClassAndBooking(classId: number, bookingId: number): Promise<Review | undefined>;
   updateReview(id: number, review: Partial<Review>): Promise<Review | undefined>;
   
   // Stripe
@@ -646,6 +647,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(contactMessages.createdAt));
   }
   
+  async getReviewByClassAndBooking(classId: number, bookingId: number): Promise<Review | undefined> {
+    const [review] = await db
+      .select()
+      .from(reviews)
+      .where(and(eq(reviews.classId, classId), eq(reviews.bookingId, bookingId)));
+    return review || undefined;
+  }
+
   async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
     const result = await db.update(reviews)
       .set(reviewData)
