@@ -4,7 +4,7 @@ import { ReviewForm } from "@/components/review/review-form";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
-import { Class, User } from "@shared/schema";
+import { Class, User, Review } from "@shared/schema";
 import { Helmet } from "react-helmet";
 
 export default function ReviewPage() {
@@ -30,9 +30,10 @@ export default function ReviewPage() {
   });
 
   // Fetch existing review for this specific class/booking
-  const { data: existingReview } = useQuery({
+  const { data: existingReview } = useQuery<Review>({
     queryKey: [`/api/reviews/class/${classId}/${bookingId}`],
-    enabled: !!classId && !!bookingId
+    enabled: !!classId && !!bookingId,
+    retry: false
   });
 
   if (classLoading || coachLoading) {
@@ -84,6 +85,7 @@ export default function ReviewPage() {
           classItem={classItem}
           coach={coach}
           bookingId={bookingId}
+          existingReview={existingReview}
         />
       </main>
       <Footer />
