@@ -129,6 +129,14 @@ export default function Header() {
                       <span>{user.role === 'coach' ? "My Classes" : "My Bookings"}</span>
                     </Link>
                   </DropdownMenuItem>
+                  {user.role === 'coach' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/my-calendar" className="cursor-pointer w-full">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        <span>My Calendar</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {(user.role === 'coach' || user.role === 'admin') && (
                     <DropdownMenuItem asChild>
                       <Link href="/customers" className="cursor-pointer w-full">

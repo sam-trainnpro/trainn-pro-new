@@ -14,20 +14,32 @@ interface Class {
   title: string;
   description: string;
   startTime: string;
-  duration: number;
+  endTime: string;
   location: string;
-  maxParticipants: number;
+  capacity: number;
   price: number;
-  imageUrl?: string;
+  image?: string;
   categoryId: number;
   coachId: number;
   isRecurring: boolean;
   parentClassId?: number;
+  maxParticipants?: number;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  whatToBring?: string;
+  createdAt?: string;
+}
+
+interface BookingCounts {
+  total: number;
+  active: number;
+  totalSpotsBooked: number;
 }
 
 interface ClassWithBookings extends Class {
-  totalBookings: number;
-  activeBookings: number;
+  totalBookings?: number;
+  activeBookings?: number;
 }
 
 export default function MyCalendarPage() {
@@ -50,9 +62,31 @@ export default function MyCalendarPage() {
   }
 
   // Fetch coach's classes
-  const { data: classes = [], isLoading } = useQuery<ClassWithBookings[]>({
+  const { data: classes = [], isLoading } = useQuery<Class[]>({
     queryKey: [`/api/coaches/${user.id}/classes`],
     enabled: !!user?.id,
+  });
+
+  // Fetch booking counts for each class
+  const { data: bookingCounts = {} } = useQuery<Record<number, BookingCounts>>({
+    queryKey: ['booking-counts', classes.map(c => c.id)],
+    queryFn: async () => {
+      const counts: Record<number, BookingCounts> = {};
+      await Promise.all(
+        classes.map(async (classItem) => {
+          try {
+            const response = await fetch(`/api/classes/${classItem.id}/bookings/count`);
+            if (response.ok) {
+              counts[classItem.id] = await response.json();
+            }
+          } catch (error) {
+            console.error(`Error fetching booking count for class ${classItem.id}:`, error);
+          }
+        })
+      );
+      return counts;
+    },
+    enabled: classes.length > 0,
   });
 
   // Calendar calculations
@@ -168,24 +202,27 @@ export default function MyCalendarPage() {
                       </div>
                       
                       <div className="space-y-1">
-                        {dayClasses.slice(0, 3).map(classItem => (
-                          <div
-                            key={classItem.id}
-                            className="text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
-                          >
-                            <div className="font-medium truncate">
-                              {classItem.title}
+                        {dayClasses.slice(0, 3).map(classItem => {
+                          const bookingData = bookingCounts[classItem.id];
+                          return (
+                            <div
+                              key={classItem.id}
+                              className="text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+                            >
+                              <div className="font-medium truncate">
+                                {classItem.title}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                {formatTime(classItem.startTime)}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {bookingData?.active || 0}/{classItem.maxParticipants || classItem.capacity}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1 mt-1">
-                              <Clock className="h-3 w-3" />
-                              {formatTime(classItem.startTime)}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {classItem.activeBookings}/{classItem.maxParticipants}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         
                         {dayClasses.length > 3 && (
                           <div className="text-xs text-gray-500 font-medium">
@@ -255,7 +292,7 @@ export default function MyCalendarPage() {
                           <div className="flex items-center gap-3">
                             <Badge variant="secondary" className="text-xs">
                               <Users className="h-3 w-3 mr-1" />
-                              {classItem.activeBookings}/{classItem.maxParticipants}
+                              {bookingCounts[classItem.id]?.active || 0}/{classItem.maxParticipants || classItem.capacity}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                               ${classItem.price}
