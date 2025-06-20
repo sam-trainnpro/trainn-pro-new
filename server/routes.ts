@@ -1628,10 +1628,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Get customers for coach/admin
-  app.get("/api/customers", requireAuth, requireCoach, async (req, res) => {
+  app.get("/api/customers", requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const userRole = req.user!.role;
+      
+      // Only allow coaches and admins to access customer data
+      if (userRole !== 'coach' && userRole !== 'admin') {
+        return res.status(403).json({ message: "Coach or admin access required" });
+      }
       
       // Get customer bookings based on role
       const customers = await storage.getCustomersForCoach(userId, userRole);
