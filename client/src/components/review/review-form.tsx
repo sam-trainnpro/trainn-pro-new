@@ -106,11 +106,8 @@ export function ReviewForm({ classItem, coach, bookingId, existingReview, onClos
         <h1 className="text-3xl font-bold mb-2">
           {existingReview ? "Edit Your Review" : "Rate Your Experience"}
         </h1>
-        <p className="text-muted-foreground">
-          How was your experience with this fitness class?
-        </p>
+        <p className="text-muted-foreground">How was your experience with this class?</p>
       </div>
-
       <Card className="border-0 shadow-lg">
         <CardHeader className="pb-4">
           {/* Class Information */}
