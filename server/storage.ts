@@ -667,6 +667,7 @@ export class DatabaseStorage implements IStorage {
           customerEmail: users.email,
           quantity: bookings.quantity,
           status: bookings.status,
+          coachId: classes.coachId,
           completedClasses: sql<number>`COALESCE((
             SELECT COUNT(*)::int 
             FROM ${bookings} b2 
@@ -680,10 +681,12 @@ export class DatabaseStorage implements IStorage {
         .innerJoin(classes, eq(bookings.classId, classes.id))
         .innerJoin(users, eq(bookings.userId, users.id))
         .where(
-          and(
-            eq(bookings.status, 'confirmed'),
-            userRole === 'admin' ? undefined : eq(classes.coachId, coachId)
-          )
+          userRole === 'admin' 
+            ? eq(bookings.status, 'confirmed')
+            : and(
+                eq(bookings.status, 'confirmed'),
+                eq(classes.coachId, coachId)
+              )
         )
         .orderBy(
           classes.startTime, // Class date first
@@ -693,7 +696,30 @@ export class DatabaseStorage implements IStorage {
           users.lastName     // Customer last name fifth
         );
 
-      return await query;
+      const results = await query;
+      
+      // For admin users, add coach information by fetching coach details
+      if (userRole === 'admin' && results.length > 0) {
+        const coachIdsSet = new Set<number>();
+        results.forEach(r => coachIdsSet.add(r.coachId));
+        const coachIds = Array.from(coachIdsSet);
+        
+        const coaches = await db.select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName
+        }).from(users).where(inArray(users.id, coachIds));
+        
+        const coachMap = new Map(coaches.map(coach => [coach.id, coach]));
+        
+        return results.map(result => ({
+          ...result,
+          coachFirstName: coachMap.get(result.coachId)?.firstName || '',
+          coachLastName: coachMap.get(result.coachId)?.lastName || ''
+        }));
+      }
+      
+      return results;
     } catch (error) {
       console.error('Error fetching customers for coach:', error);
       return [];
