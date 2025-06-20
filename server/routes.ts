@@ -1617,6 +1617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const review = await storage.createReview({
         userId: req.user!.id,
         classId,
+        bookingId,
         rating,
         comment: comment || null
       });
