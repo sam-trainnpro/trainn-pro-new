@@ -39,6 +39,12 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
   }>({
     queryKey: [`/api/classes/${classItem.id}/bookings/count`],
   });
+
+  // Get rating statistics for this class
+  const { data: ratingStats } = useQuery({
+    queryKey: ['/api/reviews/class', classItem.id, 'stats'],
+    queryFn: () => fetch(`/api/reviews/class/${classItem.id}/stats`).then(res => res.json()),
+  });
   
   // Get day name from day number
   const getDayName = (dayNum: number): string => {
@@ -178,7 +184,9 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
           
           <div className="ml-auto flex items-center">
             <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
-            <span className="ml-1">4.9</span>
+            <span className="ml-1">
+              {ratingStats?.totalReviews > 0 ? ratingStats.averageRating.toFixed(1) : '4.9'}
+            </span>
           </div>
         </div>
         

@@ -9,6 +9,16 @@ interface CoachCardProps {
 }
 
 export default function CoachCard({ coach }: CoachCardProps) {
+  // Get rating statistics for this coach
+  const { data: ratingStats } = useQuery({
+    queryKey: ['/api/reviews/coach', coach.id, 'stats'],
+    queryFn: () => fetch(`/api/reviews/coach/${coach.id}/stats`).then(res => res.json()),
+  });
+
+  // Use actual ratings or fallback to default values
+  const rating = ratingStats?.totalReviews > 0 ? ratingStats.averageRating : 4.9;
+  const reviewCount = ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 10;
+
   return (
     <div className="bg-[#F7F7F7] rounded-xl p-4 text-center hover:shadow-md transition">
       <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 bg-gray-200 flex items-center justify-center">
@@ -28,8 +38,8 @@ export default function CoachCard({ coach }: CoachCardProps) {
       
       <div className="flex justify-center items-center mb-3">
         <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
-        <span className="ml-1 font-medium">4.9</span>
-        <span className="text-sm text-gray-500 ml-1">(124 reviews)</span>
+        <span className="ml-1 font-medium">{rating.toFixed(1)}</span>
+        <span className="text-sm text-gray-500 ml-1">({reviewCount} reviews)</span>
       </div>
       
       <Link href={`/coaches/${coach.id}`}>
