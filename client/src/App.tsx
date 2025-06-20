@@ -21,6 +21,7 @@ import CreateClassPage from "@/pages/create-class";
 import MyClassesPage from "@/pages/my-classes";
 import EditClassPage from "@/pages/edit-class-new";
 import ResetPasswordPage from "@/pages/reset-password";
+import ForgotPasswordPage from "@/pages/forgot-password";
 import ReviewPage from "@/pages/review";
 import { ProtectedRoute } from "./lib/protected-route";
 
@@ -35,6 +36,9 @@ function Router() {
       </Route>
       <Route path="/register">
         <RegisterPage />
+      </Route>
+      <Route path="/forgot-password">
+        <ForgotPasswordPage />
       </Route>
       <Route path="/reset-password">
         <ResetPasswordPage />

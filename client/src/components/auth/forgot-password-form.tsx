@@ -49,13 +49,20 @@ export default function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) 
       setIsLoading(true);
       setError(null);
       
-      const response = await apiRequest("POST", "/api/auth/forgot-password", data);
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      const responseData = await response.json();
       
       if (response.ok) {
         setIsSubmitted(true);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Failed to send reset email");
+        setError(responseData.message || "Failed to send reset email");
       }
     } catch (err: any) {
       setError(err.message || "Failed to send reset email");
