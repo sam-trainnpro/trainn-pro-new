@@ -119,6 +119,7 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 20, 2025. Fixed admin access control for customer management system - admins can now view all customer bookings with coach information
 - June 20, 2025. Implemented complete customer management system for coaches and administrators
 - June 20, 2025. Added Customers page with booking table sorted by class date, time, name, and customer name
 - June 20, 2025. Added "Customers" navigation link in user dropdown menu for coaches and admins
