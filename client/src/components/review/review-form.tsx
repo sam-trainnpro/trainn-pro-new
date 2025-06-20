@@ -93,78 +93,107 @@ export function ReviewForm({ classItem, coach, bookingId, existingReview, onClos
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCancel}
-              className="p-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <CardTitle className="text-xl">
-              {existingReview ? "Edit Review" : "Add Review"}
-            </CardTitle>
-          </div>
-          
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={handleCancel}
+          className="mb-4 p-0 h-auto font-normal text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Bookings
+        </Button>
+        
+        <h1 className="text-3xl font-bold mb-2">
+          {existingReview ? "Edit Your Review" : "Rate Your Experience"}
+        </h1>
+        <p className="text-muted-foreground">
+          How was your experience with this fitness class?
+        </p>
+      </div>
+
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="pb-4">
           {/* Class Information */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-            <h3 className="font-semibold text-lg">{classItem.title}</h3>
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-6 space-y-4">
+            <h2 className="font-bold text-xl text-foreground">{classItem.title}</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="flex items-center">
-                <UserIcon className="h-4 w-4 mr-2 text-primary" />
-                <span>Coach {coach.firstName} {coach.lastName}</span>
+                <UserIcon className="h-5 w-5 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium">Coach</p>
+                  <p className="text-muted-foreground">{coach.firstName} {coach.lastName}</p>
+                </div>
               </div>
               
               <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-primary" />
-                <span>{formatDate(classItem.startTime)} at {formatTime(classItem.startTime)}</span>
+                <Clock className="h-5 w-5 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium">Date & Time</p>
+                  <p className="text-muted-foreground">{formatDate(classItem.startTime)} at {formatTime(classItem.startTime)}</p>
+                </div>
               </div>
               
               <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2 text-primary" />
-                <span>{classItem.location}</span>
+                <MapPin className="h-5 w-5 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium">Location</p>
+                  <p className="text-muted-foreground">{classItem.location}</p>
+                </div>
               </div>
               
               <div className="flex items-center">
-                <Badge variant="outline">${classItem.price}</Badge>
+                <div className="h-5 w-5 mr-3 flex items-center justify-center">
+                  <Badge variant="secondary" className="text-sm">${classItem.price}</Badge>
+                </div>
               </div>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8 pt-2">
           {/* Rating Section */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Rating <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-3">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Overall Rating</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                How would you rate this class overall?
+              </p>
+            </div>
+            
+            <div className="flex flex-col items-center space-y-4 py-4">
               <StarRating 
                 rating={rating} 
                 onRatingChange={setRating} 
                 size="lg" 
+                className="justify-center"
               />
-              <span className="text-sm text-muted-foreground">
-                {rating > 0 ? `${rating} star${rating !== 1 ? 's' : ''}` : "Select a rating"}
-              </span>
+              <p className="text-lg font-medium text-center">
+                {rating === 0 && "Select a rating"}
+                {rating === 1 && "Poor"}
+                {rating === 2 && "Fair"}
+                {rating === 3 && "Good"}
+                {rating === 4 && "Very Good"}
+                {rating === 5 && "Excellent"}
+              </p>
             </div>
           </div>
           
           {/* Comment Section */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Review (Optional)
-            </label>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Share Your Experience</h3>
+              <p className="text-sm text-muted-foreground">
+                Tell other customers about your experience (optional)
+              </p>
+            </div>
+            
             <Textarea
-              placeholder="Share your experience with this class..."
+              placeholder="What did you like about this class? How was the coach? Would you recommend it to others?"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               maxLength={1000}
-              className="min-h-[100px]"
+              className="min-h-[120px] resize-none"
             />
             <div className="text-xs text-muted-foreground text-right">
               {comment.length}/1000 characters
@@ -172,11 +201,12 @@ export function ReviewForm({ classItem, coach, bookingId, existingReview, onClos
           </div>
           
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6">
             <Button
               onClick={() => submitReviewMutation.mutate()}
               disabled={rating === 0 || submitReviewMutation.isPending}
-              className="flex-1"
+              className="flex-1 h-12 text-base font-medium"
+              size="lg"
             >
               {submitReviewMutation.isPending 
                 ? (existingReview ? "Updating..." : "Submitting...") 
@@ -187,6 +217,8 @@ export function ReviewForm({ classItem, coach, bookingId, existingReview, onClos
               variant="outline"
               onClick={handleCancel}
               disabled={submitReviewMutation.isPending}
+              className="h-12 text-base"
+              size="lg"
             >
               Cancel
             </Button>
