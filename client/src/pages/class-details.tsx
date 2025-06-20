@@ -111,6 +111,13 @@ export default function ClassDetailsPage() {
     queryKey: [`/api/classes/${classId}/bookings/count`],
     enabled: !!classId,
   });
+
+  // Get rating statistics for this class
+  const { data: ratingStats } = useQuery({
+    queryKey: ['/api/reviews/class', classId, 'stats'],
+    queryFn: () => fetch(`/api/reviews/class/${classId}/stats`).then(res => res.json()),
+    enabled: !!classId,
+  });
   
   const userBooking = bookings?.find(booking => 
     booking.classId === classId && (booking.status === 'pending' || booking.status === 'confirmed')
@@ -379,8 +386,12 @@ export default function ClassDetailsPage() {
                               <h2 className="text-xl font-bold">Coach {coach.firstName} {coach.lastName}</h2>
                               <div className="flex items-center">
                                 <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
-                                <span className="ml-1">4.9</span>
-                                <span className="text-sm text-muted-foreground ml-1">(124 reviews)</span>
+                                <span className="ml-1">
+                                  {ratingStats?.totalReviews > 0 ? ratingStats.averageRating.toFixed(1) : '4.9'}
+                                </span>
+                                <span className="text-sm text-muted-foreground ml-1">
+                                  ({ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 10} reviews)
+                                </span>
                               </div>
                             </div>
                           </div>
