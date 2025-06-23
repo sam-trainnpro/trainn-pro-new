@@ -33,7 +33,7 @@ interface ClassDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDuplicate: (classId: number) => void;
-  onDelete: (classId: number) => void;
+  onDelete: (classItem: Class) => void;
   bookingCount?: { active: number; total: number };
 }
 
