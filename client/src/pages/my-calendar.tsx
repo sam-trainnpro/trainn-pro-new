@@ -110,23 +110,63 @@ export default function MyCalendarPage() {
     }
   };
 
-  const handleDelete = async (classId: number) => {
+  const handleDelete = (classItem: Class) => {
+    console.log('handleDelete called with:', classItem);
+    console.log('recurringSeriesId:', classItem.recurringSeriesId);
+    
+    // Check if this is a recurring class
+    if (classItem.recurringSeriesId) {
+      console.log('This is a recurring class, showing delete modal');
+      setClassToDelete(classItem);
+      setShowDeleteModal(true);
+      setIsModalOpen(false); // Close the detail modal
+    } else {
+      console.log('This is a non-recurring class, showing confirmation');
+      // Non-recurring class - show simple confirmation
+      if (confirm(`Are you sure you want to delete "${classItem.title}"?`)) {
+        performDelete(classItem.id, 'this');
+      }
+    }
+  };
+
+  const handleDeleteConfirm = (option: DeleteOption) => {
+    console.log('Delete confirmed with option:', option);
+    if (classToDelete) {
+      performDelete(classToDelete.id, option);
+      setClassToDelete(null);
+    }
+  };
+
+  const performDelete = async (classId: number, option: DeleteOption) => {
     try {
-      const response = await fetch(`/api/classes/${classId}`, {
-        method: 'DELETE',
-        credentials: 'include'
+      const url = option === 'following' 
+        ? `/api/classes/${classId}?deleteOption=following`
+        : `/api/classes/${classId}`;
+        
+      console.log('Deleting class with URL:', url);
+        
+      const response = await fetch(url, {
+        method: 'DELETE'
       });
-      
-      if (response.ok) {
-        toast({
-          title: "Class deleted successfully",
-          description: "The class has been removed from your schedule."
-        });
-        refetch();
-      } else {
+
+      if (!response.ok) {
         throw new Error('Failed to delete class');
       }
+
+      // Refresh the classes list
+      await refetch();
+      setIsModalOpen(false);
+      
+      const message = option === 'following' 
+        ? "Class and following classes deleted successfully"
+        : "Class deleted successfully";
+        
+      toast({
+        title: "Success",
+        description: message
+      });
     } catch (error) {
+      console.error('Error deleting class:', error);
       toast({
         title: "Error",
         description: "Failed to delete class. Please try again.",
@@ -440,6 +480,17 @@ export default function MyCalendarPage() {
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
         bookingCount={selectedClass ? bookingCounts[selectedClass.id] : undefined}
+      />
+
+      {/* Delete Recurring Modal */}
+      <DeleteRecurringModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setClassToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        classTitle={classToDelete?.title || ''}
       />
     </>
   );
