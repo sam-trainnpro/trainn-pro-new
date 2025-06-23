@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit3, Copy, Trash2, Clock, MapPin, Users, DollarSign, X } from 'lucide-react';
+import { Edit3, Copy, Trash2, Clock, MapPin, Users, DollarSign } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Link } from 'wouter';
 
@@ -70,19 +70,9 @@ export default function ClassDetailModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg font-semibold">
-              {classItem.title}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-lg font-semibold">
+            {classItem.title}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
