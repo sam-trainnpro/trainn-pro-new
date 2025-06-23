@@ -237,16 +237,16 @@ export default function MyCalendarPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="flex items-center justify-center h-96">
+              <div className="flex items-center justify-center h-96 p-6">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                   <p className="text-gray-600">Loading calendar...</p>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden w-full min-w-full">
+              <div className="grid grid-cols-7 gap-0 border-0 overflow-hidden w-full">
                 {/* Weekday Headers */}
                 {weekdays.map(day => (
                   <div key={day} className="bg-gray-50 p-2 sm:p-3 text-center font-medium text-xs sm:text-sm text-gray-700 border-b border-gray-200">

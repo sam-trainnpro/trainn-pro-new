@@ -119,6 +119,9 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 23, 2025. Expanded calendar to full card width by removing CardContent padding and calendar borders for better mobile experience
+- June 23, 2025. Optimized calendar layout for mobile devices with responsive text sizes, spacing, and simplified time format
+- June 23, 2025. Removed duplicate close button from class detail modal for cleaner UI
 - June 23, 2025. Updated "Upcoming Classes This Month" card title to "Upcoming Classes" for cleaner UI
 - June 23, 2025. Fixed calendar date alignment issue - dates now properly align with correct days of the week
 - June 23, 2025. Fixed cancel button navigation in Create/Edit Class pages to use browser back navigation with fallbacks
