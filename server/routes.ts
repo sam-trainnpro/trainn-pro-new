@@ -436,6 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/classes/:id", requireAuth, async (req, res) => {
     try {
       const classId = parseInt(req.params.id);
+      const deleteOption = req.query.deleteOption as string; // 'this' or 'following'
       
       // Check if the class exists
       const classItem = await storage.getClass(classId);
@@ -451,9 +452,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to delete this class" });
       }
       
-      await storage.deleteClass(classId);
+      // Handle recurring class deletion
+      if (classItem.recurringSeriesId && deleteOption === 'following') {
+        await storage.deleteThisAndFollowingClasses(classId);
+      } else {
+        // Delete just this class
+        await storage.deleteClass(classId);
+      }
+      
       res.status(204).send();
     } catch (error) {
+      console.error("Error deleting class:", error);
       res.status(500).json({ message: "Failed to delete class" });
     }
   });

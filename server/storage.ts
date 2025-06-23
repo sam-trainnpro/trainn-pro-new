@@ -52,6 +52,7 @@ export interface IStorage {
   getClassesBySeriesId(seriesId: string): Promise<Class[]>;
   deleteClass(id: number): Promise<boolean>;
   deleteRecurringClassSeries(seriesId: string): Promise<boolean>;
+  deleteThisAndFollowingClasses(classId: number): Promise<boolean>;
   
   // Class Schedules
   createClassSchedule(scheduleData: InsertClassSchedule): Promise<ClassSchedule>;
@@ -623,6 +624,39 @@ export class DatabaseStorage implements IStorage {
   // Get all classes in a recurring series
   async getClassesBySeriesId(seriesId: string): Promise<Class[]> {
     return await db.select().from(classes).where(eq(classes.recurringSeriesId, seriesId));
+  }
+
+  // Delete this and following classes in a recurring series
+  async deleteThisAndFollowingClasses(classId: number): Promise<boolean> {
+    try {
+      console.log(`Deleting this and following classes starting from: ${classId}`);
+      
+      // Get the class to find its series and start time
+      const targetClass = await this.getClass(classId);
+      if (!targetClass || !targetClass.recurringSeriesId || !targetClass.startTime) {
+        throw new Error("Class not found or not part of a recurring series");
+      }
+      
+      // Get all classes in the series that start at or after this class
+      const seriesToDelete = await db.select().from(classes)
+        .where(and(
+          eq(classes.recurringSeriesId, targetClass.recurringSeriesId),
+          sql`${classes.startTime} >= ${targetClass.startTime}`
+        ));
+      
+      console.log(`Found ${seriesToDelete.length} classes to delete (this and following)`);
+      
+      // Delete all matching classes
+      for (const classInstance of seriesToDelete) {
+        await this.deleteClass(classInstance.id);
+      }
+      
+      console.log(`Successfully deleted this and following classes`);
+      return true;
+    } catch (error) {
+      console.error("Error deleting this and following classes:", error);
+      return false;
+    }
   }
   
   // Booking methods

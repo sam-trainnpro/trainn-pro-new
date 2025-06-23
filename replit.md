@@ -119,6 +119,7 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 23, 2025. Added Google Calendar-style delete options for recurring classes with "This class" and "This and following classes" options
 - June 23, 2025. Implemented complete recurring class functionality with individual database rows per instance
 - June 23, 2025. Updated recurring class architecture - each instance is now its own database row linked by recurringSeriesId
 - June 23, 2025. Added recurringSeriesId field to allow independent management of recurring class instances
