@@ -747,7 +747,13 @@ export default function EditClassPage() {
               )}
               
               <div className="pt-4 flex justify-between">
-                <Button type="button" variant="outline" onClick={() => navigate("/my-classes")}>
+                <Button type="button" variant="outline" onClick={() => {
+                  if (window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    navigate("/my-classes");
+                  }
+                }}>
                   Cancel
                 </Button>
                 <Button 
