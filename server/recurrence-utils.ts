@@ -114,7 +114,9 @@ export function parseRecurrenceRule(classData: any): RecurrenceRule | null {
   
   // Parse end date
   if (rule.endType === 'date' && classData.recurrenceEndDate) {
-    rule.endDate = new Date(classData.recurrenceEndDate);
+    rule.endDate = typeof classData.recurrenceEndDate === 'string' 
+      ? new Date(classData.recurrenceEndDate) 
+      : classData.recurrenceEndDate;
   }
   
   // Set end count
