@@ -111,6 +111,20 @@ export default function CreateClassPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [duplicatedImage, setDuplicatedImage] = useState<string | null>(null);
   const { latitude, longitude, getUserLocation } = useUserLocation();
+
+  // Handle cancel navigation
+  const handleCancel = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      // Fallback navigation based on user role
+      if (user?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/my-classes");
+      }
+    }
+  };
   
   // Check if we're in edit mode
   const urlParams = new URLSearchParams(window.location.search);
@@ -1033,7 +1047,7 @@ export default function CreateClassPage() {
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => navigate("/admin")}>
+                  <Button type="button" variant="outline" onClick={handleCancel}>
                     Cancel
                   </Button>
                   <Button 
