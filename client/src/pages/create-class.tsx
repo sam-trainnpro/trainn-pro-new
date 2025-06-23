@@ -107,6 +107,9 @@ export default function CreateClassPage() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState<ClassCategory[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [duplicatedImage, setDuplicatedImage] = useState<string | null>(null);
   const { latitude, longitude, getUserLocation } = useUserLocation();
   
   // Check if we're in edit mode
@@ -305,6 +308,11 @@ export default function CreateClassPage() {
         isRecurring: false, // Reset recurring to false for duplicates
       });
 
+      // Set the duplicated image if it exists
+      if (duplicateData.image) {
+        setDuplicatedImage(duplicateData.image);
+      }
+
       // Show success message
       toast({
         title: "Class data loaded",
@@ -364,21 +372,20 @@ export default function CreateClassPage() {
     },
   });
 
-  // State for image upload
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  
-  // State for location selection
-  const [showLocationMap, setShowLocationMap] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
-
   // Handle image file selection
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedImage(file);
+      setDuplicatedImage(null); // Clear duplicated image when new one is selected
     }
   };
+  
+  // State for location selection
+  const [showLocationMap, setShowLocationMap] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
+
+
 
   // Auto-populate address fields when location name changes
   const handleLocationNameChange = async (locationName: string) => {
@@ -641,7 +648,7 @@ export default function CreateClassPage() {
                           <FormLabel>Category <span className="text-destructive">*</span></FormLabel>
                           <Select 
                             onValueChange={field.onChange} 
-                            defaultValue={field.value}
+                            value={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -678,6 +685,21 @@ export default function CreateClassPage() {
                         {selectedImage && (
                           <p className="text-sm text-muted-foreground mt-2">
                             Selected: {selectedImage.name}
+                          </p>
+                        )}
+                        {duplicatedImage && !selectedImage && (
+                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                            <p className="text-sm text-blue-700">
+                              ✓ Using image from original class
+                            </p>
+                            <p className="text-xs text-blue-600 mt-1">
+                              Upload a new image to replace it, or keep this one
+                            </p>
+                          </div>
+                        )}
+                        {uploadingImage && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Uploading image...
                           </p>
                         )}
                       </div>
