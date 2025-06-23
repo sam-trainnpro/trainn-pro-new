@@ -270,14 +270,23 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Generated ${instances.length} recurring instances`);
       
-      // Create the parent class (template)
+      // Create the parent class (template) - ensure all date fields are properly handled
       const parentClassData = {
         ...classData,
         isRecurring: true,
-        // Parent class doesn't have specific start/end times
+        // Parent class doesn't have specific start/end times - remove these fields entirely
         startTime: undefined,
-        endTime: undefined
+        endTime: undefined,
+        // Ensure recurrence date fields are properly converted or removed
+        recurrenceEndDate: classData.recurrenceEndDate ? new Date(classData.recurrenceEndDate) : undefined
       };
+      
+      // Remove undefined fields that might cause database issues
+      Object.keys(parentClassData).forEach(key => {
+        if (parentClassData[key] === undefined) {
+          delete parentClassData[key];
+        }
+      });
       
       const parentResult = await db.insert(classes)
         .values(parentClassData)
@@ -294,15 +303,16 @@ export class DatabaseStorage implements IStorage {
           isRecurring: false, // Individual instances are not recurring
           parentClassId: parentClass.id,
           startTime: instance.startTime,
-          endTime: instance.endTime,
-          // Clear recurrence fields for instances
-          recurrenceType: undefined,
-          recurrenceInterval: undefined,
-          recurrenceDaysOfWeek: undefined,
-          recurrenceEndType: undefined,
-          recurrenceEndDate: undefined,
-          recurrenceEndCount: undefined
+          endTime: instance.endTime
         };
+        
+        // Remove all recurrence fields for instances
+        delete instanceData.recurrenceType;
+        delete instanceData.recurrenceInterval;
+        delete instanceData.recurrenceDaysOfWeek;
+        delete instanceData.recurrenceEndType;
+        delete instanceData.recurrenceEndDate;
+        delete instanceData.recurrenceEndCount;
         
         return db.insert(classes)
           .values(instanceData)
