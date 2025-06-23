@@ -119,6 +119,7 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 23, 2025. Changed mobile bottom navigation "Bookings" button to "Calendar" for coaches, directing to My Calendar page
 - June 23, 2025. Added "Customers" link to mobile navigation dropdown for coaches underneath "My Classes"
 - June 23, 2025. Added "My Calendar" link to mobile navigation dropdown for coaches underneath "My Classes"
 - June 23, 2025. Expanded Class Image input height on Create Class page for better usability
