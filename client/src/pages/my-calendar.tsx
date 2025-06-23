@@ -80,26 +80,27 @@ export default function MyCalendarPage() {
 
   const handleDuplicate = async (classId: number) => {
     try {
-      const response = await fetch(`/api/classes/${classId}/duplicate`, {
-        method: 'POST',
+      const response = await fetch(`/api/classes/${classId}`, {
+        method: 'GET',
         credentials: 'include'
       });
       
       if (response.ok) {
-        const duplicatedClass = await response.json();
-        toast({
-          title: "Class duplicated successfully",
-          description: `${duplicatedClass.title} has been created.`
+        const classData = await response.json();
+        // Navigate to create class page with the class data for duplication
+        setLocation('/create-class', { 
+          state: { 
+            duplicateData: classData,
+            isDuplicating: true
+          } 
         });
-        refetch();
-        setLocation('/create-class', { state: { duplicateData: duplicatedClass } });
       } else {
-        throw new Error('Failed to duplicate class');
+        throw new Error('Failed to fetch class data');
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to duplicate class. Please try again.",
+        description: "Failed to load class data for duplication. Please try again.",
         variant: "destructive"
       });
     }
