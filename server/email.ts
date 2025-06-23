@@ -346,6 +346,7 @@ export async function sendClassCancellationNotification(
     await mailService.send({
       to: customer.email,
       from: 'support@trainn.pro',
+      bcc: 'sam@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -494,6 +495,7 @@ export async function sendBookingCancellationConfirmation(
     await mailService.send({
       to: customer.email,
       from: 'support@trainn.pro',
+      bcc: 'sam@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -592,6 +594,7 @@ export async function sendClassScheduleUpdateNotification(
     await mailService.send({
       to: customer.email,
       from: 'support@trainn.pro',
+      bcc: 'sam@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
