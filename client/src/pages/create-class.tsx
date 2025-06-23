@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "../../../hooks/use-toast";
+import { RecurrenceModal, RecurrenceRule } from "@/components/recurrence-modal";
 import {
   Popover,
   PopoverContent,
@@ -46,7 +47,8 @@ import {
 } from "@/components/ui/separator";
 import {
   CalendarIcon,
-  Loader2
+  Loader2,
+  RotateCcw
 } from "lucide-react";
 import * as z from "zod";
 
@@ -75,6 +77,13 @@ const createClassSchema = z.object({
   whatToBring: z.string().optional(),
   image: z.string().optional(),
   isRecurring: z.boolean().default(false),
+  // Recurrence fields
+  recurrenceType: z.enum(['daily', 'weekly', 'monthly']).optional(),
+  recurrenceInterval: z.number().min(1).optional(),
+  recurrenceDaysOfWeek: z.array(z.number().min(0).max(6)).optional(),
+  recurrenceEndType: z.enum(['date', 'count']).optional(),
+  recurrenceEndDate: z.date().optional(),
+  recurrenceEndCount: z.number().min(1).optional(),
 });
 
 // Time slots for the day
