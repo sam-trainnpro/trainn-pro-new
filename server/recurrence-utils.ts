@@ -1,0 +1,126 @@
+import { addDays, addWeeks, addMonths, format, isAfter } from 'date-fns';
+
+export interface RecurrenceRule {
+  type: 'daily' | 'weekly' | 'monthly';
+  interval: number;
+  daysOfWeek?: number[]; // 0 = Sunday, 1 = Monday, etc.
+  endType: 'date' | 'count';
+  endDate?: Date;
+  endCount?: number;
+}
+
+export interface ClassInstance {
+  startTime: Date;
+  endTime: Date;
+}
+
+export function generateRecurringInstances(
+  baseStartTime: Date,
+  baseEndTime: Date,
+  rule: RecurrenceRule
+): ClassInstance[] {
+  const instances: ClassInstance[] = [];
+  const duration = baseEndTime.getTime() - baseStartTime.getTime();
+  
+  let currentDate = new Date(baseStartTime);
+  let count = 0;
+  const maxInstances = rule.endType === 'count' ? (rule.endCount || 1) : 100; // Safety limit
+  
+  while (count < maxInstances) {
+    // Check if we've reached the end date
+    if (rule.endType === 'date' && rule.endDate && isAfter(currentDate, rule.endDate)) {
+      break;
+    }
+    
+    // For weekly recurrence, check if current day is in the allowed days
+    if (rule.type === 'weekly' && rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+      const currentDayOfWeek = currentDate.getDay();
+      if (rule.daysOfWeek.includes(currentDayOfWeek)) {
+        const endTime = new Date(currentDate.getTime() + duration);
+        instances.push({
+          startTime: new Date(currentDate),
+          endTime
+        });
+        count++;
+      }
+    } else {
+      // For daily and monthly, or weekly without specific days
+      const endTime = new Date(currentDate.getTime() + duration);
+      instances.push({
+        startTime: new Date(currentDate),
+        endTime
+      });
+      count++;
+    }
+    
+    // Move to next occurrence
+    switch (rule.type) {
+      case 'daily':
+        currentDate = addDays(currentDate, rule.interval);
+        break;
+      case 'weekly':
+        if (rule.daysOfWeek && rule.daysOfWeek.length > 0) {
+          // Find next day in the week
+          const currentDayOfWeek = currentDate.getDay();
+          const sortedDays = [...rule.daysOfWeek].sort();
+          const nextDay = sortedDays.find(day => day > currentDayOfWeek);
+          
+          if (nextDay !== undefined) {
+            // Next occurrence this week
+            currentDate = addDays(currentDate, nextDay - currentDayOfWeek);
+          } else {
+            // Next occurrence next week (first day of allowed days)
+            const daysUntilNextWeek = 7 - currentDayOfWeek + sortedDays[0];
+            currentDate = addDays(currentDate, daysUntilNextWeek);
+          }
+        } else {
+          currentDate = addWeeks(currentDate, rule.interval);
+        }
+        break;
+      case 'monthly':
+        currentDate = addMonths(currentDate, rule.interval);
+        break;
+    }
+    
+    // Safety check to prevent infinite loops
+    if (instances.length > 365) { // Max 1 year of instances
+      console.warn('Stopping recurrence generation after 365 instances');
+      break;
+    }
+  }
+  
+  return instances;
+}
+
+export function parseRecurrenceRule(classData: any): RecurrenceRule | null {
+  if (!classData.isRecurring || !classData.recurrenceType) {
+    return null;
+  }
+  
+  const rule: RecurrenceRule = {
+    type: classData.recurrenceType,
+    interval: classData.recurrenceInterval || 1,
+    endType: classData.recurrenceEndType || 'count'
+  };
+  
+  // Parse days of week if it's a JSON string
+  if (classData.recurrenceDaysOfWeek) {
+    try {
+      rule.daysOfWeek = JSON.parse(classData.recurrenceDaysOfWeek);
+    } catch (error) {
+      console.error('Error parsing recurrence days of week:', error);
+    }
+  }
+  
+  // Parse end date
+  if (rule.endType === 'date' && classData.recurrenceEndDate) {
+    rule.endDate = new Date(classData.recurrenceEndDate);
+  }
+  
+  // Set end count
+  if (rule.endType === 'count' && classData.recurrenceEndCount) {
+    rule.endCount = classData.recurrenceEndCount;
+  }
+  
+  return rule;
+}

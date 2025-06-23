@@ -119,6 +119,9 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 23, 2025. Implemented complete recurring class functionality with Google Calendar-style recurrence modal
+- June 23, 2025. Added recurrence fields to database schema and backend logic to generate multiple class instances
+- June 23, 2025. Created recurring class UI with custom recurrence patterns (daily/weekly/monthly) and end conditions
 - June 23, 2025. Changed mobile bottom navigation "Bookings" button to "Calendar" for coaches, directing to My Calendar page
 - June 23, 2025. Added "Customers" link to mobile navigation dropdown for coaches underneath "My Classes"
 - June 23, 2025. Added "My Calendar" link to mobile navigation dropdown for coaches underneath "My Classes"
