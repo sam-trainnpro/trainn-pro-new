@@ -137,7 +137,7 @@ Questions? Contact us at support@trainn.com
     // Go to SendGrid Dashboard > Settings > Sender Authentication to verify your sender email
     await mailService.send({
       to: customer.email,
-      from: 'sam@trainn.pro', // Verified sender email from SendGrid
+      from: 'support@trainn.pro', // Verified sender email from SendGrid
       subject: subject,
       text: textContent,
       html: htmlContent,
@@ -162,7 +162,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
     await mailService.send({
       to: params.to,
-      from: 'sam@trainn.pro', // Verified sender email from SendGrid
+      from: 'support@trainn.pro', // Verified sender email from SendGrid
       subject: params.subject,
       text: params.text || '',
       html: params.html || '',
@@ -345,7 +345,7 @@ export async function sendClassCancellationNotification(
 
     await mailService.send({
       to: customer.email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -493,7 +493,7 @@ export async function sendBookingCancellationConfirmation(
 
     await mailService.send({
       to: customer.email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -591,7 +591,7 @@ export async function sendClassScheduleUpdateNotification(
 
     await mailService.send({
       to: customer.email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -668,7 +668,7 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
 
     await mailService.send({
       to: user.email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -839,7 +839,7 @@ The Trainn Team
   try {
     await mailService.send({
       to: email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: 'Reset Your Password - Trainn',
       text: textContent,
       html: htmlContent,
