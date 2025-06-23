@@ -425,7 +425,12 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getClassesByCoach(coachId: number): Promise<Class[]> {
-    return await db.select().from(classes).where(eq(classes.coachId, coachId));
+    // Only return classes with valid start times (exclude parent recurring templates)
+    return await db.select().from(classes)
+      .where(and(
+        eq(classes.coachId, coachId),
+        sql`${classes.startTime} IS NOT NULL`
+      ));
   }
   
   async updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined> {
