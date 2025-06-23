@@ -67,7 +67,7 @@ export default function ClassDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md mx-4">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
             {classItem.title}

@@ -35,7 +35,7 @@ export function DeleteRecurringModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md mx-4">
         <DialogHeader>
           <DialogTitle>Delete recurring class</DialogTitle>
           <DialogDescription>
