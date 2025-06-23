@@ -119,6 +119,10 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 23, 2025. Enhanced duplicate functionality to pre-populate Create Class form instead of auto-creating classes
+- June 23, 2025. Updated duplicate to preserve original title, category, image, and address components without "(Copy)" suffix
+- June 23, 2025. Added Google Calendar-style class detail modal with edit, duplicate, and delete buttons for calendar events
+- June 23, 2025. Implemented click-to-view modal system for calendar classes with action buttons and booking counts
 - June 20, 2025. Implemented interactive "My Calendar" page for coaches with Google Calendar-style monthly view and class editing functionality
 - June 20, 2025. Added calendar navigation with month browsing, class display on dates, and click-to-edit functionality
 - June 20, 2025. Added "My Calendar" navigation link in coach dropdown menu for easy calendar access

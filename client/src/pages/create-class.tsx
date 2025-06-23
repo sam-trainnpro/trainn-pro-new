@@ -265,15 +265,32 @@ export default function CreateClassPage() {
       const startTime = duplicateData.startTime ? format(new Date(duplicateData.startTime), 'HH:mm') : "09:00";
       const endTime = duplicateData.endTime ? format(new Date(duplicateData.endTime), 'HH:mm') : "";
       
+      // Parse address components from the full address if individual fields are missing
+      let addressLine1 = duplicateData.addressLine1 || "";
+      let city = duplicateData.city || "";
+      let state = duplicateData.state || "";
+      let zipCode = duplicateData.zipCode || "";
+      
+      if (!addressLine1 && duplicateData.address) {
+        const addressParts = duplicateData.address.split(', ');
+        if (addressParts.length >= 1) addressLine1 = addressParts[0];
+        if (addressParts.length >= 2) city = addressParts[1];
+        if (addressParts.length >= 3) {
+          const stateZip = addressParts[2].split(' ');
+          state = stateZip[0] || "";
+          zipCode = stateZip[1] || "";
+        }
+      }
+      
       form.reset({
-        title: `${duplicateData.title} (Copy)` || "",
+        title: duplicateData.title || "",
         description: duplicateData.description || "",
         categoryId: duplicateData.categoryId?.toString() || "",
         location: duplicateData.location || "",
-        addressLine1: duplicateData.addressLine1 || "",
-        city: duplicateData.city || "",
-        state: duplicateData.state || "",
-        zipCode: duplicateData.zipCode || "",
+        addressLine1: addressLine1,
+        city: city,
+        state: state,
+        zipCode: zipCode,
         address: duplicateData.address || "",
         latitude: duplicateData.latitude || undefined,
         longitude: duplicateData.longitude || undefined,
