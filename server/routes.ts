@@ -437,6 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const classId = parseInt(req.params.id);
       const deleteOption = req.query.deleteOption as string; // 'this' or 'following'
+      const reason = req.query.reason as string; // Optional cancellation reason
       
       // Check if the class exists
       const classItem = await storage.getClass(classId);
@@ -450,6 +451,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!isCoachOwner && !isAdmin) {
         return res.status(403).json({ message: "Not authorized to delete this class" });
+      }
+
+      // Send cancellation notifications to customers before deletion
+      try {
+        if (classItem.recurringSeriesId && deleteOption === 'following') {
+          // Get all classes that will be deleted to send notifications
+          const classesToDelete = await storage.getClassesBySeriesId(classItem.recurringSeriesId);
+          const filteredClasses = classesToDelete.filter(c => 
+            c.startTime && new Date(c.startTime) >= new Date(classItem.startTime!)
+          );
+          
+          for (const cls of filteredClasses) {
+            await sendClassCancellationNotifications(cls.id, reason);
+          }
+        } else {
+          await sendClassCancellationNotifications(classId, reason);
+        }
+      } catch (emailError) {
+        console.error('Failed to send cancellation notifications:', emailError);
+        // Continue with deletion even if emails fail
       }
       
       // Handle recurring class deletion
