@@ -3,7 +3,18 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { sendBookingConfirmation } from "./email";
+import { 
+  sendBookingConfirmation, 
+  sendNewBookingNotificationToCoach, 
+  sendWelcomeEmail,
+  sendCoachApprovalNotification,
+  sendBookingCancellationConfirmation
+} from "./email";
+import { 
+  sendClassCancellationNotifications,
+  sendClassUpdateNotifications,
+  sendDailyClassReminders
+} from "./email-scheduler";
 import { z } from "zod";
 import Stripe from "stripe";
 import multer from "multer";
@@ -536,10 +547,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update the class using storage method
+      // Track changes for notification
+      const changes: string[] = [];
+      if (updateData.title && updateData.title !== existingClass.title) {
+        changes.push(`Class name changed to "${updateData.title}"`);
+      }
+      if (updateData.startTime && updateData.startTime !== existingClass.startTime) {
+        const newDate = new Date(updateData.startTime);
+        changes.push(`Date/time changed to ${newDate.toLocaleDateString()} at ${newDate.toLocaleTimeString()}`);
+      }
+      if (updateData.location && updateData.location !== existingClass.location) {
+        changes.push(`Location changed to "${updateData.location}"`);
+      }
+      if (updateData.price && updateData.price !== existingClass.price) {
+        changes.push(`Price changed to $${updateData.price}`);
+      }
+      if (updateData.capacity && updateData.capacity !== existingClass.capacity) {
+        changes.push(`Capacity changed to ${updateData.capacity} spots`);
+      }
+
       const updatedClass = await storage.updateClass(classId, updateData);
       
       if (!updatedClass) {
         return res.status(404).json({ message: "Class not found or update failed" });
+      }
+
+      // Send update notifications if there are significant changes
+      if (changes.length > 0) {
+        try {
+          await sendClassUpdateNotifications(classId, existingClass, updatedClass, changes);
+        } catch (emailError) {
+          console.error('Failed to send class update notifications:', emailError);
+          // Don't fail the update if emails fail
+        }
       }
       
       res.json(updatedClass);
@@ -760,6 +800,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedBooking = await storage.updateBooking(bookingId, { status: "cancelled" });
+
+      // Send booking cancellation confirmation email
+      try {
+        const classItem = await storage.getClass(booking.classId);
+        if (classItem) {
+          const coach = await storage.getUser(classItem.coachId);
+          if (coach) {
+            const refundAmount = (classItem.price * booking.quantity);
+            await sendBookingCancellationConfirmation(
+              req.user,
+              classItem,
+              coach,
+              refundAmount
+            );
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send booking cancellation email:', emailError);
+        // Don't fail the cancellation if email fails
+      }
+
       res.json(updatedBooking);
     } catch (error) {
       res.status(500).json({ message: "Failed to cancel booking" });
@@ -790,6 +851,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!coach) {
         return res.status(404).json({ message: "Coach not found" });
+      }
+
+      // Send coach approval notification email
+      try {
+        await sendCoachApprovalNotification(coach);
+      } catch (emailError) {
+        console.error('Failed to send coach approval email:', emailError);
+        // Don't fail approval if email fails
       }
       
       // Remove password
@@ -1094,6 +1163,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 } else {
                   console.warn(`Failed to send confirmation email to ${req.user.email}`);
                 }
+
+                // Send new booking notification to coach
+                await sendNewBookingNotificationToCoach(
+                  coach,
+                  req.user,
+                  classDetails,
+                  confirmedBooking
+                );
               }
             }
           }
