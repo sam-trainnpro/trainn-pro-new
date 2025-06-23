@@ -311,7 +311,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Define required fields based on class type
       const baseRequiredFields = ['title', 'description', 'categoryId', 'price', 'capacity', 'location', 'address'];
       const singleOccurrenceFields = [...baseRequiredFields, 'startTime', 'endTime'];
-      const recurringFields = [...baseRequiredFields, 'schedules'];
+      
+      // For recurring classes with new recurrence format, we need startTime/endTime and recurrence data
+      const recurringFields = isRecurring && classData.recurrenceType 
+        ? [...baseRequiredFields, 'startTime', 'endTime', 'recurrenceType']
+        : [...baseRequiredFields, 'schedules']; // Legacy schedule format
       
       // Choose required fields based on class type
       const requiredFields = isRecurring ? recurringFields : singleOccurrenceFields;
@@ -343,9 +347,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create the class with properly formatted data
       const newClass = await storage.createClass(classData);
       
-      // If this is a recurring class, create individual class instances for each scheduled day
-      if (isRecurring && classData.schedules && classData.schedules.length > 0 && 
-          classData.seriesStartDate && classData.seriesEndDate) {
+      // Handle recurring classes - check for both new recurrence format and legacy schedule format
+      if (isRecurring) {
+        // New recurrence format - the storage layer handles instance generation
+        if (classData.recurrenceType) {
+          console.log("Using new recurrence format - storage will handle instance generation");
+          // The createClass method in storage will handle recurring instance creation
+        }
+        // Legacy schedule format 
+        else if (classData.schedules && classData.schedules.length > 0 && 
+                 classData.seriesStartDate && classData.seriesEndDate) {
         
         console.log("Creating individual class instances for recurring schedule");
         
@@ -401,6 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`Created ${createdClassIds.length} class instances for recurring series`);
+        }
       }
       
       // Return just the parent class
