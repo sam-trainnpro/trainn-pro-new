@@ -250,15 +250,15 @@ export default function MyCalendarPage() {
   return (
     <>
       <Header />
-      <div className="container mx-auto px-2 sm:px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">My Calendar</h1>
-            <p className="text-gray-600">Manage your class schedule and view upcoming sessions</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Calendar</h1>
+            <p className="text-sm sm:text-base text-gray-600">Manage your class schedule and view upcoming sessions</p>
           </div>
           <Link href="/create-class">
-            <Button className="flex items-center gap-2">
+            <Button className="w-full sm:w-auto flex items-center justify-center gap-2">
               <Plus className="h-4 w-4" />
               Add Class
             </Button>
