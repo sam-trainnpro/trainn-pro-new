@@ -99,6 +99,15 @@ export function setupAuth(app: Express) {
         role,
       });
 
+      // Send welcome email
+      try {
+        const { sendWelcomeEmail } = await import('./email');
+        await sendWelcomeEmail(user);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail registration if email fails
+      }
+
       // Remove password from the response
       const { password: _, ...userWithoutPassword } = user;
 
