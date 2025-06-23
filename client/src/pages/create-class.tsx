@@ -114,6 +114,10 @@ export default function CreateClassPage() {
   const editClassId = urlParams.get('edit');
   const isEditMode = !!editClassId;
 
+  // Check for duplicate data from navigation state
+  const duplicateData = window.history.state?.duplicateData;
+  const isDuplicating = window.history.state?.isDuplicating;
+
   // Fetch class data for editing
   const { data: existingClass, isLoading: loadingClass } = useQuery({
     queryKey: ['/api/classes', editClassId],
@@ -253,6 +257,47 @@ export default function CreateClassPage() {
       });
     }
   }, [existingClass, loadingClass, isEditMode, form]);
+
+  // Populate form when duplicating a class
+  useEffect(() => {
+    if (isDuplicating && duplicateData) {
+      const startDate = duplicateData.startTime ? new Date(duplicateData.startTime) : new Date();
+      const startTime = duplicateData.startTime ? format(new Date(duplicateData.startTime), 'HH:mm') : "09:00";
+      const endTime = duplicateData.endTime ? format(new Date(duplicateData.endTime), 'HH:mm') : "";
+      
+      form.reset({
+        title: `${duplicateData.title} (Copy)` || "",
+        description: duplicateData.description || "",
+        categoryId: duplicateData.categoryId?.toString() || "",
+        location: duplicateData.location || "",
+        addressLine1: duplicateData.addressLine1 || "",
+        city: duplicateData.city || "",
+        state: duplicateData.state || "",
+        zipCode: duplicateData.zipCode || "",
+        address: duplicateData.address || "",
+        latitude: duplicateData.latitude || undefined,
+        longitude: duplicateData.longitude || undefined,
+        price: duplicateData.price || 0,
+        duration: duplicateData.duration || 60,
+        capacity: duplicateData.capacity || 10,
+        startDate: startDate,
+        startTime: startTime,
+        endTime: endTime,
+        whatToBring: duplicateData.whatToBring || "",
+        image: duplicateData.image || "",
+        isRecurring: false, // Reset recurring to false for duplicates
+      });
+
+      // Show success message
+      toast({
+        title: "Class data loaded",
+        description: "The class information has been pre-filled. Update the details and click Create Class to save."
+      });
+
+      // Clear the duplicate data from history to prevent re-population on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [isDuplicating, duplicateData, form, toast]);
 
   // Create class mutation
   const { mutateAsync: createClass } = useMutation({
@@ -511,8 +556,8 @@ export default function CreateClassPage() {
   return (
     <>
       <Helmet>
-        <title>{isEditMode ? "Edit Class" : "Create a Class"} | Trainn</title>
-        <meta name="description" content={isEditMode ? "Edit your fitness class details, schedule, and location." : "Create a new fitness class to share your expertise with students. Set up class details, schedule, and location."} />
+        <title>{isEditMode ? "Edit Class" : isDuplicating ? "Duplicate Class" : "Create a Class"} | Trainn</title>
+        <meta name="description" content={isEditMode ? "Edit your fitness class details, schedule, and location." : isDuplicating ? "Create a duplicate of your existing class with pre-filled information." : "Create a new fitness class to share your expertise with students. Set up class details, schedule, and location."} />
       </Helmet>
       <Header />
       <main className="container mx-auto py-8 px-4">
@@ -524,7 +569,9 @@ export default function CreateClassPage() {
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold mb-6">{isEditMode ? "Edit Class" : "Create a Class"}</h1>
+              <h1 className="text-2xl font-bold mb-6">
+                {isEditMode ? "Edit Class" : isDuplicating ? "Duplicate Class" : "Create a Class"}
+              </h1>
           
               <div className="bg-card rounded-lg shadow-sm p-6 border">
                 <Form {...form}>

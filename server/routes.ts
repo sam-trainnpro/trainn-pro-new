@@ -418,48 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Duplicate class
-  app.post("/api/classes/:id/duplicate", requireAuth, async (req, res) => {
-    try {
-      const classId = parseInt(req.params.id);
-      const originalClass = await storage.getClass(classId);
-      
-      if (!originalClass) {
-        return res.status(404).json({ error: "Class not found" });
-      }
-      
-      // Check if user owns the class
-      if (originalClass.coachId !== req.user.id) {
-        return res.status(403).json({ error: "Not authorized to duplicate this class" });
-      }
-      
-      // Create duplicate with modified title
-      const duplicateData = {
-        title: `${originalClass.title} (Copy)`,
-        description: originalClass.description,
-        coachId: req.user.id,
-        categoryId: originalClass.categoryId,
-        price: originalClass.price,
-        capacity: originalClass.capacity,
-        location: originalClass.location,
-        latitude: originalClass.latitude,
-        longitude: originalClass.longitude,
-        address: originalClass.address,
-        image: originalClass.image,
-        startTime: originalClass.startTime,
-        endTime: originalClass.endTime,
-        isRecurring: false, // Reset recurring status for duplicates
-        parentClassId: null,
-        whatToBring: originalClass.whatToBring
-      };
-      
-      const duplicatedClass = await storage.createClass(duplicateData);
-      res.json(duplicatedClass);
-    } catch (error) {
-      console.error("Error duplicating class:", error);
-      res.status(500).json({ error: "Failed to duplicate class" });
-    }
-  });
+
 
   // Delete class (coaches can delete their own, admins can delete any)
   app.delete("/api/classes/:id", requireAuth, async (req, res) => {
