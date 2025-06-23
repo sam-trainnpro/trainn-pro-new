@@ -8,6 +8,7 @@ import {
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   contactMessages, type ContactMessage, type InsertContactMessage
 } from "@shared/schema";
+import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
@@ -37,6 +38,7 @@ export interface IStorage {
   
   // Classes
   createClass(classData: InsertClass): Promise<Class>;
+  createRecurringClass(classData: InsertClass): Promise<Class>;
   getClass(id: number): Promise<Class | undefined>;
   getClassWithSchedules(id: number): Promise<ClassWithSchedules | undefined>;
   getClasses(): Promise<Class[]>;
@@ -48,6 +50,7 @@ export interface IStorage {
   updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]>;
   getClassesByParentId(parentClassId: number): Promise<Class[]>;
   deleteClass(id: number): Promise<boolean>;
+  deleteRecurringClassSeries(parentClassId: number): Promise<boolean>;
   
   // Class Schedules
   createClassSchedule(scheduleData: InsertClassSchedule): Promise<ClassSchedule>;
@@ -220,7 +223,7 @@ export class DatabaseStorage implements IStorage {
         categoryId: Number(classData.categoryId),
         price: Number(classData.price),
         capacity: Number(classData.capacity),
-        // Handle date fields - they might be optional now for recurring classes
+        // Handle date fields
         startTime: classData.startTime ? new Date(classData.startTime) : undefined,
         endTime: classData.endTime ? new Date(classData.endTime) : undefined,
         // Add created timestamp
@@ -229,16 +232,90 @@ export class DatabaseStorage implements IStorage {
       
       console.log("Formatted class data:", formattedData);
       
-      const result = await db.insert(classes)
-        .values(formattedData)
-        .returning();
-      
-      console.log("Class created successfully:", result[0]);
-      
-      return result[0];
+      // Check if this is a recurring class
+      if (classData.isRecurring && classData.startTime && classData.endTime) {
+        return await this.createRecurringClass(formattedData);
+      } else {
+        // Create single class instance
+        const result = await db.insert(classes)
+          .values(formattedData)
+          .returning();
+        
+        console.log("Single class created successfully:", result[0]);
+        return result[0];
+      }
     } catch (error) {
       console.error("Error in storage.createClass:", error);
-      throw error; // Re-throw to handle in routes
+      throw error;
+    }
+  }
+
+  // Create recurring class instances
+  async createRecurringClass(classData: InsertClass): Promise<Class> {
+    try {
+      const recurrenceRule = parseRecurrenceRule(classData);
+      
+      if (!recurrenceRule || !classData.startTime || !classData.endTime) {
+        throw new Error("Invalid recurrence rule or missing start/end times");
+      }
+      
+      console.log("Creating recurring class with rule:", recurrenceRule);
+      
+      // Generate recurring instances
+      const instances = generateRecurringInstances(
+        new Date(classData.startTime),
+        new Date(classData.endTime),
+        recurrenceRule
+      );
+      
+      console.log(`Generated ${instances.length} recurring instances`);
+      
+      // Create the parent class (template)
+      const parentClassData = {
+        ...classData,
+        isRecurring: true,
+        // Parent class doesn't have specific start/end times
+        startTime: undefined,
+        endTime: undefined
+      };
+      
+      const parentResult = await db.insert(classes)
+        .values(parentClassData)
+        .returning();
+      
+      const parentClass = parentResult[0];
+      console.log("Parent class created:", parentClass.id);
+      
+      // Create individual class instances
+      const instancePromises = instances.map(async (instance, index) => {
+        const instanceData = {
+          ...classData,
+          title: `${classData.title}`, // Keep original title
+          isRecurring: false, // Individual instances are not recurring
+          parentClassId: parentClass.id,
+          startTime: instance.startTime,
+          endTime: instance.endTime,
+          // Clear recurrence fields for instances
+          recurrenceType: undefined,
+          recurrenceInterval: undefined,
+          recurrenceDaysOfWeek: undefined,
+          recurrenceEndType: undefined,
+          recurrenceEndDate: undefined,
+          recurrenceEndCount: undefined
+        };
+        
+        return db.insert(classes)
+          .values(instanceData)
+          .returning();
+      });
+      
+      const instanceResults = await Promise.all(instancePromises);
+      console.log(`Created ${instanceResults.length} class instances`);
+      
+      return parentClass;
+    } catch (error) {
+      console.error("Error creating recurring class:", error);
+      throw error;
     }
   }
   
@@ -521,6 +598,30 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting class:", error);
+      return false;
+    }
+  }
+
+  // Delete recurring class series
+  async deleteRecurringClassSeries(parentClassId: number): Promise<boolean> {
+    try {
+      console.log(`Deleting recurring class series: ${parentClassId}`);
+      
+      // First, delete all child instances
+      const childClasses = await this.getClassesByParentId(parentClassId);
+      console.log(`Found ${childClasses.length} child classes to delete`);
+      
+      for (const childClass of childClasses) {
+        await this.deleteClass(childClass.id);
+      }
+      
+      // Then delete the parent class
+      await this.deleteClass(parentClassId);
+      
+      console.log(`Successfully deleted recurring class series: ${parentClassId}`);
+      return true;
+    } catch (error) {
+      console.error("Error deleting recurring class series:", error);
       return false;
     }
   }
