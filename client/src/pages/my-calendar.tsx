@@ -172,6 +172,10 @@ export default function MyCalendarPage() {
   // Get classes for a specific day
   const getClassesForDay = (day: Date) => {
     return classes.filter(classItem => {
+      // Skip classes without valid start times (like parent recurring classes)
+      if (!classItem.startTime) {
+        return false;
+      }
       const classDate = parseISO(classItem.startTime);
       return isSameDay(classDate, day);
     });
