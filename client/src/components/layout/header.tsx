@@ -200,6 +200,14 @@ export default function Header() {
                       {user.role === 'coach' ? "My Classes" : "My Bookings"}
                     </Button>
                   </Link>
+                  {user.role === 'coach' && (
+                    <Link href="/my-calendar" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <Calendar className="mr-2 h-5 w-5" />
+                        My Calendar
+                      </Button>
+                    </Link>
+                  )}
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
                       <UserCircle className="mr-2 h-5 w-5" />
