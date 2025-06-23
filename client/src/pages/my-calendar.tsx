@@ -284,21 +284,23 @@ export default function MyCalendarPage() {
                             : "text-xs p-1 rounded bg-blue-50 text-black border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors";
                           
                           return (
-                            <Link key={classItem.id} href={`/edit-class/${classItem.id}`}>
-                              <div className={eventClasses}>
-                                <div className="font-medium truncate">
-                                  {classItem.title}
-                                </div>
-                                <div className="flex items-center gap-1 mt-1">
-                                  <Clock className="h-3 w-3" />
-                                  {formatTime(classItem.startTime)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {bookingData?.active || 0}/{classItem.maxParticipants || classItem.capacity}
-                                </div>
+                            <div 
+                              key={classItem.id} 
+                              className={eventClasses}
+                              onClick={() => handleClassClick(classItem)}
+                            >
+                              <div className="font-medium truncate">
+                                {classItem.title}
                               </div>
-                            </Link>
+                              <div className="flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                {formatTime(classItem.startTime)}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {bookingData?.active || 0}/{classItem.maxParticipants || classItem.capacity}
+                              </div>
+                            </div>
                           );
                         })}
                         
@@ -367,40 +369,42 @@ export default function MyCalendarPage() {
                       : "flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer";
                     
                     return (
-                      <Link key={classItem.id} href={`/edit-class/${classItem.id}`}>
-                        <div className={containerClasses}>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h4 className={titleClasses}>{classItem.title}</h4>
-                                <div className={`flex items-center gap-4 mt-1 ${detailClasses}`}>
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4" />
-                                    {format(parseISO(classItem.startTime), 'MMM d, yyyy')}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4" />
-                                    {formatTime(classItem.startTime)}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="h-4 w-4" />
-                                    {classItem.location}
-                                  </div>
+                      <div 
+                        key={classItem.id} 
+                        className={containerClasses}
+                        onClick={() => handleClassClick(classItem)}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h4 className={titleClasses}>{classItem.title}</h4>
+                              <div className={`flex items-center gap-4 mt-1 ${detailClasses}`}>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  {format(parseISO(classItem.startTime), 'MMM d, yyyy')}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  {formatTime(classItem.startTime)}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-4 w-4" />
+                                  {classItem.location}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <Badge variant="secondary" className="text-xs">
-                                  <Users className="h-3 w-3 mr-1" />
-                                  {bookingCounts[classItem.id]?.active || 0}/{classItem.maxParticipants || classItem.capacity}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  ${classItem.price}
-                                </Badge>
-                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Badge variant="secondary" className="text-xs">
+                                <Users className="h-3 w-3 mr-1" />
+                                {bookingCounts[classItem.id]?.active || 0}/{classItem.maxParticipants || classItem.capacity}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                ${classItem.price}
+                              </Badge>
                             </div>
                           </div>
                         </div>
-                      </Link>
+                      </div>
                     );
                   })
                 }
@@ -409,6 +413,16 @@ export default function MyCalendarPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Class Detail Modal */}
+      <ClassDetailModal
+        classItem={selectedClass}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+        bookingCount={selectedClass ? bookingCounts[selectedClass.id] : undefined}
+      />
     </>
   );
 }
