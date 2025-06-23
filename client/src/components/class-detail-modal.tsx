@@ -19,6 +19,7 @@ interface Class {
   coachId: number;
   isRecurring: boolean;
   parentClassId?: number;
+  recurringSeriesId?: string;
   maxParticipants?: number;
   latitude?: number;
   longitude?: number;
