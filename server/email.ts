@@ -254,7 +254,7 @@ export async function sendClassReminder(
 
     await mailService.send({
       to: customer.email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -403,7 +403,7 @@ export async function sendCoachApprovalNotification(coach: User): Promise<boolea
 
     await mailService.send({
       to: coach.email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
@@ -759,7 +759,7 @@ export async function sendNewBookingNotificationToCoach(
 
     await mailService.send({
       to: coach.email,
-      from: 'noreply@trainn.pro',
+      from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
     });
