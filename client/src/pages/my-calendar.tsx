@@ -9,6 +9,7 @@ import { Plus, ChevronLeft, ChevronRight, Calendar, Clock, MapPin, Users } from 
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { Link, useLocation } from 'wouter';
 import ClassDetailModal from '@/components/class-detail-modal';
+import { DeleteRecurringModal, DeleteOption } from '@/components/delete-recurring-modal';
 import { useToast } from '../../../hooks/use-toast';
 
 interface Class {
@@ -25,6 +26,7 @@ interface Class {
   coachId: number;
   isRecurring: boolean;
   parentClassId?: number;
+  recurringSeriesId?: string;
   maxParticipants?: number;
   latitude?: number;
   longitude?: number;
