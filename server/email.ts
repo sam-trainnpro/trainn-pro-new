@@ -842,7 +842,7 @@ The Trainn Team
   try {
     await mailService.send({
       to: email,
-      from: 'support@trainn.pro',
+      from: 'noreply@trainn.pro',
       subject: 'Reset Your Password - Trainn',
       text: textContent,
       html: htmlContent,
