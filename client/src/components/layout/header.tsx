@@ -201,12 +201,20 @@ export default function Header() {
                     </Button>
                   </Link>
                   {user.role === 'coach' && (
-                    <Link href="/my-calendar" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">
-                        <Calendar className="mr-2 h-5 w-5" />
-                        My Calendar
-                      </Button>
-                    </Link>
+                    <>
+                      <Link href="/my-calendar" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Calendar className="mr-2 h-5 w-5" />
+                          My Calendar
+                        </Button>
+                      </Link>
+                      <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <User className="mr-2 h-5 w-5" />
+                          Customers
+                        </Button>
+                      </Link>
+                    </>
                   )}
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
