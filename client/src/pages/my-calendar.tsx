@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, ChevronLeft, ChevronRight, Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isToday } from 'date-fns';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import ClassDetailModal from '@/components/class-detail-modal';
+import { useToast } from '../../../hooks/use-toast';
 
 interface Class {
   id: number;
@@ -45,6 +47,10 @@ interface ClassWithBookings extends Class {
 export default function MyCalendarPage() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   // Redirect if not a coach
   if (!user || user.role !== 'coach') {
@@ -62,10 +68,67 @@ export default function MyCalendarPage() {
   }
 
   // Fetch coach's classes
-  const { data: classes = [], isLoading } = useQuery<Class[]>({
+  const { data: classes = [], isLoading, refetch } = useQuery<Class[]>({
     queryKey: [`/api/coaches/${user.id}/classes`],
     enabled: !!user?.id,
   });
+
+  const handleClassClick = (classItem: Class) => {
+    setSelectedClass(classItem);
+    setIsModalOpen(true);
+  };
+
+  const handleDuplicate = async (classId: number) => {
+    try {
+      const response = await fetch(`/api/classes/${classId}/duplicate`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const duplicatedClass = await response.json();
+        toast({
+          title: "Class duplicated successfully",
+          description: `${duplicatedClass.title} has been created.`
+        });
+        refetch();
+        setLocation('/create-class', { state: { duplicateData: duplicatedClass } });
+      } else {
+        throw new Error('Failed to duplicate class');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to duplicate class. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDelete = async (classId: number) => {
+    try {
+      const response = await fetch(`/api/classes/${classId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Class deleted successfully",
+          description: "The class has been removed from your schedule."
+        });
+        refetch();
+      } else {
+        throw new Error('Failed to delete class');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete class. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Fetch booking counts for each class
   const { data: bookingCounts = {} } = useQuery<Record<number, BookingCounts>>({
