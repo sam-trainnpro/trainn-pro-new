@@ -61,10 +61,8 @@ export default function ClassDetailModal({
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this class? This action cannot be undone.')) {
-      onDelete(classItem.id);
-      onClose();
-    }
+    onDelete(classItem);
+    onClose();
   };
 
   return (

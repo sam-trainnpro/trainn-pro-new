@@ -126,6 +126,7 @@ export default function MyCalendarPage() {
       if (confirm(`Are you sure you want to delete "${classItem.title}"?`)) {
         performDelete(classItem.id, 'this');
       }
+      setIsModalOpen(false); // Close the detail modal
     }
   };
 
