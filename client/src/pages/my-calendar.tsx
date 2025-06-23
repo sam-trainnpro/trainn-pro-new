@@ -51,6 +51,8 @@ export default function MyCalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<Class | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
