@@ -1,8 +1,24 @@
 import { Link, useLocation } from "wouter";
 import { Home, Search, Calendar, User } from "lucide-react";
+import { useAuth } from "../../../../hooks/use-auth-simple";
 
 export default function MobileNavigation() {
   const [location] = useLocation();
+  
+  // Temporary fallback to prevent crashes
+  let user = null;
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+  } catch (error) {
+    console.log("AuthProvider not available, using fallback");
+  }
+
+  // Determine if current location matches the booking/calendar route
+  const isBookingCalendarActive = user?.role === 'coach' 
+    ? (location === '/my-calendar') 
+    : (location === '/bookings');
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-40 border-t border-gray-200">
@@ -19,10 +35,10 @@ export default function MobileNavigation() {
             <span className="text-xs mt-1">Explore</span>
           </div>
         </Link>
-        <Link href="/bookings">
-          <div className={`flex flex-col items-center py-2 px-4 ${location === '/bookings' ? 'text-primary' : 'text-gray-500'}`}>
+        <Link href={user?.role === 'coach' ? '/my-calendar' : '/bookings'}>
+          <div className={`flex flex-col items-center py-2 px-4 ${isBookingCalendarActive ? 'text-primary' : 'text-gray-500'}`}>
             <Calendar className="w-5 h-5" />
-            <span className="text-xs mt-1">Bookings</span>
+            <span className="text-xs mt-1">{user?.role === 'coach' ? 'Calendar' : 'Bookings'}</span>
           </div>
         </Link>
         <Link href="/profile">
