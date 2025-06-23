@@ -49,8 +49,9 @@ export interface IStorage {
   updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined>;
   updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]>;
   getClassesByParentId(parentClassId: number): Promise<Class[]>;
+  getClassesBySeriesId(seriesId: string): Promise<Class[]>;
   deleteClass(id: number): Promise<boolean>;
-  deleteRecurringClassSeries(parentClassId: number): Promise<boolean>;
+  deleteRecurringClassSeries(seriesId: string): Promise<boolean>;
   
   // Class Schedules
   createClassSchedule(scheduleData: InsertClassSchedule): Promise<ClassSchedule>;
@@ -250,7 +251,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Create recurring class instances
+  // Create recurring class instances - each instance is its own database row
   async createRecurringClass(classData: InsertClass): Promise<Class> {
     try {
       const recurrenceRule = parseRecurrenceRule(classData);
@@ -270,49 +271,28 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Generated ${instances.length} recurring instances`);
       
-      // Create the parent class (template) - ensure all date fields are properly handled
-      const parentClassData = {
-        ...classData,
-        isRecurring: true,
-        // Parent class doesn't have specific start/end times - remove these fields entirely
-        startTime: undefined,
-        endTime: undefined,
-        // Ensure recurrence date fields are properly converted or removed
-        recurrenceEndDate: classData.recurrenceEndDate ? new Date(classData.recurrenceEndDate) : undefined
-      };
+      // Generate a unique series ID for all instances in this recurring series
+      const seriesId = `series_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Remove undefined fields that might cause database issues
-      Object.keys(parentClassData).forEach(key => {
-        if (parentClassData[key] === undefined) {
-          delete parentClassData[key];
-        }
-      });
-      
-      const parentResult = await db.insert(classes)
-        .values(parentClassData)
-        .returning();
-      
-      const parentClass = parentResult[0];
-      console.log("Parent class created:", parentClass.id);
-      
-      // Create individual class instances
+      // Create all class instances as individual database rows
       const instancePromises = instances.map(async (instance, index) => {
         const instanceData = {
           ...classData,
           title: `${classData.title}`, // Keep original title
-          isRecurring: false, // Individual instances are not recurring
-          parentClassId: parentClass.id,
+          isRecurring: false, // Individual instances are not recurring themselves
+          recurringSeriesId: seriesId, // Link all instances with same series ID
           startTime: instance.startTime,
           endTime: instance.endTime
         };
         
-        // Remove all recurrence fields for instances
+        // Remove all recurrence fields for instances since they're individual classes now
         delete instanceData.recurrenceType;
         delete instanceData.recurrenceInterval;
         delete instanceData.recurrenceDaysOfWeek;
         delete instanceData.recurrenceEndType;
         delete instanceData.recurrenceEndDate;
         delete instanceData.recurrenceEndCount;
+        delete instanceData.parentClassId; // No parent class needed
         
         return db.insert(classes)
           .values(instanceData)
@@ -320,9 +300,10 @@ export class DatabaseStorage implements IStorage {
       });
       
       const instanceResults = await Promise.all(instancePromises);
-      console.log(`Created ${instanceResults.length} class instances`);
+      console.log(`Created ${instanceResults.length} individual class instances with series ID: ${seriesId}`);
       
-      return parentClass;
+      // Return the first instance as the "representative" class
+      return instanceResults[0][0];
     } catch (error) {
       console.error("Error creating recurring class:", error);
       throw error;
@@ -612,28 +593,31 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Delete recurring class series
-  async deleteRecurringClassSeries(parentClassId: number): Promise<boolean> {
+  // Delete recurring class series by series ID
+  async deleteRecurringClassSeries(seriesId: string): Promise<boolean> {
     try {
-      console.log(`Deleting recurring class series: ${parentClassId}`);
+      console.log(`Deleting recurring class series: ${seriesId}`);
       
-      // First, delete all child instances
-      const childClasses = await this.getClassesByParentId(parentClassId);
-      console.log(`Found ${childClasses.length} child classes to delete`);
+      // Find all classes in this series
+      const seriesClasses = await db.select().from(classes).where(eq(classes.recurringSeriesId, seriesId));
+      console.log(`Found ${seriesClasses.length} classes in series to delete`);
       
-      for (const childClass of childClasses) {
-        await this.deleteClass(childClass.id);
+      // Delete all classes in the series
+      for (const classInstance of seriesClasses) {
+        await this.deleteClass(classInstance.id);
       }
       
-      // Then delete the parent class
-      await this.deleteClass(parentClassId);
-      
-      console.log(`Successfully deleted recurring class series: ${parentClassId}`);
+      console.log(`Successfully deleted recurring class series: ${seriesId}`);
       return true;
     } catch (error) {
       console.error("Error deleting recurring class series:", error);
       return false;
     }
+  }
+
+  // Get all classes in a recurring series
+  async getClassesBySeriesId(seriesId: string): Promise<Class[]> {
+    return await db.select().from(classes).where(eq(classes.recurringSeriesId, seriesId));
   }
   
   // Booking methods

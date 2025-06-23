@@ -77,7 +77,8 @@ export const classes = pgTable("classes", {
   endTime: timestamp("end_time"), // Made optional
   // Recurring class functionality
   isRecurring: boolean("is_recurring").default(false),
-  parentClassId: integer("parent_class_id"), // Links to parent class for recurring instances
+  parentClassId: integer("parent_class_id"), // Links to parent class for recurring instances (legacy)
+  recurringSeriesId: text("recurring_series_id"), // Links recurring instances together
   // Recurrence pattern fields
   recurrenceType: text("recurrence_type"), // 'daily', 'weekly', 'monthly'
   recurrenceInterval: integer("recurrence_interval"), // every X days/weeks/months
@@ -106,6 +107,7 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   endTime: true,
   isRecurring: true,
   parentClassId: true,
+  recurringSeriesId: true,
   recurrenceType: true,
   recurrenceInterval: true,
   recurrenceDaysOfWeek: true,
