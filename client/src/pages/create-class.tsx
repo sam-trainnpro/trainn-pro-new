@@ -263,7 +263,7 @@ export default function CreateClassPage() {
 
   // Populate form when duplicating a class
   useEffect(() => {
-    if (isDuplicating && duplicateData) {
+    if (isDuplicating && duplicateData && categories.length > 0) {
       const startDate = duplicateData.startTime ? new Date(duplicateData.startTime) : new Date();
       const startTime = duplicateData.startTime ? format(new Date(duplicateData.startTime), 'HH:mm') : "09:00";
       const endTime = duplicateData.endTime ? format(new Date(duplicateData.endTime), 'HH:mm') : "";
@@ -285,6 +285,7 @@ export default function CreateClassPage() {
         }
       }
       
+      // Reset form with all data
       form.reset({
         title: duplicateData.title || "",
         description: duplicateData.description || "",
@@ -308,6 +309,13 @@ export default function CreateClassPage() {
         isRecurring: false, // Reset recurring to false for duplicates
       });
 
+      // Force update the categoryId field after form reset
+      setTimeout(() => {
+        if (duplicateData.categoryId) {
+          form.setValue('categoryId', duplicateData.categoryId.toString());
+        }
+      }, 100);
+
       // Set the duplicated image if it exists
       if (duplicateData.image) {
         setDuplicatedImage(duplicateData.image);
@@ -322,7 +330,7 @@ export default function CreateClassPage() {
       // Clear the duplicate data from history to prevent re-population on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [isDuplicating, duplicateData, form, toast]);
+  }, [isDuplicating, duplicateData, categories, form, toast]);
 
   // Create class mutation
   const { mutateAsync: createClass } = useMutation({
