@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, ChevronLeft, ChevronRight, Calendar, Clock, MapPin, Users } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { Link, useLocation } from 'wouter';
 import ClassDetailModal from '@/components/class-detail-modal';
 import { useToast } from '../../../hooks/use-toast';
@@ -153,12 +153,20 @@ export default function MyCalendarPage() {
     enabled: classes.length > 0,
   });
 
-  // Calendar calculations
+  // Calendar calculations - include leading/trailing days for proper grid alignment
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
+  
+  // Get the start of the calendar grid (start of week containing first day of month)
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday = 0
+  
+  // Get the end of the calendar grid (end of week containing last day of month)
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  
+  // Generate all days in the calendar grid (including leading/trailing days)
   const calendarDays = eachDayOfInterval({
-    start: monthStart,
-    end: monthEnd
+    start: calendarStart,
+    end: calendarEnd
   });
 
   // Get classes for a specific day
