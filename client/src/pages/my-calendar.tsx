@@ -201,7 +201,7 @@ export default function MyCalendarPage() {
   return (
     <>
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-8">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
@@ -246,10 +246,10 @@ export default function MyCalendarPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden">
+              <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden w-full min-w-full">
                 {/* Weekday Headers */}
                 {weekdays.map(day => (
-                  <div key={day} className="bg-gray-50 p-3 text-center font-medium text-sm text-gray-700 border-b border-gray-200">
+                  <div key={day} className="bg-gray-50 p-2 sm:p-3 text-center font-medium text-xs sm:text-sm text-gray-700 border-b border-gray-200">
                     {day}
                   </div>
                 ))}
@@ -263,7 +263,7 @@ export default function MyCalendarPage() {
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`min-h-[120px] p-2 border-b border-r border-gray-200 last:border-r-0 ${
+                      className={`min-h-[100px] sm:min-h-[120px] p-1 sm:p-2 border-b border-r border-gray-200 last:border-r-0 ${
                         !isCurrentMonth ? 'bg-gray-50' : 'bg-white'
                       } ${isDayToday ? 'bg-blue-50' : ''}`}
                     >
@@ -273,7 +273,7 @@ export default function MyCalendarPage() {
                             {format(day, 'd')}
                           </div>
                         ) : (
-                          <div className={`text-sm font-medium ${
+                          <div className={`text-xs sm:text-sm font-medium ${
                             !isCurrentMonth ? 'text-gray-400' : 'text-gray-900'
                           }`}>
                             {format(day, 'd')}
@@ -289,8 +289,8 @@ export default function MyCalendarPage() {
                           const isPastDay = day < new Date() && !isSameDay(day, new Date());
                           
                           const eventClasses = isPastEvent || isPastDay
-                            ? "text-xs p-1 rounded bg-gray-100 text-gray-500 border border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors opacity-60"
-                            : "text-xs p-1 rounded bg-blue-50 text-black border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors";
+                            ? "text-[10px] sm:text-xs p-0.5 sm:p-1 rounded bg-gray-100 text-gray-500 border border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors opacity-60"
+                            : "text-[10px] sm:text-xs p-0.5 sm:p-1 rounded bg-blue-50 text-black border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors";
                           
                           return (
                             <div 
@@ -302,11 +302,12 @@ export default function MyCalendarPage() {
                                 {classItem.title}
                               </div>
                               <div className="flex items-center gap-1 mt-1">
-                                <Clock className="h-3 w-3" />
-                                {formatTime(classItem.startTime)}
+                                <Clock className="h-2 w-2 sm:h-3 sm:w-3" />
+                                <span className="hidden sm:inline">{formatTime(classItem.startTime)}</span>
+                                <span className="sm:hidden">{format(parseISO(classItem.startTime), 'h:mm')}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />
+                                <Users className="h-2 w-2 sm:h-3 sm:w-3" />
                                 {bookingData?.active || 0}/{classItem.maxParticipants || classItem.capacity}
                               </div>
                             </div>
