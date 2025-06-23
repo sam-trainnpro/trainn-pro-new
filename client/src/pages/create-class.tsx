@@ -119,6 +119,8 @@ export default function CreateClassPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [duplicatedImage, setDuplicatedImage] = useState<string | null>(null);
+  const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(null);
   const { latitude, longitude, getUserLocation } = useUserLocation();
 
   // Handle cancel navigation
@@ -236,6 +238,12 @@ export default function CreateClassPage() {
       whatToBring: "",
       image: "",
       isRecurring: false,
+      recurrenceType: undefined,
+      recurrenceInterval: undefined,
+      recurrenceDaysOfWeek: undefined,
+      recurrenceEndType: undefined,
+      recurrenceEndDate: undefined,
+      recurrenceEndCount: undefined,
     },
   });
 
@@ -558,6 +566,17 @@ export default function CreateClassPage() {
       console.log("Class - Start time:", formattedData.startTime);
       console.log("Class - End time:", formattedData.endTime);
       console.log("Class - Address:", formattedData.address);
+      
+      // Add recurrence data if this is a recurring class
+      if (data.isRecurring && recurrenceRule) {
+        formattedData.isRecurring = true;
+        formattedData.recurrenceType = recurrenceRule.type;
+        formattedData.recurrenceInterval = recurrenceRule.interval;
+        formattedData.recurrenceDaysOfWeek = recurrenceRule.daysOfWeek ? JSON.stringify(recurrenceRule.daysOfWeek) : undefined;
+        formattedData.recurrenceEndType = recurrenceRule.endType;
+        formattedData.recurrenceEndDate = recurrenceRule.endDate?.toISOString();
+        formattedData.recurrenceEndCount = recurrenceRule.endCount;
+      }
       
       // Submit the processed data
       console.log("Submitting class with data:", formattedData);
@@ -1030,6 +1049,73 @@ export default function CreateClassPage() {
                     />
                   </div>
                   
+                  {/* Recurring Class Section */}
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="isRecurring"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Recurring Class
+                            </FormLabel>
+                            <FormDescription>
+                              Create multiple class instances based on a schedule
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={(e) => {
+                                field.onChange(e.target.checked);
+                                if (!e.target.checked) {
+                                  setRecurrenceRule(null);
+                                }
+                              }}
+                              className="w-4 h-4"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {form.watch('isRecurring') && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">Recurrence Pattern</p>
+                            <p className="text-sm text-muted-foreground">
+                              {recurrenceRule ? (
+                                `Repeats every ${recurrenceRule.interval} ${recurrenceRule.type}${recurrenceRule.interval > 1 ? 's' : ''}${
+                                  recurrenceRule.type === 'weekly' && recurrenceRule.daysOfWeek?.length 
+                                    ? ` on ${recurrenceRule.daysOfWeek.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ')}`
+                                    : ''
+                                }, ${recurrenceRule.endType === 'date' 
+                                  ? `until ${recurrenceRule.endDate ? format(recurrenceRule.endDate, 'MMM dd, yyyy') : 'date not set'}`
+                                  : `for ${recurrenceRule.endCount || 0} occurrences`
+                                }`
+                              ) : (
+                                'No recurrence pattern set'
+                              )}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowRecurrenceModal(true)}
+                            className="flex items-center"
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            {recurrenceRule ? 'Edit Pattern' : 'Set Pattern'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
                   {/* What to Bring Section - moved to its own row */}
                   <div>
                     <FormField
@@ -1086,6 +1172,23 @@ export default function CreateClassPage() {
         </div>
       </main>
       <Footer />
+      
+      {/* Recurrence Modal */}
+      <RecurrenceModal
+        isOpen={showRecurrenceModal}
+        onClose={() => setShowRecurrenceModal(false)}
+        onSave={(rule) => {
+          setRecurrenceRule(rule);
+          // Update form with recurrence data
+          form.setValue('recurrenceType', rule.type);
+          form.setValue('recurrenceInterval', rule.interval);
+          form.setValue('recurrenceDaysOfWeek', rule.daysOfWeek);
+          form.setValue('recurrenceEndType', rule.endType);
+          form.setValue('recurrenceEndDate', rule.endDate);
+          form.setValue('recurrenceEndCount', rule.endCount);
+        }}
+        initialRule={recurrenceRule || undefined}
+      />
     </>
   );
 }
