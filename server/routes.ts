@@ -1411,8 +1411,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this user" });
       }
       
+      console.log("Update request body:", req.body); // Debug log
+      
       // Get allowed fields based on the request body
-      const allowedFields = ['firstName', 'lastName', 'phone', 'bio', 'profileImage', 'areasOfExpertise'];
+      const allowedFields = ['firstName', 'lastName', 'phone', 'bio', 'profileImage', 'areasOfExpertise', 'certifications'];
       const updateData: Record<string, any> = {};
       
       // Use explicit property assignment to avoid prototype pollution
@@ -1422,6 +1424,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if ('bio' in req.body) updateData.bio = req.body.bio;
       if ('profileImage' in req.body) updateData.profileImage = req.body.profileImage;
       if ('areasOfExpertise' in req.body) updateData.areasOfExpertise = req.body.areasOfExpertise;
+      if ('certifications' in req.body) updateData.certifications = req.body.certifications;
+      
+      console.log("Update data being sent to storage:", updateData); // Debug log
       
       // Update the user
       const updatedUser = await storage.updateUser(userId, updateData);
@@ -1429,6 +1434,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
+      
+      console.log("Updated user from storage:", updatedUser); // Debug log
       
       // Remove sensitive information
       const { password, ...userWithoutPassword } = updatedUser;
