@@ -77,6 +77,55 @@ export default function MyClassesPage() {
     return group.find(c => c.isRecurring) || group[0];
   });
   
+  // Fetch booking counts for all classes
+  const { data: bookingCounts = {} } = useQuery({
+    queryKey: ['/api/classes/booking-counts', user?.id],
+    queryFn: async () => {
+      if (!classes) return {};
+      
+      const counts: Record<number, { active: number; total: number }> = {};
+      
+      // Fetch booking counts for all classes in parallel
+      const promises = classes.map(async (classItem) => {
+        try {
+          const response = await fetch(`/api/classes/${classItem.id}/bookings/count`);
+          if (response.ok) {
+            const data = await response.json();
+            counts[classItem.id] = data;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch booking count for class ${classItem.id}:`, error);
+        }
+      });
+      
+      await Promise.all(promises);
+      return counts;
+    },
+    enabled: !!classes && classes.length > 0,
+  });
+
+  // Handle delete with booking warning
+  const handleDeleteClass = (classItem: Class) => {
+    const bookingCount = bookingCounts[classItem.id];
+    const hasActiveBookings = bookingCount && bookingCount.active > 0;
+    
+    if (hasActiveBookings) {
+      setPendingDeleteClass(classItem);
+      setShowBookingWarningModal(true);
+    } else {
+      // Proceed with direct deletion if no active bookings
+      deleteMutation.mutate(classItem.id);
+    }
+  };
+
+  const handleBookingWarningConfirm = () => {
+    if (pendingDeleteClass) {
+      deleteMutation.mutate(pendingDeleteClass.id);
+      setPendingDeleteClass(null);
+    }
+    setShowBookingWarningModal(false);
+  };
+
   // Mutation to delete a class
   const deleteMutation = useMutation({
     mutationFn: async (classId: number) => {
@@ -111,6 +160,7 @@ export default function MyClassesPage() {
       // Invalidate queries to refresh the class list
       queryClient.invalidateQueries({ queryKey: ['/api/coaches', user?.id, 'classes'] });
       queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/classes/booking-counts', user?.id] });
       
       // Force immediate refetch to update the UI
       refetch();
