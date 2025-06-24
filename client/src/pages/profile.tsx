@@ -172,10 +172,16 @@ export default function ProfilePage() {
       }
       
       const profileData = {
-        ...data,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        bio: data.bio,
+        certifications: data.certifications,
         areasOfExpertise: selectedExpertise,
         profileImage: profileImageUrl,
       };
+      
+      console.log("Sending profile data:", profileData);
       
       const response = await apiRequest("PUT", `/api/users/${user.id}`, profileData);
       if (!response.ok) {
