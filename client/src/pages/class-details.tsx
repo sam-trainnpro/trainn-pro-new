@@ -64,15 +64,17 @@ export default function ClassDetailsPage() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Booking confirmed!",
         description: "Your free class booking has been confirmed.",
       });
       // Invalidate and refetch booking data
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
       queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
       queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
+      // Force refetch bookings before navigation
+      await queryClient.refetchQueries({ queryKey: ["/api/bookings"] });
       navigate("/bookings");
     },
     onError: (error: Error) => {
