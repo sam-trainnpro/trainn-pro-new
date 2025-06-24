@@ -119,6 +119,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- June 24, 2025. Completed Certifications section implementation with automatic page refresh to ensure data persistence - coaches can now successfully save and display their professional fitness certifications on their profiles
 - June 24, 2025. Added Certifications section to coach profiles - coaches can now list their professional fitness certifications (NASM, ISSA, ACE Fitness, NSCA, NPTI) in a free text area within their profile settings, displayed on coach detail pages
 - June 24, 2025. Implemented Areas of Expertise system for coaches - added database field, profile management interface, and display on coach cards and details pages to highlight coaching specialties
 - June 24, 2025. Added six new class categories to expand activity offerings: Surfing, Dance, Music, Painting, Boxing/Martial Arts, and Baseball with professional category images from Unsplash
