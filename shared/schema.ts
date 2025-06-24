@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   stripeConnectId: text("stripe_connect_id"), // For coaches to receive payments
   stripeConnectOnboarded: boolean("stripe_connect_onboarded").default(false), // Track if they've completed onboarding
   bankAccountVerified: boolean("bank_account_verified").default(false), // Track if bank account is verified
+  areasOfExpertise: integer("areas_of_expertise").array().default([])
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

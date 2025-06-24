@@ -6,7 +6,8 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { useToast } from "../../../hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { ClassCategory } from "@shared/schema";
+import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,6 +33,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -44,6 +53,7 @@ const profileFormSchema = z.object({
   phone: z.string().optional(),
   bio: z.string().optional(),
   profileImage: z.string().optional(),
+  areasOfExpertise: z.array(z.number()).optional(),
 });
 
 const passwordFormSchema = z.object({
@@ -67,6 +77,14 @@ export default function ProfilePage() {
   // State for profile image upload
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // State for areas of expertise
+  const [selectedExpertise, setSelectedExpertise] = useState<number[]>(user?.areasOfExpertise || []);
+
+  // Fetch categories for areas of expertise
+  const { data: categories = [] } = useQuery<ClassCategory[]>({
+    queryKey: ['/api/categories'],
+  });
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -77,6 +95,7 @@ export default function ProfilePage() {
       phone: user?.phone || "",
       bio: user?.bio || "",
       profileImage: user?.profileImage || "",
+      areasOfExpertise: user?.areasOfExpertise || [],
     },
   });
 
