@@ -38,7 +38,7 @@ const editClassSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters long"),
   description: z.string().min(10, "Description must be at least 10 characters long"),
   categoryId: z.coerce.number(),
-  price: z.coerce.number().positive("Price must be positive"),
+  price: z.coerce.number().min(0, "Price must be 0 or greater"),
   capacity: z.coerce.number().int().positive("Capacity must be a positive integer"),
   location: z.string().min(3, "Location is required"),
   address: z.string().min(5, "Address is required"),
