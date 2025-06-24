@@ -53,6 +53,36 @@ export default function ClassDetailsPage() {
   const { toast } = useToast();
   const [bookingStatus, setBookingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [quantity, setQuantity] = useState(1);
+
+  // Free booking mutation for $0 classes
+  const freeBookingMutation = useMutation({
+    mutationFn: async (data: { classId: number; quantity: number }) => {
+      const response = await apiRequest("POST", "/api/bookings/free", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to book free class");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Booking confirmed!",
+        description: "Your free class booking has been confirmed.",
+      });
+      // Invalidate and refetch booking data
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
+      navigate("/bookings");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Booking failed",
+        description: error.message || "Failed to book free class",
+        variant: "destructive",
+      });
+    },
+  });
   
   if (!params) {
     navigate("/classes");
