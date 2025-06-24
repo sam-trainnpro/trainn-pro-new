@@ -181,7 +181,7 @@ export default function ProfilePage() {
         profileImage: profileImageUrl,
       };
       
-      console.log("Sending profile data:", profileData);
+
       
       const response = await apiRequest("PUT", `/api/users/${user.id}`, profileData);
       if (!response.ok) {
@@ -200,6 +200,11 @@ export default function ProfilePage() {
       queryClient.setQueryData(["/api/user"], updatedUser);
       setSelectedExpertise(updatedUser.areasOfExpertise || []);
       setIsUpdating(false);
+      
+      // Reload the page to ensure all data is properly refreshed
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: Error) => {
       toast({
