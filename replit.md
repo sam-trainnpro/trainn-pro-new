@@ -119,6 +119,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- June 24, 2025. Implemented Areas of Expertise system for coaches - added database field, profile management interface, and display on coach cards and details pages to highlight coaching specialties
 - June 24, 2025. Added six new class categories to expand activity offerings: Surfing, Dance, Music, Painting, Boxing/Martial Arts, and Baseball with professional category images from Unsplash
 - June 24, 2025. Fixed password change functionality in Profile Security tab - implemented missing backend endpoint with proper password verification using correct hash format and timing-safe comparison
 - June 24, 2025. Added booking warning modal system for class deletion - coaches receive warning popup when trying to delete classes with active customer bookings, featuring "Delete Anyways" (grey) and "Cancel" (green) buttons across My Calendar, My Classes, and Admin pages

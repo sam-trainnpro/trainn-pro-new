@@ -48,11 +48,22 @@ export default function CoachDetailsPage() {
     queryKey: [`/api/coaches/${coachId}/classes`],
     enabled: !!coach,
   });
+
+  // Get categories for expertise display
+  const { data: categories = [] } = useQuery<ClassCategory[]>({
+    queryKey: ['/api/categories'],
+  });
   
   // Get upcoming and past classes
   const now = new Date();
   const upcomingClasses = coachClasses?.filter(c => new Date(c.startTime) > now) || [];
   const pastClasses = coachClasses?.filter(c => new Date(c.startTime) <= now) || [];
+
+  // Get expertise areas
+  const expertiseAreas = coach?.areasOfExpertise || [];
+  const expertiseCategories = expertiseAreas
+    .map(id => categories.find(cat => cat.id === id))
+    .filter(Boolean);
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -139,21 +150,26 @@ export default function CoachDetailsPage() {
             
             <section className="py-8">
               <div className="container mx-auto px-4">
-                <h2 className="text-2xl font-heading font-bold mb-2">Specialties</h2>
-                <div className="flex flex-wrap gap-2 mb-6">
-                  <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-medium">
-                    HIIT
+                <h2 className="text-2xl font-heading font-bold mb-4">Areas of Expertise</h2>
+                {expertiseCategories.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {expertiseCategories.map(category => (
+                      <Badge 
+                        key={category.id} 
+                        variant="secondary"
+                        className="bg-primary/10 text-primary px-4 py-2 text-sm font-medium hover:bg-primary/20"
+                      >
+                        {category.name}
+                      </Badge>
+                    ))}
                   </div>
-                  <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-medium">
-                    Strength Training
-                  </div>
-                  <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-medium">
-                    Cardio
-                  </div>
-                  <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-medium">
-                    Functional Fitness
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-muted-foreground mb-6">
+                    This coach hasn't specified their areas of expertise yet.
+                  </p>
+                )}
+                
+
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
