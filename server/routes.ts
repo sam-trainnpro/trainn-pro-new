@@ -1467,10 +1467,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify current password using same method as auth.ts
       const crypto = await import('crypto');
-      const [salt, storedHash] = user.password.split(':');
-      const currentPasswordHash = crypto.scryptSync(currentPassword, salt, 64).toString('hex');
+      const { promisify } = await import('util');
+      const scryptAsync = promisify(crypto.scrypt);
       
-      if (currentPasswordHash !== storedHash) {
+      // Split using dot separator (same as auth.ts)
+      const [storedHash, salt] = user.password.split('.');
+      const hashedBuf = Buffer.from(storedHash, 'hex');
+      const suppliedBuf = (await scryptAsync(currentPassword, salt, 64)) as Buffer;
+      
+      if (!crypto.timingSafeEqual(hashedBuf, suppliedBuf)) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
       
