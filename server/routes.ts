@@ -336,6 +336,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (field === 'schedules') {
           return !classData.schedules || !Array.isArray(classData.schedules) || classData.schedules.length === 0;
         }
+        if (field === 'price') {
+          return classData[field] === undefined || classData[field] === null || classData[field] === '';
+        }
         return !classData[field];
       });
       
@@ -532,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.title) updateData.title = String(req.body.title);
       if (req.body.description) updateData.description = String(req.body.description);
       if (req.body.categoryId) updateData.categoryId = parseInt(req.body.categoryId);
-      if (req.body.price) updateData.price = parseFloat(req.body.price);
+      if (req.body.price !== undefined && req.body.price !== null && req.body.price !== '') updateData.price = parseFloat(req.body.price);
       if (req.body.capacity) updateData.capacity = parseInt(req.body.capacity);
       if (req.body.location) updateData.location = String(req.body.location);
       if (req.body.address) updateData.address = String(req.body.address);
