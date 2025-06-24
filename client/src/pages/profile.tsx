@@ -371,9 +371,7 @@ export default function ProfilePage() {
         <title>My Profile | Trainn</title>
         <meta name="description" content="View and manage your Trainn profile settings" />
       </Helmet>
-
       <Header />
-      
       <main className="flex-1 pb-16 pt-6">
         <div className="container">
           <div className="mb-8">
@@ -577,9 +575,7 @@ export default function ProfilePage() {
                                       className="min-h-24"
                                     />
                                   </FormControl>
-                                  <FormDescription>
-                                    Enter your professional fitness certifications to build trust with clients
-                                  </FormDescription>
+                                  <FormDescription>Enter your professional certifications to build trust with clients</FormDescription>
                                   <FormMessage />
                                 </FormItem>
                               )}
@@ -782,7 +778,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
-      
       <Footer />
       <MobileNavigation />
     </>
