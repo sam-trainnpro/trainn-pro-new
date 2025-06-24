@@ -32,10 +32,13 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "../../../hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import BookingWarningModal from "@/components/booking-warning-modal";
 
 export default function MyClassesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [showBookingWarningModal, setShowBookingWarningModal] = useState(false);
+  const [pendingDeleteClass, setPendingDeleteClass] = useState<Class | null>(null);
   
   // Fetch classes created by this coach
   const { 
@@ -246,7 +249,7 @@ export default function MyClassesPage() {
                             className={classItem.isRecurring 
                               ? "bg-red-700 text-white hover:bg-red-800 font-medium" 
                               : "bg-red-600 text-white hover:bg-red-700"}
-                            onClick={() => deleteMutation.mutate(classItem.id)}
+                            onClick={() => handleDeleteClass(classItem)}
                             disabled={deleteMutation.isPending}
                           >
                             {deleteMutation.isPending ? (
@@ -272,6 +275,18 @@ export default function MyClassesPage() {
       
       <Footer />
       <MobileNavigation />
+
+      {/* Booking Warning Modal */}
+      <BookingWarningModal
+        isOpen={showBookingWarningModal}
+        onClose={() => {
+          setShowBookingWarningModal(false);
+          setPendingDeleteClass(null);
+        }}
+        onConfirm={handleBookingWarningConfirm}
+        classTitle={pendingDeleteClass?.title || ''}
+        activeBookings={pendingDeleteClass ? (bookingCounts[pendingDeleteClass.id]?.active || 0) : 0}
+      />
     </div>
   );
 }
