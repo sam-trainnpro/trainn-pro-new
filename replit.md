@@ -119,6 +119,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- June 24, 2025. Added five new class categories to expand activity offerings: Surfing, Dance, Music, Painting, and Boxing/Martial Arts with professional category images from Unsplash
 - June 24, 2025. Fixed password change functionality in Profile Security tab - implemented missing backend endpoint with proper password verification using correct hash format and timing-safe comparison
 - June 24, 2025. Added booking warning modal system for class deletion - coaches receive warning popup when trying to delete classes with active customer bookings, featuring "Delete Anyways" (grey) and "Cancel" (green) buttons across My Calendar, My Classes, and Admin pages
 - June 23, 2025. Implemented comprehensive email notification system with 7 new notification types including class reminders, cancellations, coach approvals, booking confirmations, schedule updates, welcome emails, and coach booking notifications - all emails now sent from support@trainn.pro with professional HTML templates
