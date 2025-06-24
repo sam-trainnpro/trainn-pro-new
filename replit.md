@@ -119,6 +119,7 @@ Trainn is a full-stack fitness marketplace application that connects fitness coa
 
 ```
 Changelog:
+- June 24, 2025. Added booking warning modal system for class deletion - coaches receive warning popup when trying to delete classes with active customer bookings, featuring "Delete Anyways" (grey) and "Cancel" (green) buttons across My Calendar, My Classes, and Admin pages
 - June 23, 2025. Implemented comprehensive email notification system with 7 new notification types including class reminders, cancellations, coach approvals, booking confirmations, schedule updates, welcome emails, and coach booking notifications - all emails now sent from support@trainn.pro with professional HTML templates
 - June 23, 2025. Successfully implemented Google Calendar-style delete options for recurring classes with "This class" and "This and following classes" functionality working
 - June 23, 2025. Implemented complete recurring class functionality with individual database rows per instance

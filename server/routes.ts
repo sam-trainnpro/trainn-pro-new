@@ -1439,6 +1439,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Change password endpoint
+  app.put("/api/users/:id/password", requireAuth, async (req, res) => {
+    const userId = parseInt(req.params.id);
+    const { currentPassword, newPassword } = req.body;
+    
+    // Ensure user can only change their own password
+    if (req.user?.id !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+    
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "New password must be at least 8 characters long" });
+    }
+    
+    try {
+      // Get current user to verify current password
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Verify current password using same method as auth.ts
+      const crypto = await import('crypto');
+      const [salt, storedHash] = user.password.split(':');
+      const currentPasswordHash = crypto.scryptSync(currentPassword, salt, 64).toString('hex');
+      
+      if (currentPasswordHash !== storedHash) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+      
+      // Hash new password
+      const { hashPassword } = await import('./auth');
+      const hashedNewPassword = await hashPassword(newPassword);
+      
+      // Update password in database
+      const updatedUser = await storage.updateUserPassword(userId, hashedNewPassword);
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update password" });
+      }
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
   // Create Stripe Connect onboarding link for coaches
   app.post("/api/coaches/:id/stripe-onboarding", requireAuth, async (req, res) => {
     if (!stripe) {
