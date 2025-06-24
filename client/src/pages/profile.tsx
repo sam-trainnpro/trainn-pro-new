@@ -173,6 +173,7 @@ export default function ProfilePage() {
       
       const profileData = {
         ...data,
+        areasOfExpertise: selectedExpertise,
         profileImage: profileImageUrl,
       };
       
