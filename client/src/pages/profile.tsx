@@ -96,6 +96,7 @@ export default function ProfilePage() {
       bio: user?.bio || "",
       profileImage: user?.profileImage || "",
       areasOfExpertise: user?.areasOfExpertise || [],
+      certifications: user?.certifications || "",
     },
   });
 
@@ -549,6 +550,27 @@ export default function ProfilePage() {
                                 )}
                               </div>
                             </div>
+                            
+                            <FormField
+                              control={profileForm.control}
+                              name="certifications"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Certifications</FormLabel>
+                                  <FormControl>
+                                    <Textarea
+                                      {...field}
+                                      placeholder="List your fitness certifications (e.g., NASM CPT, ISSA, ACE Fitness, NSCA, NPTI)..."
+                                      className="min-h-24"
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Enter your professional fitness certifications to build trust with clients
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                             </>
                           )}
                           
