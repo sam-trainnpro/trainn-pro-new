@@ -170,7 +170,14 @@ export default function CoachDetailsPage() {
                   </p>
                 )}
                 
-
+                {coach.certifications && (
+                  <>
+                    <h2 className="text-2xl font-heading font-bold mb-4 mt-8">Certifications</h2>
+                    <div className="bg-[#F7F7F7] p-4 rounded-xl mb-6">
+                      <p className="text-gray-700 whitespace-pre-line">{coach.certifications}</p>
+                    </div>
+                  </>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
