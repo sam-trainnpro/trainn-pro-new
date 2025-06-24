@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { Class, ClassCategory, User, Booking, ClassWithSchedules, ClassSchedule } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -37,7 +37,8 @@ import {
   CheckCircle,
   AlertCircle,
   Plus,
-  Minus
+  Minus,
+  Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
@@ -502,28 +503,46 @@ export default function ClassDetailsPage() {
                             
                             <Button 
                               className="w-full bg-primary hover:bg-primary/90 text-white"
-                              onClick={() => navigate(`/checkout/${classItem.id}?quantity=${quantity}`)}
+                              onClick={() => {
+                                if (classItem.price === 0) {
+                                  // Handle free class booking directly
+                                  freeBookingMutation.mutate({ classId: classItem.id, quantity });
+                                } else {
+                                  // Navigate to checkout for paid classes
+                                  navigate(`/checkout/${classItem.id}?quantity=${quantity}`);
+                                }
+                              }}
+                              disabled={freeBookingMutation.isPending}
                             >
-                              Book {quantity > 1 ? `${quantity} Spots` : 'Now'} - ${(classItem.price * quantity).toFixed(2)}
+                              {freeBookingMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Booking...
+                                </>
+                              ) : (
+                                <>Book {quantity > 1 ? `${quantity} Spots` : 'Now'} - ${(classItem.price * quantity).toFixed(2)}</>
+                              )}
                             </Button>
                           </div>
                         )}
                       </div>
                       
-                      <div className="space-y-3 text-sm">
-                        <div className="flex justify-between">
-                          <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
-                          <span>${(classItem.price * quantity).toFixed(2)}</span>
+                      {classItem.price > 0 && (
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between">
+                            <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
+                            <span>${(classItem.price * quantity).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Service fee</span>
+                            <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
+                          </div>
+                          <div className="border-t pt-3 flex justify-between font-medium">
+                            <span>Total</span>
+                            <span>${(classItem.price * quantity * 1.05).toFixed(2)}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Service fee</span>
-                          <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
-                        </div>
-                        <div className="border-t pt-3 flex justify-between font-medium">
-                          <span>Total</span>
-                          <span>${(classItem.price * quantity * 1.05).toFixed(2)}</span>
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>

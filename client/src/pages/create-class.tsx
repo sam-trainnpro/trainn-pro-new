@@ -66,7 +66,7 @@ const createClassSchema = z.object({
   address: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  price: z.coerce.number().min(1, "Price must be at least 1"),
+  price: z.coerce.number().min(0, "Price must be 0 or greater"),
   duration: z.coerce.number().min(15, "Duration must be at least 15 minutes"),
   capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
   startDate: z.date({
