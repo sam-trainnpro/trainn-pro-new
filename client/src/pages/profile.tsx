@@ -54,6 +54,7 @@ const profileFormSchema = z.object({
   bio: z.string().optional(),
   profileImage: z.string().optional(),
   areasOfExpertise: z.array(z.number()).optional(),
+  certifications: z.string().optional(),
 });
 
 const passwordFormSchema = z.object({
