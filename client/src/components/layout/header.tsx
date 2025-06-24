@@ -92,7 +92,7 @@ export default function Header() {
                 </Link>
               )}
               
-              <Link href="/bookings">
+              <Link href={user.role === 'coach' ? "/my-calendar" : "/bookings"}>
                 <Button variant="ghost" className="p-2">
                   <Calendar className="h-5 w-5" />
                 </Button>
