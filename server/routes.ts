@@ -1412,7 +1412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get allowed fields based on the request body
-      const allowedFields = ['firstName', 'lastName', 'phone', 'bio', 'profileImage'];
+      const allowedFields = ['firstName', 'lastName', 'phone', 'bio', 'profileImage', 'areasOfExpertise'];
       const updateData: Record<string, any> = {};
       
       // Use explicit property assignment to avoid prototype pollution
@@ -1421,6 +1421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if ('phone' in req.body) updateData.phone = req.body.phone;
       if ('bio' in req.body) updateData.bio = req.body.bio;
       if ('profileImage' in req.body) updateData.profileImage = req.body.profileImage;
+      if ('areasOfExpertise' in req.body) updateData.areasOfExpertise = req.body.areasOfExpertise;
       
       // Update the user
       const updatedUser = await storage.updateUser(userId, updateData);
