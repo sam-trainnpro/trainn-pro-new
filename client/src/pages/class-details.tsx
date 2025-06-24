@@ -69,13 +69,17 @@ export default function ClassDetailsPage() {
         title: "Booking confirmed!",
         description: "Your free class booking has been confirmed.",
       });
-      // Invalidate and refetch booking data
+      // Invalidate and refetch booking data aggressively
+      queryClient.removeQueries({ queryKey: ["/api/bookings"] }); // Clear cache completely
       await queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
       queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
       queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
       // Force refetch bookings before navigation
       await queryClient.refetchQueries({ queryKey: ["/api/bookings"] });
-      navigate("/bookings");
+      // Add a slight delay to ensure data is fresh
+      setTimeout(() => {
+        navigate("/bookings");
+      }, 100);
     },
     onError: (error: Error) => {
       toast({

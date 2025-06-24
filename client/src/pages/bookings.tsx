@@ -72,10 +72,14 @@ export default function BookingsPage() {
     }
   }, []);
   
-  // Fetch user bookings
+  // Fetch user bookings with aggressive refresh settings
   const { data: bookings, isLoading, error, refetch } = useQuery<BookingWithClass[]>({
     queryKey: ['/api/bookings'],
     enabled: !!user,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache results
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gets focus
   });
 
   // Fetch user reviews
