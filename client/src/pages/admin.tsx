@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
+import BookingWarningModal from "@/components/booking-warning-modal";
 
 export default function AdminPage() {
   const [, navigate] = useLocation();
@@ -63,6 +64,8 @@ export default function AdminPage() {
   const [selectedCoach, setSelectedCoach] = useState<User | null>(null);
   const [selectedClass, setSelectedClass] = useState<ClassWithSchedules | null>(null);
   const [activeTab, setActiveTab] = useState("coaches");
+  const [showBookingWarningModal, setShowBookingWarningModal] = useState(false);
+  const [pendingDeleteClass, setPendingDeleteClass] = useState<ClassWithSchedules | null>(null);
 
   // Handle URL parameters for tab navigation
   useEffect(() => {
@@ -144,6 +147,58 @@ export default function AdminPage() {
     },
   });
 
+  // Fetch booking counts for all classes
+  const { data: bookingCounts = {} } = useQuery({
+    queryKey: ['/api/admin/classes/booking-counts'],
+    queryFn: async () => {
+      if (!classes) return {};
+      
+      const counts: Record<number, { active: number; total: number }> = {};
+      
+      // Fetch booking counts for all classes in parallel
+      const promises = classes.map(async (classItem) => {
+        try {
+          const response = await fetch(`/api/classes/${classItem.id}/bookings/count`);
+          if (response.ok) {
+            const data = await response.json();
+            counts[classItem.id] = data;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch booking count for class ${classItem.id}:`, error);
+        }
+      });
+      
+      await Promise.all(promises);
+      return counts;
+    },
+    enabled: !!classes && classes.length > 0,
+  });
+
+  // Handle delete class - first check for bookings
+  const handleDeleteClass = () => {
+    if (!selectedClass) return;
+    
+    const bookingCount = bookingCounts[selectedClass.id];
+    const hasActiveBookings = bookingCount && bookingCount.active > 0;
+    
+    if (hasActiveBookings) {
+      setPendingDeleteClass(selectedClass);
+      setShowBookingWarningModal(true);
+      setDeleteDialogOpen(false);  // Close the current dialog
+    } else {
+      // Proceed with direct deletion if no active bookings
+      deleteClassMutation.mutate(selectedClass.id);
+    }
+  };
+
+  const handleBookingWarningConfirm = () => {
+    if (pendingDeleteClass) {
+      deleteClassMutation.mutate(pendingDeleteClass.id);
+      setPendingDeleteClass(null);
+    }
+    setShowBookingWarningModal(false);
+  };
+
   // Delete class mutation
   const deleteClassMutation = useMutation({
     mutationFn: async (classId: number) => {
@@ -158,6 +213,7 @@ export default function AdminPage() {
       });
       refetchClasses();
       queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/classes/booking-counts'] });
       setDeleteDialogOpen(false);
     },
     onError: (error: Error) => {
@@ -177,12 +233,7 @@ export default function AdminPage() {
     }
   };
   
-  // Handle class deletion
-  const handleDeleteClass = () => {
-    if (selectedClass) {
-      deleteClassMutation.mutate(selectedClass.id);
-    }
-  };
+
   
   // Open approval dialog
   const openApprovalDialog = (coach: User) => {
@@ -534,6 +585,18 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Booking Warning Modal */}
+      <BookingWarningModal
+        isOpen={showBookingWarningModal}
+        onClose={() => {
+          setShowBookingWarningModal(false);
+          setPendingDeleteClass(null);
+        }}
+        onConfirm={handleBookingWarningConfirm}
+        classTitle={pendingDeleteClass?.title || ''}
+        activeBookings={pendingDeleteClass ? (bookingCounts[pendingDeleteClass.id]?.active || 0) : 0}
+      />
     </div>
   );
 }
