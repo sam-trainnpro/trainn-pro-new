@@ -117,6 +117,23 @@ export default function ProfilePage() {
     }
   };
 
+  // Handle adding expertise area
+  const addExpertiseArea = (categoryId: string) => {
+    const id = parseInt(categoryId);
+    if (!selectedExpertise.includes(id)) {
+      const newExpertise = [...selectedExpertise, id];
+      setSelectedExpertise(newExpertise);
+      profileForm.setValue('areasOfExpertise', newExpertise);
+    }
+  };
+
+  // Handle removing expertise area
+  const removeExpertiseArea = (categoryId: number) => {
+    const newExpertise = selectedExpertise.filter(id => id !== categoryId);
+    setSelectedExpertise(newExpertise);
+    profileForm.setValue('areasOfExpertise', newExpertise);
+  };
+
   // Upload image and get URL
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
@@ -172,6 +189,7 @@ export default function ProfilePage() {
       
       // Update user data in cache
       queryClient.setQueryData(["/api/user"], updatedUser);
+      setSelectedExpertise(updatedUser.areasOfExpertise || []);
       setIsUpdating(false);
     },
     onError: (error: Error) => {
@@ -469,17 +487,18 @@ export default function ProfilePage() {
                           </div>
 
                           {user.role === 'coach' && (
-                            <FormField
-                              control={profileForm.control}
-                              name="bio"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Bio</FormLabel>
-                                  <FormControl>
-                                    <Textarea 
-                                      {...field} 
-                                      placeholder="Tell clients about yourself, your expertise, and your training style..." 
-                                      className="min-h-32"
+                            <>
+                              <FormField
+                                control={profileForm.control}
+                                name="bio"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Bio</FormLabel>
+                                    <FormControl>
+                                      <Textarea 
+                                        {...field} 
+                                        placeholder="Tell clients about yourself, your expertise, and your training style..." 
+                                        className="min-h-32"
                                     />
                                   </FormControl>
                                   <FormDescription>
@@ -489,6 +508,48 @@ export default function ProfilePage() {
                                 </FormItem>
                               )}
                             />
+                            
+                            <div className="space-y-4">
+                              <FormLabel>Areas of Expertise</FormLabel>
+                              <FormDescription>
+                                Select the categories you specialize in teaching. This helps clients find the right coach for their needs.
+                              </FormDescription>
+                              
+                              <div className="space-y-3">
+                                <Select onValueChange={addExpertiseArea}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Add an area of expertise" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {categories
+                                      .filter(category => !selectedExpertise.includes(category.id))
+                                      .map(category => (
+                                        <SelectItem key={category.id} value={category.id.toString()}>
+                                          {category.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                
+                                {selectedExpertise.length > 0 && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {selectedExpertise.map(categoryId => {
+                                      const category = categories.find(c => c.id === categoryId);
+                                      return category ? (
+                                        <Badge key={categoryId} variant="secondary" className="flex items-center gap-1">
+                                          {category.name}
+                                          <X 
+                                            className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                                            onClick={() => removeExpertiseArea(categoryId)}
+                                          />
+                                        </Badge>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            </>
                           )}
                           
                           <div className="flex justify-end">

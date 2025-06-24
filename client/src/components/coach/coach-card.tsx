@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@shared/schema";
+import { User, ClassCategory } from "@shared/schema";
 import { Star, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -15,9 +15,21 @@ export default function CoachCard({ coach }: CoachCardProps) {
     queryFn: () => fetch(`/api/reviews/coach/${coach.id}/stats`).then(res => res.json()),
   });
 
+  // Get categories for expertise display
+  const { data: categories = [] } = useQuery<ClassCategory[]>({
+    queryKey: ['/api/categories'],
+  });
+
   // Use actual ratings or fallback to default values
   const rating = ratingStats?.totalReviews > 0 ? ratingStats.averageRating : 4.9;
   const reviewCount = ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 10;
+
+  // Get expertise areas
+  const expertiseAreas = coach.areasOfExpertise || [];
+  const expertiseNames = expertiseAreas
+    .map(id => categories.find(cat => cat.id === id)?.name)
+    .filter(Boolean)
+    .slice(0, 3); // Show max 3 areas
 
   return (
     <div className="bg-[#F7F7F7] rounded-xl p-4 text-center hover:shadow-md transition">
@@ -34,7 +46,9 @@ export default function CoachCard({ coach }: CoachCardProps) {
       </div>
       
       <h3 className="font-heading font-bold text-lg">Coach {coach.firstName}</h3>
-      <p className="text-sm text-gray-600 mb-2">HIIT, Cardio, Strength</p>
+      <p className="text-sm text-gray-600 mb-2">
+        {expertiseNames.length > 0 ? expertiseNames.join(', ') : 'Fitness Expert'}
+      </p>
       
       <div className="flex justify-center items-center mb-3">
         <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
