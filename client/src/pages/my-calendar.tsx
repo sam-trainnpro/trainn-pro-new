@@ -10,6 +10,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { Link, useLocation } from 'wouter';
 import ClassDetailModal from '@/components/class-detail-modal';
 import { DeleteRecurringModal, DeleteOption } from '@/components/delete-recurring-modal';
+import BookingWarningModal from '@/components/booking-warning-modal';
 import { useToast } from '../../../hooks/use-toast';
 
 interface Class {
@@ -53,6 +54,8 @@ export default function MyCalendarPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [classToDelete, setClassToDelete] = useState<Class | null>(null);
+  const [showBookingWarningModal, setShowBookingWarningModal] = useState(false);
+  const [pendingDeleteClass, setPendingDeleteClass] = useState<Class | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -114,19 +117,43 @@ export default function MyCalendarPage() {
     console.log('handleDelete called with:', classItem);
     console.log('recurringSeriesId:', classItem.recurringSeriesId);
     
+    // Check if class has active bookings
+    const bookingCount = bookingCounts[classItem.id];
+    const hasActiveBookings = bookingCount && bookingCount.active > 0;
+    
+    if (hasActiveBookings) {
+      console.log('Class has active bookings, showing warning modal');
+      setPendingDeleteClass(classItem);
+      setShowBookingWarningModal(true);
+      setIsModalOpen(false); // Close the detail modal
+      return;
+    }
+    
+    // Proceed with normal delete flow if no active bookings
+    proceedWithDelete(classItem);
+  };
+
+  const proceedWithDelete = (classItem: Class) => {
     // Check if this is a recurring class
     if (classItem.recurringSeriesId) {
       console.log('This is a recurring class, showing delete modal');
       setClassToDelete(classItem);
       setShowDeleteModal(true);
-      setIsModalOpen(false); // Close the detail modal
     } else {
       console.log('This is a non-recurring class, showing confirmation');
       // Non-recurring class - show simple confirmation
       if (confirm(`Are you sure you want to delete "${classItem.title}"?`)) {
         performDelete(classItem.id, 'this');
       }
-      setIsModalOpen(false); // Close the detail modal
+    }
+  };
+
+  const handleBookingWarningConfirm = () => {
+    console.log('Booking warning confirmed, proceeding with delete');
+    setShowBookingWarningModal(false);
+    if (pendingDeleteClass) {
+      proceedWithDelete(pendingDeleteClass);
+      setPendingDeleteClass(null);
     }
   };
 
@@ -492,6 +519,18 @@ export default function MyCalendarPage() {
         }}
         onConfirm={handleDeleteConfirm}
         classTitle={classToDelete?.title || ''}
+      />
+
+      {/* Booking Warning Modal */}
+      <BookingWarningModal
+        isOpen={showBookingWarningModal}
+        onClose={() => {
+          setShowBookingWarningModal(false);
+          setPendingDeleteClass(null);
+        }}
+        onConfirm={handleBookingWarningConfirm}
+        classTitle={pendingDeleteClass?.title || ''}
+        activeBookings={pendingDeleteClass ? (bookingCounts[pendingDeleteClass.id]?.active || 0) : 0}
       />
     </>
   );
