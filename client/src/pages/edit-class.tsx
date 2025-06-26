@@ -244,8 +244,12 @@ export default function EditClassPage() {
       
       console.log('Formatted data sent to server:', formattedData);
       
+      // Get current editOption from URL (may have been updated during modal confirmation)
+      const currentUrl = new URL(window.location.href);
+      const currentEditOption = currentUrl.searchParams.get('editOption') as 'this' | 'following' | null;
+      
       // Determine the endpoint based on editOption
-      const endpoint = editOption === 'following' 
+      const endpoint = currentEditOption === 'following' 
         ? `/api/classes/${id}?editOption=following`
         : `/api/classes/${id}`;
       
