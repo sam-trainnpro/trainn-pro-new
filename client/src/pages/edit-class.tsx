@@ -269,8 +269,8 @@ export default function EditClassPage() {
       // Clear selected image after successful update
       setSelectedImage(null);
       
-      // Stay on the edit page to show the updated data
-      // navigate("/my-classes");
+      // Navigate to My Calendar page to show updated class
+      navigate("/my-calendar");
     },
     onError: (error: Error) => {
       toast({
