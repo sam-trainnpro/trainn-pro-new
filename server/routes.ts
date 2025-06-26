@@ -623,20 +623,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the class using storage method
       // Track changes for notification
       const changes: string[] = [];
-      if (updateData.title && updateData.title !== existingClass.title) {
+      if (updateData.title && updateData.title !== classItem.title) {
         changes.push(`Class name changed to "${updateData.title}"`);
       }
-      if (updateData.startTime && updateData.startTime !== existingClass.startTime) {
+      if (updateData.startTime && updateData.startTime !== classItem.startTime) {
         const newDate = new Date(updateData.startTime);
         changes.push(`Date/time changed to ${newDate.toLocaleDateString()} at ${newDate.toLocaleTimeString()}`);
       }
-      if (updateData.location && updateData.location !== existingClass.location) {
+      if (updateData.location && updateData.location !== classItem.location) {
         changes.push(`Location changed to "${updateData.location}"`);
       }
-      if (updateData.price && updateData.price !== existingClass.price) {
+      if (updateData.price && updateData.price !== classItem.price) {
         changes.push(`Price changed to $${updateData.price}`);
       }
-      if (updateData.capacity && updateData.capacity !== existingClass.capacity) {
+      if (updateData.capacity && updateData.capacity !== classItem.capacity) {
         changes.push(`Capacity changed to ${updateData.capacity} spots`);
       }
 
@@ -649,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send update notifications if there are significant changes
       if (changes.length > 0) {
         try {
-          await sendClassUpdateNotifications(classId, existingClass, updatedClass, changes);
+          await sendClassUpdateNotifications(classId, classItem, updatedClass, changes);
         } catch (emailError) {
           console.error('Failed to send class update notifications:', emailError);
           // Don't fail the update if emails fail
