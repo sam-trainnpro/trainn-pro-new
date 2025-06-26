@@ -188,8 +188,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
 
+  // Test endpoint to check OAuth configuration
+  app.get('/api/auth/google/test', (req, res) => {
+    const config = {
+      hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+      hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+      clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...',
+      callbackUrl: `https://18601edf-4a24-406b-bba8-ab1ce8812f91-00-12st5ttaoy5jd.spock.replit.dev/api/auth/google/callback`,
+      domain: process.env.REPLIT_DOMAINS?.split(',')[0]
+    };
+    res.json(config);
+  });
+
   // Google OAuth routes
   app.get('/api/auth/google', (req, res, next) => {
+    console.log('Google OAuth route hit with query:', req.query);
+    console.log('Google Client ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+    console.log('Google Client Secret exists:', !!process.env.GOOGLE_CLIENT_SECRET);
+    
     const { role } = req.query;
     const state = role ? JSON.stringify({ role }) : undefined;
     
@@ -202,9 +218,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/auth/google/callback', 
-    passport.authenticate('google', { failureRedirect: '/auth?error=google_auth_failed' }),
+    (req, res, next) => {
+      console.log('Google callback hit with query:', req.query);
+      console.log('Google callback state:', req.query.state);
+      passport.authenticate('google', { 
+        failureRedirect: '/auth?error=google_auth_failed',
+        failureMessage: true 
+      })(req, res, next);
+    },
     async (req, res) => {
       try {
+        console.log('Google callback success, user:', req.user ? 'found' : 'not found');
         const user = req.user;
         if (!user) {
           return res.redirect('/auth?error=no_user');
