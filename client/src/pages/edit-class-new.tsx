@@ -209,12 +209,16 @@ export default function EditClassPage() {
         description: "Class updated successfully",
       });
       
-      // Invalidate and refetch class data
+      // Invalidate and refetch class data to show updates immediately
       queryClient.invalidateQueries({ queryKey: [`/api/classes/${id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
       queryClient.invalidateQueries({ queryKey: ['/api/coaches', user?.id, 'classes'] });
       
-      navigate("/my-classes");
+      // Clear selected image after successful update
+      setSelectedImage(null);
+      
+      // Stay on the edit page to show the updated data
+      // navigate("/my-classes");
     },
     onError: (error: Error) => {
       toast({
