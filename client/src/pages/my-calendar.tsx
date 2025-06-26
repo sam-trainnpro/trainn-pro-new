@@ -89,15 +89,8 @@ export default function MyCalendarPage() {
   };
 
   const handleEdit = (classItem: Class) => {
-    // Check if this is a recurring class
-    if (classItem.recurringSeriesId) {
-      setClassToEdit(classItem);
-      setShowEditModal(true);
-      setIsModalOpen(false); // Close the detail modal
-    } else {
-      // Non-recurring class - go directly to edit page
-      setLocation(`/edit-class/${classItem.id}`);
-    }
+    // Go directly to edit page for all classes - modal will appear on save if recurring
+    setLocation(`/edit-class/${classItem.id}`);
   };
 
   const handleEditConfirm = (option: EditOption) => {
