@@ -86,9 +86,7 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.NODE_ENV === 'production' && process.env.REPL_DEPLOYMENT_URL
-            ? `${process.env.REPL_DEPLOYMENT_URL}/api/auth/google/callback`
-            : `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/google/callback`,
+          callbackURL: `https://trainn-samuelroth.replit.app/api/auth/google/callback`,
           scope: ['profile', 'email'],
           proxy: true
         },
