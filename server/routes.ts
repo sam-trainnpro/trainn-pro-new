@@ -194,9 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hasClientId: !!process.env.GOOGLE_CLIENT_ID,
       hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
       clientIdPrefix: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...',
-      callbackUrl: process.env.NODE_ENV === 'production' && process.env.REPL_DEPLOYMENT_URL
-        ? `${process.env.REPL_DEPLOYMENT_URL}/api/auth/google/callback`
-        : `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/google/callback`,
+      callbackUrl: `https://trainn-samuelroth.replit.app/api/auth/google/callback`,
       domain: process.env.REPLIT_DOMAINS?.split(',')[0],
       status: 'APIs enabled - ready for testing'
     };
