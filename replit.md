@@ -121,6 +121,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- June 26, 2025. Implemented complete Google OAuth "Sign In with Google" functionality - added database schema support, backend passport strategy, OAuth routes, and frontend buttons on login/register forms with role preference handling. Requires Google Cloud Console OAuth configuration with redirect URI.
 - June 24, 2025. Successfully implemented complete $0 class functionality - coaches can create free classes by setting price to $0, customers can book instantly without payment processing, includes aggressive cache refresh to ensure My Bookings page shows new bookings immediately
 - June 24, 2025. Completed Certifications section implementation with automatic page refresh to ensure data persistence - coaches can now successfully save and display their professional fitness certifications on their profiles
 - June 24, 2025. Added Certifications section to coach profiles - coaches can now list their professional fitness certifications (NASM, ISSA, ACE Fitness, NSCA, NPTI) in a free text area within their profile settings, displayed on coach detail pages
