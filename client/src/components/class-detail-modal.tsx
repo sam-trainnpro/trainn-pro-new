@@ -32,6 +32,7 @@ interface ClassDetailModalProps {
   classItem: Class | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit: (classItem: Class) => void;
   onDuplicate: (classId: number) => void;
   onDelete: (classItem: Class) => void;
   bookingCount?: { active: number; total: number };
@@ -41,6 +42,7 @@ export default function ClassDetailModal({
   classItem, 
   isOpen, 
   onClose, 
+  onEdit,
   onDuplicate, 
   onDelete,
   bookingCount 
