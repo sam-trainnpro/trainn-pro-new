@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
+import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { 
@@ -186,6 +187,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Set up authentication routes
   setupAuth(app);
+
+  // Google OAuth routes
+  app.get('/api/auth/google', (req, res, next) => {
+    const { role } = req.query;
+    const state = role ? JSON.stringify({ role }) : undefined;
+    
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
+      state
+    })(req, res, next);
+  });
+
+  app.get('/api/auth/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/auth?error=google_auth_failed' }),
+    async (req, res) => {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.redirect('/auth?error=no_user');
+        }
+
+        // Handle role preference from state
+        const state = req.query.state;
+        if (state && typeof state === 'string') {
+          try {
+            const { role } = JSON.parse(state);
+            if (role === 'coach' && user.role === 'customer') {
+              // Update user role to coach if they selected coach during Google sign-in
+              await storage.updateUser(user.id, { role: 'coach' });
+            }
+          } catch (e) {
+            console.error('Error parsing OAuth state:', e);
+          }
+        }
+
+        // Redirect to home page on successful authentication
+        res.redirect('/');
+      } catch (error) {
+        console.error('Google OAuth callback error:', error);
+        res.redirect('/auth?error=callback_error');
+      }
+    }
+  );
 
   // Helper to check authentication
   function requireAuth(req: any, res: any, next: any) {

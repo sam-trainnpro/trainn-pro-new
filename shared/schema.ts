@@ -34,6 +34,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   lastName: true,
   phone: true,
   role: true,
+  googleId: true,
+  authMethod: true,
+  googleProfilePicture: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

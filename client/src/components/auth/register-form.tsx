@@ -19,6 +19,7 @@ import {
   RadioGroup, 
   RadioGroupItem 
 } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
