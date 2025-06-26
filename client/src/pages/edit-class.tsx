@@ -52,9 +52,13 @@ type EditClassFormValues = z.infer<typeof editClassSchema>;
 
 export default function EditClassPage() {
   const { id } = useParams<{ id: string }>();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Get editOption from URL query parameters
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const editOption = urlParams.get('editOption') as 'this' | 'following' | null;
   
   // State for image upload
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -235,9 +239,9 @@ export default function EditClassPage() {
       
       console.log('Formatted data sent to server:', formattedData);
       
-      // Determine if we need to update the entire series or just this instance
-      const endpoint = updateSeries && classData?.isRecurring 
-        ? `/api/classes/${id}/series` 
+      // Determine the endpoint based on editOption
+      const endpoint = editOption === 'following' 
+        ? `/api/classes/${id}?editOption=following`
         : `/api/classes/${id}`;
       
       const response = await apiRequest("PUT", endpoint, formattedData);

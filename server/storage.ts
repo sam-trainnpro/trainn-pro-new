@@ -48,6 +48,7 @@ export interface IStorage {
   getClassesByCoach(coachId: number): Promise<Class[]>;
   updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined>;
   updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]>;
+  updateThisAndFollowingClasses(classId: number, classData: Partial<Class>): Promise<Class[]>;
   getClassesByParentId(parentClassId: number): Promise<Class[]>;
   getClassesBySeriesId(seriesId: string): Promise<Class[]>;
   deleteClass(id: number): Promise<boolean>;
