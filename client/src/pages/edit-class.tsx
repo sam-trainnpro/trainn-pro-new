@@ -32,6 +32,7 @@ import {
   ArrowLeftIcon,
   Save
 } from "lucide-react";
+import { EditRecurringModal, type EditOption } from "@/components/edit-recurring-modal";
 
 // Define validation schema for editing a class
 const editClassSchema = z.object({
@@ -63,6 +64,10 @@ export default function EditClassPage() {
   // State for image upload
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // State for recurring edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<EditClassFormValues | null>(null);
   
   // Fetch the class to edit
   const {
@@ -287,7 +292,32 @@ export default function EditClassPage() {
   
   // Handle form submission
   const onSubmit = (data: EditClassFormValues) => {
-    editMutation.mutate(data);
+    // Check if this is a recurring class and no editOption was provided
+    if (classData?.recurringSeriesId && !editOption) {
+      // Show modal to ask for edit option
+      setPendingFormData(data);
+      setShowEditModal(true);
+    } else {
+      // Direct submission for non-recurring classes or when editOption is already set
+      editMutation.mutate(data);
+    }
+  };
+
+  // Handle recurring edit modal confirmation
+  const handleEditConfirm = (option: EditOption) => {
+    if (pendingFormData) {
+      // Update the URL to include the edit option and proceed with mutation
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('editOption', option);
+      window.history.replaceState({}, '', currentUrl.toString());
+      
+      // Now mutate with the selected option
+      editMutation.mutate(pendingFormData);
+      
+      // Clear pending data
+      setPendingFormData(null);
+    }
+    setShowEditModal(false);
   };
   
   // If not authorized, show error
@@ -788,6 +818,14 @@ export default function EditClassPage() {
       
       <Footer />
       <MobileNavigation />
+      
+      {/* Edit Recurring Modal */}
+      <EditRecurringModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onConfirm={handleEditConfirm}
+        classTitle={classData?.title || ""}
+      />
     </div>
   );
 }
