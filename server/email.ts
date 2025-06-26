@@ -159,6 +159,8 @@ Spots Booked: ${booking.quantity}
 Coach: ${coach.firstName} ${coach.lastName}
 ${classData.location ? `Location: ${classData.location}` : ''}
 
+Add to Calendar: ${calendarInviteUrl}
+
 Important: Please arrive 10-15 minutes early for check-in. 
 If you need to cancel or reschedule, please contact us at least 24 hours in advance.
 
