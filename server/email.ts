@@ -175,6 +175,11 @@ Questions? Contact us at support@trainn.com
       subject: subject,
       text: textContent,
       html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
     });
 
     console.log(`Booking confirmation email sent to ${customer.email} for class ${classData.title}`);
@@ -327,6 +332,11 @@ Trainn - Your Fitness Journey Awaits
       subject: subject,
       text: textContent,
       html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
     });
 
     console.log(`Class reminder sent to ${customer.email} for ${classData.title}`);
