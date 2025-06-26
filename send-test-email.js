@@ -170,6 +170,11 @@ Questions? Contact us at support@trainn.pro
       subject: `Booking Confirmed: ${classData.title} - ${formattedDate}`,
       text: textContent,
       html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
     });
 
     console.log('✅ Test email sent successfully to sam@trainn.pro');
