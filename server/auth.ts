@@ -86,7 +86,7 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/api/auth/google/callback`,
+          callbackURL: `https://18601edf-4a24-406b-bba8-ab1ce8812f91-00-12st5ttaoy5jd.spock.replit.dev/api/auth/google/callback`,
         },
         async (_accessToken, _refreshToken, profile, done) => {
           try {
