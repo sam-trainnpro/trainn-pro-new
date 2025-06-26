@@ -212,7 +212,7 @@ export default function EditClassPage() {
       // Invalidate and refetch class data to show updates immediately
       queryClient.invalidateQueries({ queryKey: [`/api/classes/${id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/coaches', user?.id, 'classes'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/coaches/${user?.id}/classes`] });
       
       // Clear selected image after successful update
       setSelectedImage(null);
