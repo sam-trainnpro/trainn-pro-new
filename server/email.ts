@@ -8,6 +8,25 @@ if (!process.env.SENDGRID_API_KEY) {
 const mailService = new MailService();
 mailService.setApiKey(process.env.SENDGRID_API_KEY);
 
+function generateCalendarInviteUrl(classData: Class, startTime: Date, endTime: Date): string {
+  const formatDate = (date: Date) => {
+    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+
+  const title = encodeURIComponent(classData.title);
+  const description = encodeURIComponent(
+    `${classData.description || ''}\n\nLocation: ${classData.address}\n\nBooked through Trainn Fitness`
+  );
+  const location = encodeURIComponent(classData.address || '');
+  const startDateTime = formatDate(startTime);
+  const endDateTime = formatDate(endTime);
+
+  // Generate Google Calendar URL
+  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateTime}/${endDateTime}&details=${description}&location=${location}`;
+
+  return googleCalendarUrl;
+}
+
 interface BookingConfirmationData {
   booking: Booking;
   classData: Class;
@@ -30,6 +49,7 @@ export async function sendBookingConfirmation(
     
     // Format date and time
     const classDate = new Date(classData.startTime!);
+    const classEndTime = new Date(classData.endTime!);
     const formattedDate = classDate.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric', 
@@ -41,6 +61,9 @@ export async function sendBookingConfirmation(
       minute: '2-digit',
       hour12: true
     });
+
+    // Generate calendar invite URL
+    const calendarInviteUrl = generateCalendarInviteUrl(classData, classDate, classEndTime);
 
     const subject = `Trainn Confirmation and Receipt for ${classData.title} on ${formattedDate}`;
     
@@ -95,6 +118,15 @@ export async function sendBookingConfirmation(
           </div>
           ` : ''}
           
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${calendarInviteUrl}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+              📅 Add to Calendar
+            </a>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 14px;">
+              Click above to add this class to your calendar
+            </p>
+          </div>
+
           <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 25px 0;">
             <p style="color: #1565c0; margin: 0; font-size: 14px;">
               <strong>Important:</strong> Please arrive 10-15 minutes early for check-in. 
@@ -182,6 +214,7 @@ export async function sendClassReminder(
 ): Promise<boolean> {
   try {
     const classDate = new Date(classData.startTime!);
+    const classEndTime = new Date(classData.endTime!);
     const formattedDate = classDate.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -193,6 +226,9 @@ export async function sendClassReminder(
       minute: '2-digit',
       hour12: true
     });
+
+    // Generate calendar invite URL for reminder
+    const calendarInviteUrl = generateCalendarInviteUrl(classData, classDate, classEndTime);
 
     const subject = `Reminder: ${classData.title} tomorrow at ${formattedTime}`;
 
@@ -236,6 +272,15 @@ export async function sendClassReminder(
             </table>
           </div>
           
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${calendarInviteUrl}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+              📅 Add to Calendar
+            </a>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 14px;">
+              Add this class to your calendar as a reminder
+            </p>
+          </div>
+
           <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 25px 0;">
             <p style="color: #1565c0; margin: 0; font-size: 14px;">
               <strong>Remember:</strong> Please arrive 10-15 minutes early for check-in. 
@@ -252,10 +297,33 @@ export async function sendClassReminder(
       </div>
     `;
 
+    const textContent = `
+Class Reminder
+
+Hi ${customer.firstName},
+
+Just a friendly reminder that you have a class coming up tomorrow!
+
+Class: ${classData.title}
+Date: ${formattedDate} at ${formattedTime}
+Coach: ${coach.firstName} ${coach.lastName}
+Location: ${classData.location}
+${classData.whatToBring ? `What to Bring: ${classData.whatToBring}` : ''}
+
+Add to Calendar: ${calendarInviteUrl}
+
+Please arrive 10-15 minutes early for check-in.
+
+Questions? Contact us at support@trainn.com
+
+Trainn - Your Fitness Journey Awaits
+    `;
+
     await mailService.send({
       to: customer.email,
       from: 'support@trainn.pro',
       subject: subject,
+      text: textContent,
       html: htmlContent,
     });
 
