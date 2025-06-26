@@ -6,7 +6,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   phone: text("phone"),
@@ -20,7 +20,11 @@ export const users = pgTable("users", {
   stripeConnectOnboarded: boolean("stripe_connect_onboarded").default(false), // Track if they've completed onboarding
   bankAccountVerified: boolean("bank_account_verified").default(false), // Track if bank account is verified
   areasOfExpertise: integer("areas_of_expertise").array().default([]),
-  certifications: text("certifications")
+  certifications: text("certifications"),
+  // Google OAuth fields
+  googleId: text("google_id"),
+  authMethod: text("auth_method").notNull().default("password"), // 'password', 'google', or 'both'
+  googleProfilePicture: text("google_profile_picture"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
