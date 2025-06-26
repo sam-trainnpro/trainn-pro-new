@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -77,6 +78,66 @@ export function setupAuth(app: Express) {
       done(error);
     }
   });
+
+  // Google OAuth Strategy
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: "/api/auth/google/callback",
+        },
+        async (_accessToken, _refreshToken, profile, done) => {
+          try {
+            const email = profile.emails?.[0]?.value;
+            if (!email) {
+              return done(new Error("No email found in Google profile"));
+            }
+
+            const firstName = profile.name?.givenName || "";
+            const lastName = profile.name?.familyName || "";
+            const googleProfilePicture = profile.photos?.[0]?.value || null;
+
+            // Check if user exists with this email
+            let user = await storage.getUserByEmail(email);
+
+            if (user) {
+              // Update existing user with Google info
+              user = await storage.updateUser(user.id, {
+                googleId: profile.id,
+                authMethod: user.password ? "both" : "google",
+                googleProfilePicture,
+              });
+            } else {
+              // Create new user with Google info
+              user = await storage.createUser({
+                email,
+                firstName,
+                lastName,
+                googleId: profile.id,
+                authMethod: "google",
+                googleProfilePicture,
+                role: "customer", // Default to customer, can be changed later
+              });
+
+              // Send welcome email for new users
+              try {
+                const { sendWelcomeEmail } = await import('./email');
+                await sendWelcomeEmail(user);
+              } catch (emailError) {
+                console.error('Failed to send welcome email:', emailError);
+              }
+            }
+
+            done(null, user);
+          } catch (error) {
+            done(error);
+          }
+        }
+      )
+    );
+  }
 
   app.post("/api/register", async (req, res, next) => {
     try {
