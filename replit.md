@@ -121,6 +121,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- June 26, 2025. Added auto-refresh functionality to class editing pages - updated data now displays immediately after saving without requiring manual page refresh
 - June 26, 2025. Fixed class editing bug causing 500 error - corrected undefined variable reference in update class route that was preventing coaches from editing class details
 - June 26, 2025. Added calendar invite functionality to booking confirmation and reminder emails - customers can now click "Add to Calendar" button to automatically add booked classes to their Google Calendar with proper event details including title, description, location, and timing.
 - June 26, 2025. Successfully deployed app to trainn-samuelroth.replit.app and updated Google OAuth configuration for production deployment. Fixed redirect_uri_mismatch error by updating callback URLs to use deployed domain instead of preview URL.
