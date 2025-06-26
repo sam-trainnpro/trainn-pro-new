@@ -15,7 +15,7 @@ function generateCalendarInviteUrl(classData: Class, startTime: Date, endTime: D
 
   const title = encodeURIComponent(classData.title);
   const description = encodeURIComponent(
-    `${classData.description || ''}\n\nLocation: ${classData.address}\n\nBooked through Trainn Fitness`
+    `${classData.description || ''}\n\nLocation: ${classData.address}\n\nBooked through Trainn`
   );
   const location = encodeURIComponent(classData.address || '');
   const startDateTime = formatDate(startTime);

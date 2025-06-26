@@ -16,7 +16,7 @@ function generateCalendarInviteUrl(classData, startTime, endTime) {
     action: 'TEMPLATE',
     text: classData.title,
     dates: `${formatDate(startTime)}/${formatDate(endTime)}`,
-    details: `${classData.description || ''}\n\nCoach: ${classData.coach}\nLocation: ${classData.location}\n\nBooked through Trainn Fitness`,
+    details: `${classData.description || ''}\n\nCoach: ${classData.coach}\nLocation: ${classData.location}\n\nBooked through Trainn`,
     location: classData.address || classData.location,
     trp: 'false'
   });
