@@ -299,13 +299,18 @@ export default function EditClassPage() {
     console.log('onSubmit called:', {
       classData: classData,
       recurringSeriesId: classData?.recurringSeriesId,
+      recurring_series_id: (classData as any)?.recurring_series_id,
       editOption: editOption,
-      showModal: classData?.recurringSeriesId && !editOption
+      showModal: !!classData?.recurringSeriesId && !editOption,
+      allKeys: classData ? Object.keys(classData) : []
     });
     
     // Check if this is a recurring class and no editOption was provided
-    if (classData?.recurringSeriesId && !editOption) {
-      console.log('Showing recurring edit modal');
+    // Check for both camelCase and snake_case property names
+    const hasRecurringSeries = classData?.recurringSeriesId || (classData as any)?.recurring_series_id;
+    
+    if (hasRecurringSeries && !editOption) {
+      console.log('Showing recurring edit modal for series:', hasRecurringSeries);
       // Show modal to ask for edit option
       setPendingFormData(data);
       setShowEditModal(true);
