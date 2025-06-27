@@ -296,12 +296,21 @@ export default function EditClassPage() {
   
   // Handle form submission
   const onSubmit = (data: EditClassFormValues) => {
+    console.log('onSubmit called:', {
+      classData: classData,
+      recurringSeriesId: classData?.recurringSeriesId,
+      editOption: editOption,
+      showModal: classData?.recurringSeriesId && !editOption
+    });
+    
     // Check if this is a recurring class and no editOption was provided
     if (classData?.recurringSeriesId && !editOption) {
+      console.log('Showing recurring edit modal');
       // Show modal to ask for edit option
       setPendingFormData(data);
       setShowEditModal(true);
     } else {
+      console.log('Direct submission - no modal needed');
       // Direct submission for non-recurring classes or when editOption is already set
       editMutation.mutate(data);
     }
