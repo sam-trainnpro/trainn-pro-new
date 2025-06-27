@@ -577,7 +577,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/classes/:id", requireCoach, async (req, res) => {
     try {
       const classId = parseInt(req.params.id);
-      const editOption = req.query.editOption as 'this' | 'following' | undefined;
       
       // Check if the class exists
       const classItem = await storage.getClass(classId);
@@ -590,7 +589,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this class" });
       }
       
-      // Prepare update data
+      // Check if this is a recurring class
+      if (classItem.isRecurring) {
+        // Redirect to the series update endpoint
+        return res.status(400).json({ 
+          message: "This is a recurring class series. Use the series update endpoint.",
+          isRecurring: true,
+          classId: classItem.id
+        });
+      }
+      
+      // Simplified update with just basic fields that we know work
       const updateData: any = {};
       
       // Only add fields that definitely exist and have valid values
@@ -609,18 +618,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (req.body.endTime) {
         updateData.endTime = new Date(req.body.endTime);
-      }
-
-      // Handle recurring class updates
-      if (classItem.recurringSeriesId && editOption === 'following') {
-        // Update this class and all following classes in the series
-        await storage.updateThisAndFollowingClasses(classId, updateData);
-        
-        res.json({ 
-          message: "Class and following classes updated successfully",
-          editOption: 'following'
-        });
-        return;
       }
 
       // Update the class using storage method

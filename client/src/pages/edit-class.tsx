@@ -30,10 +30,8 @@ import {
   MapPin, 
   Clock, 
   ArrowLeftIcon,
-  Save,
-  Calendar as CalendarLucide
+  Save
 } from "lucide-react";
-import { EditRecurringModal, type EditOption } from "@/components/edit-recurring-modal";
 
 // Define validation schema for editing a class
 const editClassSchema = z.object({
@@ -54,21 +52,13 @@ type EditClassFormValues = z.infer<typeof editClassSchema>;
 
 export default function EditClassPage() {
   const { id } = useParams<{ id: string }>();
-  const [location, navigate] = useLocation();
+  const [, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  // Get editOption from URL query parameters
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const editOption = urlParams.get('editOption') as 'this' | 'following' | null;
   
   // State for image upload
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
-  
-  // State for recurring edit modal
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [pendingFormData, setPendingFormData] = useState<EditClassFormValues | null>(null);
   
   // Fetch the class to edit
   const {
@@ -245,13 +235,9 @@ export default function EditClassPage() {
       
       console.log('Formatted data sent to server:', formattedData);
       
-      // Get current editOption from URL (may have been updated during modal confirmation)
-      const currentUrl = new URL(window.location.href);
-      const currentEditOption = currentUrl.searchParams.get('editOption') as 'this' | 'following' | null;
-      
-      // Determine the endpoint based on editOption
-      const endpoint = currentEditOption === 'following' 
-        ? `/api/classes/${id}?editOption=following`
+      // Determine if we need to update the entire series or just this instance
+      const endpoint = updateSeries && classData?.isRecurring 
+        ? `/api/classes/${id}/series` 
         : `/api/classes/${id}`;
       
       const response = await apiRequest("PUT", endpoint, formattedData);
@@ -297,46 +283,7 @@ export default function EditClassPage() {
   
   // Handle form submission
   const onSubmit = (data: EditClassFormValues) => {
-    console.log('onSubmit called:', {
-      classData: classData,
-      recurringSeriesId: classData?.recurringSeriesId,
-      recurring_series_id: (classData as any)?.recurring_series_id,
-      editOption: editOption,
-      showModal: !!classData?.recurringSeriesId && !editOption,
-      allKeys: classData ? Object.keys(classData) : []
-    });
-    
-    // Check if this is a recurring class and no editOption was provided
-    // Check for both camelCase and snake_case property names
-    const hasRecurringSeries = classData?.recurringSeriesId || (classData as any)?.recurring_series_id;
-    
-    if (hasRecurringSeries && !editOption) {
-      console.log('Showing recurring edit modal for series:', hasRecurringSeries);
-      // Show modal to ask for edit option
-      setPendingFormData(data);
-      setShowEditModal(true);
-    } else {
-      console.log('Direct submission - no modal needed');
-      // Direct submission for non-recurring classes or when editOption is already set
-      editMutation.mutate(data);
-    }
-  };
-
-  // Handle recurring edit modal confirmation
-  const handleEditConfirm = (option: EditOption) => {
-    if (pendingFormData) {
-      // Update the URL to include the edit option and proceed with mutation
-      const currentUrl = new URL(window.location.href);
-      currentUrl.searchParams.set('editOption', option);
-      window.history.replaceState({}, '', currentUrl.toString());
-      
-      // Now mutate with the selected option
-      editMutation.mutate(pendingFormData);
-      
-      // Clear pending data
-      setPendingFormData(null);
-    }
-    setShowEditModal(false);
+    editMutation.mutate(data);
   };
   
   // If not authorized, show error
@@ -478,22 +425,6 @@ export default function EditClassPage() {
                   </FormItem>
                 )}
               />
-              
-              {/* Recurring Class Information */}
-              {classData?.recurringSeriesId && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CalendarLucide className="h-5 w-5 text-blue-600" />
-                    <h3 className="font-medium text-blue-900">Recurring Class</h3>
-                  </div>
-                  <p className="text-sm text-blue-700 mb-2">
-                    This class is part of a recurring series (ID: {classData.recurringSeriesId}).
-                  </p>
-                  <p className="text-sm text-blue-600">
-                    After clicking "Save Changes", you'll be asked whether to edit just this class or this and all following classes in the series.
-                  </p>
-                </div>
-              )}
               
               {/* Category */}
               <FormField
@@ -853,14 +784,6 @@ export default function EditClassPage() {
       
       <Footer />
       <MobileNavigation />
-      
-      {/* Edit Recurring Modal */}
-      <EditRecurringModal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        onConfirm={handleEditConfirm}
-        classTitle={classData?.title || ""}
-      />
     </div>
   );
 }
