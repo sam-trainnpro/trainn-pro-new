@@ -25,6 +25,9 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import ReviewPage from "@/pages/review";
 import CustomersPage from "@/pages/customers";
 import MyCalendarPage from "@/pages/my-calendar";
+import BlogPage from "@/pages/blog";
+import BlogPostPage from "@/pages/blog-post";
+import BlogAdminPage from "@/pages/blog-admin";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -95,6 +98,15 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/my-calendar">
         <MyCalendarPage />
+      </ProtectedRoute>
+      <Route path="/blog">
+        <BlogPage />
+      </Route>
+      <Route path="/blog/:slug">
+        <BlogPostPage />
+      </Route>
+      <ProtectedRoute path="/blog/admin">
+        <BlogAdminPage />
       </ProtectedRoute>
       <Route>
         <NotFound />
