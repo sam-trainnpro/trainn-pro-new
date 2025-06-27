@@ -7,9 +7,8 @@ import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../../hooks/use-toast";
 import { useAuth } from "../../../hooks/use-auth-simple";
-import { apiRequest } from "@/lib/queryClient";
 import type { BlogPost } from "@shared/schema";
 
 export default function BlogAdminPage() {
@@ -51,9 +50,13 @@ export default function BlogAdminPage() {
   // Delete post mutation
   const deleteMutation = useMutation({
     mutationFn: async (postId: number) => {
-      return await apiRequest(`/api/blog/${postId}`, {
+      const response = await fetch(`/api/blog/${postId}`, {
         method: 'DELETE',
       });
+      if (!response.ok) {
+        throw new Error('Failed to delete blog post');
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/blog/admin'] });
