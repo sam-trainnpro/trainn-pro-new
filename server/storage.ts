@@ -6,7 +6,8 @@ import {
   classCategories, type ClassCategory, type InsertClassCategory,
   classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules,
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
-  contactMessages, type ContactMessage, type InsertContactMessage
+  contactMessages, type ContactMessage, type InsertContactMessage,
+  blogPosts, type BlogPost, type InsertBlogPost
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -90,6 +91,14 @@ export interface IStorage {
   
   // Customer management
   getCustomersForCoach(coachId: number, userRole: string): Promise<any[]>;
+  
+  // Blog posts
+  createBlogPost(postData: InsertBlogPost): Promise<BlogPost>;
+  getBlogPost(id: number): Promise<BlogPost | undefined>;
+  getBlogPosts(filters?: { status?: string }): Promise<BlogPost[]>;
+  getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
+  updateBlogPost(id: number, postData: Partial<BlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -909,6 +918,46 @@ export class DatabaseStorage implements IStorage {
       averageRating: stats?.averageRating || 0,
       totalReviews: stats?.totalReviews || 0
     };
+  }
+
+  // Blog post methods
+  async createBlogPost(postData: InsertBlogPost): Promise<BlogPost> {
+    const [post] = await db.insert(blogPosts).values(postData).returning();
+    return post;
+  }
+
+  async getBlogPost(id: number): Promise<BlogPost | undefined> {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.id, id));
+    return post || undefined;
+  }
+
+  async getBlogPosts(filters?: { status?: string }): Promise<BlogPost[]> {
+    const query = db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt));
+    
+    if (filters?.status) {
+      return await query.where(eq(blogPosts.status, filters.status));
+    }
+    
+    return await query;
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<BlogPost | undefined> {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug));
+    return post || undefined;
+  }
+
+  async updateBlogPost(id: number, postData: Partial<BlogPost>): Promise<BlogPost | undefined> {
+    const [updatedPost] = await db
+      .update(blogPosts)
+      .set({ ...postData, updatedAt: new Date() })
+      .where(eq(blogPosts.id, id))
+      .returning();
+    return updatedPost || undefined;
+  }
+
+  async deleteBlogPost(id: number): Promise<boolean> {
+    const result = await db.delete(blogPosts).where(eq(blogPosts.id, id));
+    return result.rowCount > 0;
   }
 }
 

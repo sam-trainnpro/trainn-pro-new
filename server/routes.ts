@@ -2211,7 +2211,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Blog post routes
+  
+  // Get all published blog posts (public)
+  app.get("/api/blog", async (req, res) => {
+    try {
+      const posts = await storage.getBlogPosts({ status: "published" });
+      res.json(posts);
+    } catch (error: any) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
 
+  // Get all blog posts including drafts (admin only)
+  app.get("/api/blog/admin", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const posts = await storage.getBlogPosts();
+      res.json(posts);
+    } catch (error: any) {
+      console.error("Error fetching all blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  // Get single blog post by slug (public for published, admin for all)
+  app.get("/api/blog/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const post = await storage.getBlogPostBySlug(slug);
+      
+      if (!post) {
+        return res.status(404).json({ message: "Blog post not found" });
+      }
+
+      // Check if post is published or user is admin
+      if (post.status !== "published") {
+        // Only allow admin to view unpublished posts
+        if (!req.user || req.user.role !== "admin") {
+          return res.status(404).json({ message: "Blog post not found" });
+        }
+      }
+
+      res.json(post);
+    } catch (error: any) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ message: "Failed to fetch blog post" });
+    }
+  });
+
+  // Create new blog post (admin only)
+  app.post("/api/blog", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { title, content, excerpt, slug, featuredImage, status, tags, metaDescription } = req.body;
+
+      if (!title || !content || !slug) {
+        return res.status(400).json({ message: "Title, content, and slug are required" });
+      }
+
+      // Calculate read time (approximate: 200 words per minute)
+      const wordCount = content.split(/\s+/).length;
+      const readTime = Math.ceil(wordCount / 200);
+
+      const blogPost = await storage.createBlogPost({
+        title,
+        content,
+        excerpt: excerpt || content.substring(0, 200) + "...",
+        slug,
+        featuredImage: featuredImage || null,
+        authorId: req.user!.id,
+        status: status || "draft",
+        publishedAt: status === "published" ? new Date() : null,
+        tags: tags || [],
+        metaDescription: metaDescription || null,
+        readTime
+      });
+
+      res.status(201).json(blogPost);
+    } catch (error: any) {
+      console.error("Error creating blog post:", error);
+      if (error.message?.includes("duplicate key")) {
+        return res.status(400).json({ message: "A blog post with this slug already exists" });
+      }
+      res.status(500).json({ message: "Failed to create blog post" });
+    }
+  });
+
+  // Update blog post (admin only)
+  app.put("/api/blog/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const { title, content, excerpt, slug, featuredImage, status, tags, metaDescription } = req.body;
+
+      const existingPost = await storage.getBlogPost(postId);
+      if (!existingPost) {
+        return res.status(404).json({ message: "Blog post not found" });
+      }
+
+      // Calculate read time if content changed
+      const wordCount = content ? content.split(/\s+/).length : 0;
+      const readTime = content ? Math.ceil(wordCount / 200) : existingPost.readTime;
+
+      const updatedPost = await storage.updateBlogPost(postId, {
+        title: title || existingPost.title,
+        content: content || existingPost.content,
+        excerpt: excerpt || existingPost.excerpt,
+        slug: slug || existingPost.slug,
+        featuredImage: featuredImage !== undefined ? featuredImage : existingPost.featuredImage,
+        status: status || existingPost.status,
+        publishedAt: status === "published" && existingPost.status !== "published" ? new Date() : existingPost.publishedAt,
+        tags: tags || existingPost.tags,
+        metaDescription: metaDescription !== undefined ? metaDescription : existingPost.metaDescription,
+        readTime
+      });
+
+      res.json(updatedPost);
+    } catch (error: any) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ message: "Failed to update blog post" });
+    }
+  });
+
+  // Delete blog post (admin only)
+  app.delete("/api/blog/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      
+      const existingPost = await storage.getBlogPost(postId);
+      if (!existingPost) {
+        return res.status(404).json({ message: "Blog post not found" });
+      }
+
+      await storage.deleteBlogPost(postId);
+      res.json({ message: "Blog post deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ message: "Failed to delete blog post" });
+    }
+  });
 
   const httpServer = createServer(app);
 
