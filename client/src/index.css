@@ -110,22 +110,6 @@
   @apply bg-white/80 backdrop-blur-md border border-white/30;
 }
 
-/* Apple Pay Button Styling */
-.PaymentRequestButton {
-  height: 48px;
-  border-radius: 6px;
-  width: 100%;
-}
-
-.PaymentRequestButton:focus {
-  outline: 2px solid #007aff;
-  outline-offset: 2px;
-}
-
-.apple-pay-button-container {
-  width: 100%;
-}
-
 /* Animation classes */
 .slide-in {
   animation: slideIn 0.3s ease-out forwards;
