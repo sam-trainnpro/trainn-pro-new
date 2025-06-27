@@ -184,42 +184,8 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
       });
       setPaymentStatus("error");
     } else {
-      // Payment succeeded, now confirm the booking
-      try {
-        const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
-          paymentIntentId: paymentIntent?.id,
-          classId: classItem.id,
-          quantity: quantity
-        });
-        
-        if (confirmResponse.ok) {
-          // Invalidate bookings cache to refresh My Bookings page
-          queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-          queryClient.invalidateQueries({ queryKey: [`/api/classes/${classItem.id}/bookings/count`] });
-          
-          toast({
-            title: "Payment Successful",
-            description: "Your booking has been confirmed!",
-          });
-          setPaymentStatus("success");
-          
-          // Force refresh bookings data before navigating
-          await queryClient.refetchQueries({ queryKey: ['/api/bookings'] });
-          
-          // Redirect to bookings page with refresh parameter after successful payment
-          setTimeout(() => {
-            navigate("/bookings?refresh=true");
-          }, 1500);
-        } else {
-          throw new Error("Failed to confirm booking");
-        }
-      } catch (confirmError) {
-        toast({
-          title: "Payment Processed",
-          description: "Payment successful, but there was an issue confirming your booking. Please contact support.",
-          variant: "destructive",
-        });
-      }
+      // Payment succeeded, use shared handler
+      await handlePaymentSuccess(paymentIntent);
     }
     
     setIsProcessing(false);
@@ -243,46 +209,68 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-[#F7F7F7] rounded-lg p-4">
-        <PaymentElement />
-      </div>
-      
-      <div className="space-y-3">
-        <div className="flex justify-between">
-          <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
-          <span>${(classItem.price * quantity).toFixed(2)}</span>
+    <div className="space-y-6">
+      {/* Apple Pay Button - shows only if available */}
+      {paymentRequest && canMakePayment && (
+        <div className="space-y-4">
+          <div className="apple-pay-button-container">
+            <PaymentRequestButtonElement 
+              options={{ paymentRequest }}
+              className="PaymentRequestButton"
+            />
+          </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or pay with card</span>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span>Service fee</span>
-          <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
-        </div>
-        <Separator />
-        <div className="flex justify-between font-medium">
-          <span>Total</span>
-          <span>${(classItem.price * quantity * 1.05).toFixed(2)}</span>
-        </div>
-      </div>
+      )}
       
-      <Button 
-        type="submit" 
-        className="w-full bg-primary text-white"
-        disabled={!stripe || isProcessing}
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing Payment...
-          </>
-        ) : (
-          `Pay $${(classItem.price * quantity * 1.05).toFixed(2)}`
-        )}
-      </Button>
-      
-      <p className="text-xs text-muted-foreground text-center">
-        By completing this purchase, you agree to our Terms of Service and Privacy Policy.
-      </p>
-    </form>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-[#F7F7F7] rounded-lg p-4">
+          <PaymentElement />
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
+            <span>${(classItem.price * quantity).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Service fee</span>
+            <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
+          </div>
+          <Separator />
+          <div className="flex justify-between font-medium">
+            <span>Total</span>
+            <span>${(classItem.price * quantity * 1.05).toFixed(2)}</span>
+          </div>
+        </div>
+        
+        <Button 
+          type="submit" 
+          className="w-full bg-primary text-white"
+          disabled={!stripe || isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing Payment...
+            </>
+          ) : (
+            `Pay $${(classItem.price * quantity * 1.05).toFixed(2)}`
+          )}
+        </Button>
+        
+        <p className="text-xs text-muted-foreground text-center">
+          By completing this purchase, you agree to our Terms of Service and Privacy Policy.
+        </p>
+      </form>
+    </div>
   );
 };
 
