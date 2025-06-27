@@ -49,7 +49,7 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
   const [canMakePayment, setCanMakePayment] = useState(false);
 
-  // Initialize Apple Pay
+  // Initialize Apple Pay and Google Pay
   useEffect(() => {
     if (stripe) {
       const totalAmount = classItem.price * quantity * 1.05; // Include service fee
@@ -65,7 +65,7 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
         requestPayerEmail: true,
       });
 
-      // Check if Apple Pay is available
+      // Check if Apple Pay or Google Pay is available
       pr.canMakePayment().then(result => {
         if (result) {
           setPaymentRequest(pr);
@@ -210,7 +210,7 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
 
   return (
     <div className="space-y-6">
-      {/* Apple Pay Button - shows only if available */}
+      {/* Quick Pay Buttons - Apple Pay, Google Pay, etc. */}
       {paymentRequest && canMakePayment && (
         <div className="space-y-4">
           <div className="apple-pay-button-container">
