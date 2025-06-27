@@ -238,3 +238,30 @@ export const insertContactMessageSchema = createInsertSchema(contactMessages).om
 
 export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
 export type ContactMessage = typeof contactMessages.$inferSelect;
+
+// Blog Posts
+export const blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  excerpt: text("excerpt"),
+  slug: text("slug").notNull().unique(),
+  featuredImage: text("featured_image"),
+  authorId: integer("author_id").notNull(),
+  status: text("status").notNull().default("draft"), // draft, published, archived
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  tags: text("tags").array().default([]),
+  metaDescription: text("meta_description"),
+  readTime: integer("read_time"), // estimated read time in minutes
+});
+
+export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
+export type BlogPost = typeof blogPosts.$inferSelect;
