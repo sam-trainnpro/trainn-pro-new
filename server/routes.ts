@@ -959,10 +959,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
       
-      // Create a PaymentIntent with the class price
+      // Create a PaymentIntent with the class price and Apple Pay support
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(classItem.price * 100), // Convert to cents
         currency: "usd",
+        payment_method_types: ['card', 'apple_pay'], // Enable Apple Pay
         // Store the class and user IDs as metadata
         metadata: {
           classId: classItem.id.toString(),
@@ -1118,10 +1119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const platformFee = Math.round(amountInCents * 0.15);
           const coachPayout = amountInCents - platformFee;
           
-          // Create payment intent with Stripe Connect
+          // Create payment intent with Stripe Connect and Apple Pay support
           const paymentIntentData: any = {
             amount: amountInCents,
             currency: "usd",
+            payment_method_types: ['card', 'apple_pay'], // Enable Apple Pay
             description: `Booking for ${classDetails.title}`,
             metadata: {
               classId: classId.toString(),
