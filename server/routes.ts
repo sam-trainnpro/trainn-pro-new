@@ -1119,11 +1119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const platformFee = Math.round(amountInCents * 0.15);
           const coachPayout = amountInCents - platformFee;
           
-          // Create payment intent with Stripe Connect and Apple Pay support
+          // Create payment intent with Stripe Connect (Apple Pay conditional)
           const paymentIntentData: any = {
             amount: amountInCents,
             currency: "usd",
-            payment_method_types: ['card', 'apple_pay'], // Enable Apple Pay
+            payment_method_types: ['card'], // Start with card only
             description: `Booking for ${classDetails.title}`,
             metadata: {
               classId: classId.toString(),
