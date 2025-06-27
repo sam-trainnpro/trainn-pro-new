@@ -48,7 +48,6 @@ export interface IStorage {
   getClassesByCoach(coachId: number): Promise<Class[]>;
   updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined>;
   updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]>;
-  updateThisAndFollowingClasses(classId: number, classData: Partial<Class>): Promise<Class[]>;
   getClassesByParentId(parentClassId: number): Promise<Class[]>;
   getClassesBySeriesId(seriesId: string): Promise<Class[]>;
   deleteClass(id: number): Promise<boolean>;
@@ -492,46 +491,6 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedClasses;
-  }
-
-  async updateThisAndFollowingClasses(classId: number, classData: Partial<Class>): Promise<Class[]> {
-    try {
-      console.log(`Updating this and following classes starting from: ${classId}`);
-      
-      // Get the class to find its series and start time
-      const targetClass = await this.getClass(classId);
-      if (!targetClass || !targetClass.recurringSeriesId || !targetClass.startTime) {
-        throw new Error("Class not found or not part of a recurring series");
-      }
-      
-      // Get all classes in the series that start at or after this class
-      const seriesToUpdate = await db.select().from(classes)
-        .where(and(
-          eq(classes.recurringSeriesId, targetClass.recurringSeriesId),
-          sql`${classes.startTime} >= ${targetClass.startTime}`
-        ));
-      
-      console.log(`Found ${seriesToUpdate.length} classes to update (this and following)`);
-      
-      // Update all matching classes
-      const updatedClasses: Class[] = [];
-      for (const classInstance of seriesToUpdate) {
-        const result = await db.update(classes)
-          .set(classData)
-          .where(eq(classes.id, classInstance.id))
-          .returning();
-        
-        if (result.length > 0) {
-          updatedClasses.push(result[0]);
-        }
-      }
-      
-      console.log(`Successfully updated ${updatedClasses.length} classes (this and following)`);
-      return updatedClasses;
-    } catch (error) {
-      console.error("Error updating this and following classes:", error);
-      throw error;
-    }
   }
   
   async deleteClass(id: number): Promise<boolean> {

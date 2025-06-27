@@ -10,7 +10,6 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { Link, useLocation } from 'wouter';
 import ClassDetailModal from '@/components/class-detail-modal';
 import { DeleteRecurringModal, DeleteOption } from '@/components/delete-recurring-modal';
-import { EditRecurringModal, EditOption } from '@/components/edit-recurring-modal';
 import BookingWarningModal from '@/components/booking-warning-modal';
 import { useToast } from '../../../hooks/use-toast';
 
@@ -55,8 +54,6 @@ export default function MyCalendarPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [classToDelete, setClassToDelete] = useState<Class | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [classToEdit, setClassToEdit] = useState<Class | null>(null);
   const [showBookingWarningModal, setShowBookingWarningModal] = useState(false);
   const [pendingDeleteClass, setPendingDeleteClass] = useState<Class | null>(null);
   const [, setLocation] = useLocation();
@@ -86,22 +83,6 @@ export default function MyCalendarPage() {
   const handleClassClick = (classItem: Class) => {
     setSelectedClass(classItem);
     setIsModalOpen(true);
-  };
-
-  const handleEdit = (classItem: Class) => {
-    // Go directly to edit page for all classes - modal will appear on save if recurring
-    setLocation(`/edit-class/${classItem.id}`);
-  };
-
-  const handleEditConfirm = (option: EditOption) => {
-    if (classToEdit) {
-      const editUrl = option === 'following' 
-        ? `/edit-class/${classToEdit.id}?editOption=following`
-        : `/edit-class/${classToEdit.id}`;
-      
-      setLocation(editUrl);
-      setClassToEdit(null);
-    }
   };
 
   const handleDuplicate = async (classId: number) => {
@@ -524,21 +505,9 @@ export default function MyCalendarPage() {
         classItem={selectedClass}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onEdit={handleEdit}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
         bookingCount={selectedClass ? bookingCounts[selectedClass.id] : undefined}
-      />
-
-      {/* Edit Recurring Modal */}
-      <EditRecurringModal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setClassToEdit(null);
-        }}
-        onConfirm={handleEditConfirm}
-        classTitle={classToEdit?.title || ''}
       />
 
       {/* Delete Recurring Modal */}

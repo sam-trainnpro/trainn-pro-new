@@ -32,7 +32,6 @@ interface ClassDetailModalProps {
   classItem: Class | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (classItem: Class) => void;
   onDuplicate: (classId: number) => void;
   onDelete: (classItem: Class) => void;
   bookingCount?: { active: number; total: number };
@@ -42,7 +41,6 @@ export default function ClassDetailModal({
   classItem, 
   isOpen, 
   onClose, 
-  onEdit,
   onDuplicate, 
   onDelete,
   bookingCount 
@@ -136,14 +134,12 @@ export default function ClassDetailModal({
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={() => onEdit(classItem)}
-              className="flex-1 flex items-center gap-2"
-            >
-              <Edit3 className="h-4 w-4" />
-              Edit
-            </Button>
+            <Link href={`/edit-class/${classItem.id}`} className="flex-1">
+              <Button variant="outline" className="w-full flex items-center gap-2">
+                <Edit3 className="h-4 w-4" />
+                Edit
+              </Button>
+            </Link>
             
             <Button 
               variant="outline" 
