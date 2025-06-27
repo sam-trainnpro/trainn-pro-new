@@ -4,7 +4,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { Class, Booking } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { Elements, PaymentElement, PaymentRequestButtonElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -46,6 +46,117 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
   const [_, navigate] = useLocation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
+  const [paymentRequest, setPaymentRequest] = useState<any>(null);
+  const [canMakePayment, setCanMakePayment] = useState(false);
+
+  // Initialize Apple Pay
+  useEffect(() => {
+    if (stripe) {
+      const totalAmount = classItem.price * quantity * 1.05; // Include service fee
+      
+      const pr = stripe.paymentRequest({
+        country: 'US',
+        currency: 'usd',
+        total: {
+          label: `${classItem.title} - Class Booking`,
+          amount: Math.round(totalAmount * 100), // Convert to cents
+        },
+        requestPayerName: true,
+        requestPayerEmail: true,
+      });
+
+      // Check if Apple Pay is available
+      pr.canMakePayment().then(result => {
+        if (result) {
+          setPaymentRequest(pr);
+          setCanMakePayment(true);
+        }
+      });
+
+      // Handle Apple Pay payment confirmation
+      pr.on('paymentmethod', async (ev) => {
+        setIsProcessing(true);
+        setPaymentStatus("processing");
+
+        try {
+          // Use the client secret from the existing payment intent
+          const clientSecret = new URLSearchParams(window.location.search).get('payment_intent_client_secret');
+          
+          if (!clientSecret) {
+            throw new Error('Payment configuration error');
+          }
+
+          const { error, paymentIntent } = await stripe.confirmCardPayment(
+            clientSecret,
+            { payment_method: ev.paymentMethod.id },
+            { handleActions: false }
+          );
+
+          if (error) {
+            ev.complete('fail');
+            toast({
+              title: "Apple Pay Failed",
+              description: error.message || "Payment could not be processed.",
+              variant: "destructive",
+            });
+            setPaymentStatus("error");
+          } else {
+            ev.complete('success');
+            await handlePaymentSuccess(paymentIntent);
+          }
+        } catch (error: any) {
+          ev.complete('fail');
+          toast({
+            title: "Apple Pay Failed",
+            description: error.message || "An unexpected error occurred.",
+            variant: "destructive",
+          });
+          setPaymentStatus("error");
+        }
+        
+        setIsProcessing(false);
+      });
+    }
+  }, [stripe, classItem, quantity]);
+
+  // Shared payment success handler
+  const handlePaymentSuccess = async (paymentIntent: any) => {
+    try {
+      const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
+        paymentIntentId: paymentIntent?.id,
+        classId: classItem.id,
+        quantity: quantity
+      });
+      
+      if (confirmResponse.ok) {
+        // Invalidate bookings cache to refresh My Bookings page
+        queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/classes/${classItem.id}/bookings/count`] });
+        
+        toast({
+          title: "Payment Successful",
+          description: "Your booking has been confirmed!",
+        });
+        setPaymentStatus("success");
+        
+        // Force refresh bookings data before navigating
+        await queryClient.refetchQueries({ queryKey: ['/api/bookings'] });
+        
+        // Redirect to bookings page with refresh parameter after successful payment
+        setTimeout(() => {
+          navigate("/bookings?refresh=true");
+        }, 1500);
+      } else {
+        throw new Error("Failed to confirm booking");
+      }
+    } catch (confirmError) {
+      toast({
+        title: "Payment Processed",
+        description: "Payment successful, but there was an issue confirming your booking. Please contact support.",
+        variant: "destructive",
+      });
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
