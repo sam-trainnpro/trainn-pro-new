@@ -30,7 +30,8 @@ import {
   MapPin, 
   Clock, 
   ArrowLeftIcon,
-  Save
+  Save,
+  Calendar as CalendarLucide
 } from "lucide-react";
 import { EditRecurringModal, type EditOption } from "@/components/edit-recurring-modal";
 
@@ -477,6 +478,22 @@ export default function EditClassPage() {
                   </FormItem>
                 )}
               />
+              
+              {/* Recurring Class Information */}
+              {classData?.recurringSeriesId && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <CalendarLucide className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-medium text-blue-900">Recurring Class</h3>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-2">
+                    This class is part of a recurring series (ID: {classData.recurringSeriesId}).
+                  </p>
+                  <p className="text-sm text-blue-600">
+                    After clicking "Save Changes", you'll be asked whether to edit just this class or this and all following classes in the series.
+                  </p>
+                </div>
+              )}
               
               {/* Category */}
               <FormField
