@@ -24,13 +24,13 @@ export function EditRecurringModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="edit-recurring-description">
         <DialogHeader>
           <DialogTitle>Edit Recurring Class</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p id="edit-recurring-description" className="text-sm text-gray-600">
             "{classTitle}" is part of a recurring series. What would you like to edit?
           </p>
           
