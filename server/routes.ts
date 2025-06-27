@@ -959,11 +959,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
       
-      // Create a PaymentIntent with multiple payment methods
+      // Create a PaymentIntent with the class price
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(classItem.price * 100), // Convert to cents
         currency: "usd",
-        payment_method_types: ['card', 'apple_pay', 'google_pay', 'klarna', 'amazon_pay', 'cashapp'],
         // Store the class and user IDs as metadata
         metadata: {
           classId: classItem.id.toString(),
@@ -1119,11 +1118,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const platformFee = Math.round(amountInCents * 0.15);
           const coachPayout = amountInCents - platformFee;
           
-          // Create payment intent with Stripe Connect and multiple payment methods
+          // Create payment intent with Stripe Connect
           const paymentIntentData: any = {
             amount: amountInCents,
             currency: "usd",
-            payment_method_types: ['card', 'apple_pay', 'google_pay', 'klarna', 'amazon_pay', 'cashapp'],
             description: `Booking for ${classDetails.title}`,
             metadata: {
               classId: classId.toString(),

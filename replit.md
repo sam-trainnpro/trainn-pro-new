@@ -121,7 +121,6 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
-- June 27, 2025. Implemented comprehensive payment methods integration - added Apple Pay, Google Pay, Klarna, Amazon Pay, and Cash App support to checkout system. Updated both payment intent creation endpoints to include all payment methods, enhanced PaymentRequestButtonElement to support multiple quick-pay options, and maintained seamless integration with existing booking confirmation flow.
 - June 26, 2025. Fixed cache invalidation bug in class editing - corrected query key format mismatch that prevented My Calendar from showing updated data immediately after editing
 - June 26, 2025. Enhanced class editing workflow - after saving changes, users are redirected to My Calendar page with auto-refreshed data to immediately see their updates in calendar view
 - June 26, 2025. Fixed class editing bug causing 500 error - corrected undefined variable reference in update class route that was preventing coaches from editing class details
