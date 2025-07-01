@@ -30,6 +30,7 @@ export interface SearchFilters {
   location?: string;
   date?: Date;
   classType?: string;
+  ageGroup?: string;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -107,6 +108,19 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     });
   };
   
+  const handleAgeGroupSelect = (value: string) => {
+    const newParams = {
+      ...searchParams,
+      ageGroup: value
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude,
+      longitude
+    });
+  };
+  
   const handleLocationClick = () => {
     getUserLocation();
   };
@@ -123,9 +137,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     if (searchParams.query) count++;
     if (searchParams.date) count++;
     if (searchParams.classType) count++;
+    if (searchParams.ageGroup) count++;
     if (latitude && longitude) count++;
-    
-
     
     setActiveFiltersCount(count);
   }, [searchParams, latitude, longitude]);
@@ -256,6 +269,40 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
               </PopoverContent>
             </Popover>
             
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant={searchParams.ageGroup ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.ageGroup 
+                      ? searchParams.ageGroup
+                      : "Age Group"
+                    }
+                  </span>
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-60">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Select age group</h4>
+                  <Select 
+                    onValueChange={handleAgeGroupSelect}
+                    value={searchParams.ageGroup}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select age group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Adults">Adults</SelectItem>
+                      <SelectItem value="Kids">Kids</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
 
             
             <Button className="min-w-fit pl-[8px] pr-[8px]" onClick={handleSearch}>
@@ -325,6 +372,24 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                     className="h-3 w-3 ml-1 cursor-pointer" 
                     onClick={() => {
                       const newParams = {...searchParams, classType: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude,
+                        longitude
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+              
+              {searchParams.ageGroup && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Age: {searchParams.ageGroup}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, ageGroup: undefined};
                       setSearchParams(newParams);
                       onSearch({
                         ...newParams,
