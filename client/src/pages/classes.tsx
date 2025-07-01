@@ -31,6 +31,7 @@ export default function ClassesPage() {
   const [filters, setFilters] = useState<SearchFiltersType>({
     query: typeof searchParams.q === 'string' ? searchParams.q : "",
     classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
+    ageGroup: typeof searchParams.ageGroup === 'string' ? searchParams.ageGroup : undefined,
     date: searchParams.date ? new Date(searchParams.date as string) : undefined,
     latitude: typeof searchParams.lat === 'string' ? Number(searchParams.lat) : null,
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
@@ -98,7 +99,10 @@ export default function ClassesPage() {
       return false;
     }
 
-
+    // Age group filter
+    if (filters.ageGroup && classItem.ageGroup !== filters.ageGroup) {
+      return false;
+    }
 
     // Date filter - show classes only for the selected date
     if (filters.date) {
@@ -154,6 +158,10 @@ export default function ClassesPage() {
     
     if (newFilters.classType) {
       queryParams.set('type', newFilters.classType);
+    }
+    
+    if (newFilters.ageGroup) {
+      queryParams.set('ageGroup', newFilters.ageGroup);
     }
     
     if (newFilters.date) {
