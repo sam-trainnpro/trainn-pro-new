@@ -97,6 +97,8 @@ export const classes = pgTable("classes", {
   recurrenceEndCount: integer("recurrence_end_count"),
   // Storage for what to bring information
   whatToBring: text("what_to_bring"),
+  // Age group for the class
+  ageGroup: text("age_group").notNull().default("Adults"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -124,6 +126,7 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   recurrenceEndDate: true,
   recurrenceEndCount: true,
   whatToBring: true,
+  ageGroup: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;

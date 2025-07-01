@@ -76,6 +76,7 @@ const createClassSchema = z.object({
   endTime: z.string().optional(), // Added for API compatibility
   whatToBring: z.string().optional(),
   image: z.string().optional(),
+  ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
   isRecurring: z.boolean().default(false),
   // Recurrence fields
   recurrenceType: z.enum(['daily', 'weekly', 'monthly']).optional(),
@@ -237,6 +238,7 @@ export default function CreateClassPage() {
       endTime: "",
       whatToBring: "",
       image: "",
+      ageGroup: "Adults",
       isRecurring: false,
       recurrenceType: undefined,
       recurrenceInterval: undefined,
@@ -287,6 +289,7 @@ export default function CreateClassPage() {
         endTime: existingClass.endTime || "",
         whatToBring: existingClass.whatToBring || "",
         image: existingClass.image || "",
+        ageGroup: existingClass.ageGroup || "Adults",
         isRecurring: existingClass.isRecurring || false,
       });
     }
