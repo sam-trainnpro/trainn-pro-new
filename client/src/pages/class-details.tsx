@@ -38,7 +38,8 @@ import {
   AlertCircle,
   Plus,
   Minus,
-  Loader2
+  Loader2,
+  UserCheck
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
@@ -366,15 +367,13 @@ export default function ClassDetailsPage() {
                           </div>
                         </div>
                         
-                        {classItem.whatToBring && (
-                          <div className="flex items-center">
-                            <PackageOpen className="h-5 w-5 mr-3 text-primary" />
-                            <div>
-                              <p className="text-sm text-muted-foreground">What to Bring</p>
-                              <p className="font-medium">{classItem.whatToBring}</p>
-                            </div>
+                        <div className="flex items-center">
+                          <UserCheck className="h-5 w-5 mr-3 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Age Group</p>
+                            <p className="font-medium">{classItem.ageGroup || 'Adults'}</p>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </TabsContent>
                     
