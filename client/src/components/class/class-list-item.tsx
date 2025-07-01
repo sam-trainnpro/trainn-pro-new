@@ -128,14 +128,11 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           </div>
         </div>
         
-        {/* Price, category, age group, and spots left column */}
+        {/* Price, category, and spots left column */}
         <div className="flex flex-col items-end">
           <div className="flex gap-1 mb-1">
             <Badge variant="outline">
               {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              {classItem.ageGroup || 'Adults'}
             </Badge>
           </div>
           <div className="font-medium text-gray-900">${classItem.price}</div>
