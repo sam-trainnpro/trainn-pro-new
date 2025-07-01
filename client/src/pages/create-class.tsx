@@ -340,6 +340,7 @@ export default function CreateClassPage() {
         endTime: endTime,
         whatToBring: duplicateData.whatToBring || "",
         image: duplicateData.image || "",
+        ageGroup: duplicateData.ageGroup || "Adults",
         isRecurring: false, // Reset recurring to false for duplicates
       });
 
@@ -718,6 +719,34 @@ export default function CreateClassPage() {
                           </Select>
                           <FormDescription>
                             Choose the category that best fits your class
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="ageGroup"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age Group <span className="text-destructive">*</span></FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select age group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Adults">Adults</SelectItem>
+                              <SelectItem value="Kids">Kids</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose whether this class is designed for adults or kids
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
