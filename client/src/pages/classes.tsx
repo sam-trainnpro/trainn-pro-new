@@ -248,11 +248,17 @@ export default function ClassesPage() {
             </div>
             
             {/* Filters summary */}
-            {(filters.classType || filters.date || searchParams.category) && (
+            {(filters.classType || filters.ageGroup || filters.date || searchParams.category) && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {filters.classType && categories && (
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                     Type: {categories.find(c => c.id === Number(filters.classType))?.name || filters.classType}
+                  </div>
+                )}
+                
+                {filters.ageGroup && (
+                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+                    Age: {filters.ageGroup}
                   </div>
                 )}
                 
@@ -267,8 +273,6 @@ export default function ClassesPage() {
                     Date: {filters.date.toLocaleDateString()}
                   </div>
                 )}
-                
-
               </div>
             )}
             
