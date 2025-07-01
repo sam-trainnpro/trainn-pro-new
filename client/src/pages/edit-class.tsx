@@ -43,6 +43,7 @@ const editClassSchema = z.object({
   location: z.string().min(3, "Location is required"),
   address: z.string().min(5, "Address is required"),
   image: z.string().optional().nullable(),
+  ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
   classDate: z.date(),
   startTime: z.string().min(1, "Start time is required"),
   duration: z.coerce.number().positive("Duration must be positive"),
@@ -90,6 +91,7 @@ export default function EditClassPage() {
       location: "",
       address: "",
       image: "",
+      ageGroup: "Adults",
       classDate: new Date(),
       startTime: "09:00",
       duration: 60,
@@ -142,6 +144,7 @@ export default function EditClassPage() {
         location: classData.location,
         address: classData.address || "",
         image: classData.image || "",
+        ageGroup: (classData.ageGroup as "Adults" | "Kids") || "Adults",
         classDate: classDate,
         startTime: timeString,
         duration: duration > 0 ? duration : 60, // Default to 60 minutes if calculation fails
@@ -462,6 +465,35 @@ export default function EditClassPage() {
                     </Select>
                     <FormDescription>
                       Select the category that best fits your class
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Age Group */}
+              <FormField
+                control={form.control}
+                name="ageGroup"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Age Group</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select age group" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Adults">Adults</SelectItem>
+                        <SelectItem value="Kids">Kids</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose whether this class is designed for adults or kids
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
