@@ -243,6 +243,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (role === 'coach' && user.role === 'customer') {
               // Update user role to coach if they selected coach during Google sign-in
               await storage.updateUser(user.id, { role: 'coach' });
+              
+              // Send admin notification for new coach conversion
+              try {
+                const { sendNewCoachNotificationToAdmin } = await import('./email');
+                const updatedUser = await storage.getUser(user.id);
+                if (updatedUser) {
+                  await sendNewCoachNotificationToAdmin(updatedUser);
+                  console.log('Admin notification sent for OAuth coach conversion:', user.email);
+                }
+              } catch (emailError) {
+                console.error('Failed to send admin notification for OAuth coach conversion:', emailError);
+                // Don't fail the OAuth process if email fails
+              }
             }
           } catch (e) {
             console.error('Error parsing OAuth state:', e);
