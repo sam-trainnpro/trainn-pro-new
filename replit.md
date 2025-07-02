@@ -121,6 +121,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 2, 2025. Implemented admin email notification system for new coach registrations - sends professional HTML email to sam@trainn.pro when new coaches register via standard registration or Google OAuth conversion, includes coach details, areas of expertise, and bio for admin review
 - January 2, 2025. Resolved recurring Vite dependency cache corruption issues by implementing complete dependency rebuild process - fixed persistent preview loading problems that occurred multiple times during development
 - January 2, 2025. Completed Age Group UI improvements - replaced duplicate "What to Bring" section on Class Detail page with Age Group display showing "Adults" or "Kids" alongside other class information
 - January 2, 2025. Integrated Age Group filtering with Browse All Classes page - removed age group badges from individual class listings and added Age Group filter dropdown with proper URL parameter handling
