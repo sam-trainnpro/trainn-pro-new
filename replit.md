@@ -121,6 +121,9 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 2, 2025. Resolved recurring Vite dependency cache corruption issues by implementing complete dependency rebuild process - fixed persistent preview loading problems that occurred multiple times during development
+- January 2, 2025. Completed Age Group UI improvements - replaced duplicate "What to Bring" section on Class Detail page with Age Group display showing "Adults" or "Kids" alongside other class information
+- January 2, 2025. Integrated Age Group filtering with Browse All Classes page - removed age group badges from individual class listings and added Age Group filter dropdown with proper URL parameter handling
 - June 26, 2025. Fixed cache invalidation bug in class editing - corrected query key format mismatch that prevented My Calendar from showing updated data immediately after editing
 - June 26, 2025. Enhanced class editing workflow - after saving changes, users are redirected to My Calendar page with auto-refreshed data to immediately see their updates in calendar view
 - June 26, 2025. Fixed class editing bug causing 500 error - corrected undefined variable reference in update class route that was preventing coaches from editing class details

@@ -171,6 +171,18 @@ export function setupAuth(app: Express) {
         // Don't fail registration if email fails
       }
 
+      // Send admin notification if this is a coach registration
+      if (role === 'coach') {
+        try {
+          const { sendNewCoachNotificationToAdmin } = await import('./email');
+          await sendNewCoachNotificationToAdmin(user);
+          console.log('Admin notification sent for new coach registration:', user.email);
+        } catch (emailError) {
+          console.error('Failed to send admin notification for new coach:', emailError);
+          // Don't fail registration if email fails
+        }
+      }
+
       // Remove password from the response
       const { password: _, ...userWithoutPassword } = user;
 

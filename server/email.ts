@@ -938,3 +938,106 @@ The Trainn Team
     return false;
   }
 }
+
+export async function sendNewCoachNotificationToAdmin(coach: User): Promise<boolean> {
+  try {
+    const textContent = `
+New Coach Registration - Trainn
+
+A new coach has registered on the Trainn platform and requires approval.
+
+Coach Details:
+Name: ${coach.firstName} ${coach.lastName}
+Email: ${coach.email}
+Phone: ${coach.phone || 'Not provided'}
+Registration Date: ${new Date().toLocaleDateString()}
+
+Areas of Expertise: ${coach.areasOfExpertise || 'Not specified'}
+Bio: ${coach.bio || 'Not provided'}
+
+Please log in to the admin panel to review and approve this coach profile.
+
+Best regards,
+The Trainn Team
+    `;
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Coach Registration - Trainn</title>
+    </head>
+    <body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 300;">New Coach Registration</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Admin Notification</p>
+      </div>
+      
+      <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <p style="font-size: 16px; margin-bottom: 25px;">A new coach has registered on the Trainn platform and requires approval.</p>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #495057; margin-top: 0; font-size: 18px;">Coach Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-weight: 600; color: #6c757d; width: 30%;">Name:</td>
+              <td style="padding: 8px 0;">${coach.firstName} ${coach.lastName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: 600; color: #6c757d;">Email:</td>
+              <td style="padding: 8px 0;">${coach.email}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: 600; color: #6c757d;">Phone:</td>
+              <td style="padding: 8px 0;">${coach.phone || 'Not provided'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-weight: 600; color: #6c757d;">Registration Date:</td>
+              <td style="padding: 8px 0;">${new Date().toLocaleDateString()}</td>
+            </tr>
+          </table>
+        </div>
+        
+        ${coach.areasOfExpertise ? `
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="color: #495057; margin-top: 0;">Areas of Expertise:</h4>
+          <p style="margin: 0;">${coach.areasOfExpertise}</p>
+        </div>
+        ` : ''}
+        
+        ${coach.bio ? `
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="color: #495057; margin-top: 0;">Bio:</h4>
+          <p style="margin: 0;">${coach.bio}</p>
+        </div>
+        ` : ''}
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <p style="color: #6c757d; margin-bottom: 20px;">Please log in to the admin panel to review and approve this coach profile.</p>
+        </div>
+        
+        <div style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 30px; text-align: center; color: #6c757d;">
+          <p style="margin: 0;">Best regards,<br>The Trainn Team</p>
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    await mailService.send({
+      to: 'sam@trainn.pro',
+      from: 'support@trainn.pro',
+      subject: 'New Coach Registration - Approval Required',
+      text: textContent,
+      html: htmlContent,
+    });
+
+    console.log('Admin notification email sent successfully for new coach:', coach.email);
+    return true;
+  } catch (error) {
+    console.error('Failed to send admin notification for new coach:', error);
+    return false;
+  }
+}
