@@ -37,6 +37,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
+
+
   // Configure multer for file uploads
   const storage_multer = multer.diskStorage({
     destination: (req, file, cb) => {
