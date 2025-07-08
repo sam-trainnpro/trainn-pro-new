@@ -127,7 +127,8 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
                 <span className="text-gray-400 ml-1">({reviewCount})</span>
               </div>
             </div>
-            <div className="font-medium text-gray-900">${classItem.price}</div>
+            {/* Price shown on mobile only */}
+            <div className="md:hidden font-medium text-gray-900">${classItem.price}</div>
           </div>
           
           {/* Location information */}
@@ -160,6 +161,9 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
             </Badge>
           </div>
+          
+          {/* Price shown on desktop only */}
+          <div className="hidden md:block font-medium text-gray-900 mb-1">${classItem.price}</div>
           
           {/* Spots left indicator shown on desktop only */}
           <div className="hidden md:flex text-xs mt-1 px-2 py-0.5 rounded-full bg-gray-100 items-center">
