@@ -16,11 +16,7 @@ export default function FAQPage() {
       question: "What is your cancellation policy?",
       answer: "You can cancel your booking up to 48 hours before the scheduled class time for a full refund. Cancellations made less than 48 hours before the class will not receive a refund. No-shows will not receive a refund. For recurring bookings, each individual session follows the same cancellation policy. To cancel your booking, please log into your account and navigate to your bookings and click the Cancel button."
     },
-    {
-      id: "communication",
-      question: "How do I communicate with my coach?",
-      answer: "You can communicate with your coach through several ways: view their profile page for contact information or send messages through our platform's booking system."
-    },
+
     {
       id: "no-slots",
       question: "What happens if there are no more slots available?",
