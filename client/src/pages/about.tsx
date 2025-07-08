@@ -78,7 +78,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">Wellness</h3>
                 <p className="text-sm text-gray-600">
-                  Supporting healthy lifestyles for people of all ages
+                  Offering classes that enrich the body and mind, fostering healthy lifestyles for people of all ages
                 </p>
               </CardContent>
             </Card>
