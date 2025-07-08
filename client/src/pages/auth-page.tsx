@@ -110,7 +110,7 @@ export default function AuthPage() {
             <div className="grid grid-cols-2 gap-4 my-8">
               <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
                 <h3 className="text-3xl font-bold mb-1">1000+</h3>
-                <p>Fitness Classes</p>
+                <p>Adult & Kids Classes</p>
               </div>
               <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
                 <h3 className="text-3xl font-bold mb-1">500+</h3>
