@@ -94,12 +94,12 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
     <Link href={`/classes/${classItem.id}`}>
       <div className="p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors flex flex-col md:flex-row gap-2 md:items-center">
         {/* Time and duration column */}
-        <div className="w-32 mr-4">
+        <div className="w-full md:w-32 mr-4">
           {startTime && (
             <div className="text-gray-700 text-sm mb-1 flex items-center justify-between md:justify-start">
               <span>{formattedDateDisplay}</span>
-              {/* Category badge shown on mobile, inline with date */}
-              <div className="md:hidden">
+              {/* Category badge shown on mobile, right-aligned */}
+              <div className="md:hidden ml-auto">
                 <Badge variant="outline" className="text-xs">
                   {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
                 </Badge>
