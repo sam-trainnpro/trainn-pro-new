@@ -103,9 +103,9 @@ export default function AuthPage() {
             }}
           ></div>
           <div className="relative z-10 text-white max-w-lg text-center">
-            <h1 className="text-4xl font-bold mb-4">Transform Your Health & Wellness Journey</h1>
+            <h1 className="text-4xl font-bold mb-4">Building stronger communities through fitness, creativity and play</h1>
             <p className="text-xl mb-6">
-              Connect with top coaches, book personalized classes, and achieve your fitness goals with Trainn.
+              Connect with top coaches, book personalized classes, and achieve your goals with Trainn.
             </p>
             <div className="grid grid-cols-2 gap-4 my-8">
               <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
