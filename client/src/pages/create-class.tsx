@@ -786,7 +786,7 @@ export default function CreateClassPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Upload an image that represents your class (max 5MB)
+                        Upload an image that represents your class (max 40MB)
                       </p>
                     </div>
                   </div>
