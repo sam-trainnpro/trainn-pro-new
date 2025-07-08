@@ -81,7 +81,24 @@ export default function FAQPage() {
             </CardContent>
           </Card>
 
-          
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Still have questions?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Can't find the answer you're looking for? Our support team is here to help.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-2">Email Support</h4>
+                  <p className="text-muted-foreground">support@trainn.pro</p>
+                  <p className="text-sm text-muted-foreground">Response within 24 hours</p>
+                </div>
+                
+              </div>
+            </CardContent>
+          </Card>
         </main>
         
         <Footer />
