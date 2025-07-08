@@ -131,9 +131,24 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           </div>
           
           {/* Location information */}
-          <div className="text-gray-600 text-sm mt-1 flex items-center">
-            <MapPin className="h-3.5 w-3.5 mr-1 text-gray-400" />
-            <span>{classItem.location || 'Location not specified'}</span>
+          <div className="text-gray-600 text-sm mt-1 flex items-center justify-between">
+            <div className="flex items-center">
+              <MapPin className="h-3.5 w-3.5 mr-1 text-gray-400" />
+              <span>{classItem.location || 'Location not specified'}</span>
+            </div>
+            {/* Spots left indicator shown on mobile only */}
+            <div className="md:hidden text-xs px-2 py-0.5 rounded-full bg-gray-100 flex items-center">
+              <Users className="h-3 w-3 mr-1 text-gray-500" />
+              {isLoadingBookingCount ? (
+                <Skeleton className="h-3 w-12" />
+              ) : bookingCount ? (
+                <span>
+                  <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
+                </span>
+              ) : (
+                <span>{classItem.capacity} spots left</span>
+              )}
+            </div>
           </div>
         </div>
         
@@ -146,8 +161,8 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
             </Badge>
           </div>
           
-          {/* Spots left indicator */}
-          <div className="text-xs mt-1 px-2 py-0.5 rounded-full bg-gray-100 flex items-center">
+          {/* Spots left indicator shown on desktop only */}
+          <div className="hidden md:flex text-xs mt-1 px-2 py-0.5 rounded-full bg-gray-100 items-center">
             <Users className="h-3 w-3 mr-1 text-gray-500" />
             {isLoadingBookingCount ? (
               <Skeleton className="h-3 w-12" />
