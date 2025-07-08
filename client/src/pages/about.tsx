@@ -54,7 +54,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">Community</h3>
                 <p className="text-sm text-gray-600">
-                  Building connections through shared fitness experiences
+                  Building connections through fun and shared experiences
                 </p>
               </CardContent>
             </Card>
