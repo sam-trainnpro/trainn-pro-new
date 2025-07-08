@@ -103,7 +103,7 @@ export default function AboutPage() {
                 Ready to Join Our Community?
               </h2>
               <p className="text-lg mb-6 text-primary-foreground/90">
-                Whether you're looking to get fit or help others achieve their goals, Trainn is here for you.
+                Trainn is here for you.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a 
