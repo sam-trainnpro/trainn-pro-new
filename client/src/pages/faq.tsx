@@ -35,11 +35,6 @@ export default function FAQPage() {
       id: "insurance",
       question: "Does your company provide insurance?",
       answer: "We recommend that participants have their own personal health and accident insurance. Our coaches are expected and encouraged to maintain professional liability insurance."
-    },
-    {
-      id: "cancellation-policy",
-      question: "What is your cancellation policy?",
-      answer: "You can cancel your class booking and receive a full refund up to 24 hours before the scheduled class time. Cancellations made within 24 hours of the class start time are not eligible for a refund. To cancel your booking, please log into your account and navigate to your bookings, or contact our support team at support@trainn.pro."
     }
   ];
 
