@@ -116,15 +116,18 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
         {/* Class title, coach info, and location */}
         <div className="flex-1">
           <div className="font-medium text-gray-900">{classItem.title}</div>
-          <div className="flex items-center mt-1">
-            <div className="text-gray-600 text-sm">
-              {isLoadingCoach ? 'Loading coach...' : coach?.firstName ? `${coach.firstName} ${coach.lastName}` : 'Unknown Coach'}
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center">
+              <div className="text-gray-600 text-sm">
+                {isLoadingCoach ? 'Loading coach...' : coach?.firstName ? `${coach.firstName} ${coach.lastName}` : 'Unknown Coach'}
+              </div>
+              <div className="ml-2 flex items-center text-sm">
+                <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
+                <span>{rating.toFixed(1)}</span>
+                <span className="text-gray-400 ml-1">({reviewCount})</span>
+              </div>
             </div>
-            <div className="ml-2 flex items-center text-sm">
-              <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
-              <span>{rating.toFixed(1)}</span>
-              <span className="text-gray-400 ml-1">({reviewCount})</span>
-            </div>
+            <div className="font-medium text-gray-900">${classItem.price}</div>
           </div>
           
           {/* Location information */}
@@ -134,7 +137,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           </div>
         </div>
         
-        {/* Price, category, and spots left column */}
+        {/* Category and spots left column */}
         <div className="flex flex-col items-end">
           {/* Category badge shown on desktop only */}
           <div className="hidden md:flex gap-1 mb-1">
@@ -142,7 +145,6 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
             </Badge>
           </div>
-          <div className="font-medium text-gray-900">${classItem.price}</div>
           
           {/* Spots left indicator */}
           <div className="text-xs mt-1 px-2 py-0.5 rounded-full bg-gray-100 flex items-center">
