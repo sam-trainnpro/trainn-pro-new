@@ -45,7 +45,7 @@ export default function BlogPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Trainn Blog</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Expert fitness tips, training guides, and inspiring stories from the Trainn community
+            Expert fitness tips, sports drills, music and art guides, and inspiring stories from the Trainn community
           </p>
           
           {/* Admin Create Post Button */}
