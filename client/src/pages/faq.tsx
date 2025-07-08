@@ -5,6 +5,7 @@ import {
   Accordion,
   AccordionContent,
   AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -68,10 +69,10 @@ export default function FAQPage() {
               <Accordion type="single" collapsible className="w-full">
                 {faqs.map((faq) => (
                   <AccordionItem key={faq.id} value={faq.id}>
+                    <AccordionTrigger className="text-left text-lg font-medium">
+                      {faq.question}
+                    </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground text-base leading-relaxed pt-2">
-                      <div className="text-left text-lg font-medium text-foreground mb-2">
-                        {faq.question}
-                      </div>
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
