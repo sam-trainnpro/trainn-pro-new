@@ -96,8 +96,14 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
         {/* Time and duration column */}
         <div className="w-32 mr-4">
           {startTime && (
-            <div className="text-gray-700 text-sm mb-1">
-              {formattedDateDisplay}
+            <div className="text-gray-700 text-sm mb-1 flex items-center justify-between md:justify-start">
+              <span>{formattedDateDisplay}</span>
+              {/* Category badge shown on mobile, inline with date */}
+              <div className="md:hidden">
+                <Badge variant="outline" className="text-xs">
+                  {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
+                </Badge>
+              </div>
             </div>
           )}
           <div className="font-medium text-gray-900 flex items-center">
@@ -130,7 +136,8 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
         
         {/* Price, category, and spots left column */}
         <div className="flex flex-col items-end">
-          <div className="flex gap-1 mb-1">
+          {/* Category badge shown on desktop only */}
+          <div className="hidden md:flex gap-1 mb-1">
             <Badge variant="outline">
               {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
             </Badge>
