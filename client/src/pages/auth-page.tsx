@@ -118,7 +118,7 @@ export default function AuthPage() {
               </div>
             </div>
             <p className="text-lg font-light">
-              "Trainn has transformed how I find fitness classes and coaches. The platform is intuitive and the classes are amazing!"
+              "Trainn has transformed how I find classes for me and my kids. The platform is intuitive and the classes are amazing!"
             </p>
             <p className="mt-2 font-medium">— Lea G., Trainn Member</p>
           </div>
