@@ -144,10 +144,10 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               <Skeleton className="h-3 w-12" />
             ) : bookingCount ? (
               <span>
-                <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots
+                <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
               </span>
             ) : (
-              <span>{classItem.capacity} spots</span>
+              <span>{classItem.capacity} spots left</span>
             )}
           </div>
         </div>
