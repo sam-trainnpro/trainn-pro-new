@@ -494,7 +494,7 @@ export default function ProfilePage() {
                               className="cursor-pointer"
                             />
                             <p className="text-sm text-gray-600">
-                              Upload a profile picture. Square images work best. Accepted formats: JPG, PNG, GIF
+                              Upload a profile picture. Square images work best. Accepted formats: JPG, PNG, GIF (max 40MB)
                             </p>
                           </div>
 
