@@ -143,9 +143,13 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               {isLoadingBookingCount ? (
                 <Skeleton className="h-3 w-12" />
               ) : bookingCount ? (
-                <span>
-                  <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
-                </span>
+                bookingCount.spotsLeft === 0 ? (
+                  <span className="font-medium">Class Full</span>
+                ) : (
+                  <span>
+                    <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
+                  </span>
+                )
               ) : (
                 <span>{classItem.capacity} spots left</span>
               )}
@@ -171,9 +175,13 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
             {isLoadingBookingCount ? (
               <Skeleton className="h-3 w-12" />
             ) : bookingCount ? (
-              <span>
-                <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
-              </span>
+              bookingCount.spotsLeft === 0 ? (
+                <span className="font-medium">Class Full</span>
+              ) : (
+                <span>
+                  <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
+                </span>
+              )
             ) : (
               <span>{classItem.capacity} spots left</span>
             )}
