@@ -1272,7 +1272,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paymentIntentId, classId, quantity = 1 } = req.body;
       
+      console.log("=== PAYMENT CONFIRMATION STARTED ===");
+      console.log("Payment Intent ID:", paymentIntentId);
+      console.log("Class ID:", classId);
+      console.log("Quantity:", quantity);
+      console.log("User:", req.user.id, req.user.email);
+      
       if (!paymentIntentId || !classId) {
+        console.log("Missing required fields - paymentIntentId:", paymentIntentId, "classId:", classId);
         return res.status(400).json({ message: "Missing required fields" });
       }
       
@@ -1292,7 +1299,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Class is fully booked" });
       }
       
+      // Determine payment method from Stripe PaymentIntent if available
+      let paymentMethod = "stripe";
+      if (stripe && paymentIntentId && paymentIntentId.startsWith("pi_")) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          if (paymentIntent.payment_method) {
+            const paymentMethodObj = await stripe.paymentMethods.retrieve(paymentIntent.payment_method as string);
+            paymentMethod = paymentMethodObj.type || "stripe";
+            console.log("Detected payment method:", paymentMethod);
+          }
+        } catch (stripeError) {
+          console.log("Could not retrieve payment method from Stripe, using default:", stripeError);
+        }
+      }
+
       // Create new confirmed booking directly (no pending status)
+      console.log("Creating booking with data:", {
+        userId: req.user.id,
+        classId: parseInt(classId),
+        quantity: quantity,
+        status: "confirmed",
+        stripePaymentIntentId: paymentIntentId,
+        paymentMethod: paymentMethod
+      });
+      
       const booking = await storage.createBooking({
         userId: req.user.id,
         classId: parseInt(classId),
@@ -1300,8 +1331,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "confirmed",
         stripePaymentIntentId: paymentIntentId,
         paymentDate: new Date(),
-        paymentMethod: "stripe"
+        paymentMethod: paymentMethod
       });
+      
+      console.log("Booking created successfully:", booking);
       
       const updatedBookings = [booking];
       const totalQuantity = quantity;
