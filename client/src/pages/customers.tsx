@@ -169,7 +169,7 @@ export default function CustomersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{uniqueCustomers}</div>
               <p className="text-xs text-muted-foreground">
-                Unique customers
+                Count of unique customers who have taken your class
               </p>
             </CardContent>
           </Card>
