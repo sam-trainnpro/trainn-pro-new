@@ -219,15 +219,7 @@ export default function CoachDetailsPage() {
                     </div>
                   </div>
                   
-                  <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
-                    <Star className="h-10 w-10 text-primary mr-4" />
-                    <div>
-                      <h3 className="font-medium">Classes</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {isLoadingClasses ? 'Loading...' : `${coachClasses?.length || 0} total`}
-                      </p>
-                    </div>
-                  </div>
+                  
                 </div>
                 
                 <Tabs defaultValue="upcoming" className="mt-8">
