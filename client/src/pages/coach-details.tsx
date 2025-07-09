@@ -24,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 import { format } from "date-fns";
-import certificationIcon from '@assets/Certification Icon_1752030067957.png';
 
 export default function CoachDetailsPage() {
   const [, navigate] = useLocation();
@@ -126,13 +125,6 @@ export default function CoachDetailsPage() {
           </div>
         ) : coach ? (
           <>
-            {/* Reviews Section - Positioned at Top */}
-            <section className="py-8">
-              <div className="container mx-auto px-4">
-                <ReviewsSection reviewsData={reviewsData} coach={coach} />
-              </div>
-            </section>
-
             <section className="bg-[#F7F7F7] py-8">
               <div className="container mx-auto px-4">
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -156,10 +148,10 @@ export default function CoachDetailsPage() {
                     <div className="flex items-center justify-center md:justify-start mt-1 mb-4">
                       <Star className="text-[#FFCC00] fill-[#FFCC00] h-5 w-5" />
                       <span className="ml-1 font-medium">
-                        {reviewsData?.totalReviews > 0 ? reviewsData.averageRating.toFixed(1) : '4.9'}
+                        {ratingStats?.totalReviews > 0 ? ratingStats.averageRating.toFixed(1) : '4.9'}
                       </span>
                       <span className="text-muted-foreground ml-1">
-                        ({reviewsData?.totalReviews > 0 ? reviewsData.totalReviews : 0} reviews)
+                        ({ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 0} reviews)
                       </span>
                     </div>
                     
@@ -206,10 +198,13 @@ export default function CoachDetailsPage() {
                     </div>
                   </>
                 )}
+
+                {/* Reviews Section */}
+                <ReviewsSection reviewsData={reviewsData} coach={coach} />
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
-                    <img src={certificationIcon} alt="Certification" className="h-10 w-10 mr-4" />
+                    <Award className="h-10 w-10 text-primary mr-4" />
                     <div>
                       <h3 className="font-medium">Certified Trainer</h3>
                       <p className="text-sm text-muted-foreground">NASM CPT</p>
@@ -318,11 +313,11 @@ function ReviewsSection({ reviewsData, coach }: ReviewsSectionProps) {
   
   if (!reviewsData || reviewsData.reviews.length === 0) {
     return (
-      <div>
-        <h2 className="text-3xl font-heading font-bold mb-6">What Students Are Saying</h2>
-        <div className="bg-[#F7F7F7] p-8 rounded-xl text-center">
-          <Star className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground text-lg">Reviews coming soon</p>
+      <div className="mt-8">
+        <h2 className="text-2xl font-heading font-bold mb-4">Reviews</h2>
+        <div className="bg-[#F7F7F7] p-6 rounded-xl text-center">
+          <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">Reviews coming soon</p>
         </div>
       </div>
     );
@@ -332,82 +327,59 @@ function ReviewsSection({ reviewsData, coach }: ReviewsSectionProps) {
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 5);
 
   return (
-    <div>
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-heading font-bold mb-2">What Students Are Saying</h2>
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star 
-                key={i}
-                className={`h-6 w-6 ${
-                  i < Math.round(reviewsData.averageRating) 
-                    ? 'text-[#FFCC00] fill-[#FFCC00]' 
-                    : 'text-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-xl font-bold">
-            {reviewsData.averageRating.toFixed(1)}
-          </span>
-          <span className="text-muted-foreground">
-            ({reviewsData.totalReviews} {reviewsData.totalReviews === 1 ? 'review' : 'reviews'})
-          </span>
-        </div>
-      </div>
+    <div className="mt-8">
+      <h2 className="text-2xl font-heading font-bold mb-4">Reviews</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="space-y-4">
         {displayedReviews.map((review: any, index: number) => (
-          <div key={review.id || index} className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <UserCircle className="h-8 w-8 text-primary" />
+          <div key={review.id || index} className="bg-[#F7F7F7] p-4 rounded-xl">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <UserCircle className="h-6 w-6 text-primary" />
               </div>
-              <div>
-                <h4 className="font-semibold">
-                  {review.customerFirstName || 'Customer'} {review.customerLastName || ''}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {review.createdAt ? format(new Date(review.createdAt), 'MMM d, yyyy') : ''}
-                </p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium">
+                    {review.customerFirstName || 'Customer'} {review.customerLastName || ''}
+                  </span>
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < review.rating 
+                            ? 'text-[#FFCC00] fill-[#FFCC00]' 
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {review.createdAt ? format(new Date(review.createdAt), 'MMM d, yyyy') : ''}
+                  </span>
+                </div>
+                {review.comment && (
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    {review.comment}
+                  </p>
+                )}
+                {review.className && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Class: {review.className}
+                  </p>
+                )}
               </div>
             </div>
-            
-            <div className="flex items-center mb-3">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i}
-                  className={`h-5 w-5 ${
-                    i < review.rating 
-                      ? 'text-[#FFCC00] fill-[#FFCC00]' 
-                      : 'text-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-            
-            {review.comment && (
-              <p className="text-gray-700 leading-relaxed mb-3">
-                {review.comment}
-              </p>
-            )}
-            
-            {review.className && (
-              <p className="text-xs text-muted-foreground bg-gray-50 px-3 py-1 rounded-full inline-block">
-                Class: {review.className}
-              </p>
-            )}
           </div>
         ))}
       </div>
 
       {reviews.length > 5 && (
-        <div className="text-center">
+        <div className="mt-4 text-center">
           <Button 
             variant="outline" 
             onClick={() => setShowAllReviews(!showAllReviews)}
-            className="flex items-center gap-2 mx-auto"
+            className="flex items-center gap-2"
           >
             {showAllReviews ? (
               <>
