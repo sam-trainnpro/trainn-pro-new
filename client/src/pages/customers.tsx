@@ -169,7 +169,7 @@ export default function CustomersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{uniqueCustomers}</div>
               <p className="text-xs text-muted-foreground">
-                Unique email addresses
+                Unique customers
               </p>
             </CardContent>
           </Card>
