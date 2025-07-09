@@ -48,7 +48,7 @@ export default function CoachesPage() {
           <div className="container mx-auto px-4 text-center text-white">
             <h1 className="text-3xl md:text-4xl font-heading font-bold mb-4">Find Your Perfect Coach</h1>
             <p className="max-w-2xl mx-auto mb-8">
-              Connect with experienced fitness professionals who will help you achieve your fitness goals
+              Connect with experienced fitness, sports, and creative professionals who will help you achieve your goals
             </p>
             <div className="max-w-lg mx-auto relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
