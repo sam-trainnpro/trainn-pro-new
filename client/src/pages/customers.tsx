@@ -99,12 +99,18 @@ export default function CustomersPage() {
   // Calculate stats
   const totalCustomers = customerBookings.length;
   const uniqueCustomers = new Set(customerBookings.map((booking: CustomerBooking) => 
-    `${booking.customerFirstName} ${booking.customerLastName}`
+    booking.customerEmail
   )).size;
   
-  const totalCompletedClasses = customerBookings.reduce((sum: number, booking: CustomerBooking) => 
-    sum + (booking.completedClasses || 0), 0
-  );
+  // Count completed classes taught by coach (classes with at least 1 attendee that occurred in the past)
+  const completedClassesSet = new Set();
+  customerBookings.forEach((booking: CustomerBooking) => {
+    const classDate = new Date(booking.classDate);
+    if (classDate < new Date()) {
+      completedClassesSet.add(booking.className + '_' + booking.classDate);
+    }
+  });
+  const totalCompletedClasses = completedClassesSet.size;
 
   const formatDateTime = (dateTime: string | Date) => {
     if (!dateTime) return 'N/A';
@@ -163,7 +169,7 @@ export default function CustomersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{uniqueCustomers}</div>
               <p className="text-xs text-muted-foreground">
-                Individual customers served
+                Unique email addresses
               </p>
             </CardContent>
           </Card>
@@ -176,7 +182,7 @@ export default function CustomersPage() {
             <CardContent>
               <div className="text-2xl font-bold">{totalCompletedClasses}</div>
               <p className="text-xs text-muted-foreground">
-                Total classes completed
+                Classes taught with attendees
               </p>
             </CardContent>
           </Card>
