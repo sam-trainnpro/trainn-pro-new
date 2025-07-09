@@ -72,9 +72,8 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
     queryFn: () => fetch(`/api/reviews/class/${classItem.id}/stats`).then(res => res.json()),
   });
 
-  // Use actual ratings or fallback to default values
-  const rating = ratingStats?.totalReviews > 0 ? ratingStats.averageRating : 4.9;
-  const reviewCount = ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 10;
+  // Only show ratings if there are real reviews
+  const hasRealReviews = ratingStats?.totalReviews > 0;
   
   const formattedStartTime = startTime 
     ? formatTime(startTime)
@@ -121,11 +120,13 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               <div className="text-gray-600 text-sm">
                 {isLoadingCoach ? 'Loading coach...' : coach?.firstName ? `${coach.firstName} ${coach.lastName}` : 'Unknown Coach'}
               </div>
-              <div className="ml-2 flex items-center text-sm">
-                <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
-                <span>{rating.toFixed(1)}</span>
-                <span className="text-gray-400 ml-1">({reviewCount})</span>
-              </div>
+              {hasRealReviews && ratingStats && (
+                <div className="ml-2 flex items-center text-sm">
+                  <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
+                  <span>{ratingStats.averageRating.toFixed(1)}</span>
+                  <span className="text-gray-400 ml-1">({ratingStats.totalReviews})</span>
+                </div>
+              )}
             </div>
             {/* Price shown on mobile only */}
             <div className="md:hidden font-medium text-gray-900">${classItem.price}</div>
