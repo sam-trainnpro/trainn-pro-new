@@ -380,7 +380,7 @@ export default function CreateClassPage() {
         title: "Class created",
         description: "Your class has been created successfully.",
       });
-      navigate("/my-classes");
+      navigate("/my-calendar");
     },
     onError: (error: Error) => {
       toast({
