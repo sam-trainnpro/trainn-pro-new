@@ -15,11 +15,15 @@ import {
   UserCircle, 
   Award,
   Clock,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
+import { useState } from "react";
+import { format } from "date-fns";
 
 export default function CoachDetailsPage() {
   const [, navigate] = useLocation();
@@ -53,6 +57,18 @@ export default function CoachDetailsPage() {
   // Get categories for expertise display
   const { data: categories = [] } = useQuery<ClassCategory[]>({
     queryKey: ['/api/categories'],
+  });
+
+  // Get coach rating stats
+  const { data: ratingStats } = useQuery({
+    queryKey: ['/api/reviews/coach', coachId, 'stats'],
+    enabled: !!coach,
+  });
+
+  // Get coach reviews
+  const { data: reviewsData } = useQuery({
+    queryKey: ['/api/reviews/coach', coachId],
+    enabled: !!coach,
   });
   
   // Get upcoming and past classes
@@ -131,8 +147,12 @@ export default function CoachDetailsPage() {
                     
                     <div className="flex items-center justify-center md:justify-start mt-1 mb-4">
                       <Star className="text-[#FFCC00] fill-[#FFCC00] h-5 w-5" />
-                      <span className="ml-1 font-medium">4.9</span>
-                      <span className="text-muted-foreground ml-1">(124 reviews)</span>
+                      <span className="ml-1 font-medium">
+                        {ratingStats?.totalReviews > 0 ? ratingStats.averageRating.toFixed(1) : '4.9'}
+                      </span>
+                      <span className="text-muted-foreground ml-1">
+                        ({ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 0} reviews)
+                      </span>
                     </div>
                     
                     {coach.bio ? (
@@ -178,6 +198,9 @@ export default function CoachDetailsPage() {
                     </div>
                   </>
                 )}
+
+                {/* Reviews Section */}
+                <ReviewsSection reviewsData={reviewsData} coach={coach} />
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
@@ -275,6 +298,101 @@ export default function CoachDetailsPage() {
       
       <Footer />
       <MobileNavigation />
+    </div>
+  );
+}
+
+// Reviews Section Component
+interface ReviewsSectionProps {
+  reviewsData: any;
+  coach: User;
+}
+
+function ReviewsSection({ reviewsData, coach }: ReviewsSectionProps) {
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  
+  if (!reviewsData || reviewsData.reviews.length === 0) {
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-heading font-bold mb-4">Reviews</h2>
+        <div className="bg-[#F7F7F7] p-6 rounded-xl text-center">
+          <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">Reviews coming soon</p>
+        </div>
+      </div>
+    );
+  }
+
+  const reviews = reviewsData.reviews || [];
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 5);
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-2xl font-heading font-bold mb-4">Reviews</h2>
+      
+      <div className="space-y-4">
+        {displayedReviews.map((review: any, index: number) => (
+          <div key={review.id || index} className="bg-[#F7F7F7] p-4 rounded-xl">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <UserCircle className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium">
+                    {review.customerFirstName || 'Customer'} {review.customerLastName || ''}
+                  </span>
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < review.rating 
+                            ? 'text-[#FFCC00] fill-[#FFCC00]' 
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {review.createdAt ? format(new Date(review.createdAt), 'MMM d, yyyy') : ''}
+                  </span>
+                </div>
+                {review.comment && (
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    {review.comment}
+                  </p>
+                )}
+                {review.className && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Class: {review.className}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {reviews.length > 5 && (
+        <div className="mt-4 text-center">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowAllReviews(!showAllReviews)}
+            className="flex items-center gap-2"
+          >
+            {showAllReviews ? (
+              <>
+                Show Less <ChevronUp className="h-4 w-4" />
+              </>
+            ) : (
+              <>
+                Show More Reviews ({reviews.length - 5} more) <ChevronDown className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
