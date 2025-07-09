@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 import { format } from "date-fns";
+import certificationIcon from '@assets/Certification Icon_1752030067957.png';
 
 export default function CoachDetailsPage() {
   const [, navigate] = useLocation();
@@ -208,7 +209,7 @@ export default function CoachDetailsPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
-                    <Award className="h-10 w-10 text-primary mr-4" />
+                    <img src={certificationIcon} alt="Certification" className="h-10 w-10 mr-4" />
                     <div>
                       <h3 className="font-medium">Certified Trainer</h3>
                       <p className="text-sm text-muted-foreground">NASM CPT</p>
