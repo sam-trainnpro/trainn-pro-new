@@ -74,12 +74,20 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
       setPaymentStatus("error");
     } else {
       // Payment succeeded, now confirm the booking
+      console.log("=== PAYMENT SUCCEEDED ===");
+      console.log("Payment Intent:", paymentIntent);
+      console.log("Payment Intent ID:", paymentIntent?.id);
+      console.log("Class ID:", classItem.id);
+      console.log("Quantity:", quantity);
+      
       try {
         const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
           paymentIntentId: paymentIntent?.id,
           classId: classItem.id,
           quantity: quantity
         });
+        
+        console.log("Payment confirmation response:", confirmResponse.status);
         
         if (confirmResponse.ok) {
           // Invalidate bookings cache to refresh My Bookings page
@@ -100,9 +108,12 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
             navigate("/bookings?refresh=true");
           }, 1500);
         } else {
-          throw new Error("Failed to confirm booking");
+          const errorData = await confirmResponse.json();
+          console.error("Payment confirmation failed:", errorData);
+          throw new Error(errorData.message || "Failed to confirm booking");
         }
       } catch (confirmError) {
+        console.error("Payment confirmation error:", confirmError);
         toast({
           title: "Payment Processed",
           description: "Payment successful, but there was an issue confirming your booking. Please contact support.",
