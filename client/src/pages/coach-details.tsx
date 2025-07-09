@@ -202,25 +202,7 @@ export default function CoachDetailsPage() {
                 {/* Reviews Section */}
                 <ReviewsSection reviewsData={reviewsData} coach={coach} />
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
-                    <Award className="h-10 w-10 text-primary mr-4" />
-                    <div>
-                      <h3 className="font-medium">Certified Trainer</h3>
-                      <p className="text-sm text-muted-foreground">NASM CPT</p>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
-                    <Clock className="h-10 w-10 text-primary mr-4" />
-                    <div>
-                      <h3 className="font-medium">Experience</h3>
-                      <p className="text-sm text-muted-foreground">5+ years</p>
-                    </div>
-                  </div>
-                  
-                  
-                </div>
+
                 
                 <Tabs defaultValue="upcoming" className="mt-8">
                   <div className="flex justify-between items-center mb-4">
