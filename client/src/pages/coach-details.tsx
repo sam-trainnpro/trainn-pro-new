@@ -7,16 +7,22 @@ import MobileNavigation from "@/components/layout/mobile-navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
+  Calendar,
   Star, 
+  ChevronRight,
   UserCircle, 
+  Award,
+  Clock,
   AlertCircle,
   ChevronDown,
   ChevronUp
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 import { format } from "date-fns";
+import ClassCard from "@/components/class/class-card";
 
 export default function CoachDetailsPage() {
   const [, navigate] = useLocation();
@@ -55,11 +61,26 @@ export default function CoachDetailsPage() {
     enabled: !!coach,
   });
 
+  // Get coach classes
+  const { data: coachClasses, isLoading: isLoadingClasses } = useQuery<Class[]>({
+    queryKey: [`/api/coaches/${coachId}/classes`],
+    enabled: !!coach,
+  });
+
   // Get expertise areas
   const expertiseAreas = coach?.areasOfExpertise || [];
   const expertiseCategories = expertiseAreas
     .map(id => categories.find(cat => cat.id === id))
     .filter(Boolean);
+
+  // Split classes into upcoming and past
+  const now = new Date();
+  const upcomingClasses = coachClasses?.filter(classItem => 
+    classItem.startTime && new Date(classItem.startTime) > now
+  ) || [];
+  const pastClasses = coachClasses?.filter(classItem => 
+    classItem.startTime && new Date(classItem.startTime) <= now
+  ) || [];
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -178,10 +199,97 @@ export default function CoachDetailsPage() {
                   </>
                 )}
 
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
+                    <Award className="h-10 w-10 text-primary mr-4" />
+                    <div>
+                      <h3 className="font-medium">Certified Trainer</h3>
+                      <p className="text-sm text-muted-foreground">NASM CPT</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
+                    <Clock className="h-10 w-10 text-primary mr-4" />
+                    <div>
+                      <h3 className="font-medium">Experience</h3>
+                      <p className="text-sm text-muted-foreground">5+ years</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
+                    <Star className="h-10 w-10 text-primary mr-4" />
+                    <div>
+                      <h3 className="font-medium">Classes</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {isLoadingClasses ? 'Loading...' : `${coachClasses?.length || 0} total`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <Tabs defaultValue="upcoming" className="mt-8">
+                  <div className="flex justify-between items-center mb-4">
+                    <TabsList>
+                      <TabsTrigger value="upcoming">Upcoming Classes</TabsTrigger>
+                      <TabsTrigger value="past">Past Classes</TabsTrigger>
+                    </TabsList>
+                    
+                    <Link href="/classes" className="text-secondary hover:underline font-medium flex items-center">
+                      View All <ChevronRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  </div>
+                  
+                  <TabsContent value="upcoming">
+                    {isLoadingClasses ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-80 w-full rounded-xl" />
+                        ))}
+                      </div>
+                    ) : upcomingClasses.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {upcomingClasses.map((classItem) => (
+                          <ClassCard key={classItem.id} classItem={classItem} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-[#F7F7F7] rounded-xl">
+                        <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Upcoming Classes</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Coach {coach.firstName} doesn't have any scheduled classes right now.
+                        </p>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="past">
+                    {isLoadingClasses ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-80 w-full rounded-xl" />
+                        ))}
+                      </div>
+                    ) : pastClasses.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {pastClasses.map((classItem) => (
+                          <ClassCard key={classItem.id} classItem={classItem} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-[#F7F7F7] rounded-xl">
+                        <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Past Classes</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Coach {coach.firstName} doesn't have any past classes yet.
+                        </p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+
                 {/* Reviews Section */}
                 <ReviewsSection reviewsData={reviewsData} coach={coach} />
-                
-                
               </div>
             </section>
           </>
