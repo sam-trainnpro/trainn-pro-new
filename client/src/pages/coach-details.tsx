@@ -4,10 +4,12 @@ import { User, Class, ClassCategory } from "@shared/schema";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
+import ClassCard from "@/components/class/class-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Calendar,
+  Mail, 
   Star, 
   ChevronRight,
   UserCircle, 
@@ -22,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 import { format } from "date-fns";
-import ClassCard from "@/components/class/class-card";
 
 export default function CoachDetailsPage() {
   const [, navigate] = useLocation();
@@ -44,6 +45,15 @@ export default function CoachDetailsPage() {
     queryKey: [`/api/coaches/${coachId}`],
   });
   
+  // Fetch coach's classes
+  const { 
+    data: coachClasses, 
+    isLoading: isLoadingClasses 
+  } = useQuery<Class[]>({
+    queryKey: [`/api/coaches/${coachId}/classes`],
+    enabled: !!coach,
+  });
+
   // Get categories for expertise display
   const { data: categories = [] } = useQuery<ClassCategory[]>({
     queryKey: ['/api/categories'],
@@ -60,27 +70,17 @@ export default function CoachDetailsPage() {
     queryKey: ['/api/reviews/coach', coachId],
     enabled: !!coach,
   });
-
-  // Get coach classes
-  const { data: coachClasses, isLoading: isLoadingClasses } = useQuery<Class[]>({
-    queryKey: [`/api/coaches/${coachId}/classes`],
-    enabled: !!coach,
-  });
+  
+  // Get upcoming and past classes
+  const now = new Date();
+  const upcomingClasses = coachClasses?.filter(c => new Date(c.startTime) > now) || [];
+  const pastClasses = coachClasses?.filter(c => new Date(c.startTime) <= now) || [];
 
   // Get expertise areas
   const expertiseAreas = coach?.areasOfExpertise || [];
   const expertiseCategories = expertiseAreas
     .map(id => categories.find(cat => cat.id === id))
     .filter(Boolean);
-
-  // Split classes into upcoming and past
-  const now = new Date();
-  const upcomingClasses = coachClasses?.filter(classItem => 
-    classItem.startTime && new Date(classItem.startTime) > now
-  ) || [];
-  const pastClasses = coachClasses?.filter(classItem => 
-    classItem.startTime && new Date(classItem.startTime) <= now
-  ) || [];
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -199,6 +199,9 @@ export default function CoachDetailsPage() {
                   </>
                 )}
 
+                {/* Reviews Section */}
+                <ReviewsSection reviewsData={reviewsData} coach={coach} />
+                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                   <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
                     <Award className="h-10 w-10 text-primary mr-4" />
@@ -216,15 +219,7 @@ export default function CoachDetailsPage() {
                     </div>
                   </div>
                   
-                  <div className="bg-[#F7F7F7] p-4 rounded-xl flex items-center">
-                    <Star className="h-10 w-10 text-primary mr-4" />
-                    <div>
-                      <h3 className="font-medium">Classes</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {isLoadingClasses ? 'Loading...' : `${coachClasses?.length || 0} total`}
-                      </p>
-                    </div>
-                  </div>
+                  
                 </div>
                 
                 <Tabs defaultValue="upcoming" className="mt-8">
@@ -287,9 +282,6 @@ export default function CoachDetailsPage() {
                     )}
                   </TabsContent>
                 </Tabs>
-
-                {/* Reviews Section */}
-                <ReviewsSection reviewsData={reviewsData} coach={coach} />
               </div>
             </section>
           </>
