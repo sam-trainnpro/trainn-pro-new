@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../../hooks/use-auth-simple';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/layout/header';
@@ -58,6 +58,11 @@ export default function MyCalendarPage() {
   const [pendingDeleteClass, setPendingDeleteClass] = useState<Class | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Redirect if not a coach
   if (!user || user.role !== 'coach') {

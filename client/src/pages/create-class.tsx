@@ -381,6 +381,10 @@ export default function CreateClassPage() {
         description: "Your class has been created successfully.",
       });
       navigate("/my-calendar");
+      // Ensure scroll to top after navigation
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
