@@ -20,9 +20,8 @@ export default function CoachCard({ coach }: CoachCardProps) {
     queryKey: ['/api/categories'],
   });
 
-  // Use actual ratings or fallback to default values
-  const rating = ratingStats?.totalReviews > 0 ? ratingStats.averageRating : 4.9;
-  const reviewCount = ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 10;
+  // Only show ratings if there are real reviews
+  const hasRealReviews = ratingStats?.totalReviews > 0;
 
   // Get expertise areas
   const expertiseAreas = coach.areasOfExpertise || [];
@@ -50,11 +49,15 @@ export default function CoachCard({ coach }: CoachCardProps) {
         {expertiseNames.length > 0 ? expertiseNames.join(', ') : 'Fitness Expert'}
       </p>
       
-      <div className="flex justify-center items-center mb-3">
-        <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
-        <span className="ml-1 font-medium">{rating.toFixed(1)}</span>
-        <span className="text-sm text-gray-500 ml-1">({reviewCount} reviews)</span>
-      </div>
+      {hasRealReviews && (
+        <div className="flex justify-center items-center mb-3">
+          <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
+          <span className="ml-1 font-medium">{ratingStats.averageRating.toFixed(1)}</span>
+          <span className="text-sm text-gray-500 ml-1">
+            ({ratingStats.totalReviews} {ratingStats.totalReviews === 1 ? 'review' : 'reviews'})
+          </span>
+        </div>
+      )}
       
       <Link href={`/coaches/${coach.id}`}>
         <Button 

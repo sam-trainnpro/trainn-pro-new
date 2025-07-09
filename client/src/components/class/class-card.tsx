@@ -182,12 +182,14 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
             )}
           </span>
           
-          <div className="ml-auto flex items-center">
-            <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
-            <span className="ml-1">
-              {ratingStats?.totalReviews > 0 ? ratingStats.averageRating.toFixed(1) : '4.9'}
-            </span>
-          </div>
+          {ratingStats?.totalReviews > 0 && (
+            <div className="ml-auto flex items-center">
+              <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
+              <span className="ml-1">
+                {ratingStats.averageRating.toFixed(1)}
+              </span>
+            </div>
+          )}
         </div>
         
         <div className="mt-4 grid grid-cols-2 gap-3">

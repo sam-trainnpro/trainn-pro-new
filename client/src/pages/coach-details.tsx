@@ -145,15 +145,17 @@ export default function CoachDetailsPage() {
                       Coach {coach.firstName} {coach.lastName}
                     </h1>
                     
-                    <div className="flex items-center justify-center md:justify-start mt-1 mb-4">
-                      <Star className="text-[#FFCC00] fill-[#FFCC00] h-5 w-5" />
-                      <span className="ml-1 font-medium">
-                        {ratingStats?.totalReviews > 0 ? ratingStats.averageRating.toFixed(1) : '4.9'}
-                      </span>
-                      <span className="text-muted-foreground ml-1">
-                        ({ratingStats?.totalReviews > 0 ? ratingStats.totalReviews : 0} reviews)
-                      </span>
-                    </div>
+                    {ratingStats?.totalReviews > 0 && (
+                      <div className="flex items-center justify-center md:justify-start mt-1 mb-4">
+                        <Star className="text-[#FFCC00] fill-[#FFCC00] h-5 w-5" />
+                        <span className="ml-1 font-medium">
+                          {ratingStats.averageRating.toFixed(1)}
+                        </span>
+                        <span className="text-muted-foreground ml-1">
+                          ({ratingStats.totalReviews} {ratingStats.totalReviews === 1 ? 'review' : 'reviews'})
+                        </span>
+                      </div>
+                    )}
                     
                     {coach.bio ? (
                       <p className="mb-6 max-w-3xl">{coach.bio}</p>
