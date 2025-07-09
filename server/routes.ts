@@ -2138,6 +2138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.id,
         classId,
         bookingId,
+        coachId: classItem.coachId,
         rating,
         comment: comment || null
       });
@@ -2198,26 +2199,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const coachId = parseInt(req.params.coachId);
       
-      // Get all classes for this coach
-      const coachClasses = await storage.getClassesByCoach(coachId);
-      const classIds = coachClasses.map(c => c.id);
-      
-      // Get all reviews for these classes
-      let allReviews: any[] = [];
-      for (const classId of classIds) {
-        const classReviews = await storage.getClassReviews(classId);
-        allReviews = allReviews.concat(classReviews);
-      }
+      // Get all reviews for this coach directly using coach_id
+      const coachReviews = await storage.getCoachReviews(coachId);
       
       // Calculate average rating
-      const averageRating = allReviews.length > 0 
-        ? allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length 
+      const averageRating = coachReviews.length > 0 
+        ? coachReviews.reduce((sum, review) => sum + review.rating, 0) / coachReviews.length 
         : 0;
       
       res.json({
-        reviews: allReviews,
+        reviews: coachReviews,
         averageRating: Math.round(averageRating * 10) / 10,
-        totalReviews: allReviews.length
+        totalReviews: coachReviews.length
       });
     } catch (error: any) {
       console.error("Error fetching coach reviews:", error);

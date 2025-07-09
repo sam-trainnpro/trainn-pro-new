@@ -910,14 +910,36 @@ export class DatabaseStorage implements IStorage {
       totalReviews: sql<number>`COUNT(*)::int`
     })
     .from(reviews)
-    .innerJoin(classes, eq(reviews.classId, classes.id))
-    .where(eq(classes.coachId, coachId));
+    .where(eq(reviews.coachId, coachId));
     
     const stats = result[0];
     return {
       averageRating: stats?.averageRating || 0,
       totalReviews: stats?.totalReviews || 0
     };
+  }
+
+  async getCoachReviews(coachId: number): Promise<any[]> {
+    const result = await db.select({
+      id: reviews.id,
+      userId: reviews.userId,
+      classId: reviews.classId,
+      bookingId: reviews.bookingId,
+      rating: reviews.rating,
+      comment: reviews.comment,
+      createdAt: reviews.createdAt,
+      updatedAt: reviews.updatedAt,
+      customerFirstName: users.firstName,
+      customerLastName: users.lastName,
+      className: classes.title
+    })
+    .from(reviews)
+    .innerJoin(users, eq(reviews.userId, users.id))
+    .innerJoin(classes, eq(reviews.classId, classes.id))
+    .where(eq(reviews.coachId, coachId))
+    .orderBy(desc(reviews.createdAt));
+    
+    return result;
   }
 
   // Blog post methods
