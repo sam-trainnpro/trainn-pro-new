@@ -65,15 +65,15 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
   const duration = getDuration();
   const startTime = classItem.startTime ? new Date(classItem.startTime) : null;
   
-  // Calculate average rating (would come from reviews in a real app)
-  // Fetch actual rating data
-  const { data: ratingStats } = useQuery({
-    queryKey: ['/api/reviews/class', classItem.id, 'stats'],
-    queryFn: () => fetch(`/api/reviews/class/${classItem.id}/stats`).then(res => res.json()),
+  // Fetch coach rating data from Reviews table
+  const { data: coachRatingStats } = useQuery({
+    queryKey: ['/api/reviews/coach', classItem.coachId, 'stats'],
+    queryFn: () => fetch(`/api/reviews/coach/${classItem.coachId}/stats`).then(res => res.json()),
+    enabled: !!classItem.coachId,
   });
 
-  // Only show ratings if there are real reviews
-  const hasRealReviews = ratingStats?.totalReviews > 0;
+  // Only show ratings if the coach has real reviews
+  const hasRealCoachReviews = coachRatingStats?.totalReviews > 0;
   
   const formattedStartTime = startTime 
     ? formatTime(startTime)
@@ -120,11 +120,11 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               <div className="text-gray-600 text-sm">
                 {isLoadingCoach ? 'Loading coach...' : coach?.firstName ? `${coach.firstName} ${coach.lastName}` : 'Unknown Coach'}
               </div>
-              {hasRealReviews && ratingStats && (
+              {hasRealCoachReviews && coachRatingStats && (
                 <div className="ml-2 flex items-center text-sm">
                   <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
-                  <span>{ratingStats.averageRating.toFixed(1)}</span>
-                  <span className="text-gray-400 ml-1">({ratingStats.totalReviews})</span>
+                  <span>{coachRatingStats.averageRating.toFixed(1)}</span>
+                  <span className="text-gray-400 ml-1">({coachRatingStats.totalReviews})</span>
                 </div>
               )}
             </div>

@@ -40,10 +40,11 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     queryKey: [`/api/classes/${classItem.id}/bookings/count`],
   });
 
-  // Get rating statistics for this class
-  const { data: ratingStats } = useQuery({
-    queryKey: ['/api/reviews/class', classItem.id, 'stats'],
-    queryFn: () => fetch(`/api/reviews/class/${classItem.id}/stats`).then(res => res.json()),
+  // Get rating statistics for the coach
+  const { data: coachRatingStats } = useQuery({
+    queryKey: ['/api/reviews/coach', classItem.coachId, 'stats'],
+    queryFn: () => fetch(`/api/reviews/coach/${classItem.coachId}/stats`).then(res => res.json()),
+    enabled: !!classItem.coachId,
   });
   
   // Get day name from day number
@@ -182,11 +183,11 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
             )}
           </span>
           
-          {ratingStats?.totalReviews > 0 && (
+          {coachRatingStats?.totalReviews > 0 && (
             <div className="ml-auto flex items-center">
               <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
               <span className="ml-1">
-                {ratingStats.averageRating.toFixed(1)}
+                {coachRatingStats.averageRating.toFixed(1)}
               </span>
             </div>
           )}
