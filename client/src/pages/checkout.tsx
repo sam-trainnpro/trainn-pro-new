@@ -60,7 +60,7 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin + "/bookings",
+        return_url: window.location.origin + "/checkout/" + classItem.id + "?payment_status=success",
       },
       redirect: "if_required",
     });
@@ -198,6 +198,7 @@ export default function CheckoutPage() {
   // Get quantity from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const quantity = parseInt(urlParams.get('quantity') || '1');
+  const paymentStatus = urlParams.get('payment_status');
   
   // Redirect if not logged in
   if (!user) {
@@ -248,6 +249,68 @@ export default function CheckoutPage() {
     booking.classId === classId && booking.status === 'confirmed'
   );
   
+  // Handle successful payment redirect from Amazon Pay
+  useEffect(() => {
+    const handlePaymentSuccess = async () => {
+      if (paymentStatus === 'success' && classItem) {
+        console.log("=== PROCESSING AMAZON PAY SUCCESS REDIRECT ===");
+        setIsLoading(true);
+        
+        try {
+          // Get the payment intent from URL parameters
+          const paymentIntentId = urlParams.get('payment_intent');
+          if (!paymentIntentId) {
+            throw new Error("Payment intent ID not found in URL");
+          }
+          
+          console.log("Payment Intent ID from URL:", paymentIntentId);
+          
+          const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
+            paymentIntentId: paymentIntentId,
+            classId: classItem.id,
+            quantity: quantity
+          });
+          
+          if (confirmResponse.ok) {
+            // Invalidate bookings cache to refresh My Bookings page
+            queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+            queryClient.invalidateQueries({ queryKey: [`/api/classes/${classItem.id}/bookings/count`] });
+            
+            toast({
+              title: "Payment Successful",
+              description: "Your booking has been confirmed!",
+            });
+            
+            // Force refresh bookings data before navigating
+            await queryClient.refetchQueries({ queryKey: ['/api/bookings'] });
+            
+            // Redirect to bookings page after successful payment
+            setTimeout(() => {
+              navigate("/bookings?refresh=true");
+            }, 2000);
+          } else {
+            const errorData = await confirmResponse.json();
+            console.error("Payment confirmation failed:", errorData);
+            throw new Error(errorData.message || "Failed to confirm booking");
+          }
+        } catch (error: any) {
+          console.error("Error processing payment success:", error);
+          toast({
+            title: "Payment Processing Error",
+            description: error.message || "There was an issue processing your payment. Please contact support.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    if (paymentStatus === 'success' && classItem) {
+      handlePaymentSuccess();
+    }
+  }, [paymentStatus, classItem, classId, quantity, toast, navigate, queryClient]);
+
   // Create payment intent
   useEffect(() => {
     const createPaymentIntent = async () => {
@@ -280,10 +343,10 @@ export default function CheckoutPage() {
       }
     };
     
-    if (classItem && !userBooking) {
+    if (classItem && !userBooking && paymentStatus !== 'success') {
       createPaymentIntent();
     }
-  }, [classItem, userBooking, classId, toast]);
+  }, [classItem, userBooking, classId, toast, paymentStatus]);
   
   // Format dates
   const formatDate = (dateString: string | Date | null) => {
@@ -297,6 +360,29 @@ export default function CheckoutPage() {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return format(date, "h:mm a");
   };
+  
+  // Show processing state for Amazon Pay redirect
+  if (paymentStatus === 'success' && isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-grow bg-[#F7F7F7] py-8">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+                <h2 className="text-xl font-bold mb-2">Processing Your Payment</h2>
+                <p className="text-muted-foreground">
+                  Please wait while we confirm your booking...
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
   
   // If user has already booked and confirmed this class
   if (userBooking && userBooking.status === 'confirmed') {
