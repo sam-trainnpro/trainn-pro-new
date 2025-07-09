@@ -121,6 +121,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 8, 2025. Fixed Amazon Pay booking workflow by resolving cross-origin navigation errors - implemented proper redirect handling that routes Amazon Pay success callbacks back to checkout page for booking confirmation, eliminating runtime errors and ensuring bookings appear correctly in My Bookings page
 - July 7, 2025. Increased maximum photo upload size from 5MB to 40MB for all image uploads (profile pictures and class images) across the application - updated multer configuration and UI text to reflect the new limit
 - January 2, 2025. Implemented admin email notification system for new coach registrations - sends professional HTML email to sam@trainn.pro when new coaches register via standard registration or Google OAuth conversion, includes coach details, areas of expertise, and bio for admin review
 - January 2, 2025. Resolved recurring Vite dependency cache corruption issues by implementing complete dependency rebuild process - fixed persistent preview loading problems that occurred multiple times during development
