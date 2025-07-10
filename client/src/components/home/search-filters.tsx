@@ -31,6 +31,7 @@ export interface SearchFilters {
   date?: Date;
   classType?: string;
   ageGroup?: string;
+  city?: string;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -52,6 +53,18 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
       const response = await fetch('/api/categories');
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
+      }
+      return response.json();
+    },
+  });
+
+  // Fetch cities from database
+  const { data: cities, isLoading: isLoadingCities } = useQuery<string[]>({
+    queryKey: ['/api/cities'],
+    queryFn: async () => {
+      const response = await fetch('/api/cities');
+      if (!response.ok) {
+        throw new Error('Failed to fetch cities');
       }
       return response.json();
     },
@@ -120,6 +133,19 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
       longitude
     });
   };
+
+  const handleCitySelect = (value: string) => {
+    const newParams = {
+      ...searchParams,
+      city: value
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude,
+      longitude
+    });
+  };
   
   const handleLocationClick = () => {
     getUserLocation();
@@ -138,6 +164,7 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     if (searchParams.date) count++;
     if (searchParams.classType) count++;
     if (searchParams.ageGroup) count++;
+    if (searchParams.city) count++;
     if (latitude && longitude) count++;
     
     setActiveFiltersCount(count);
@@ -178,29 +205,58 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
             <Popover>
               <PopoverTrigger asChild>
                 <Button 
-                  variant="outline" 
+                  variant={searchParams.city ? "default" : "outline"} 
                   className="min-w-fit flex items-center gap-1"
-                  onClick={handleLocationClick}
                 >
-                  <span>City</span>
+                  <span>
+                    {searchParams.city 
+                      ? searchParams.city
+                      : "City"
+                    }
+                  </span>
                   <MapPin className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80">
                 <div className="space-y-4">
-                  <h4 className="font-medium">Find classes near you</h4>
-                  <Button 
-                    className="w-full"
-                    onClick={handleLocationClick}
-                    disabled={loading}
+                  <h4 className="font-medium">Select city</h4>
+                  <Select 
+                    onValueChange={handleCitySelect}
+                    value={searchParams.city}
                   >
-                    {loading ? 'Getting location...' : 'Use current location'}
-                  </Button>
-                  {latitude && longitude && (
-                    <p className="text-sm text-muted-foreground">
-                      Location set! We'll show classes near you.
-                    </p>
-                  )}
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoadingCities ? (
+                        <SelectItem value="" disabled>Loading cities...</SelectItem>
+                      ) : cities && cities.length > 0 ? (
+                        cities.map(city => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>No cities available</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-2">Or find classes near you</h4>
+                    <Button 
+                      className="w-full"
+                      onClick={handleLocationClick}
+                      disabled={loading}
+                    >
+                      {loading ? 'Getting location...' : 'Use current location'}
+                    </Button>
+                    {latitude && longitude && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Location set! We'll show classes near you.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
@@ -390,6 +446,24 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                     className="h-3 w-3 ml-1 cursor-pointer" 
                     onClick={() => {
                       const newParams = {...searchParams, ageGroup: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude,
+                        longitude
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+              
+              {searchParams.city && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  City: {searchParams.city}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, city: undefined};
                       setSearchParams(newParams);
                       onSearch({
                         ...newParams,

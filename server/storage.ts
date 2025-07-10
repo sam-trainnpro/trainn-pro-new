@@ -37,6 +37,9 @@ export interface IStorage {
   getAllClassCategories(): Promise<ClassCategory[]>;
   getClassCategory(id: number): Promise<ClassCategory | undefined>;
   
+  // City data
+  getClassCities(): Promise<string[]>;
+  
   // Classes
   createClass(classData: InsertClass): Promise<Class>;
   createRecurringClass(classData: InsertClass): Promise<Class>;
@@ -219,6 +222,26 @@ export class DatabaseStorage implements IStorage {
   async getClassCategory(id: number): Promise<ClassCategory | undefined> {
     const result = await db.select().from(classCategories).where(eq(classCategories.id, id));
     return result[0];
+  }
+
+  // Get unique cities from class addresses
+  async getClassCities(): Promise<string[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT DISTINCT 
+          TRIM(SPLIT_PART(address, ',', -2)) as city
+        FROM classes 
+        WHERE address IS NOT NULL 
+          AND address != '' 
+          AND TRIM(SPLIT_PART(address, ',', -2)) != ''
+        ORDER BY city
+      `);
+      
+      return result.rows.map((row: any) => row.city).filter(city => city);
+    } catch (error) {
+      console.error("Error getting class cities:", error);
+      return [];
+    }
   }
   
   // Class methods
