@@ -142,6 +142,7 @@ export default function EditClassPage() {
     const response = await fetch('/api/upload-image', {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {

@@ -144,6 +144,7 @@ export default function ProfilePage() {
     const response = await fetch('/api/upload-image', {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
