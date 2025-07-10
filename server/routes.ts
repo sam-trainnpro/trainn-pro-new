@@ -382,11 +382,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/upload-image", requireAuth, upload.single('image'), (req, res) => {
     try {
       if (!req.file) {
+        console.error("No file received in upload request");
         return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      console.log("File upload successful:", {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        size: req.file.size,
+        path: req.file.path
+      });
+      
+      // Verify file actually exists on disk
+      const filePath = path.join(uploadsDir, req.file.filename);
+      if (!fs.existsSync(filePath)) {
+        console.error("File was not saved to disk:", filePath);
+        return res.status(500).json({ message: "File upload failed - file not saved" });
       }
       
       // Return the file path that can be used as the image URL
       const imageUrl = `/uploads/${req.file.filename}`;
+      console.log("Returning image URL:", imageUrl);
       res.json({ imageUrl });
     } catch (error) {
       console.error("Error uploading file:", error);
