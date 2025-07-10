@@ -15,10 +15,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { useLocation as useGeoLocation } from "../../../../hooks/use-location";
+
 import { useQuery } from "@tanstack/react-query";
 import { ClassCategory } from "@shared/schema";
-import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 
 interface SearchFiltersProps {
@@ -43,8 +42,6 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   
   const [searchParams, setSearchParams] = useState<SearchFilters>(initialFilters);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
-  
-  const { latitude, longitude, getUserLocation, loading } = useGeoLocation();
   
   // Fetch class categories from database
   const { data: categories, isLoading: isLoadingCategories } = useQuery<ClassCategory[]>({
@@ -82,8 +79,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const handleSearch = () => {
     onSearch({
       ...searchParams,
-      latitude,
-      longitude
+      latitude: null,
+      longitude: null
     });
   };
   
@@ -103,8 +100,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     setSearchParams(newParams);
     onSearch({
       ...newParams,
-      latitude,
-      longitude
+      latitude: null,
+      longitude: null
     });
   };
   
@@ -116,8 +113,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     setSearchParams(newParams);
     onSearch({
       ...newParams,
-      latitude,
-      longitude
+      latitude: null,
+      longitude: null
     });
   };
   
@@ -129,8 +126,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     setSearchParams(newParams);
     onSearch({
       ...newParams,
-      latitude,
-      longitude
+      latitude: null,
+      longitude: null
     });
   };
 
@@ -142,19 +139,19 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     setSearchParams(newParams);
     onSearch({
       ...newParams,
-      latitude,
-      longitude
+      latitude: null,
+      longitude: null
     });
-  };
-  
-  const handleLocationClick = () => {
-    getUserLocation();
   };
   
   // Reset all filters to initial state
   const handleClearFilters = () => {
     setSearchParams(initialFilters);
-    onSearch(initialFilters);
+    onSearch({
+      ...initialFilters,
+      latitude: null,
+      longitude: null
+    });
   };
   
   // Count active filters
@@ -165,10 +162,9 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     if (searchParams.classType) count++;
     if (searchParams.ageGroup) count++;
     if (searchParams.city) count++;
-    if (latitude && longitude) count++;
     
     setActiveFiltersCount(count);
-  }, [searchParams, latitude, longitude]);
+  }, [searchParams]);
   
   // Apply filters on initial mount and when search parameters change
   useEffect(() => {
@@ -176,8 +172,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
     const timer = setTimeout(() => {
       onSearch({
         ...searchParams,
-        latitude,
-        longitude
+        latitude: null,
+        longitude: null
       });
     }, 100);
     
@@ -241,22 +237,6 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       )}
                     </SelectContent>
                   </Select>
-                  
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-2">Or find classes near you</h4>
-                    <Button 
-                      className="w-full"
-                      onClick={handleLocationClick}
-                      disabled={loading}
-                    >
-                      {loading ? 'Getting location...' : 'Use current location'}
-                    </Button>
-                    {latitude && longitude && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Location set! We'll show classes near you.
-                      </p>
-                    )}
-                  </div>
                 </div>
               </PopoverContent>
             </Popover>
@@ -391,8 +371,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       setSearchParams(newParams);
                       onSearch({
                         ...newParams,
-                        latitude,
-                        longitude
+                        latitude: null,
+                        longitude: null
                       });
                     }}
                   />
@@ -413,8 +393,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       setSearchParams(newParams);
                       onSearch({
                         ...newParams,
-                        latitude,
-                        longitude
+                        latitude: null,
+                        longitude: null
                       });
                     }}
                   />
@@ -431,8 +411,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       setSearchParams(newParams);
                       onSearch({
                         ...newParams,
-                        latitude,
-                        longitude
+                        latitude: null,
+                        longitude: null
                       });
                     }}
                   />
@@ -449,8 +429,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       setSearchParams(newParams);
                       onSearch({
                         ...newParams,
-                        latitude,
-                        longitude
+                        latitude: null,
+                        longitude: null
                       });
                     }}
                   />
@@ -467,24 +447,6 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       setSearchParams(newParams);
                       onSearch({
                         ...newParams,
-                        latitude,
-                        longitude
-                      });
-                    }}
-                  />
-                </Badge>
-              )}
-              
-              {latitude && longitude && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Near Me
-                  <X 
-                    className="h-3 w-3 ml-1 cursor-pointer" 
-                    onClick={() => {
-                      // We can't directly reset latitude/longitude as they're from another hook
-                      // But we can trigger a search without location
-                      onSearch({
-                        ...searchParams,
                         latitude: null,
                         longitude: null
                       });
@@ -492,6 +454,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                   />
                 </Badge>
               )}
+              
+
               
 
             </div>
