@@ -937,7 +937,8 @@ export class DatabaseStorage implements IStorage {
     .innerJoin(users, eq(reviews.userId, users.id))
     .innerJoin(classes, eq(reviews.classId, classes.id))
     .where(eq(reviews.coachId, coachId))
-    .orderBy(desc(reviews.createdAt));
+    .orderBy(desc(reviews.updatedAt))
+    .limit(5);
     
     return result;
   }

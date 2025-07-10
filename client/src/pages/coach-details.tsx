@@ -67,7 +67,7 @@ export default function CoachDetailsPage() {
 
   // Get coach reviews
   const { data: reviewsData } = useQuery({
-    queryKey: ['/api/reviews/coach', coachId],
+    queryKey: [`/api/reviews/coach/${coachId}`],
     enabled: !!coach,
   });
   
