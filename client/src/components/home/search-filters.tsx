@@ -266,43 +266,41 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
               </PopoverContent>
             </Popover>
             
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="min-w-fit flex items-center gap-1">
-                  <span>Class Type</span>
-                  <Filter className="h-4 w-4" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant={searchParams.classType ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.classType && categories 
+                      ? categories.find(c => c.id.toString() === searchParams.classType)?.name || 'Class Type'
+                      : "Class Type"
+                    }
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-60">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Select class type</h4>
-                  <Select 
-                    onValueChange={handleClassTypeSelect}
-                    value={searchParams.classType}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingCategories ? (
-                        <SelectItem value="" disabled>Loading categories...</SelectItem>
-                      ) : categories && categories.length > 0 ? (
-                        categories.map(category => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="" disabled>No categories available</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </PopoverContent>
-            </Popover>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {isLoadingCategories ? (
+                  <DropdownMenuItem disabled>Loading categories...</DropdownMenuItem>
+                ) : categories && categories.length > 0 ? (
+                  categories.map(category => (
+                    <DropdownMenuItem 
+                      key={category.id} 
+                      onClick={() => handleClassTypeSelect(category.id.toString())}
+                    >
+                      {category.name}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>No categories available</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
-            <Popover>
-              <PopoverTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button 
                   variant={searchParams.ageGroup ? "default" : "outline"} 
                   className="min-w-fit flex items-center gap-1"
@@ -313,27 +311,18 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       : "Age Group"
                     }
                   </span>
-                  <Filter className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-60">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Select age group</h4>
-                  <Select 
-                    onValueChange={handleAgeGroupSelect}
-                    value={searchParams.ageGroup}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select age group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Adults">Adults</SelectItem>
-                      <SelectItem value="Kids">Kids</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </PopoverContent>
-            </Popover>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Adults")}>
+                  Adults
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Kids")}>
+                  Kids
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
 
             
