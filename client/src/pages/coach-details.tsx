@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 
 export default function CoachDetailsPage() {
   const [, navigate] = useLocation();
@@ -308,43 +308,38 @@ function ReviewsSection({ reviewsData, coach }: ReviewsSectionProps) {
       
       <div className="space-y-4">
         {displayedReviews.map((review: any, index: number) => (
-          <div key={review.id || index} className="bg-[#F7F7F7] p-4 rounded-xl">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <UserCircle className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium">
-                    {review.customerFirstName || 'Customer'} {review.customerLastName || ''}
-                  </span>
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < review.rating 
-                            ? 'text-[#FFCC00] fill-[#FFCC00]' 
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {review.createdAt ? format(new Date(review.createdAt), 'MMM d, yyyy') : ''}
-                  </span>
+          <div key={review.id || index} className="bg-white p-4 rounded-lg border border-gray-200">
+            <div className="flex flex-col space-y-3">
+              {/* Reviewer name and star rating on top line */}
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-lg text-gray-900">
+                  {review.customerFirstName || 'Customer'}
+                </span>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < review.rating 
+                          ? 'text-[#FFCC00] fill-[#FFCC00]' 
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
                 </div>
-                {review.comment && (
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    {review.comment}
-                  </p>
-                )}
-                {review.className && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Class: {review.className}
-                  </p>
-                )}
               </div>
+              
+              {/* Relative date */}
+              <div className="text-sm text-gray-500">
+                {review.updatedAt ? formatDistanceToNow(new Date(review.updatedAt), { addSuffix: true }) : ''}
+              </div>
+              
+              {/* Review comment */}
+              {review.comment && (
+                <p className="text-gray-800 leading-relaxed">
+                  {review.comment}
+                </p>
+              )}
             </div>
           </div>
         ))}
@@ -363,7 +358,8 @@ function ReviewsSection({ reviewsData, coach }: ReviewsSectionProps) {
               </>
             ) : (
               <>
-                Show More Reviews ({reviews.length - 5} more) <ChevronDown className="h-4 w-4" />
+                Show All Reviews ({reviews.length})
+                <ChevronDown className="h-4 w-4" />
               </>
             )}
           </Button>
