@@ -224,7 +224,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // Get unique cities from class addresses
+  // Get unique cities from class addresses for upcoming classes only
   async getClassCities(): Promise<string[]> {
     try {
       const result = await db.execute(sql`
@@ -234,6 +234,7 @@ export class DatabaseStorage implements IStorage {
         WHERE address IS NOT NULL 
           AND address != '' 
           AND TRIM(SPLIT_PART(address, ',', -2)) != ''
+          AND start_time >= CURRENT_DATE
         ORDER BY city
       `);
       
