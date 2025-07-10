@@ -329,6 +329,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all cities where classes are offered
+  app.get("/api/cities", async (req, res) => {
+    try {
+      const cities = await storage.getClassCities();
+      res.json(cities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cities" });
+    }
+  });
+
   // Get all classes
   app.get("/api/classes", async (req, res) => {
     try {

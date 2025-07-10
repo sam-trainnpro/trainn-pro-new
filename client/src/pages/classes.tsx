@@ -32,6 +32,7 @@ export default function ClassesPage() {
     query: typeof searchParams.q === 'string' ? searchParams.q : "",
     classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
     ageGroup: typeof searchParams.ageGroup === 'string' ? searchParams.ageGroup : undefined,
+    city: typeof searchParams.city === 'string' ? searchParams.city : undefined,
     date: searchParams.date ? new Date(searchParams.date as string) : undefined,
     latitude: typeof searchParams.lat === 'string' ? Number(searchParams.lat) : null,
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
@@ -104,6 +105,18 @@ export default function ClassesPage() {
       return false;
     }
 
+    // City filter - check if class address contains the selected city
+    if (filters.city && classItem.address) {
+      // Extract city from address (assuming format: "street, city, state, country")
+      const addressParts = classItem.address.split(',');
+      if (addressParts.length >= 2) {
+        const classCity = addressParts[addressParts.length - 2].trim();
+        if (!classCity.toLowerCase().includes(filters.city.toLowerCase())) {
+          return false;
+        }
+      }
+    }
+
     // Date filter - show classes only for the selected date
     if (filters.date) {
       // Class must have a start time to be filtered by date
@@ -162,6 +175,10 @@ export default function ClassesPage() {
     
     if (newFilters.ageGroup) {
       queryParams.set('ageGroup', newFilters.ageGroup);
+    }
+    
+    if (newFilters.city) {
+      queryParams.set('city', newFilters.city);
     }
     
     if (newFilters.date) {
@@ -248,7 +265,7 @@ export default function ClassesPage() {
             </div>
             
             {/* Filters summary */}
-            {(filters.classType || filters.ageGroup || filters.date || searchParams.category) && (
+            {(filters.classType || filters.ageGroup || filters.city || filters.date || searchParams.category) && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {filters.classType && categories && (
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
@@ -259,6 +276,12 @@ export default function ClassesPage() {
                 {filters.ageGroup && (
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                     Age: {filters.ageGroup}
+                  </div>
+                )}
+                
+                {filters.city && (
+                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+                    City: {filters.city}
                   </div>
                 )}
                 
