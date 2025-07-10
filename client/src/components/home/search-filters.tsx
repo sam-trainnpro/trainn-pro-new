@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Filter, X, RefreshCw } from 'lucide-react';
+import { Search, MapPin, Calendar, Filter, X, RefreshCw, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -15,6 +15,12 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 import { useQuery } from "@tanstack/react-query";
 import { ClassCategory } from "@shared/schema";
@@ -198,8 +204,8 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
           </div>
           
           <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-            <Popover>
-              <PopoverTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button 
                   variant={searchParams.city ? "default" : "outline"} 
                   className="min-w-fit flex items-center gap-1"
@@ -210,36 +216,26 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
                       : "City"
                     }
                   </span>
-                  <MapPin className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Select city</h4>
-                  <Select 
-                    onValueChange={handleCitySelect}
-                    value={searchParams.city}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingCities ? (
-                        <SelectItem value="" disabled>Loading cities...</SelectItem>
-                      ) : cities && cities.length > 0 ? (
-                        cities.map(city => (
-                          <SelectItem key={city} value={city}>
-                            {city}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="" disabled>No cities available</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </PopoverContent>
-            </Popover>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {isLoadingCities ? (
+                  <DropdownMenuItem disabled>Loading cities...</DropdownMenuItem>
+                ) : cities && cities.length > 0 ? (
+                  cities.map(city => (
+                    <DropdownMenuItem 
+                      key={city} 
+                      onClick={() => handleCitySelect(city)}
+                    >
+                      {city}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>No cities available</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <Popover>
               <PopoverTrigger asChild>
