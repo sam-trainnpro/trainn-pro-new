@@ -713,6 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.address) updateData.address = String(req.body.address);
       if (req.body.image) updateData.image = String(req.body.image);
       if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
+      if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
       
       // Handle date fields carefully
       if (req.body.startTime) {
