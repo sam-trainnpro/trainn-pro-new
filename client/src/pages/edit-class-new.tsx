@@ -296,8 +296,8 @@ export default function EditClassPage() {
   };
 
   const onSubmit = (data: EditClassFormValues) => {
-    // Check if this is a recurring class (has recurringSeriesId)
-    if (classData?.recurringSeriesId) {
+    // Check if this is a recurring class (has recurring_series_id)
+    if (classData?.recurring_series_id) {
       // Show modal for recurring class
       setPendingFormData(data);
       setShowEditModal(true);
