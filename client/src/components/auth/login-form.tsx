@@ -74,8 +74,17 @@ export default function LoginForm() {
         // Use window.location.href instead of navigate for more reliable navigation
         // after authentication state changes
         window.setTimeout(() => {
-          console.log("Navigating to home after login");
-          window.location.href = "/";
+          console.log("Navigating after login");
+          // Check for redirect URL in query params
+          const searchParams = new URLSearchParams(window.location.search);
+          const redirectUrl = searchParams.get('redirect');
+          if (redirectUrl) {
+            console.log("Redirecting to:", redirectUrl);
+            window.location.href = decodeURIComponent(redirectUrl);
+          } else {
+            console.log("Navigating to home");
+            window.location.href = "/";
+          }
         }, 100);
       } catch (mutationError: any) {
         console.error("Mutation error:", mutationError);

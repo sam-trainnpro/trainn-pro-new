@@ -54,9 +54,16 @@ export default function AuthPage() {
   // Redirect if the user is already logged in
   useEffect(() => {
     if (user) {
-      console.log("User already logged in, redirecting to home");
+      console.log("User already logged in, redirecting");
       setTimeout(() => {
-        navigate("/");
+        // Check for redirect URL in query params
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectUrl = searchParams.get('redirect');
+        if (redirectUrl) {
+          navigate(decodeURIComponent(redirectUrl));
+        } else {
+          navigate("/");
+        }
       }, 0);
     }
   }, [user, navigate]);
