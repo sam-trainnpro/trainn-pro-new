@@ -88,6 +88,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 - **Email**: SendGrid (SENDGRID_API_KEY required)
 - **Maps**: Google Maps JavaScript API (Google Maps API key needed)
 - **Payments**: Stripe (STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY required)
+- **Image Storage**: Cloudinary (CLOUDINARY_URL required)
 
 ### Environment Variables
 - DATABASE_URL: PostgreSQL connection string
@@ -95,6 +96,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 - SESSION_SECRET: Session encryption key
 - STRIPE_SECRET_KEY: Server-side Stripe authentication
 - VITE_STRIPE_PUBLISHABLE_KEY: Client-side Stripe public key
+- CLOUDINARY_URL: Cloudinary connection string (format: cloudinary://api_key:api_secret@cloud_name)
 - Google Maps API key (for client-side integration)
 
 ## Deployment Strategy
@@ -121,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 10, 2025. Successfully integrated Cloudinary cloud storage for permanent image hosting - all uploaded images (coach profiles, class images) now stored securely in the cloud with automatic optimization (1200x1200 max resolution, auto-format selection) and organized folder structure ('trainn' folder), includes graceful fallback to local storage if Cloudinary unavailable
 - January 10, 2025. Enhanced coach pages with Google Maps-style detailed review display - shows reviewer first name, star rating, relative dates (e.g. "4 months ago"), and full comment text in clean white cards; backend now limits to 5 most recent reviews ordered by updated_at timestamp
 - January 8, 2025. Eliminated all placeholder ratings (4.9 stars, 10 reviews) across the application - coaches, classes, and all components now display only authentic review data from real customers, hiding rating sections when no reviews exist
 - January 8, 2025. Fixed Amazon Pay booking workflow by resolving cross-origin navigation errors - implemented proper redirect handling that routes Amazon Pay success callbacks back to checkout page for booking confirmation, eliminating runtime errors and ensuring bookings appear correctly in My Bookings page
