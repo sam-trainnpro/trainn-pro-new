@@ -145,8 +145,17 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
           if (onSuccess) {
             onSuccess();
           } else {
-            console.log("Navigating to home after registration");
-            window.location.href = "/";
+            console.log("Navigating after registration");
+            // Check for redirect URL in query params
+            const searchParams = new URLSearchParams(window.location.search);
+            const redirectUrl = searchParams.get('redirect');
+            if (redirectUrl) {
+              console.log("Redirecting to:", redirectUrl);
+              window.location.href = decodeURIComponent(redirectUrl);
+            } else {
+              console.log("Navigating to home");
+              window.location.href = "/";
+            }
           }
         }, 100);
       } catch (mutationError: any) {

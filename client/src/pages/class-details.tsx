@@ -541,6 +541,13 @@ export default function ClassDetailsPage() {
                             <Button 
                               className="w-full bg-primary hover:bg-primary/90 text-white"
                               onClick={() => {
+                                if (!user) {
+                                  // Redirect to auth page with return URL
+                                  const returnUrl = encodeURIComponent(window.location.pathname);
+                                  navigate(`/auth?redirect=${returnUrl}`);
+                                  return;
+                                }
+                                
                                 if (classItem.price === 0) {
                                   // Handle free class booking directly
                                   freeBookingMutation.mutate({ classId: classItem.id, quantity });
