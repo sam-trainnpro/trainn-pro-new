@@ -21,6 +21,7 @@ import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+// Import Cloudinary dynamically to avoid configuration errors at startup
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.warn('Warning: Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -30,27 +31,75 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = process.env.STRIPE_SECRET_KEY ? 
   new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" }) : null;
 
+// Check if Cloudinary is available
+const cloudinaryAvailable = !!process.env.CLOUDINARY_URL;
+if (!cloudinaryAvailable) {
+  console.warn('⚠️  CLOUDINARY_URL not found. Image uploads will use local storage (not recommended for production).');
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Create uploads directory if it doesn't exist
+  // Create uploads directory if it doesn't exist (fallback for local storage)
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-
-
-  // Configure multer for file uploads
-  const storage_multer = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-      // Generate unique filename with timestamp
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const ext = path.extname(file.originalname);
-      cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  // Configure multer storage - use Cloudinary if available, otherwise local disk
+  let storage_multer;
+  let cloudinaryEnabled = false;
+  
+  if (cloudinaryAvailable) {
+    try {
+      // Dynamic import of Cloudinary to avoid configuration errors at startup
+      const { v2: cloudinary } = await import('cloudinary');
+      const { CloudinaryStorage } = await import('multer-storage-cloudinary');
+      
+      cloudinary.config({
+        secure: true, // Always use HTTPS
+        folder: 'trainn' // Organize uploads in a folder
+      });
+      
+      storage_multer = new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+          folder: 'trainn', // Organize uploads in a folder
+          allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+          transformation: [
+            { width: 1200, height: 1200, crop: 'limit', quality: 'auto' }, // Optimize images
+            { fetch_format: 'auto' } // Auto-select best format
+          ]
+        } as any
+      });
+      cloudinaryEnabled = true;
+      console.log('✅ Cloudinary configured successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize Cloudinary storage:', error);
+      console.warn('⚠️  Falling back to local storage.');
+      storage_multer = multer.diskStorage({
+        destination: (req, file, cb) => {
+          cb(null, uploadsDir);
+        },
+        filename: (req, file, cb) => {
+          // Generate unique filename with timestamp
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          const ext = path.extname(file.originalname);
+          cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+        }
+      });
     }
-  });
+  } else {
+    storage_multer = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+      },
+      filename: (req, file, cb) => {
+        // Generate unique filename with timestamp
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+      }
+    });
+  }
 
   const upload = multer({ 
     storage: storage_multer,
@@ -67,8 +116,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve uploaded files statically
-  app.use('/uploads', express.static(uploadsDir));
+  // Serve uploaded files statically (only needed for local storage)
+  if (!cloudinaryEnabled) {
+    app.use('/uploads', express.static(uploadsDir));
+  }
 
   // Public rating statistics endpoints (before authentication)
   app.get("/api/reviews/class/:classId/stats", async (req, res) => {
@@ -403,16 +454,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path: req.file.path
       });
       
-      // Verify file actually exists on disk
-      const filePath = path.join(uploadsDir, req.file.filename);
-      if (!fs.existsSync(filePath)) {
-        console.error("File was not saved to disk:", filePath);
-        return res.status(500).json({ message: "File upload failed - file not saved" });
+      let imageUrl: string;
+      
+      if (cloudinaryEnabled) {
+        // Using Cloudinary - the URL is in the path property
+        imageUrl = (req.file as any).path; // Cloudinary returns the full URL in the path field
+        console.log("✅ Cloudinary upload successful. URL:", imageUrl);
+      } else {
+        // Using local storage - verify file exists on disk
+        const filePath = path.join(uploadsDir, req.file.filename);
+        if (!fs.existsSync(filePath)) {
+          console.error("File was not saved to disk:", filePath);
+          return res.status(500).json({ message: "File upload failed - file not saved" });
+        }
+        
+        // Return the file path that can be used as the image URL
+        imageUrl = `/uploads/${req.file.filename}`;
+        console.log("📁 Local storage upload successful. URL:", imageUrl);
       }
       
-      // Return the file path that can be used as the image URL
-      const imageUrl = `/uploads/${req.file.filename}`;
-      console.log("Returning image URL:", imageUrl);
       res.json({ imageUrl });
     } catch (error) {
       console.error("Error uploading file:", error);
