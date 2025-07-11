@@ -355,7 +355,15 @@ export default function ClassDetailsPage() {
                           <Users className="h-5 w-5 mr-3 text-primary" />
                           <div>
                             <p className="text-sm text-muted-foreground">Coach</p>
-                            <p className="font-medium">{classItem.capacity} spots</p>
+                            <p className="font-medium">
+                              {isLoadingCoach ? (
+                                <Skeleton className="h-4 w-24 inline-block" />
+                              ) : coach ? (
+                                `${coach.firstName} ${coach.lastName}`
+                              ) : (
+                                'Loading...'
+                              )}
+                            </p>
                           </div>
                         </div>
                         
