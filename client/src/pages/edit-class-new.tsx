@@ -590,29 +590,29 @@ export default function EditClassPage() {
                       )}
                     />
                   </div>
-                  
-                  {/* What to Bring */}
-                  <FormField
-                    control={form.control}
-                    name="whatToBring"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>What to Bring</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="e.g., water bottle, yoga mat, comfortable workout clothes, towel..."
-                            className="min-h-[80px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Let students know what items they should bring to your class
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+
+                {/* What to Bring */}
+                <FormField
+                  control={form.control}
+                  name="whatToBring"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What to Bring</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="e.g., water bottle, yoga mat, comfortable workout clothes, towel..."
+                          className="min-h-[80px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Let students know what items they should bring to your class
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <div className="pt-4 flex justify-between">
                   <Button type="button" variant="outline" onClick={() => navigate("/my-classes")}>
