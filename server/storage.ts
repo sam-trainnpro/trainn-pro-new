@@ -491,36 +491,36 @@ export class DatabaseStorage implements IStorage {
       .where(eq(classes.parentClassId, parentClassId));
   }
   
-  async updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]> {
-    // First, update the parent class itself
-    await db.update(classes)
-      .set(classData)
-      .where(eq(classes.id, parentClassId));
+  async getClassesByRecurringSeriesId(recurringSeriesId: string): Promise<Class[]> {
+    return await db.select()
+      .from(classes)
+      .where(eq(classes.recurringSeriesId, recurringSeriesId));
+  }
+  
+  async updateClassSeries(classId: number, classData: Partial<Class>): Promise<Class[]> {
+    // Get the class to find its recurring series ID
+    const targetClass = await this.getClass(classId);
+    if (!targetClass?.recurringSeriesId) {
+      throw new Error("Class is not part of a recurring series");
+    }
     
-    // Then update all child classes (instances) of this series
-    // We exclude date-specific fields from the update
+    // Get all classes in the series
+    const seriesClasses = await this.getClassesByRecurringSeriesId(targetClass.recurringSeriesId);
+    
+    // We exclude date-specific fields from the update since each instance has its own timing
     const { startTime, endTime, ...updateData } = classData;
     
-    // Get all child classes
-    const childClasses = await this.getClassesByParentId(parentClassId);
-    
-    // Update each child class individually to ensure proper returning
+    // Update all classes in the series
     const updatedClasses: Class[] = [];
-    for (const childClass of childClasses) {
+    for (const seriesClass of seriesClasses) {
       const result = await db.update(classes)
         .set(updateData)
-        .where(eq(classes.id, childClass.id))
+        .where(eq(classes.id, seriesClass.id))
         .returning();
       
       if (result.length > 0) {
         updatedClasses.push(result[0]);
       }
-    }
-    
-    // Return the updated parent class along with all updated child classes
-    const parentClass = await this.getClass(parentClassId);
-    if (parentClass) {
-      updatedClasses.unshift(parentClass);
     }
     
     return updatedClasses;

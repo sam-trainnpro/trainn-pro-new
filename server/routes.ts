@@ -782,8 +782,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this class series" });
       }
       
-      // Verify this is actually a recurring class
-      if (!classItem.isRecurring) {
+      // Verify this is actually a recurring class (check for recurringSeriesId)
+      if (!classItem.recurringSeriesId) {
         return res.status(400).json({ 
           message: "This is not a recurring class series. Use the regular update endpoint."
         });

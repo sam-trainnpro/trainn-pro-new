@@ -296,19 +296,12 @@ export default function EditClassPage() {
   };
 
   const onSubmit = (data: EditClassFormValues) => {
-    // Debug logging
-    console.log('onSubmit called with classData:', classData);
-    console.log('recurringSeriesId:', classData?.recurringSeriesId);
-    console.log('showEditModal state:', showEditModal);
-    
     // Check if this is a recurring class (has recurringSeriesId)
     if (classData?.recurringSeriesId) {
-      console.log('Detected recurring class, showing modal');
       // Show modal for recurring class
       setPendingFormData(data);
       setShowEditModal(true);
     } else {
-      console.log('Single class detected, updating directly');
       // Directly update single class
       editSingleClassMutation.mutate(data);
     }
@@ -725,31 +718,12 @@ export default function EditClassPage() {
       <EditRecurringModal
         isOpen={showEditModal}
         onClose={() => {
-          console.log('Modal closed');
           setShowEditModal(false);
           setPendingFormData(null);
         }}
         onConfirm={handleEditConfirm}
         classTitle={classData?.title || ''}
       />
-      
-      {/* Debug: Show modal state */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{
-          position: 'fixed',
-          top: 10,
-          right: 10,
-          background: 'red',
-          color: 'white',
-          padding: '10px',
-          fontSize: '12px',
-          zIndex: 9999
-        }}>
-          Debug - Modal Open: {showEditModal ? 'YES' : 'NO'}
-          <br />
-          Recurring ID: {classData?.recurringSeriesId || 'NONE'}
-        </div>
-      )}
     </div>
   );
 }
