@@ -37,6 +37,7 @@ const editClassSchema = z.object({
   classDate: z.date(),
   startTime: z.string().min(1, "Start time is required"),
   duration: z.coerce.number().positive("Duration must be positive"),
+  whatToBring: z.string().optional().nullable(),
 });
 
 type EditClassFormValues = z.infer<typeof editClassSchema>;
@@ -85,6 +86,7 @@ export default function EditClassPage() {
       classDate: new Date(),
       startTime: "09:00",
       duration: 60,
+      whatToBring: "",
     }
   });
   
@@ -119,6 +121,7 @@ export default function EditClassPage() {
         classDate: classDate,
         startTime: timeString,
         duration: duration > 0 ? duration : 60, // Default to 60 minutes if calculation fails
+        whatToBring: classData.whatToBring || "",
       });
     }
   }, [classData, form]);
@@ -193,6 +196,7 @@ export default function EditClassPage() {
         image: imageUrl,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
+        whatToBring: data.whatToBring,
       };
       
       const response = await apiRequest("PUT", `/api/classes/${id}`, formattedData);
@@ -586,6 +590,28 @@ export default function EditClassPage() {
                       )}
                     />
                   </div>
+                  
+                  {/* What to Bring */}
+                  <FormField
+                    control={form.control}
+                    name="whatToBring"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>What to Bring</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="e.g., water bottle, yoga mat, comfortable workout clothes, towel..."
+                            className="min-h-[80px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Let students know what items they should bring to your class
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
                 
                 <div className="pt-4 flex justify-between">
