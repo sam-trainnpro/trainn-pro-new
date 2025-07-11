@@ -56,7 +56,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex flex-col items-start">
           <span className="text-primary text-2xl font-heading font-bold">Trainn</span>
-          <span className="text-xs text-gray-600 font-normal leading-tight">
+          <span className="text-xs text-gray-600 leading-tight font-bold">
             Outdoor fitness and creative classes for adults and kids in San Francisco
           </span>
         </Link>
