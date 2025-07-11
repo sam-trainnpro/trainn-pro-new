@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
+import EditRecurringModal, { type EditOption } from "@/components/edit-recurring-modal";
 import type { Class, ClassCategory } from "@shared/schema";
 
 // Define validation schema for editing a class
@@ -52,6 +53,10 @@ export default function EditClassPage() {
   // State for image upload
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // State for recurring class edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<EditClassFormValues | null>(null);
   
   // Fetch the class to edit
   const {
@@ -156,49 +161,53 @@ export default function EditClassPage() {
     return result.imageUrl;
   };
   
-  // Edit class mutation
-  const editMutation = useMutation({
-    mutationFn: async (data: EditClassFormValues) => {
-      if (!id) throw new Error("Class ID is missing");
-      
-      let imageUrl = data.image;
-      
-      // Upload new image if one was selected
-      if (selectedImage) {
-        setUploadingImage(true);
-        try {
-          imageUrl = await uploadImage(selectedImage);
-        } finally {
-          setUploadingImage(false);
-        }
+  // Helper function to process form data
+  const processFormData = async (data: EditClassFormValues) => {
+    if (!id) throw new Error("Class ID is missing");
+    
+    let imageUrl = data.image;
+    
+    // Upload new image if one was selected
+    if (selectedImage) {
+      setUploadingImage(true);
+      try {
+        imageUrl = await uploadImage(selectedImage);
+      } finally {
+        setUploadingImage(false);
       }
-      
-      // Convert the new date/time format back to startTime and endTime
-      const [hours, minutes] = data.startTime.split(':').map(Number);
-      
-      // Create start time by combining class date with start time
-      const startTime = new Date(data.classDate);
-      startTime.setHours(hours, minutes, 0, 0);
-      
-      // Create end time by adding duration to start time
-      const endTime = new Date(startTime);
-      endTime.setMinutes(endTime.getMinutes() + data.duration);
-      
-      // Format the data for the server
-      const formattedData = {
-        title: data.title,
-        description: data.description,
-        categoryId: data.categoryId,
-        price: data.price,
-        capacity: data.capacity,
-        location: data.location,
-        address: data.address,
-        image: imageUrl,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        whatToBring: data.whatToBring,
-      };
-      
+    }
+    
+    // Convert the new date/time format back to startTime and endTime
+    const [hours, minutes] = data.startTime.split(':').map(Number);
+    
+    // Create start time by combining class date with start time
+    const startTime = new Date(data.classDate);
+    startTime.setHours(hours, minutes, 0, 0);
+    
+    // Create end time by adding duration to start time
+    const endTime = new Date(startTime);
+    endTime.setMinutes(endTime.getMinutes() + data.duration);
+    
+    // Format the data for the server
+    return {
+      title: data.title,
+      description: data.description,
+      categoryId: data.categoryId,
+      price: data.price,
+      capacity: data.capacity,
+      location: data.location,
+      address: data.address,
+      image: imageUrl,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      whatToBring: data.whatToBring,
+    };
+  };
+
+  // Edit single class mutation
+  const editSingleClassMutation = useMutation({
+    mutationFn: async (data: EditClassFormValues) => {
+      const formattedData = await processFormData(data);
       const response = await apiRequest("PUT", `/api/classes/${id}`, formattedData);
       
       if (!response.ok) {
@@ -234,8 +243,68 @@ export default function EditClassPage() {
     },
   });
 
+  // Edit class series mutation
+  const editSeriesMutation = useMutation({
+    mutationFn: async (data: EditClassFormValues) => {
+      const formattedData = await processFormData(data);
+      const response = await apiRequest("PUT", `/api/classes/${id}/series`, formattedData);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update class series");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success!",
+        description: "Class series updated successfully",
+      });
+      
+      // Invalidate and refetch class data to show updates immediately
+      queryClient.invalidateQueries({ queryKey: [`/api/classes/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/coaches/${user?.id}/classes`] });
+      
+      // Clear selected image after successful update
+      setSelectedImage(null);
+      
+      // Navigate to My Calendar page to show updated class
+      navigate("/my-calendar");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle modal confirmation
+  const handleEditConfirm = (option: EditOption) => {
+    if (!pendingFormData) return;
+    
+    if (option === "this") {
+      editSingleClassMutation.mutate(pendingFormData);
+    } else {
+      editSeriesMutation.mutate(pendingFormData);
+    }
+    
+    setPendingFormData(null);
+  };
+
   const onSubmit = (data: EditClassFormValues) => {
-    editMutation.mutate(data);
+    // Check if this is a recurring class (has recurringSeriesId)
+    if (classData?.recurringSeriesId) {
+      // Show modal for recurring class
+      setPendingFormData(data);
+      setShowEditModal(true);
+    } else {
+      // Directly update single class
+      editSingleClassMutation.mutate(data);
+    }
   };
 
   if (isLoadingClass || isLoadingCategories) {
@@ -621,9 +690,9 @@ export default function EditClassPage() {
                   <Button 
                     type="submit" 
                     className="bg-primary text-white"
-                    disabled={editMutation.isPending || uploadingImage}
+                    disabled={editSingleClassMutation.isPending || editSeriesMutation.isPending || uploadingImage}
                   >
-                    {(editMutation.isPending || uploadingImage) ? (
+                    {(editSingleClassMutation.isPending || editSeriesMutation.isPending || uploadingImage) ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {uploadingImage ? "Uploading image..." : "Saving..."}
@@ -644,6 +713,17 @@ export default function EditClassPage() {
       
       <Footer />
       <MobileNavigation />
+
+      {/* Edit Recurring Modal */}
+      <EditRecurringModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setPendingFormData(null);
+        }}
+        onConfirm={handleEditConfirm}
+        classTitle={classData?.title || ''}
+      />
     </div>
   );
 }
