@@ -615,6 +615,13 @@ export default function EditClassPage() {
                         src={selectedImage ? URL.createObjectURL(selectedImage) : classData?.image || ''}
                         alt="Class preview"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // If uploaded image fails to load, use fallback
+                          if (!selectedImage) {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+                          }
+                        }}
                       />
                       {selectedImage && (
                         <div className="absolute top-2 right-2">

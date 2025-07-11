@@ -76,15 +76,20 @@ export default function ClassDetailModal({
 
         <div className="space-y-4">
           {/* Class Image */}
-          {classItem.image && (
-            <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
-              <img 
-                src={classItem.image} 
-                alt={classItem.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+          <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
+            <img 
+              src={classItem.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"} 
+              alt={classItem.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // If the image fails to load, use fallback
+                const target = e.target as HTMLImageElement;
+                if (target.src !== "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500") {
+                  target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+                }
+              }}
+            />
+          </div>
 
           {/* Class Details */}
           <div className="space-y-3">

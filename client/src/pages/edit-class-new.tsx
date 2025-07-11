@@ -441,6 +441,11 @@ export default function EditClassPage() {
                         src={classData.image} 
                         alt="Current class image" 
                         className="w-32 h-32 object-cover rounded-lg border"
+                        onError={(e) => {
+                          // If the image fails to load, use fallback
+                          const target = e.target as HTMLImageElement;
+                          target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+                        }}
                       />
                     </div>
                   )}

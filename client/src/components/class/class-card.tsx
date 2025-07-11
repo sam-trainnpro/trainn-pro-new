@@ -101,6 +101,13 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
           src={classItem.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
           alt={classItem.title} 
           className="w-full h-full object-cover"
+          onError={(e) => {
+            // If the image fails to load, use fallback
+            const target = e.target as HTMLImageElement;
+            if (target.src !== "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500") {
+              target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+            }
+          }}
         />
         <div className="absolute top-3 left-3 bg-primary text-white text-sm font-medium px-2 py-1 rounded">
           {isLoadingCategory ? <Skeleton className="h-4 w-16" /> : category?.name || "Class"}
@@ -166,6 +173,15 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
                   src={coach.profileImage} 
                   alt={`${coach?.firstName} ${coach?.lastName}`} 
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Hide the image and show the initials fallback
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const container = target.parentElement;
+                    if (container) {
+                      container.innerHTML = `<span class="text-xs font-medium text-gray-700">${coach?.firstName?.[0] || ''}${coach?.lastName?.[0] || ''}</span>`;
+                    }
+                  }}
                 />
               ) : (
                 <span className="text-xs font-medium">
