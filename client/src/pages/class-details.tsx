@@ -150,11 +150,18 @@ export default function ClassDetailsPage() {
     enabled: !!classId,
   });
 
-  // Get rating statistics for this class
-  const { data: ratingStats } = useQuery({
-    queryKey: ['/api/reviews/class', classId, 'stats'],
-    queryFn: () => fetch(`/api/reviews/class/${classId}/stats`).then(res => res.json()),
-    enabled: !!classId,
+  // Get rating statistics for the coach
+  const { data: coachRatingStats } = useQuery({
+    queryKey: ['/api/reviews/coach', classItem?.coachId, 'stats'],
+    queryFn: () => fetch(`/api/reviews/coach/${classItem?.coachId}/stats`).then(res => res.json()),
+    enabled: !!classItem?.coachId,
+  });
+  
+  // Get recent reviews for the coach
+  const { data: coachReviews } = useQuery({
+    queryKey: [`/api/reviews/coach/${classItem?.coachId}`, { limit: 2 }],
+    queryFn: () => fetch(`/api/reviews/coach/${classItem?.coachId}?limit=2`).then(res => res.json()),
+    enabled: !!classItem?.coachId,
   });
   
   const userBooking = bookings?.find(booking => 
@@ -435,14 +442,14 @@ export default function ClassDetailsPage() {
                             </div>
                             <div>
                               <h2 className="text-xl font-bold">Coach {coach.firstName} {coach.lastName}</h2>
-                              {ratingStats?.totalReviews > 0 && (
+                              {coachRatingStats?.totalReviews > 0 && (
                                 <div className="flex items-center">
                                   <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
                                   <span className="ml-1">
-                                    {ratingStats.averageRating.toFixed(1)}
+                                    {coachRatingStats.averageRating.toFixed(1)}
                                   </span>
                                   <span className="text-sm text-muted-foreground ml-1">
-                                    ({ratingStats.totalReviews} {ratingStats.totalReviews === 1 ? 'review' : 'reviews'})
+                                    ({coachRatingStats.totalReviews} {coachRatingStats.totalReviews === 1 ? 'review' : 'reviews'})
                                   </span>
                                 </div>
                               )}
@@ -458,6 +465,48 @@ export default function ClassDetailsPage() {
                             <p className="text-muted-foreground italic mb-4">
                               This coach hasn't added a bio yet.
                             </p>
+                          )}
+                          
+                          {/* Recent Reviews Section */}
+                          {coachReviews && coachReviews.reviews && coachReviews.reviews.length > 0 && (
+                            <div className="mb-4">
+                              <h3 className="font-medium mb-3">Recent Reviews</h3>
+                              <div className="space-y-3">
+                                {coachReviews.reviews.slice(0, 2).map((review: any) => (
+                                  <div key={review.id} className="bg-[#F7F7F7] p-4 rounded-lg">
+                                    <div className="flex items-center mb-2">
+                                      <div className="flex items-center">
+                                        {[...Array(5)].map((_, i) => (
+                                          <Star
+                                            key={i}
+                                            className={`h-4 w-4 ${
+                                              i < review.rating
+                                                ? 'text-[#FFCC00] fill-[#FFCC00]'
+                                                : 'text-gray-300'
+                                            }`}
+                                          />
+                                        ))}
+                                      </div>
+                                      <span className="ml-2 text-sm font-medium">
+                                        {review.customerName}
+                                      </span>
+                                      <span className="ml-2 text-sm text-muted-foreground">
+                                        {new Date(review.updatedAt).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric'
+                                        })}
+                                      </span>
+                                    </div>
+                                    {review.comment && (
+                                      <p className="text-sm text-muted-foreground">
+                                        {review.comment}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           )}
                           
                           <Button asChild variant="outline" className="w-full sm:w-auto">
