@@ -354,7 +354,7 @@ export default function ClassDetailsPage() {
                         <div className="flex items-center">
                           <Users className="h-5 w-5 mr-3 text-primary" />
                           <div>
-                            <p className="text-sm text-muted-foreground">Capacity</p>
+                            <p className="text-sm text-muted-foreground">Coach</p>
                             <p className="font-medium">{classItem.capacity} spots</p>
                           </div>
                         </div>
