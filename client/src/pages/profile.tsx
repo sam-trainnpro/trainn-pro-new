@@ -462,6 +462,14 @@ export default function ProfilePage() {
                                   src={user.profileImage} 
                                   alt="Current profile picture" 
                                   className="w-24 h-24 object-cover rounded-full border"
+                                  onError={(e) => {
+                                    // Hide the image container if it fails to load
+                                    const target = e.target as HTMLImageElement;
+                                    const container = target.closest('.mt-2') as HTMLElement;
+                                    if (container) {
+                                      container.style.display = 'none';
+                                    }
+                                  }}
                                 />
                               </div>
                             )}
