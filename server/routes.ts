@@ -2284,9 +2284,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/reviews/coach/:coachId", async (req, res) => {
     try {
       const coachId = parseInt(req.params.coachId);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
       
       // Get all reviews for this coach directly using coach_id
-      const coachReviews = await storage.getCoachReviews(coachId);
+      let coachReviews = await storage.getCoachReviews(coachId);
+      
+      // Apply limit if specified
+      if (limit && limit > 0) {
+        coachReviews = coachReviews.slice(0, limit);
+      }
       
       // Calculate average rating
       const averageRating = coachReviews.length > 0 
