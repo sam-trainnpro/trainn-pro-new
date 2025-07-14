@@ -1826,7 +1826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           business_profile: {
             name: `${coach.firstName} ${coach.lastName}`,
-            product_description: 'Fitness coaching and training services',
+            product_description: 'Fitness, sports and creative class coaching and training services',
           },
         });
         

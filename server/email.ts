@@ -244,7 +244,7 @@ export async function sendClassReminder(
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Your Fitness Journey Awaits</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Outdoor fitness and creative classes for adults and kids</p>
           </div>
           
           <h2 style="color: #333; margin-bottom: 20px;">Class Reminder</h2>
@@ -323,7 +323,7 @@ Please arrive 10-15 minutes early for check-in.
 
 Questions? Contact us at support@trainn.com
 
-Trainn - Your Fitness Journey Awaits
+Trainn - Outdoor fitness and creative classes for adults and kids
     `;
 
     await mailService.send({
@@ -455,12 +455,12 @@ export async function sendCoachApprovalNotification(coach: User): Promise<boolea
           <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Congratulations!</h2>
           
           <p style="color: #333; line-height: 1.6;">Hi ${coach.firstName},</p>
-          <p style="color: #333; line-height: 1.6;">Great news! Your coach account has been approved and you can now start creating and managing fitness classes on Trainn.</p>
+          <p style="color: #333; line-height: 1.6;">Great news! Your coach account has been approved and you can now start creating and managing fitness, sports, or creative classes on Trainn.</p>
           
           <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #28a745;">
             <h3 style="color: #155724; margin-top: 0;">What you can do now:</h3>
             <ul style="color: #155724; margin: 10px 0;">
-              <li>Create your first fitness class</li>
+              <li>Create your first class</li>
               <li>Set your own pricing and schedule</li>
               <li>Manage bookings and customers</li>
               <li>Track your earnings</li>
@@ -471,7 +471,7 @@ export async function sendCoachApprovalNotification(coach: User): Promise<boolea
             <a href="https://trainn.pro/create-class" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Create Your First Class</a>
           </div>
           
-          <p style="color: #333; line-height: 1.6;">We're excited to have you as part of the Trainn community. Start sharing your passion for fitness and help others achieve their goals!</p>
+          <p style="color: #333; line-height: 1.6;">We're excited to have you as part of the Trainn community. Start sharing your passion and help others achieve their goals!</p>
           
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
             <p style="color: #666; margin: 0; font-size: 14px;">
@@ -704,15 +704,15 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
           <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Welcome to Trainn!</h2>
           
           <p style="color: #333; line-height: 1.6;">Hi ${user.firstName},</p>
-          <p style="color: #333; line-height: 1.6;">Welcome to Trainn! We're excited to have you join our community of fitness enthusiasts.</p>
+          <p style="color: #333; line-height: 1.6;">Welcome to Trainn! We're excited to have you join our community.</p>
           
           ${isCoach ? `
           <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h3 style="color: #1565c0; margin-top: 0;">As a Coach, you can:</h3>
             <ul style="color: #1565c0; margin: 10px 0;">
-              <li>Create and manage fitness classes</li>
+              <li>Create and manage classes</li>
               <li>Set your own pricing and schedule</li>
-              <li>Build your fitness community</li>
+              <li>Build your fitness or creative community</li>
               <li>Earn money doing what you love</li>
             </ul>
             <p style="color: #1565c0; margin-bottom: 0; font-size: 14px;">
@@ -723,10 +723,10 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
           <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0;">
             <h3 style="color: #1565c0; margin-top: 0;">As a Customer, you can:</h3>
             <ul style="color: #1565c0; margin: 10px 0;">
-              <li>Browse and book fitness classes</li>
+              <li>Browse and book classes</li>
               <li>Find classes near you</li>
               <li>Connect with amazing coaches</li>
-              <li>Track your fitness journey</li>
+              <li>Track your journey</li>
             </ul>
           </div>
           
@@ -742,7 +742,7 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
               Questions? Contact us at support@trainn.com
             </p>
             <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">
-              Welcome to your fitness journey with Trainn!
+              Welcome to your fitness, sports and creative journey with Trainn!
             </p>
           </div>
         </div>
@@ -870,7 +870,7 @@ export async function sendPasswordResetEmail(
       <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <div style="text-align: center; margin-bottom: 30px;">
           <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-          <p style="color: #666; margin: 5px 0 0 0;">Your Fitness Journey Awaits</p>
+          <p style="color: #666; margin: 5px 0 0 0;">Outdoor fitness and creative classes for adults and kids</p>
         </div>
         
         <h2 style="color: #333; margin-bottom: 20px;">Password Reset Request</h2>
