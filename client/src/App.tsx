@@ -30,6 +30,7 @@ import BlogPostPage from "@/pages/blog-post";
 import BlogAdminPage from "@/pages/blog-admin";
 import DMCAPage from "@/pages/dmca";
 import CommunityGuidelinesPage from "@/pages/community-guidelines";
+import GiftTermsPage from "@/pages/gift-terms";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -115,6 +116,9 @@ function Router() {
       </Route>
       <Route path="/about/communityguidelines">
         <CommunityGuidelinesPage />
+      </Route>
+      <Route path="/terms/gifts">
+        <GiftTermsPage />
       </Route>
       <Route>
         <NotFound />
