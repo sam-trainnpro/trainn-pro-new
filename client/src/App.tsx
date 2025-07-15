@@ -29,6 +29,7 @@ import BlogPage from "@/pages/blog";
 import BlogPostPage from "@/pages/blog-post";
 import BlogAdminPage from "@/pages/blog-admin";
 import DMCAPage from "@/pages/dmca";
+import CommunityGuidelinesPage from "@/pages/community-guidelines";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -111,6 +112,9 @@ function Router() {
       </ProtectedRoute>
       <Route path="/terms/dmca">
         <DMCAPage />
+      </Route>
+      <Route path="/about/communityguidelines">
+        <CommunityGuidelinesPage />
       </Route>
       <Route>
         <NotFound />
