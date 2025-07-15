@@ -28,6 +28,7 @@ import MyCalendarPage from "@/pages/my-calendar";
 import BlogPage from "@/pages/blog";
 import BlogPostPage from "@/pages/blog-post";
 import BlogAdminPage from "@/pages/blog-admin";
+import DMCAPage from "@/pages/dmca";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -108,6 +109,9 @@ function Router() {
       <ProtectedRoute path="/blog/admin">
         <BlogAdminPage />
       </ProtectedRoute>
+      <Route path="/terms/dmca">
+        <DMCAPage />
+      </Route>
       <Route>
         <NotFound />
       </Route>
