@@ -32,7 +32,6 @@ import DMCAPage from "@/pages/dmca";
 import CommunityGuidelinesPage from "@/pages/community-guidelines";
 import GiftTermsPage from "@/pages/gift-terms";
 import CustomerReferralsPage from "@/pages/customer-referrals";
-import TermsOfServicePage from "@/pages/terms-of-service";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -124,9 +123,6 @@ function Router() {
       </Route>
       <Route path="/terms/customer-referrals">
         <CustomerReferralsPage />
-      </Route>
-      <Route path="/terms">
-        <TermsOfServicePage />
       </Route>
       <Route>
         <NotFound />

@@ -62,7 +62,7 @@ export default function Footer() {
             <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2023 Trainn. All rights reserved.</p>
             <div className="flex space-x-6">
               <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Privacy Policy</Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white transition text-sm">Terms of Service</Link>
+              <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Terms of Service</Link>
               <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Cookie Policy</Link>
             </div>
           </div>
