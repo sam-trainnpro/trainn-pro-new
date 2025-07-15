@@ -73,7 +73,7 @@ export default function DMCAPage() {
               </div>
 
               <p className="mb-4">
-                For clarity, only DMCA notices should go to the Copyright Agent. Any other feedback, comments, requests for technical support or other communications should be directed to Trainn customer service.
+                For clarity, only DMCA notices should go to the Copyright Agent. Any other feedback, comments, requests for technical support or other communications should be directed to Trainn <a href="/contact" className="text-blue-600 hover:underline">customer service</a>.
               </p>
             </CardContent>
           </Card>
