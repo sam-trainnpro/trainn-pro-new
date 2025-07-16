@@ -57,6 +57,38 @@ export default function TermsOfUsePage() {
                     </p>
                   </div>
                 </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">2. Trainn Platform</h2>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">a) Trainn Platform.</h3>
+                    <p className="mb-4">
+                      The Trainn platform enables consumers to reserve, schedule, purchase, access and attend a wide range of Offerings offered and operated by fitness studios, gyms, trainers, venues or other third parties (collectively, "Venues"). Trainn itself is not a gymnasium, place of amusement or recreation, health club, facility, fitness studio or similar establishment and does not own, operate or control any of the Offerings that are offered at or through such facilities.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">b) Membership Options.</h3>
+                    <p className="mb-4">
+                      There are a number of ways to participate in Offerings such as various subscription plans, promotional plans, digital Offerings, and non-subscription purchases. These options consist of different Offerings, services and features and may be subject to additional and differing conditions, prices, policies and limitations. We reserve the right to modify, terminate or otherwise amend our offered options and plans at any time in our discretion. From time to time we may permit non-subscribers to access certain Offerings, content or features for a cost or at no cost. Trainn makes no commitment on the quantity, availability, type or frequency at which such Offerings, content and features will be available to non-subscribers and may modify, discontinue, remove or suspend access at any time and for any reason in our sole discretion.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">c) Non-Subscription Purchases.</h3>
+                    <p className="mb-4">
+                      Trainn may permit you to purchase certain products or Offerings through the Site, without having a subscription or in addition to your subscription. You acknowledge and agree that these Terms apply to any such purchase you make, and you will be responsible to pay the applicable fees, which may change at any time.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">d) Subscription Plans.</h3>
+                    <p className="mb-4">
+                      Train may provide various subscription plans to provide access to additional parts of the Site and additional Offerings. A subscription starts on the date that you sign up for a subscription and submit payment via a valid Payment Method (defined below) or reactivate a pre-existing subscription. Unless we communicate a different time period to you at the time of sign up or otherwise (such as a multi-month commitment plan): each billing cycle is one month in length (a "Subscription Cycle"), your Trainn subscription automatically renews each month, and we will automatically bill the monthly subscription fee to your Payment Method each month, until your subscription is cancelled or terminated. For example, if you purchase your Trainn subscription on July 5, your subscription will automatically renew on August 5th (as further explained below). You must provide us with a current, valid, accepted method of payment to which any applicable fees will be charged ("Payment Method"). We may update the accepted methods from time to time. If you add a subscription to your base subscription or if you upgrade or downgrade to a different subscription, all such subscriptions will be governed by these Terms and will continue indefinitely until cancelled or terminated.
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
