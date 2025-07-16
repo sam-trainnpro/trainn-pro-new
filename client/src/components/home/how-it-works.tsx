@@ -14,7 +14,7 @@ export default function HowItWorks() {
               <Search className="text-primary h-6 w-6" />
             </div>
             <h3 className="font-heading font-bold text-xl mb-2">Find Your Class</h3>
-            <p className="text-gray-600">Search and filter through hundreds of classes by type, location, time, and age group to find the right class for you.</p>
+            <p className="text-gray-600">Search and filter through hundreds of classes by type, location, time, and age group to find the right adults or kids class.</p>
           </div>
           
           <div className="text-center">
