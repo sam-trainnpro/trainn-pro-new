@@ -128,6 +128,134 @@ export default function TermsOfUsePage() {
                       You agree that the information you provide to Trainn at sign up and at all other times will be true, accurate, current, and complete and that you will keep this information accurate and up-to-date at all times. When you sign up, you will be asked to create a password. You are solely responsible for all activity that occurs under your account, including any activity by unauthorized users. To use the Site you must have access to the Internet and may be required to download a Trainn mobile application to use some or all of Trainn features. You are solely responsible for providing your own access (e.g., computer, mobile device, Internet connection, etc.) to the Site and Offerings.
                     </p>
                   </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">i) Eligibility.</h3>
+                    <p className="mb-4">
+                      The availability of all or part of our Site and/or Offerings may be limited based on geographic, age, or other criteria as we may establish from time to time. You understand and agree we may disallow you from subscribing to Trainn or may terminate your subscription at any time based on these criteria. For example, you must be 18 years of age or older to use the Site and/or Offerings and/or purchase a class offered on Trainn or a Trainn subscription. You further understand that the Site and/or Offerings may not be available in every geography.
+                    </p>
+                    
+                    <p className="mb-4">
+                      PLEASE ENSURE YOU ARE VIEWING THE TERMS OF USE FOR THE COUNTRY IN WHICH YOU ARE LOCATED. 
+                    </p>
+                    
+                    <p className="mb-4">
+                      THESE TERMS ARE ONLY APPLICABLE TO USERS IN THE U.S. OR THE COUNTRY FOR WHICH A REGIONAL AMENDMENT IS AVAILABLE AT THE END OF THESE TERMS. THE SITE IS NOT AVAILABLE TO ANY USERS SUSPENDED OR REMOVED FROM THE SITE BY TRAINN. BY USING THE SITE, YOU REPRESENT THAT YOU ARE A RESIDENT OF THE U.S. OR THE COUNTRY FOR WHICH A REGIONAL AMENDMENT IS AVAILABLE AT THE END OF THESE TERMS, AT LEAST 18 YEARS OLD AND HAVE NOT BEEN PREVIOUSLY SUSPENDED OR REMOVED. THOSE WHO CHOOSE TO ACCESS THE SITE DO SO AT THEIR OWN INITIATIVE AND ARE RESPONSIBLE FOR COMPLIANCE WITH ALL LOCAL RULES INCLUDING, WITHOUT LIMITATION, RULES ABOUT THE INTERNET, DATA, EMAIL OR OTHER ELECTRONIC MESSAGES, OR PRIVACY.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">j) Communications.</h3>
+                    <p className="mb-4">
+                      By providing your information or creating an account, you agree that Trainn may contact you by email, direct mail, telephone or text messages at any of the addresses or phone numbers, as applicable, provided by you or on your behalf in connection with a Trainn account, including for marketing purposes. You may opt-out of marketing emails via the provided unsubscribe link or otherwise opt-out by contacting us at any time.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">k) Subscribing Organizations.</h3>
+                    <p className="mb-4">
+                      If you have express permission from Trainn to open or use an account on behalf of a company, entity, or organization (a "Subscribing Organization"), then you represent and warrant that you are an authorized representative of such organization with the authority to bind it to these Terms; and agree to be bound by these Terms on its behalf.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">l) Your responsibility for yourself and others.</h3>
+                    <p className="mb-4">
+                      Unless Trainn specifically communicates otherwise for a particular Offering, you are not permitted to make reservations on behalf of anyone but yourself or invite or bring anyone to your reservation. You are responsible and liable for your own acts and omissions and anyone for whom you make a reservation or bring to a reservation (including if the guest arrives separately). For example, this means: (i) you are responsible for leaving all facilities you visit in the condition they were in when you arrived and paying for any damage you or your guests cause, and (ii) you must act with integrity, treat others with respect, and comply with all applicable laws at all times. If Trainn authorizes you to book for a guest who is a minor or bring a minor to a reservation, you must be legally authorized to act on behalf of the minor, and you are solely responsible for supervising the minor.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">m) Reimbursement.</h3>
+                    <p className="mb-4">
+                      Trainn makes no representations or guarantees that any purchase you make through Trainn will be reimbursable through your insurance or otherwise and has no obligation to facilitate any such reimbursement. You are solely responsible for ensuring that you and your purchases or uses qualify for any applicable reimbursements.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">3. Fees, Billing, Cancellation</h2>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">a) Recurring Billing.</h3>
+                    <p className="mb-4">
+                      By initiating a Trainn subscription, you authorize us to charge you for your initial subscription period and a recurring monthly subscription fee at the then current rate, which may change from time to time. You acknowledge that the amount billed each month may vary for reasons that may include differing amounts due to promotional offers and/or changing or adding a plan, and you authorize us to charge your Payment Method for such varying amounts, which may be billed monthly in one or more charges. You also authorize us to charge you any other fees you may incur in connection with your use of the Site, such as any applicable sign-up fee, taxes and cancellation or late fees, as further explained below. Note that even if you do not use the subscription or access the Site and/or Offerings, you will be responsible for subscription fees until you cancel your subscription, or it is otherwise terminated.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">b) Subscription Cycle.</h3>
+                    <p className="mb-4">
+                      When you sign up and purchase your Trainn subscription, your first Subscription Cycle will be billed immediately. Unless we expressly communicate otherwise, for example, with multi-month commitment plans, your subscription will automatically renew each month and you will be billed on the same date each month. We reserve the right to change the timing of our billing (and if we do, we'll make adjustments to the amounts we charge, as appropriate). In the event your paid subscription began on a day not contained in a given month, we may bill your Payment Method on a day in the applicable month or such other day as we deem appropriate. For example, if you started your Trainn membership or became a paying member on June 30th, your next payment date is likely to be July 31st, and your Payment Method would be billed on that date. Your renewal date may change due to changes in your subscription.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">c) Refunds.</h3>
+                    <p className="mb-4">
+                      Generally, our fees (including the monthly fee for your membership and any other fees) are nonrefundable unless we specifically communicate otherwise at the time of purchase. However, we will provide a refund to subscribers for their current prepaid subscription period only in the following circumstances: (i) if you are cancelling your subscription and request a refund within 5 days of the date of your first payment for your subscription or (ii) if your subscription is cancelled prior to the end of a period for which you have incurred a charge, due to your relocation, disability or death; provided, however, in each case we reserve the right to charge a fee to cover the cost of any Offering or other services or products you may have used or received prior to your cancellation and to ask for proof of such changed condition, to the extent permitted by law. WE DO NOT PROVIDE REFUNDS OR MAKE GOODS FOR ANY PRIOR MONTHS INCLUDING FOR UNUSED CREDITS OR OFFERINGS.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">d) Price Changes.</h3>
+                    <p className="mb-4">
+                      We reserve the right to adjust pricing at any time. Unless we expressly communicate otherwise, any price changes to your subscription will take effect on your next billing cycle upon notice communicated through a posting on the Trainn website or mobile application or such other means as we may deem appropriate from time to time, such as email. If you do not cancel your subscription, you will be deemed to have accepted these new fees.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">e) Payment Methods.</h3>
+                    <p className="mb-4">
+                      You may edit your Payment Method information by logging onto our website or mobile application and editing it in your account settings. If a payment is not successfully settled due to expiration, insufficient funds or otherwise, you nonetheless will remain responsible for any uncollected amounts and authorize us to continue billing the Payment Method or any other payment method you have provided, as it may be updated, including in the event you attempt to create a new account, reactivate the unsettled account or sign up for a new account. This may result in a change to your payment billing dates. If we cannot charge your account, we reserve the right, but are not obligated, to terminate your access to our Site or any portion thereof.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">f) Cancellation of Subscription.</h3>
+                    <p className="mb-4">
+                      Unless we communicate otherwise, you may terminate your subscription at any time before your subscription renews by going into your account settings on the Trainn website and letting us know you would like to cancel. Unless we communicate otherwise, and except for during a Trial, following any cancellation you will continue to have access to your subscription through the end of your current prepaid Subscription Cycle, unless you cancel and receive a refund in which case your access will be terminated immediately. Note that if you do terminate your subscription, we reserve the right to charge a reactivation fee if you want to return to Trainn in future months or to restrict your access in future months. If you cancel your subscription or it is terminated for any reason, you will lose access to all Offerings, content, credits or features available through the subscription.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">g) Other Fees.</h3>
+                    <p className="mb-4">
+                      You are responsible for paying applicable fees if you do not cancel an Offering with appropriate notice or do not attend your scheduled Offering. Click here for our current cancellation and missed Offering rules, including the applicable fees. We reserve the right to change the policy regarding when we charge fees, to introduce additional fees (such as a sign-up fee) and to change the amount of any such fees at any time.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">h) Reservation and Cancellation of Offerings.</h3>
+                    <p className="mb-4">
+                      As a Trainn user, you must reserve and cancel your Offerings only through the Site. Click here for our current cancellation and missed Offering rules, including the applicable fees. It is a breach of these Terms if you reserve or cancel directly with a Venue, including through any online or mobile account you have with a Venue, independent of Trainn. If you reserve or cancel directly with such Venue, we reserve the right to charge you the full amount that the Venue charges for such Offering and/or any applicable cancellation fees, and/or to suspend or terminate your subscription.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">i) Fees Charged by Venues.</h3>
+                    <p className="mb-4">
+                      In addition to fees we charge, Venues may also charge equipment or other amenity fees that you will be responsible for directly. For example, some Venues might charge extra to rent a yoga mat or cycling shoes. Further, Trainn only gives you access to the Offering for which you signed up on the Site (and at the specified time and location). The Venue may have additional fees for use of additional Offerings or spaces.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">j) Third Party Fees for Using Trainn.</h3>
+                    <p className="mb-4">
+                      You are also responsible for all third-party charges and fees associated with connecting to and using the Site and/or Offerings, including fees such as internet service provider fees, telephone and computer equipment charges, sales tax and any other fees necessary to access the Site and/or Offerings.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">4. Promotions</h2>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">a) Trials.</h3>
+                    <p className="mb-4">
+                      From time to time we may offer a trial membership that includes access to the Trainn platform during the trial period. The Offerings, content and features available during your Trial may differ from those available during subsequent Subscription Cycles. Trials will have the duration and price communicated at the time you sign up. Unless otherwise communicated, a trial begins at the moment of sign up (even if you choose not to take your first Offering until a later date) and ends at 11:59pm local time (based on your location when you signed up for Trainn) on the last day of the trial (for a one-week trial, this would be the same weekday of following week). If you cancel your Trial, your cancellation will be processed and your Trial period will end immediately, your credits will expire, and your upcoming reservations will be cancelled, unless we communicate otherwise. Each trial membership automatically will convert to a regular monthly subscription and price unless canceled by 11:59 pm local time (based on your location when you signed up for Trainn) on the last day of trial. Unless we communicate otherwise in writing, customers that cancel and do not convert to a regular subscription may not attend Offerings taking place after the end of the trial membership period (even if booking occurred before the end of the applicable trial period). Trials, discount offers, and promotions (collectively "Trials") may be redeemed as described in the specifics of the promotion and may be subject to additional or different terms. Unless we expressly communicate otherwise, Trials cannot be transferred, sold, bartered, combined with other offers, or redeemed for cash, and they are void where prohibited. You understand and agree that unless we expressly communicate otherwise, Trials are available only to new users that have never had a Trainn account before and there is only one Trial permitted per credit card or payment method and it is a violation of these Terms to sign up for a Trial if you have signed up for an account or trial in the past or to have more than one account or trial. Trainn reserves the right, in its absolute discretion, to determine your eligibility for a Trial. If in our discretion we believe you are not eligible for a Trial, we reserve the right to prevent you from signing up for a Trial or to terminate your promotional subscription. If we terminate your Trials because you have violated these Terms, you understand that you will not be eligible for a refund.
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
