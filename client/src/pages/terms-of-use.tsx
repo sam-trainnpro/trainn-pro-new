@@ -537,6 +537,217 @@ export default function TermsOfUsePage() {
                     THEREFORE, TO THE FULLEST EXTENT PERMITTED BY LAW, YOU RELEASE, INDEMNIFY, AND HOLD HARMLESS TRAINN RELEASEES FROM ANY AND ALL RESPONSIBILITY, CLAIMS, ACTIONS, SUITS, PROCEDURES, COSTS, EXPENSES, DAMAGES AND LIABILITIES ARISING OUT OF OR IN ANY WAY RELATED TO YOUR PARTICIPATION IN OR USE OF THE SITE AND/OR ATTENDANCE AT, PARTICIPATION IN, PURCHASE OF AND/OR USE OF ANY OFFERING) INCLUDING BUT NOT LIMITED TO WITH RESPECT TO BODILY INJURY, PHYSICAL HARM, LOSS, ILLNESS, DEATH OR PROPERTY DAMAGE, AND/OR SUCH PARTICIPATION OR USE BY ANYONE ON WHOSE BEHALF YOU MADE A RESERVATION OR INVITED TO OR BROUGHT TO AN OFFERING.
                   </p>
                 </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">14. Indemnification; Hold Harmless.</h2>
+                  <p className="mb-4">
+                    You agree to indemnify and hold Trainn Releasees, harmless from any claims, actions, suits, costs, expenses, losses, damages, liabilities, including attorneys' fees, arising out of or in connection with your misuse of the Site, Offerings, violation of these Terms, violation of the rights of any other person or entity, issue arising out of you making a reservation for another person or inviting or bringing another person to an Offering, or any breach of your representations, warranties, and covenants set forth in these Terms.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">15. Limitation of Liability and Damages.</h2>
+                  <p className="mb-4">
+                    UNDER NO CIRCUMSTANCES WILL TRAINN RELEASEES BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES UNDER ANY THEORY OF LIABILITY, WHETHER BASED IN CONTRACT, TORT (INCLUDING NEGLIGENCE AND PRODUCT LIABILITY), OR OTHERWISE, EVEN IF TRAINN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. APPLICABLE LAW MAY NOT ALLOW THE LIMITATION OR EXCLUSION OF LIABILITY OR INCIDENTAL OR CONSEQUENTIAL DAMAGES, SO THE ABOVE LIMITATION OR EXCLUSION MAY NOT APPLY TO YOU. IN SUCH CASES, TRAINN RELEASEES' LIABILITY WILL BE LIMITED TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW.
+                  </p>
+                  <p className="mb-4">
+                    TRAINN RELEASEES' LIABILITY TO YOU IS LIMITED TO $50 USD (OR THE LOCAL EQUIVALENT THEREOF) OR THE AMOUNTS, IF ANY, PAID BY YOU TO TRAINN UNDER THIS AGREEMENT IN THE THREE MONTHS IMMEDIATELY PRIOR TO THE EVENT FIRST GIVING RISE TO THE CLAIM, WHICHEVER IS MORE. THE FOREGOING LIMITATIONS WILL APPLY TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, REGARDLESS OF WHETHER TRAINN RELEASEES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES AND REGARDLESS OF WHETHER ANY REMEDY FAILS OF ITS ESSENTIAL PURPOSE.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">16. Venue Waivers and Terms.</h2>
+                  <p className="mb-4">
+                    Members booking Offerings are deemed to agree to the liability waivers and terms of individual Venues. Your participation in any Offering may be subject to additional policies, rules or conditions of the applicable Venue and you understand and agree that you may not be permitted to reserve or attend Offerings or services if you do not comply with these Terms or the policies of the Venues or as otherwise determined by a Venue. If you have questions about a Venue's waiver or other terms, please see the applicable Venue's website or contact the Venue directly.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">17. Infringement Policy.</h2>
+                  <p className="mb-4">
+                    Please see our Digital Millennium Copyright Act document for an explanation of our copyright and trademark policies in the United States.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">18. Arbitration Agreement</h2>
+                  <p className="mb-4">
+                    PLEASE READ THE FOLLOWING CAREFULLY:
+                  </p>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">a) Purpose.</h3>
+                    <p className="mb-4">
+                      This Arbitration Agreement facilitates the prompt and efficient resolution of any disputes that may arise between you and Trainn Releasees. Arbitration is a form of private dispute resolution in which parties to a contract agree to submit their disputes and potential disputes to a neutral third person (called an arbitrator) for a binding decision, instead of having such dispute(s) decided in a lawsuit, in court, by a judge or jury trial. Please read this Arbitration Agreement carefully. It provides that all disputes between you and Trainn Releasees shall be resolved by binding arbitration. Arbitration replaces the right to go to court. In the absence of this arbitration agreement, you may otherwise have a right or opportunity to bring claims in a court, before a judge or jury, and/or to participate in or be represented in a case filed in court by others (including, but not limited to, class actions). Entering into this Arbitration Agreement constitutes a waiver of your right to litigate claims in court and all opportunity to be heard by a judge or jury. There is no judge or jury in arbitration, and court review of an arbitration award is limited. The arbitrator must follow this Arbitration Agreement and can award the same damages and relief as a court (including attorney's fees).
+                    </p>
+                    <p className="mb-4">
+                      The term "Dispute" means any dispute, claim, or controversy between you and Trainn Releasees regarding any aspect of your relationship with Trainn Releasees, whether based in contract, statute, regulation, ordinance, tort (including, but not limited to, fraud, misrepresentation, fraudulent inducement, negligence, gross negligence or reckless behavior), or any other legal or equitable theory, and includes the validity, enforceability or scope of this Arbitration Agreement (with the exception of the enforceability of the Class Action Waiver clause below). "Dispute" is to be given the broadest possible meaning that will be enforced.
+                    </p>
+                    <p className="mb-4">
+                      WE EACH AGREE THAT, EXCEPT AS PROVIDED BELOW, ANY AND ALL DISPUTES, AS DEFINED ABOVE, WHETHER PRESENTLY IN EXISTENCE OR BASED ON ACTS OR OMISSIONS IN THE PAST OR IN THE FUTURE, WILL BE RESOLVED EXCLUSIVELY AND FINALLY BY BINDING ARBITRATION RATHER THAN IN COURT IN ACCORDANCE WITH THIS ARBITRATION AGREEMENT. Notwithstanding the foregoing, either you or Trainn Releasees may elect to bring an individual action in small claims court provided, however, that if the case is subsequently removed from small claims court it will be subject to the procedures set out herein.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">b) Pre-Arbitration Dispute Resolution.</h3>
+                    <p className="mb-4">
+                      Before initiating any Dispute, whether in court or arbitration, you must first give Trainn Releasees an opportunity to resolve the Dispute by mailing written notification (hereinafter, a "Pre-Arbitration Demand") to Trainn Releasees - Pre-Arbitration Demand, Attention: Mr. S. Roth, Legal Department, 156 E. 79th St, New York, NY 10075. A Pre-Arbitration Demand is valid only if it pertains to, and is on behalf of, a single individual. A Pre-Arbitration Demand brought on behalf of multiple individuals is invalid as to all. That Pre-Arbitration Demand must include (1) your name, (2) your telephone number, email address, residential address, and mailing address, if different than your residential address, (3) a written description of the Dispute, (4) a description of the specific relief you seek, including whatever amount of money is demanded and the means by which you calculated the claimed damages, and (5) your signature.
+                    </p>
+                    <p className="mb-4">
+                      Following your Pre-Arbitration Demand, before you submit a dispute to arbitration, you must engage in good faith in an informal negotiation process, as specified in this paragraph. This informal negotiation must include an individual meet-and-confer in person, or via teleconference or videoconference, that addresses only the Dispute between you and Trainn Releasees (the "Conference"). If you are represented by counsel, your counsel may participate in the Conference, but you will also need to individually attend and participate. Trainn Releasees will participate in the Conference through one or more representatives, which may include our counsel. Following the informal negotiation, if Trainn Releasees do not resolve the Dispute to your satisfaction within 60 days after it receives your written notification, you may pursue your Dispute in arbitration.
+                    </p>
+                    <p className="mb-4">
+                      You agree that compliance with this subsection is a condition precedent to commencing arbitration, and that the arbitration administrator or arbitrator shall dismiss any arbitration filed that does not strictly comply with these informal dispute resolution procedures. Notwithstanding any other provision of this Agreement, the party against whom an arbitration has been filed has the right to seek a judicial declaration in court regarding whether the arbitration should be dismissed for failure to comply with the informal dispute resolution process set forth in this subsection.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">c) Arbitration Procedures.</h3>
+                    <p className="mb-4">
+                      If the Dispute is not resolved as provided above in the Pre-Arbitration Claim Resolution section, either you or Trainn Releasees may initiate arbitration proceedings. The Federal Arbitration Act ("FAA"), 9 U.S.C. §§ 1-16, including its procedural provisions, and not state law, governs the interpretation and enforcement of this arbitration agreement. JAMS, www.jamsadr.com, will arbitrate all Disputes, and the arbitration will be conducted before a single arbitrator. The arbitration shall be commenced as an individual arbitration, and shall in no event be commenced as a class arbitration. All issues shall be for the arbitrator to decide, including the scope of this Arbitration Agreement.
+                    </p>
+                    <p className="mb-4">
+                      For arbitration before JAMS, the JAMS Comprehensive Arbitration Rules & Procedures and the JAMS Recommended Arbitration Discovery Protocols For Domestic, Commercial Cases will apply. For Disputes brought as part of mass arbitration, the JAMS Mass Arbitration Procedures and Guidelines will apply. Mass arbitration is defined as 75 or more similar demands for arbitration filed against the same party or related parties by individual claimants represented by either the same law firm or law firms acting in coordination. The JAMS rules are available at www.jamsadr.com or by calling 1-800-352-5267. In the event that this Arbitration Agreement conflicts with the applicable arbitration rules, this Arbitration Agreement shall govern. Under no circumstances will class action procedures or rules apply to the arbitration. However, the arbitrator will apply applicable substantive law consistent with the FAA and the applicable statute of limitations or condition precedent to suit.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">d) Arbitration Award.</h3>
+                    <p className="mb-4">
+                      The arbitrator may award on an individual basis any relief that would be available pursuant to applicable law, and will not have the power to award relief to, against or for the benefit of any person who is not a party to the proceeding. The arbitrator shall make any award in writing but need not provide a statement of reasons unless requested by a party. Such award by the arbitrator will be final and binding on the parties, except for any right of appeal provided by applicable federal law, including but not limited to the FAA, and may be entered in any court having jurisdiction over the parties for purposes of enforcement.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">e) Authority of the Arbitrator.</h3>
+                    <p className="mb-4">
+                      Except as expressly provided herein, the arbitrator will decide the jurisdiction of the arbitrator and the rights and liabilities, if any, of you and Trainn Releasees. Other than as expressly provided in this Arbitration Agreement and the applicable arbitration rules, the Dispute will not be consolidated with any other matters or joined with any other cases or parties. The arbitrator will have the authority to grant motions dispositive of all or part of any claim or dispute. The arbitrator will have the authority to award monetary damages and to grant any non-monetary remedy or relief available to an individual under law, the arbitral forum's rules, and the Terms. The arbitrator will issue a written award and statement of decision describing the essential findings and conclusions on which the award is based, including the calculation of any damages awarded. The arbitrator has the same authority to award relief on an individual basis that a judge in a court of law would have. The award of the arbitrator is final and binding upon you and Trainn Releasees.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">f) Location of Arbitration.</h3>
+                    <p className="mb-4">
+                      Arbitration shall take place in New York County, New York, but it may proceed by telephone if you so choose.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">g) Payment of Arbitration Fees and Costs.</h3>
+                    <p className="mb-4">
+                      If Trainn is the party initiating an arbitration against you, Trainn will pay all costs associated with the arbitration, including the entire filing fee. If you are the party initiating an arbitration against Trainn Releasees, you will be responsible for the applicable initial filing fee. Trainn will pay both parties' administrative fees.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">h) Settlement Offers and Offers of Judgment.</h3>
+                    <p className="mb-4">
+                      At least ten (10) calendar days before the date set for an arbitration hearing with respect to a Dispute, you or we may serve a written offer of judgement on the other party to allow judgment on specified terms. If the offer is accepted, the offer with proof of acceptance shall be submitted to the arbitrator, who shall enter judgment accordingly. If the offer is not accepted prior to the arbitration hearing or within thirty (30) calendar days after it is made, whichever is first, it shall be deemed withdrawn and cannot be given as evidence in the arbitration. If an offer made by one party is not accepted by the other party, and the other party fails to obtain a more favorable award, the other party shall not recover their post-offer costs and shall pay the offering party's costs (including all fees paid to the arbitral forum) from the time of the offer.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">i) Class Action Waiver.</h3>
+                    <p className="mb-4">
+                      Any Disputes arising out of or relating to your use of the Site and/or attendance at, participation in or use of Offerings, any purchase you make on or through the Site, any information you provide via the Site, and/or these Terms (including the formation, performance, or alleged breach), shall be submitted individually by you and will not be subject to any class action or representative status. The arbitrator may not consolidate more than one person's claims, and may not otherwise preside over any form of a class or representative proceeding or claims (such as a class action, representative action, consolidated action or private attorney general action). Neither you, nor any other Member of Trainn Releasees and/or user of Trainn Releasees' services, can be a class representative, class member, or otherwise participate in a class, representative, consolidated or private attorney general proceeding with respect to the matters set forth in the first sentence of this paragraph. You agree that this Class Action Waiver is material and essential to the arbitration of any dispute between you and Trainn Releasees and is non-severable from the Arbitration Agreement. If any portion of this Class Action Waiver is limited, voided, or cannot be enforced, then the Arbitration Agreement shall be null and void. You understand that by agreeing to this Class Action Waiver, you may only pursue Dispute against Trainn Releasees in an individual capacity and not as a plaintiff or class member in any purported class action or representative proceeding.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">j) Limitation of Procedural Rights.</h3>
+                    <p className="mb-4">
+                      You understand and agree that, by entering into this Arbitration Agreement, you and Trainn Releasees are each agreeing to arbitration instead of the right to a trial before a judge or jury in a public court. In the absence of this Arbitration Agreement, you and Trainn Releasees might otherwise have a right or opportunity to bring Disputes in a court, before a judge or jury, and/or to participate or be represented in a case filed in court by others (including class actions). By using the Trainn Site or any Offering, product or services, or otherwise accepting these Terms, you are entering into this Arbitration Agreement, and you give up those procedural rights. Other rights that you would have if you went to court, such as the right to appeal and to certain types of discovery, may be more limited in arbitration. The right to appellate review of an arbitrator's decision is much more limited than in court, and in general an arbitrator's decision may not be appealed for errors of fact or law. Arbitration procedures are typically more limited, more efficient, and less costly than rules applicable in court and are subject to very limited review by a court. YOU AND TRAINN RELEASEES WAIVE ALL RIGHTS TO A JURY TRIAL in any litigation between you and Trainn Releasees over whether to vacate or enforce an arbitration award and elect instead to have the dispute be resolved by a judge serving as the finder of fact.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">k) Severability.</h3>
+                    <p className="mb-4">
+                      If any clause within this Arbitration Agreement, other than the Class Action Waiver clause above, is found to be illegal or unenforceable, that clause will be severed from this Arbitration Agreement, and the remainder of this Arbitration Agreement will be given full force and effect. If the Class Action Waiver clause is found to be illegal or unenforceable, then this entire Arbitration Agreement will be unenforceable and the Dispute will be decided by a court of competent jurisdiction.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">l) Continuation.</h3>
+                    <p className="mb-4">
+                      This Arbitration Agreement shall survive the termination of your contract with Trainn and your use of the Trainn Site, Offerings, and services.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">19. Miscellaneous.</h2>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">a) Choice of Law; Forum.</h3>
+                    <p className="mb-4">
+                      These Terms shall be governed in all respects by the laws of the State of New York, without regard to conflict of law provisions, consistent with the Federal Arbitration Act (to the extent permitted by applicable law). If for any reason a claim proceeds in court rather than in arbitration (including any claims brought by parties outside the United States), the dispute shall be exclusively brought in state or federal court located in New York, New York.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">b) Assignment.</h3>
+                    <p className="mb-4">
+                      We may assign our rights and obligations under these Terms. The Terms will inure to the benefit of our successors, assigns and licensees.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">c) Severability.</h3>
+                    <p className="mb-4">
+                      If any provision of these Terms shall be unlawful, void, or for any reason unenforceable, then that provision will be deemed severable from these Terms and will not affect the validity and enforceability of any remaining provisions.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">d) Headings.</h3>
+                    <p className="mb-4">
+                      The heading references herein are for convenience purposes only, do not constitute a part of these Terms, and will not be deemed to limit or affect any of the provisions hereof.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">e) Entire Agreement.</h3>
+                    <p className="mb-4">
+                      These Terms and any applicable Additional Terms, as each may be amended as set forth herein, are the entire agreement between you and Trainn relating to the subject matter herein.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">f) Claims; Statute of Limitations.</h3>
+                    <p className="mb-4">
+                      IN THE EVENT YOU HAVE A CAUSE OF ACTION THAT IS NOT OTHERWISE BARRED BY THESE TERMS, YOU AND TRAINN AGREE THAT ANY CAUSE OF ACTION ARISING OUT OF OR RELATED TO THESE TERMS AND/OR THE SITE AND/OR ATTENDANCE AT, PARTICIPATION IN, USE OF OR PURCHASE OF OFFERINGS MUST COMMENCE WITHIN ONE (1) YEAR AFTER THE CAUSE OF ACTION ACCRUES. OTHERWISE, SUCH CAUSE OF ACTION IS PERMANENTLY BARRED.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">g) Disclosures.</h3>
+                    <p className="mb-4">
+                      If you are in the United States, the services are offered by Trainn, a California business are laid out in this document. For questions, contact us here. If you are a California resident, you may have this same information emailed to you by sending a contacting us by following the link above with your email address and a request for this information.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">h) Waiver.</h3>
+                    <p className="mb-4">
+                      No waiver of any of these Terms by Trainn is binding unless authorized in writing by an executive officer of Trainn. In the event that Trainn waives a breach of any provision of these Terms, such waiver will not be construed as a continuing waiver of other breaches of the same nature or other provisions of these Terms and will in no manner affect the right of Trainn to enforce the same at a later time. Further, in the event we choose to grant an exception to these Terms, any such exception is in our sole discretion and does not entitle you or anyone else to any exceptions in the future for similar circumstances.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">i) Notice.</h3>
+                    <p className="mb-4">
+                      Except as explicitly stated otherwise, legal notices will be served, with respect to Trainn, on Trainn's national registered agent, and, with respect to you, to the email address you provide to Trainn during the registration process. Notice will be deemed given 24 hours after the email is sent, unless the sending party is notified that the email address is invalid. Alternatively, we may give you legal notice by mail to the address provided during the registration process (if you provided an address). In such case, notice will be deemed given 3 days after the date of mailing.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">j) No Class Action.</h3>
+                    <p className="mb-4">
+                      You agree that you may only pursue disputes against Trainn Releasees in an individual capacity and not as a plaintiff or class member in any purported class action or representative proceeding.
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 16, 2025. Completed comprehensive Terms of Use page at /terms with all 19 sections including platform terms, billing policies, arbitration agreement, liability limitations, and miscellaneous provisions - added verbatim legal text covering user obligations, payment processing, content rights, dispute resolution, and New York law governance
 - January 16, 2025. Added DMCA policy page at /terms/dmca with comprehensive copyright infringement procedures, contact information, and legal guidelines - accessible via direct URL but not linked in main navigation as requested
 - January 10, 2025. Successfully integrated Cloudinary cloud storage for permanent image hosting - all uploaded images (coach profiles, class images) now stored securely in the cloud with automatic optimization (1200x1200 max resolution, auto-format selection) and organized folder structure ('trainn' folder), includes graceful fallback to local storage if Cloudinary unavailable
 - January 10, 2025. Enhanced coach pages with Google Maps-style detailed review display - shows reviewer first name, star rating, relative dates (e.g. "4 months ago"), and full comment text in clean white cards; backend now limits to 5 most recent reviews ordered by updated_at timestamp
