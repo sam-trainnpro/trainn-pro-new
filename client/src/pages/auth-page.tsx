@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
-import { useSafeAuth } from "../../../hooks/use-auth-safe";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
 import ResetPasswordForm from "@/components/auth/reset-password-form";
@@ -10,7 +10,7 @@ import { Helmet } from "react-helmet";
 export default function AuthPage() {
   // Fix: wouter's useLocation returns [path, navigate] where path is just a string
   const [path, navigate] = useLocation();
-  const { user } = useSafeAuth();
+  const { user } = useAuth();
   
   // Initialize with defaults and update after mount to avoid type errors
   const [authParams, setAuthParams] = useState({
