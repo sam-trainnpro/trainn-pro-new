@@ -123,7 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
-- July 16, 2025. Enhanced Featured Classes section with specific category prioritization - shows paid Strength & Conditioning class, Music class when available, and Soccer/Basketball class; fallback to Strength & Conditioning, Soccer, Basketball if no Music classes available
+- July 16, 2025. Enhanced Featured Classes section with specific category prioritization - shows paid Strength & Conditioning class, Music class (prioritizing coaches other than Coach ID 1), and Soccer/Basketball class; fallback to Strength & Conditioning, Soccer, Basketball if no Music classes available
 - July 16, 2025. Updated How Trainn Works section text - changed button to "Start Your Journey", updated descriptions to mention "adults or kids class", simplified Book & Pay text, changed final step to "Trainn & Review" emphasizing fun and goal achievement
 - July 16, 2025. Streamlined home page layout by removing Top Coaches and Explore Class Types sections and moving How Trainn Works section above Featured Classes - simplified user journey to focus on core value proposition before showing available classes
 - July 16, 2025. Updated hero section background image to zoomed-out family workout photo - uploaded custom family workout image to Cloudinary with wider composition showing outdoor fitness activities with adults and kids, better representing the platform's focus on diverse class offerings for all ages

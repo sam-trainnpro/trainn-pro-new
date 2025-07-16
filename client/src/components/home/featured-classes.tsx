@@ -35,13 +35,24 @@ export default function FeaturedClasses() {
       selectedClasses.push(sortedStrength[0]);
     }
     
-    // Priority 2: Music class (categoryId: 12)
+    // Priority 2: Music class (categoryId: 12) - prefer coaches other than Coach ID 1
     const musicClasses = classesByCategory[12];
     if (musicClasses && musicClasses.length > 0) {
-      const sortedMusic = musicClasses.sort((a, b) => 
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-      );
-      selectedClasses.push(sortedMusic[0]);
+      // First try to find music classes not taught by Coach ID 1
+      const nonCoach1Music = musicClasses.filter(c => c.coachId !== 1);
+      
+      if (nonCoach1Music.length > 0) {
+        const sortedMusic = nonCoach1Music.sort((a, b) => 
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+        selectedClasses.push(sortedMusic[0]);
+      } else {
+        // Fallback to any music class including Coach ID 1
+        const sortedMusic = musicClasses.sort((a, b) => 
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+        selectedClasses.push(sortedMusic[0]);
+      }
     }
     
     // Priority 3: Soccer (categoryId: 6) or Basketball (categoryId: 5)
