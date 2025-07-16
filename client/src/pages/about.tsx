@@ -65,7 +65,7 @@ export default function AboutPage() {
                   <CalendarCheck className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="font-heading font-bold text-xl mb-2">Book & Pay</h3>
-                <p className="text-gray-600">Securely book and pay for your classes in just a few clicks. Receive instant confirmation and add to your calendar.</p>
+                <p className="text-gray-600">Securely book and pay in just a few clicks. Receive instant confirmation and add to your calendar.</p>
               </div>
               
               <div className="text-center">
