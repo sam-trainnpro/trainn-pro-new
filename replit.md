@@ -123,6 +123,9 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 16, 2025. Enhanced Terms of Use page with interactive Privacy Policy hyperlinks - added clickable links to Privacy Policy references in sections 1a, 1c, 6 (twice), and 8 for improved user navigation between legal documents
+- January 16, 2025. Fixed AuthProvider error on legal pages by updating HeroSection component to use useSafeAuth hook instead of useAuth, ensuring legal pages load properly without authentication requirements
+- January 16, 2025. Added scroll-to-top functionality for all legal pages (Terms of Use, Privacy Policy, Cookie Policy) - users automatically scroll to document beginning when navigating to legal pages
 - January 16, 2025. Completed comprehensive Cookie Policy page at /cookies with detailed information about cookie usage, tracking technologies, browser controls, targeted advertising, and Do Not Track policies - added verbatim legal text covering first-party and third-party cookies, browser settings, and opt-out procedures
 - January 16, 2025. Completed comprehensive Privacy Policy page at /privacy with all 12 sections including data collection practices, sharing policies, security measures, international transfers, retention policies, user rights, and special terms for US residents - added verbatim legal text covering personal information handling, third-party disclosures, and compliance with state privacy laws
 - January 16, 2025. Completed comprehensive Terms of Use page at /terms with all 19 sections including platform terms, billing policies, arbitration agreement, liability limitations, and miscellaneous provisions - added verbatim legal text covering user obligations, payment processing, content rights, dispute resolution, and New York law governance
