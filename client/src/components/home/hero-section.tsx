@@ -14,9 +14,9 @@ export default function HeroSection() {
           backgroundColor: '#ffffff'
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 flex items-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 flex items-center md:items-center items-end">
           <div className="container mx-auto px-4">
-            <div className="max-w-xl text-white">
+            <div className="max-w-xl text-white mb-8 md:mb-0">
               <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4">Find Your Perfect Class</h1>
               <p className="text-lg mb-6">Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music and art classes for adults and kids</p>
               <div className="flex flex-col sm:flex-row gap-3">
