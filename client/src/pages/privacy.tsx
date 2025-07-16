@@ -141,6 +141,105 @@ export default function PrivacyPage() {
                   </li>
                 </ul>
               </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">4. Who Does Trainn Share My Personal Information With?</h2>
+                <p className="mb-4">
+                  We may disclose your personal information to the following categories of recipients or in the following circumstances:
+                </p>
+                <ul className="list-disc pl-6 mb-4 space-y-2">
+                  <li>
+                    To services providers and partners who provide data processing and other services to us (for example, to support the delivery of, provide functionality on, or help to enhance the security of our Site, payment card processors, customer support vendors, hosting vendors, scheduling providers and market research and marketing vendors), or who otherwise process personal information for purposes that are described in this Privacy Policy or notified to you when we collect your personal information;
+                  </li>
+                  <li>
+                    To our Group Companies so that they can provide, develop, improve, and analyze the Site and their own services and products, as well as for our Group Companies' own internal and marketing purposes, including to send you marketing communications by email, SMS and telephone and for targeted digital marketing about their services and products;
+                  </li>
+                  <li>
+                    To any Partner that makes available a class, activity or experience you reserve or use through our Site as a Trainn User and their third-party providers, so that they can process the applicable reservation or activity and make available classes and services to you;
+                  </li>
+                  <li>
+                    Your name, photo and other information associated with your Trainn User account will be visible to other Trainn Users so that they can search for and connect with you on Trainn. You can prevent other Trainn Users from being able to search for you by updating your preferences via the Privacy tab in your Account Settings;
+                  </li>
+                  <li>
+                    If you sync your Trainn User account to a third-party network, such as Facebook, or provide us with your contacts, such as those stored on your mobile device, you will be able to see which of your contacts are using Trainn. If those contacts are Trainn members, they will also be able to see that you are using Trainn;
+                  </li>
+                  <li>
+                    If you accept a friend request from another Trainn User then, in addition to your name, photo and other information associated with your account, that Trainn User will also be able to see your past and upcoming classes, your achievement badges, your favorite studios, your friend connections and other profile information (together, "Profile Information"). We may use, communicate, and display your Profile Information next to or in connection with ads, offers, and other messages to your Trainn friends – for example, by sending an email to one of your Trainn friends to suggest that they join you in class. If you would like to stop your Profile Information being shared with your Trainn friends in this way, you can do so via the Privacy tab in your Account Settings;
+                  </li>
+                  <li>
+                    To anyone who visits the public area of our Site, including via venue and schedule listings, public profiles, reviews, or class ratings. As a Trainn User, you should be aware that any content or information you choose to disclose in public areas of our Site can be read, collected, and used by other users, the general public and other sites (including search engines);
+                  </li>
+                  <li>
+                    To any competent law enforcement body, regulatory, government agency, court, or other third -party where we believe disclosure is necessary as a matter of applicable law or regulation, to exercise, establish or defend our legal rights, or to protect your vital interests or those of any other person;
+                  </li>
+                  <li>
+                    In connection with an actual or potential merger, sale, acquisition, investment, assignment, reorganization, joint venture, or transfer of all or part of Trainn's business, assets, or affiliates or Group Companies, including if Trainn should ever file for bankruptcy or a related proceeding, provided that we inform the relevant third-party it must use your personal information only for the purposes disclosed in this Privacy Policy;
+                  </li>
+                  <li>
+                    To your program administrator (such as your employer or similar entity), if you participate in any enterprise solutions or the Trainn Corporate Program; and
+                  </li>
+                  <li>
+                    To any other person with your consent to the disclosure or otherwise in accordance with applicable law.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">5. How does Trainn Keep My Personal Information Secure?</h2>
+                <p className="mb-4">
+                  We use security procedures and practices to protect the personal information that we collect and process about you. We monitor our systems for possible vulnerabilities and attacks. However, we cannot guarantee 100% security of any information that you send us.
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">6. International Data Transfers</h2>
+                <p className="mb-4">
+                  Your personal information may be transferred to, and processed in, countries other than the country in which you are resident, including outside of the EEA, the UK, Switzerland, Japan and Canada (including Quebec). These countries may have data protection laws that differ from the laws of your country (and, in some cases, may not be as protective). Specifically, our Site servers are located in the United States and our third-party service providers and partners operate around the world. This means that when we collect your personal information, we may process it in any of these countries.
+                </p>
+                <p className="mb-4">
+                  Some countries recognize the data protection laws of other countries as providing an adequate level of data protection according to local standards. For example, some non-EEA countries are recognized by the European Commission as providing an adequate level of data protection according to EEA standards (the full list of these countries is available at https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/rules-international-data-transfers_en).
+                </p>
+                <p className="mb-4">
+                  However, where this is not the case, we take appropriate safeguards in accordance with applicable laws to require that your personal information will remain protected in accordance with this Privacy Policy. These include implementing standard contractual clauses (such as the EU Standard Contractual Clauses and the UK International Data Transfer Addendum) which require Group Companies and service providers to protect personal information that they process which originates from the EEA, the UK, or other jurisdictions with comparable laws (as applicable) in accordance with local data protection laws. A copy of our standard contractual clauses, if applicable, and information about the other similar appropriate safeguards we take with respect to international data transfers can be provided upon request (see How to Contact Us).
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">7. Data Retention</h2>
+                <p className="mb-4">
+                  We retain personal information we collect from you where we have an ongoing legitimate business need to do so (for example, to provide you with a service you have requested or to comply with applicable legal, tax or accounting requirements). When we have no ongoing legitimate business need to process your personal information, we will either delete or anonymize it or, if this is not possible (for example, because your personal information has been stored in backup archives), then we will securely store your personal information and isolate it from any further processing until deletion is possible.
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">8. Your Data Protection Rights</h2>
+                <p className="mb-4">
+                  Where applicable law allows for such rights, you may have the following data protection rights:
+                </p>
+                <ul className="list-disc pl-6 mb-4 space-y-2">
+                  <li>
+                    You have the right to opt-out of receiving direct marketing communications we send you at any time. To opt-out of receiving email marketing, you should click on the "unsubscribe" or "opt-out" link in the marketing e-mails we send you. To opt-out of receiving SMS messages from us, you can reply STOP to any SMS messages. To opt-out of other forms of marketing (such as postal marketing, telemarketing or targeted digital marketing) please contact us as explained in the "How to Contact Us" section below.
+                  </li>
+                  <li>
+                    You may correct or amend your personal information by editing your profile on the Site or contacting us as explained in the "How to Contact Us" section below.
+                  </li>
+                  <li>
+                    You may delete your personal information by contacting us as explained in the "How to Contact Us" section below.
+                  </li>
+                  <li>
+                    You may object to processing of your personal information, ask us to restrict processing of your personal information, access the personal information we hold about you, or request portability of your personal information by contacting us as explained in the "How to Contact Us" section below.
+                  </li>
+                  <li>
+                    If we have collected and process your personal information with your consent, then you can withdraw your consent at any time. Withdrawing your consent will not affect the lawfulness of any processing we conducted prior to your withdrawal, nor will it affect processing of your personal information conducted in reliance on lawful processing grounds other than consent (where applicable). You can withdraw your consent by contacting us as explained in the "How to Contact Us" section below.
+                  </li>
+                </ul>
+                <p className="mb-4">
+                  Residents in certain countries and US states have additional rights with respect to personal information collected by businesses and should review any additional privacy notices set out in the "Special Terms" section below.
+                </p>
+                <p className="mb-4">
+                  If you have any questions relating to your rights as set out in this Privacy Policy you may contact us as explained in the "How to Contact Us" section below.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
