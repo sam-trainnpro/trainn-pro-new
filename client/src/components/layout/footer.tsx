@@ -61,7 +61,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2023 Trainn. All rights reserved.</p>
             <div className="flex space-x-6">
-              <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Privacy Policy</Link>
+              <Link href="/privacy" className="text-gray-400 hover:text-white transition text-sm">Privacy Policy</Link>
               <Link href="/terms" className="text-gray-400 hover:text-white transition text-sm">Terms of Use</Link>
               <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Cookie Policy</Link>
             </div>
