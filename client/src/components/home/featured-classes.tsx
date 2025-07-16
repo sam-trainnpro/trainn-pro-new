@@ -10,8 +10,36 @@ export default function FeaturedClasses() {
     queryKey: ['/api/classes'],
   });
   
-  // Take only the first 3 classes for featured section
-  const featuredClasses = classes?.slice(0, 3);
+  // Filter for future classes and select diverse class types
+  const featuredClasses = classes ? (() => {
+    const now = new Date();
+    const futureClasses = classes.filter(c => new Date(c.dateTime) > now);
+    
+    // Group classes by category to ensure diversity
+    const classesByCategory = futureClasses.reduce((acc, classItem) => {
+      if (!acc[classItem.categoryId]) {
+        acc[classItem.categoryId] = [];
+      }
+      acc[classItem.categoryId].push(classItem);
+      return acc;
+    }, {} as Record<number, Class[]>);
+    
+    // Select one class from each category, up to 3 different categories
+    const selectedClasses: Class[] = [];
+    const categories = Object.keys(classesByCategory);
+    
+    for (const categoryId of categories) {
+      if (selectedClasses.length >= 3) break;
+      const categoryClasses = classesByCategory[Number(categoryId)];
+      // Sort by date and take the earliest one from this category
+      const sortedClasses = categoryClasses.sort((a, b) => 
+        new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+      );
+      selectedClasses.push(sortedClasses[0]);
+    }
+    
+    return selectedClasses;
+  })() : [];
   
   return (
     <section className="py-8 md:py-12 bg-[#F7F7F7]">
