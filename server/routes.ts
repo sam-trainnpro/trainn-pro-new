@@ -1217,9 +1217,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Convert amount to cents
           const amountInCents = Math.round(parseFloat(amount) * 100);
           
-          // Calculate platform fee (15%) and coach payout (85%)
-          const platformFee = Math.round(amountInCents * 0.15);
-          const coachPayout = amountInCents - platformFee;
+          // Calculate Stripe fees: 2.9% + $0.30 per transaction
+          const stripeFeePercentage = 0.029;
+          const stripeFixedFee = 30; // 30 cents in cents
+          const stripeFee = Math.round(amountInCents * stripeFeePercentage) + stripeFixedFee;
+          
+          // Calculate net amount after Stripe fees
+          const netAmount = amountInCents - stripeFee;
+          
+          // Split net amount: 85% to coach, 15% to platform
+          const coachPayout = Math.round(netAmount * 0.85);
+          const platformFee = netAmount - coachPayout;
           
           // Create payment intent with Stripe Connect
           const paymentIntentData: any = {
@@ -1230,6 +1238,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               classId: classId.toString(),
               userId: req.user.id.toString(),
               coachId: coach.id.toString(),
+              stripeFee: stripeFee.toString(),
+              netAmount: netAmount.toString(),
               platformFee: platformFee.toString(),
               coachPayout: coachPayout.toString()
             }
@@ -1249,6 +1259,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id,
             amount: amountInCents,
+            stripeFee,
+            netAmount,
             platformFee,
             coachPayout
           });
@@ -1261,12 +1273,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // For testing when Stripe is not available
+        const testAmountInCents = Math.round(parseFloat(amount) * 100);
+        const testStripeFee = Math.round(testAmountInCents * 0.029) + 30;
+        const testNetAmount = testAmountInCents - testStripeFee;
+        const testCoachPayout = Math.round(testNetAmount * 0.85);
+        const testPlatformFee = testNetAmount - testCoachPayout;
+        
         res.status(200).json({
           clientSecret: "dummy_client_secret_for_testing",
           paymentIntentId: `dummy_pi_${Date.now()}`,
-          amount: parseFloat(amount) * 100,
-          platformFee: Math.round(parseFloat(amount) * 100 * 0.15),
-          coachPayout: Math.round(parseFloat(amount) * 100 * 0.85)
+          amount: testAmountInCents,
+          stripeFee: testStripeFee,
+          netAmount: testNetAmount,
+          platformFee: testPlatformFee,
+          coachPayout: testCoachPayout
         });
       }
     } catch (error: any) {
