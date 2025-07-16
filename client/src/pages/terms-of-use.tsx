@@ -398,6 +398,145 @@ export default function TermsOfUsePage() {
                     </p>
                   </div>
                 </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">9. Ownership; Proprietary Rights; Content.</h2>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">a)</h3>
+                    <p className="mb-4">
+                      The Trainn website and mobile applications are owned and operated by Trainn. The content, recordings, visual interfaces, graphics, design, compilation, information, computer code, products, software (including any downloadable software), or any music, images, video, text, services, and all other material or elements of or available through the Site provided by Trainn ("Content") are protected by the copyright, trade dress, patent, and trademark laws of the United States and other countries, international conventions, and all other relevant intellectual property and proprietary rights, and applicable laws. Except for your User Submissions, all Content contained on the Site is the copyrighted property of Trainn or its subsidiaries or affiliated companies (collectively the "Trainn Companies"), and/or third-party licensors. All trademarks, service marks, and trade names are proprietary to the Trainn Companies and/or third-party licensors whether registered or unregistered and may not be used in connection with any product or service or in any manner that is likely to cause confusion as to our endorsement, affiliation or sponsorship of any person, product or service. Except as expressly authorized by Trainn, you agree not to sell, license, distribute, copy, modify, download, record, publicly perform or display, transmit, publish, edit, adapt, create derivative works from, or otherwise make unauthorized use of the Content and may only access the Content for your personal, non-commercial use. In the event that Content is downloaded to your computer or mobile phone, you do not obtain any ownership interest in such Content. All rights not expressly granted in these Terms are reserved.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">b)</h3>
+                    <p className="mb-4">
+                      By installing, copying, or otherwise using the Site or its software, you acknowledge that you have read and understood these Terms, and agree to be bound by its terms and conditions. If you do not agree to (or cannot comply with) the terms and conditions of this Agreement, do not install, copy, or use the Site or Content.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">c)</h3>
+                    <p className="mb-4">
+                      You agree that you will not, for any reason whatsoever, reverse engineer, decompile, disassemble, or otherwise tamper with any security components, usage rules or other protection measures applicable to the Site or Content. You agree to abide by the rules and policies established from time to time by Trainn. Such rules and policies will be applied generally in a nondiscriminatory manner to users of the Site and software, and may include, for example, required or automated updates, modifications, and/or reinstallations of the software and obtaining available patches to address security, interoperability, and/or performance issues.
+                    </p>
+                    <p className="mb-4">
+                      You agree not to make any use of the Content that would infringe the copyright therein.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">d)</h3>
+                    <p className="mb-4">
+                      The Site and any related software may enable you to obtain, listen to, view, and/or read (as the case may be) Content that may be obtained by you in digital form, and you shall do so solely for your individual, personal, noncommercial entertainment use.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">e)</h3>
+                    <p className="mb-4">
+                      You agree not to share your Trainn account with anyone other than yourself nor will you allow anyone other than yourself to access or use any Content accessible on or through the Site, including but not limited to sound recordings and/or musical compositions. You agree that you will not attempt to modify any software or Content obtained through the Site for any reason whatsoever, including for the purpose of disguising or changing any indications of the ownership or source of the Content. You further understand that you are not granted any commercial, sale, resale, reproduction, distribution, or promotional use rights for the Content, or any rights for uses that require a synchronization or public performance license with respect to the underlying musical composition and any unauthorized reproduction or distribution of Content is expressly prohibited and may violate applicable law. You are not permitted to modify, edit or repurpose any Content.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">f)</h3>
+                    <p className="mb-4">
+                      You represent, warrant and agree that you are using the Site hereunder for your own personal, noncommercial entertainment use and not for redistribution or transfer of any kind. You agree (a) not to redistribute, broadcast, publicly perform or publicly display any Content, or otherwise transfer any Content obtained through the Site, and (b) you will comply with all applicable laws in your use of the Content.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">g)</h3>
+                    <p className="mb-4">
+                      You understand and agree the Content may be owned by the Trainn Companies or by third parties. However, in all circumstances, you understand and acknowledge that your rights with respect to Content will be limited by copyright law. All owners and providers of Content expressly reserve their rights in and to such Content and you are not permitted to infringe the rights of the copyright owner(s) of the Content, including but not limited to any sound recordings or musical compositions.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">h)</h3>
+                    <p className="mb-4">
+                      Trainn and/or the owners of the Content may, from time to time, remove Content from the Site without notice.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">i)</h3>
+                    <p className="mb-4">
+                      The owners of Content are intended beneficiaries of this Agreement and shall have the right to enforce this Agreement against you.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">j)</h3>
+                    <p className="mb-4">
+                      The Site, including all software, Content and other information, materials and products included on or otherwise made available to you through the Service are provided "as-is" and "as available" without warranties of any kind from the Trainn Companies or any owners of Content. To the full extent permissible by applicable law, the Trainn Companies and all owners of Content disclaim all warranties, express or implied, including, but not limited to, implied warranties of merchantability and fitness for a particular purpose. Neither the Trainn Companies nor any owner of Content warrants that the Site or any software, Content, information, materials or products included on or otherwise made available to you through the Site are free of viruses or other harmful components.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">k)</h3>
+                    <p className="mb-4">
+                      NEITHER TRAINN, ITS PARENTS, SUBSIDIARIES, AND AFFILIATED ENTITIES, AND EACH OF THEIR RESPECTIVE OFFICERS, DIRECTORS, MEMBERS, EMPLOYEES, CONSULTANTS, CONTRACT EMPLOYEES, REPRESENTATIVES AND AGENTS, AND EACH OF THEIR RESPECTIVE SUCCESSORS AND ASSIGNS (COLLECTIVELY, "TRAINN RELEASEES") NOR ANY OWNER OF CONTENT WILL BE LIABLE FOR ANY INCIDENTAL, PUNITIVE, SPECIAL OR CONSEQUENTIAL DAMAGES OF ANY KIND ARISING FROM THE USE OF THE SITE OR FROM SOFTWARE, CONTENT, INFORMATION, MATERIALS OR PRODUCTS INCLUDED ON OR OTHERWISE MADE AVAILABLE TO YOU THROUGH THE SITE, OR FOR ANY DAMAGES IN EXCESS OF THE AMOUNT PAID FOR THE SPECIFIC ITEM OF CONTENT GIVING RISE TO THE APPLICABLE CLAIM FOR DAMAGES.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">10. Third-Party Sites, Products and Services; Links.</h2>
+                  <p className="mb-4">
+                    The Site may include links or access to other web sites or services ("Linked Sites") solely as a convenience to users. Trainn does not endorse any such Linked Sites, or the information, material, products, or services contained on other linked sites or accessible through other Linked Sites. Furthermore, Trainn makes no express or implied warranties with regard to the information, material, products, or services that are contained on or accessible through linked sites. ACCESS AND USE OF LINKED SITES, INCLUDING THE INFORMATION, MATERIAL, CONTENT, PRODUCTS, AND SERVICES ON LINKED SITES OR AVAILABLE THROUGH LINKED SITES, IS SOLELY AT YOUR OWN RISK.
+                  </p>
+                  <p className="mb-4">
+                    Sometimes promotional plans are offered in conjunction with the provision of third party products and services. We are not responsible for the products and services provided by such third parties, and use of such products and services is at your own risk.
+                  </p>
+                  <p className="mb-4">
+                    Your correspondence or business dealings with, or participation in promotions of, third parties found on or through the Site are solely between you and such third party. YOU AGREE THAT TRAINN RELEASEES WILL NOT BE RESPONSIBLE OR LIABLE FOR ANY LOSS OR DAMAGE OF ANY SORT INCURRED AS THE RESULT OF ANY SUCH DEALINGS OR AS THE RESULT OF THE PRESENCE OF SUCH THIRD PARTIES ON THE SITE.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">11. Electronic Signatures and Agreements.</h2>
+                  <p className="mb-4">
+                    You acknowledge and agree that by clicking on the button labeled "CONFIRM PURCHASE," "SUBMIT", "DOWNLOAD", "START MEMBERSHIP", "PLACE MY ORDER", "I ACCEPT" or such similar links as may be designated by Trainn to accept the terms and conditions of these Terms, you are submitting a legally binding electronic signature and are entering into a legally binding contract. You acknowledge that your electronic submissions constitute your agreement and intent to be bound by these Terms. Pursuant to any applicable statutes, regulations, rules, ordinances or other laws, including without limitation the United States Electronic Signatures in Global and National Commerce Act, P.L. 106-229 (the "E-Sign Act") or other similar statutes, YOU HEREBY AGREE TO THE USE OF ELECTRONIC SIGNATURES, CONTRACTS, ORDERS AND OTHER RECORDS AND TO ELECTRONIC DELIVERY OF NOTICES, POLICIES AND RECORDS OF TRANSACTIONS INITIATED OR COMPLETED THROUGH THE SITE OR SERVICES OFFERED BY TRAINN. Further, you hereby waive any rights or requirements under any statutes, regulations, rules, ordinances or other laws in any jurisdiction which require an original signature or delivery or retention of non-electronic records, or to payments or the granting of credits by other than electronic means.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">12. General Disclaimers; No Warranties.</h2>
+                  <p className="mb-4">
+                    OFFERINGS AND OTHER NON-TRAINN PRODUCTS AND SERVICES MADE AVAILABLE ARE PROVIDED BY THIRD PARTIES (AND THE DESCRIPTIONS OF THE FOREGOING ARE PROVIDED BY SUCH THIRD PARTIES), NOT TRAINN. TO THE FULLEST EXTENT PERMISSIBLE PURSUANT TO APPLICABLE LAW, YOUR USE OF THE SITE AND YOUR ATTENDANCE AT, PARTICIPATION IN, PURCHASE AND/OR USE OF THE OFFERINGS, IS SOLELY AT YOUR OWN RISK. TRAINN RELEASEES DO NOT ASSUME ANY LIABILITY OR MAKE ANY WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, ARISING OUT OF, IN CONNECTION WITH OR WITH RESPECT TO THE SITE AND/OR OFFERINGS.
+                  </p>
+                  <p className="mb-4">
+                    IN NO EVENT SHALL TRAINN RELEASEES BE LIABLE FOR ANY ACT, ERROR OR OMISSION BY ANY THIRD PARTY, INCLUDING, WITHOUT LIMITATION, ANY WHICH ARISES OUT OF OR IS ANY WAY CONNECTED WITH A USER'S ATTENDANCE, USE OF OR PARTICIPATION IN AN OFFERING OR PRODUCT, OR THE PERFORMANCE OR NON-PERFORMANCE OF ANY THIRD PARTY. TRAINN IS NOT AN AGENT OF ANY THIRD-PARTY.
+                  </p>
+                  <p className="mb-4">
+                    ALL ASPECTS OF OR CONTENT OR FEATURES AVAILABLE THROUGH THE SITE AND/OR OFFERINGS ARE PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND EITHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMISSIBLE PURSUANT TO APPLICABLE LAW, TRAINN RELEASEES DISCLAIM AND EXCLUDE ALL WARRANTIES, WHETHER STATUTORY, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT OF PROPRIETARY RIGHTS.
+                  </p>
+                  <p className="mb-4">
+                    WITHOUT LIMITING THE FOREGOING, TRAINN DOES NOT WARRANT OR MAKE ANY REPRESENTATIONS (I) THAT THE SITE AND/OR ANY OFFERING IS SUITABLE FOR YOU OR WILL MEET YOUR PERSONAL NEEDS, (II) REGARDING THE ADEQUACY OR SAFETY OF ANY OFFERING OR RECOMMENDATION, (III) THAT THE SITE AND/OR ANY OFFERING, OR ANY ASPECT THEREOF, WILL BE AVAILABLE OR PERMITTED IN YOUR JURISDICTION, (IV) THAT THE SITE, OR ANY ASPECT THEREOF, WILL BE UNINTERRUPTED OR ERROR-FREE, THAT DEFECTS WILL BE CORRECTED, OR THAT THE SITE AND ANY DOWNLOADABLE SOFTWARE, CONTENT, SERVICES, OR APPLICATIONS MADE AVAILABLE IN CONJUNCTION WITH OR THROUGH THE SITE OR THE SERVER THAT MAKES THEM AVAILABLE ARE FREE OF VIRUSES OR OTHER HARMFUL COMPONENTS, OR (V) REGARDING THE USE OF THE SITE AND ANY DOWNLOADABLE SOFTWARE, CONTENT, SERVICES, OR APPLICATIONS MADE AVAILABLE IN CONJUNCTION WITH OR THROUGH THE SITE IN TERMS OF CORRECTNESS, ACCURACY, RELIABILITY, OR OTHERWISE. ANY MATERIAL, CONTENT OR DATA THAT YOU DOWNLOAD OR OTHERWISE OBTAIN THROUGH THE SITE IS AT YOUR OWN RISK. YOU ARE SOLELY RESPONSIBLE FOR ANY DAMAGES TO YOUR COMPUTER SYSTEM OR LOSS OF DATA RESULTING FROM THE DOWNLOAD OF SUCH MATERIAL, CONTENT OR DATA.
+                  </p>
+                  <p className="mb-4">
+                    CERTAIN LAWS DO NOT ALLOW LIMITATIONS ON IMPLIED WARRANTIES OR THE EXCLUSION OR LIMITATION OF CERTAIN DAMAGES. IF THESE LAWS APPLY TO YOU, SOME OR ALL OF THE DISCLAIMERS, EXCLUSIONS, OR LIMITATIONS SET FORTH IN THESE TERMS MIGHT NOT APPLY TO YOU, AND YOU MIGHT HAVE ADDITIONAL RIGHTS. TO THE EXTENT ANY DISCLAIMER OR LIMITATION OF LIABILITY DOES NOT APPLY, ALL APPLICABLE EXPRESS, IMPLIED, AND STATUTORY WARRANTIES WILL BE LIMITED IN DURATION TO A PERIOD OF 30 DAYS AFTER THE DATE ON WHICH YOU FIRST USED THE SITE, AND NO WARRANTIES SHALL APPLY AFTER SUCH PERIOD.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">13. Waiver and Release.</h2>
+                  <p className="mb-4">
+                    YOU UNDERSTAND THAT TRAINN IS NOT A GYMNASIUM, PLACE OF AMUSEMENT OR RECREATION, HEALTH CLUB, FACILITY, FITNESS STUDIO, WELLNESS STUDIO, FOOD OR BEVERAGE ESTABLISHMENT, MOVIE THEATER, ENTERTAINMENT VENUE, VENUE OFFERING OTHER EXPERIENCES, OR SIMILAR ESTABLISHMENT AND THE OFFERINGS ARE OPERATED AND DELIVERED BY THE APPLICABLE VENUE AND NOT BY TRAINN. TRAINN IS NOT RESPONSIBLE FOR THE QUALITY OF ANY OFFERING PROVIDED BY A VENUE OR THIRD PARTY (INCLUDING BUT NOT LIMITED TO THE FACILITY, INSTRUCTOR OR CURRICULUM). YOU ARE SOLELY RESPONSIBLE FOR DETERMINING WHETHER THE OFFERING OR RECOMMENDATIONS AVAILABLE ON OR THROUGH THE SITE AND/OR OFFERINGS ARE RIGHT FOR YOU. YOU UNDERSTAND THAT THERE ARE CERTAIN INHERENT RISKS AND DANGERS IN EXERCISING AND PARTICIPATING IN SERVICES AT THE TYPES OF VENUES MENTIONED ABOVE AND THAT THE OFFERINGS YOU MAY ATTEND OR PARTICIPATE IN OFFER A RANGE OF ACTIVITY AND INTENSITY LEVELS. BY USING TRAINN (INCLUDING BUT NOT LIMITED TO ATTENDING, PARTICIPATING IN OR USING AN OFFERING), YOU ACKNOWLEDGE AND AGREE, ON BEHALF OF YOURSELF, YOUR HEIRS, PERSONAL REPRESENTATIVES AND/OR ASSIGNS THAT YOU ARE AWARE OF THESE RISKS WHICH INCLUDE, BUT ARE NOT LIMITED TO, PROPERTY DAMAGE, ILLNESS, LOSS AND BODILY INJURY OR DEATH. YOU ACKNOWLEDGE THAT SOME OF THESE RISKS CANNOT BE ELIMINATED AND YOU SPECIFICALLY ASSUME THE RISK OF INJURY OR HARM. YOU ACKNOWLEDGE AND AGREE THAT IT IS YOUR RESPONSIBILITY TO CONSULT WITH YOUR PHYSICIAN OR OTHER HEALTH CARE PROFESSIONAL PRIOR TO USING TRAINN (INCLUDING BUT NOT LIMITED TO ATTENDING, PARTICIPATING IN OR USING AN OFFERING) AND TO DETERMINE IF AND HOW PARTICIPATING IS APPROPRIATE FOR YOU. DO NOT USE OFFERINGS IF YOUR PHYSICIAN OR HEALTH CARE PROVIDER ADVISES AGAINST IT. IF YOU EXPERIENCE FAINTNESS, DIZZINESS, PAIN OR SHORTNESS OF BREATH AT ANY TIME WHILE EXERCISING, YOU SHOULD STOP IMMEDIATELY.
+                  </p>
+                  <p className="mb-4">
+                    YOU ALSO UNDERSTAND AND AGREE THAT THE SITE OFFERS FITNESS AND OTHER INFORMATION THAT IS DESIGNED FOR INFORMATIONAL, EDUCATIONAL AND ENTERTAINMENT PURPOSES ONLY. NOTHING STATED OR POSTED ON OR OTHERWISE AVAILABLE THROUGH ANY ASPECT OF THE SITE AND/OR AN OFFERING IS INTENDED TO BE, AND MUST NOT BE TAKEN TO BE, THE PRACTICE OF MEDICAL, PROFESSIONAL OR COUNSELING CARE. YOU SHOULD NOT RELY ON ANY INFORMATION ON OR THROUGH THE SITE AND/OR AN OFFERING AS A SUBSTITUTE FOR, NOR DOES IT REPLACE, PROFESSIONAL MEDICAL ADVICE, DIAGNOSIS, OR TREATMENT. IF YOU HAVE ANY CONCERNS OR QUESTIONS ABOUT YOUR HEALTH OR FITNESS LEVEL, YOU SHOULD ALWAYS CONSULT A PHYSICIAN OR OTHER HEALTH-CARE PROFESSIONAL. DO NOT EVER DISREGARD, AVOID OR DELAY OBTAINING MEDICAL OR HEALTH RELATED ADVICE FROM YOUR HEALTH-CARE PROFESSIONAL BECAUSE OF SOMETHING YOU MAY HAVE READ OR HEARD ON OR THROUGH THE SITE AND/OR AN OFFERING. THE USE OF ANY OF THE CONTENT, RECOMMENDATIONS AND INFORMATION PROVIDED ON OR THROUGH TRAINN IS SOLELY AT YOUR OWN RISK.
+                  </p>
+                  <p className="mb-4">
+                    THE SITE IS CONTINUALLY UNDER DEVELOPMENT AND TRAINN MAKES NO WARRANTY OF ANY KIND, IMPLIED OR EXPRESS, AS TO ITS ACCURACY, COMPLETENESS OR APPROPRIATENESS FOR ANY PURPOSE. IN THAT REGARD, DEVELOPMENTS IN RESEARCH MAY IMPACT THE FITNESS OR RELATED ADVICE THAT APPEARS ON OR IN CONNECTION WITH THE SITE. NO ASSURANCE CAN BE GIVEN THAT THE ADVICE OR RECOMMENDATIONS CONTAINED IN OR THROUGH THE SITE AND/OR AN OFFERING WILL ALWAYS INCLUDE THE MOST RECENT FINDINGS OR DEVELOPMENTS WITH RESPECT TO THE PARTICULAR MATERIAL OR CONTENT.
+                  </p>
+                  <p className="mb-4">
+                    THEREFORE, TO THE FULLEST EXTENT PERMITTED BY LAW, YOU RELEASE, INDEMNIFY, AND HOLD HARMLESS TRAINN RELEASEES FROM ANY AND ALL RESPONSIBILITY, CLAIMS, ACTIONS, SUITS, PROCEDURES, COSTS, EXPENSES, DAMAGES AND LIABILITIES ARISING OUT OF OR IN ANY WAY RELATED TO YOUR PARTICIPATION IN OR USE OF THE SITE AND/OR ATTENDANCE AT, PARTICIPATION IN, PURCHASE OF AND/OR USE OF ANY OFFERING) INCLUDING BUT NOT LIMITED TO WITH RESPECT TO BODILY INJURY, PHYSICAL HARM, LOSS, ILLNESS, DEATH OR PROPERTY DAMAGE, AND/OR SUCH PARTICIPATION OR USE BY ANYONE ON WHOSE BEHALF YOU MADE A RESERVATION OR INVITED TO OR BROUGHT TO AN OFFERING.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
