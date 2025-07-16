@@ -13,7 +13,7 @@ export default function FeaturedClasses() {
   // Filter for future classes and select diverse class types
   const featuredClasses = classes ? (() => {
     const now = new Date();
-    const futureClasses = classes.filter(c => new Date(c.dateTime) > now);
+    const futureClasses = classes.filter(c => new Date(c.startTime) > now);
     
     // Group classes by category to ensure diversity
     const classesByCategory = futureClasses.reduce((acc, classItem) => {
@@ -33,7 +33,7 @@ export default function FeaturedClasses() {
       const categoryClasses = classesByCategory[Number(categoryId)];
       // Sort by date and take the earliest one from this category
       const sortedClasses = categoryClasses.sort((a, b) => 
-        new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
       );
       selectedClasses.push(sortedClasses[0]);
     }
