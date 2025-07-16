@@ -263,7 +263,7 @@ export default function PrivacyPage() {
               <div>
                 <h2 className="text-xl font-semibold mb-4">11. How to Contact Us</h2>
                 <p className="mb-4">
-                  If you have any questions or concerns about our use of your personal information, please contact us here
+                  If you have any questions or concerns about our use of your personal information, please contact us through Trainn's Contact Us page.
                 </p>
               </div>
 
