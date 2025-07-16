@@ -73,7 +73,7 @@ export default function AboutPage() {
                   <HeartPulse className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="font-heading font-bold text-xl mb-2">Trainn & Review</h3>
-                <p className="text-gray-600">Attend your class, achieve your fitness goals, and leave a review to help other members find great coaches.</p>
+                <p className="text-gray-600">Attend your class, achieve your goals, have fun, and leave a review to help others find great coaches.</p>
               </div>
             </div>
             
