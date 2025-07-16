@@ -152,7 +152,7 @@ export default function TermsOfUsePage() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">j) Communications.</h3>
                     <p className="mb-4">
-                      By providing your information or creating an account, you agree that Trainn may contact you by email, direct mail, telephone or text messages at any of the addresses or phone numbers, as applicable, provided by you or on your behalf in connection with a Trainn account, including for marketing purposes. You may opt-out of marketing emails via the provided unsubscribe link or otherwise opt-out by contacting us at any time.
+                      By providing your information or creating an account, you agree that Trainn may contact you by email, direct mail, telephone or text messages at any of the addresses or phone numbers, as applicable, provided by you or on your behalf in connection with a Trainn account, including for marketing purposes. You may opt-out of marketing emails via the provided unsubscribe link or otherwise opt-out by <Link href="/contact" className="text-blue-600 hover:text-blue-800 underline">contacting us</Link> at any time.
                     </p>
                   </div>
 
