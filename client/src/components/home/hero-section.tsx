@@ -10,7 +10,7 @@ export default function HeroSection() {
       <div 
         className="h-[420px] md:h-[500px] w-full bg-cover bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: "url('https://res.cloudinary.com/dbtslhlgp/image/upload/v1752691427/trainn/trainn/hero-home-page-v2.jpg')"
+          backgroundImage: "url('https://res.cloudinary.com/dbtslhlgp/image/upload/v1752691680/trainn/trainn/hero-home-page-v3.jpg')"
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 flex items-center">
