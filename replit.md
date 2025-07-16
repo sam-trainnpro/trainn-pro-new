@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 16, 2025. Temporarily restored original home page routing - user reported Trainn logo redirecting to /classes instead of showing full homepage experience with hero section, search filters, featured classes, featured coaches, class categories, how it works, download app, testimonials, and CTA section
 - January 16, 2025. Enhanced Create Account form with legal document links - updated Terms of Service and Privacy Policy links in registration form to point to /terms and /privacy respectively, replacing placeholder links for proper legal document navigation
 - January 16, 2025. Enhanced Terms of Use page with additional hyperlinks - added 4 new clickable links: Gift Cards section (4b) to /terms/gifts, Refer a Friend section (4c) to /terms/customer-referrals, Community Guidelines (section 7) to /communityguidelines, and Digital Millennium Copyright Act (section 17) to /terms/dmca for comprehensive cross-document navigation
 - January 16, 2025. Enhanced Terms of Use page with FAQ hyperlinks - added clickable links to "here" references in sections 3g (Other Fees) and 3h (Reservation and Cancellation) that direct users to /faq page for cancellation and missed offering rules
