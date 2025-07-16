@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Link } from "wouter";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -43,7 +44,7 @@ export default function TermsOfUsePage() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">a) Acceptance of Terms.</h3>
                     <p className="mb-4">
-                      By accessing and/or using the Site and/or Offerings, either through Trainn, your employer, or another third party; clicking any button to indicate your consent; or otherwise indicating your consent to these Terms, you accept and agree to be bound by these Terms and all terms, conditions, and limitations associated with them that are posted on the Site and the Trainn Privacy Policy, just as if you had agreed to these Terms in writing. If you do not agree to these Terms, do not use the Site or any Offerings.
+                      By accessing and/or using the Site and/or Offerings, either through Trainn, your employer, or another third party; clicking any button to indicate your consent; or otherwise indicating your consent to these Terms, you accept and agree to be bound by these Terms and all terms, conditions, and limitations associated with them that are posted on the Site and the Trainn <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</Link>, just as if you had agreed to these Terms in writing. If you do not agree to these Terms, do not use the Site or any Offerings.
                     </p>
                   </div>
 
@@ -57,7 +58,7 @@ export default function TermsOfUsePage() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">c) Additional Terms.</h3>
                     <p className="mb-4">
-                      In addition to these Terms, certain plans, offers, products, services, elements or features may also be subject to additional terms, conditions, guidelines or rules which may be posted, communicated or modified by us or applicable third parties at any time. Your use of any such plan, offer, product, service, element or feature is subject to those additional terms and conditions, which are hereby incorporated by reference into the Terms, provided that in the event of any conflict between such additional terms and the Terms, the Terms shall control. The Trainn Privacy Policy is hereby incorporated by reference.
+                      In addition to these Terms, certain plans, offers, products, services, elements or features may also be subject to additional terms, conditions, guidelines or rules which may be posted, communicated or modified by us or applicable third parties at any time. Your use of any such plan, offer, product, service, element or feature is subject to those additional terms and conditions, which are hereby incorporated by reference into the Terms, provided that in the event of any conflict between such additional terms and the Terms, the Terms shall control. The Trainn <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</Link> is hereby incorporated by reference.
                     </p>
                   </div>
                 </div>
@@ -293,7 +294,7 @@ export default function TermsOfUsePage() {
                 <div>
                   <h2 className="text-xl font-semibold mb-4">6. Privacy.</h2>
                   <p className="mb-4">
-                    Your privacy is important to Trainn. The Trainn Privacy Policy is hereby incorporated into these Terms by reference. Please read the privacy policy carefully for information relating to Trainn collection, use, and disclosure of your personal information. When you make a reservation, the applicable Venue partner will have access to certain information about you, such as your name and email address, so it can process the applicable reservation or activity and make available Offerings and provide services to you. Please see the Privacy Policy for more information
+                    Your privacy is important to Trainn. The Trainn <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</Link> is hereby incorporated into these Terms by reference. Please read the privacy policy carefully for information relating to Trainn collection, use, and disclosure of your personal information. When you make a reservation, the applicable Venue partner will have access to certain information about you, such as your name and email address, so it can process the applicable reservation or activity and make available Offerings and provide services to you. Please see the <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</Link> for more information
                   </p>
                 </div>
 
@@ -335,7 +336,7 @@ export default function TermsOfUsePage() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">a) General.</h3>
                     <p className="mb-4">
-                      The Site provides certain features which enable you and other users to submit, post, share and search for content and information, which may include (without limitation) text, graphic and pictorial works, profile information, information about reserved or attended Offerings, friend connections or any other information submitted by you and other users or arising from your use of the Site ("User Submissions"). User Submissions also include reviews, ratings and other feedback ("Reviews"). We strongly recommend that you think carefully about what you upload to, share with or make accessible to the Site. Trainn does not guarantee any anonymity or confidentiality with respect to any User Submissions. For information on how we use your personal information, please see our Privacy Policy.
+                      The Site provides certain features which enable you and other users to submit, post, share and search for content and information, which may include (without limitation) text, graphic and pictorial works, profile information, information about reserved or attended Offerings, friend connections or any other information submitted by you and other users or arising from your use of the Site ("User Submissions"). User Submissions also include reviews, ratings and other feedback ("Reviews"). We strongly recommend that you think carefully about what you upload to, share with or make accessible to the Site. Trainn does not guarantee any anonymity or confidentiality with respect to any User Submissions. For information on how we use your personal information, please see our <Link href="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</Link>.
                     </p>
                   </div>
 
