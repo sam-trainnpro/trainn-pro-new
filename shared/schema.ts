@@ -270,3 +270,34 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
 
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 export type BlogPost = typeof blogPosts.$inferSelect;
+
+// Scheduled Payouts
+export const scheduledPayouts = pgTable("scheduled_payouts", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").notNull(),
+  classId: integer("class_id").notNull(),
+  coachId: integer("coach_id").notNull(),
+  customerId: integer("customer_id").notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").notNull(),
+  amountCents: integer("amount_cents").notNull(), // Total payment amount
+  stripeFee: integer("stripe_fee").notNull(), // Stripe processing fee
+  netAmount: integer("net_amount").notNull(), // Amount after Stripe fees
+  coachPayout: integer("coach_payout").notNull(), // Amount to pay coach
+  platformFee: integer("platform_fee").notNull(), // Platform fee
+  scheduledPayoutDate: timestamp("scheduled_payout_date").notNull(), // When to pay coach
+  status: text("status").notNull().default("scheduled"), // scheduled, processing, completed, failed
+  stripeTransferId: text("stripe_transfer_id"), // Stripe transfer ID when completed
+  completedAt: timestamp("completed_at"),
+  failureReason: text("failure_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertScheduledPayoutSchema = createInsertSchema(scheduledPayouts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertScheduledPayout = z.infer<typeof insertScheduledPayoutSchema>;
+export type ScheduledPayout = typeof scheduledPayouts.$inferSelect;

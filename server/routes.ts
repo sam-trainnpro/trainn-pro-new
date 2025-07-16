@@ -1245,13 +1245,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           };
 
-          // If coach has connected Stripe account, use destination charges
-          if (coach.stripeConnectId && coach.stripeConnectOnboarded) {
-            paymentIntentData.transfer_data = {
-              destination: coach.stripeConnectId
-            };
-            paymentIntentData.application_fee_amount = platformFee;
-          }
+          // Don't transfer immediately - we'll handle delayed payouts after class completion
+          // Store coach payout info in metadata for later processing
+          paymentIntentData.metadata.delayedPayout = 'true';
+          paymentIntentData.metadata.coachStripeId = coach.stripeConnectId || '';
+          paymentIntentData.metadata.coachOnboarded = coach.stripeConnectOnboarded ? 'true' : 'false';
 
           const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
           
@@ -1443,6 +1441,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Booking created successfully:", booking);
       
+      // Create scheduled payout for coach (2 days after class completion)
+      if (stripe && paymentIntentId && paymentIntentId.startsWith("pi_")) {
+        try {
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          if (paymentIntent.metadata) {
+            const metadata = paymentIntent.metadata;
+            
+            // Calculate the scheduled payout date: 2 days after class completion
+            const classEndTime = new Date(classItem.endTime);
+            const payoutDate = new Date(classEndTime);
+            payoutDate.setDate(payoutDate.getDate() + 2);
+            
+            // Create scheduled payout record
+            await storage.createScheduledPayout({
+              bookingId: booking.id,
+              classId: parseInt(classId),
+              coachId: classItem.coachId,
+              customerId: req.user.id,
+              stripePaymentIntentId: paymentIntentId,
+              amountCents: parseInt(metadata.amount || '0'),
+              stripeFee: parseInt(metadata.stripeFee || '0'),
+              netAmount: parseInt(metadata.netAmount || '0'),
+              coachPayout: parseInt(metadata.coachPayout || '0'),
+              platformFee: parseInt(metadata.platformFee || '0'),
+              scheduledPayoutDate: payoutDate,
+              status: 'scheduled'
+            });
+            
+            console.log(`Scheduled payout created for coach ${classItem.coachId}, payout date: ${payoutDate.toISOString()}`);
+          }
+        } catch (error) {
+          console.error("Error creating scheduled payout:", error);
+          // Don't fail the booking if payout scheduling fails
+        }
+      }
+      
       const updatedBookings = [booking];
       const totalQuantity = quantity;
       
@@ -1497,6 +1531,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Payment confirmation error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Scheduled Payout Management Routes
+  
+  // Process due payouts (admin only)
+  app.post("/api/admin/process-payouts", requireAdmin, async (req, res) => {
+    try {
+      const { payoutProcessor } = await import('./payout-processor');
+      const results = await payoutProcessor.processDuePayouts();
+      
+      res.json({
+        success: true,
+        processed: results.length,
+        successful: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+        results
+      });
+    } catch (error: any) {
+      console.error("Error processing payouts:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Get payout statistics (admin only)
+  app.get("/api/admin/payout-stats", requireAdmin, async (req, res) => {
+    try {
+      const { payoutProcessor } = await import('./payout-processor');
+      const stats = await payoutProcessor.getPayoutStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Error getting payout stats:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Get scheduled payouts (admin only)
+  app.get("/api/admin/scheduled-payouts", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const payouts = await storage.getScheduledPayouts(
+        status ? { status: status as string } : undefined
+      );
+      res.json(payouts);
+    } catch (error: any) {
+      console.error("Error getting scheduled payouts:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Get coach's scheduled payouts (coaches can see their own)
+  app.get("/api/coach/scheduled-payouts", requireCoach, async (req, res) => {
+    try {
+      const payouts = await storage.getScheduledPayoutsByCoach(req.user.id);
+      res.json(payouts);
+    } catch (error: any) {
+      console.error("Error getting coach payouts:", error);
       res.status(500).json({ message: error.message });
     }
   });
