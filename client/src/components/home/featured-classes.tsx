@@ -10,12 +10,12 @@ export default function FeaturedClasses() {
     queryKey: ['/api/classes'],
   });
   
-  // Filter for future classes and select diverse class types
+  // Filter for future classes and select specific class types
   const featuredClasses = classes ? (() => {
     const now = new Date();
     const futureClasses = classes.filter(c => new Date(c.startTime) > now);
     
-    // Group classes by category to ensure diversity
+    // Group classes by category
     const classesByCategory = futureClasses.reduce((acc, classItem) => {
       if (!acc[classItem.categoryId]) {
         acc[classItem.categoryId] = [];
@@ -24,18 +24,51 @@ export default function FeaturedClasses() {
       return acc;
     }, {} as Record<number, Class[]>);
     
-    // Select one class from each category, up to 3 different categories
     const selectedClasses: Class[] = [];
-    const categories = Object.keys(classesByCategory);
     
-    for (const categoryId of categories) {
-      if (selectedClasses.length >= 3) break;
-      const categoryClasses = classesByCategory[Number(categoryId)];
-      // Sort by date and take the earliest one from this category
-      const sortedClasses = categoryClasses.sort((a, b) => 
+    // Priority 1: Strength & Conditioning class with price > $0 (categoryId: 3)
+    const strengthClasses = classesByCategory[3]?.filter(c => c.price > 0);
+    if (strengthClasses && strengthClasses.length > 0) {
+      const sortedStrength = strengthClasses.sort((a, b) => 
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
       );
-      selectedClasses.push(sortedClasses[0]);
+      selectedClasses.push(sortedStrength[0]);
+    }
+    
+    // Priority 2: Music class (categoryId: 12)
+    const musicClasses = classesByCategory[12];
+    if (musicClasses && musicClasses.length > 0) {
+      const sortedMusic = musicClasses.sort((a, b) => 
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      );
+      selectedClasses.push(sortedMusic[0]);
+    }
+    
+    // Priority 3: Soccer (categoryId: 6) or Basketball (categoryId: 5)
+    const soccerClasses = classesByCategory[6];
+    const basketballClasses = classesByCategory[5];
+    
+    if (soccerClasses && soccerClasses.length > 0) {
+      const sortedSoccer = soccerClasses.sort((a, b) => 
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      );
+      selectedClasses.push(sortedSoccer[0]);
+    } else if (basketballClasses && basketballClasses.length > 0) {
+      const sortedBasketball = basketballClasses.sort((a, b) => 
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      );
+      selectedClasses.push(sortedBasketball[0]);
+    }
+    
+    // If no music class available, try to fill with Basketball if Soccer was already selected
+    if (selectedClasses.length < 3 && !musicClasses) {
+      if (basketballClasses && basketballClasses.length > 0 && 
+          !selectedClasses.some(c => c.categoryId === 5)) {
+        const sortedBasketball = basketballClasses.sort((a, b) => 
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        );
+        selectedClasses.push(sortedBasketball[0]);
+      }
     }
     
     return selectedClasses;
