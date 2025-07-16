@@ -226,14 +226,14 @@ export default function TermsOfUsePage() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">g) Other Fees.</h3>
                     <p className="mb-4">
-                      You are responsible for paying applicable fees if you do not cancel an Offering with appropriate notice or do not attend your scheduled Offering. Click here for our current cancellation and missed Offering rules, including the applicable fees. We reserve the right to change the policy regarding when we charge fees, to introduce additional fees (such as a sign-up fee) and to change the amount of any such fees at any time.
+                      You are responsible for paying applicable fees if you do not cancel an Offering with appropriate notice or do not attend your scheduled Offering. Click <Link href="/faq" className="text-blue-600 hover:text-blue-800 underline">here</Link> for our current cancellation and missed Offering rules, including the applicable fees. We reserve the right to change the policy regarding when we charge fees, to introduce additional fees (such as a sign-up fee) and to change the amount of any such fees at any time.
                     </p>
                   </div>
 
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">h) Reservation and Cancellation of Offerings.</h3>
                     <p className="mb-4">
-                      As a Trainn user, you must reserve and cancel your Offerings only through the Site. Click here for our current cancellation and missed Offering rules, including the applicable fees. It is a breach of these Terms if you reserve or cancel directly with a Venue, including through any online or mobile account you have with a Venue, independent of Trainn. If you reserve or cancel directly with such Venue, we reserve the right to charge you the full amount that the Venue charges for such Offering and/or any applicable cancellation fees, and/or to suspend or terminate your subscription.
+                      As a Trainn user, you must reserve and cancel your Offerings only through the Site. Click <Link href="/faq" className="text-blue-600 hover:text-blue-800 underline">here</Link> for our current cancellation and missed Offering rules, including the applicable fees. It is a breach of these Terms if you reserve or cancel directly with a Venue, including through any online or mobile account you have with a Venue, independent of Trainn. If you reserve or cancel directly with such Venue, we reserve the right to charge you the full amount that the Venue charges for such Offering and/or any applicable cancellation fees, and/or to suspend or terminate your subscription.
                     </p>
                   </div>
 
