@@ -9,7 +9,7 @@ export default function DownloadApp() {
         <div className="flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-8 md:mb-0">
             <h2 className="text-2xl md:text-3xl font-heading font-bold mb-4">Take Trainn On The Go</h2>
-            <p className="text-gray-600 mb-6">Download our mobile app to easily find, book, and manage your fitness classes anywhere. Get exclusive app-only deals and notifications for your favorite coaches.</p>
+            <p className="text-gray-600 mb-6">Make our web app quickly accessible on your iPhone. Within your browser click the rectangle button with an up arrow, scroll down and select "Add to Home Screen". Label the page Trainn.</p>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Button variant="outline" className="bg-[#333333] text-white border-[#333333] hover:bg-[#222222] flex items-center gap-2">
