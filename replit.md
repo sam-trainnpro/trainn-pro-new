@@ -123,7 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
-- July 16, 2025. Updated hero image on home page to new multi-panel composition with full-width coverage - uploaded Hero Images - Trainn Home Page v3 with cleaner white background showing outdoor fitness scenes with adults doing yoga, coach with kids playing soccer, and music instructor with guitar and children; changed from bg-contain to bg-cover for full-width display without grey borders
+- July 16, 2025. Updated hero image on home page to new multi-panel composition preserving white background - uploaded Hero Images - Trainn Home Page v3 without crop transformation to maintain original white background; switched back to bg-contain to show complete image with white background intact
 - July 16, 2025. Updated CTA section text and removed app store buttons - changed heading to "Ready to Trainn?" and updated description to emphasize upskilling and community building; removed App Store and Google Play download buttons from download section, keeping only iPhone web app instructions
 - July 16, 2025. Updated Sophia L. testimonial to emphasize strength classes and family benefits - changed from yoga focus to strength classes, added mention of finding sports classes for kids after school and weekends
 - July 16, 2025. Updated all Coach Pat's soccer classes to use Cloudinary image - replaced local upload images with optimized Cloudinary URL (Kids_Soccer_-_Ball_and_Cleat_fejyih.jpg) for consistent image display across all future soccer classes
