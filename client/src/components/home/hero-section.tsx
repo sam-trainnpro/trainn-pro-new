@@ -8,9 +8,10 @@ export default function HeroSection() {
   return (
     <section className="relative">
       <div 
-        className="h-[420px] md:h-[500px] w-full bg-cover bg-center bg-no-repeat"
+        className="h-[420px] md:h-[500px] w-full bg-contain bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: "url('https://res.cloudinary.com/dbtslhlgp/image/upload/v1752691680/trainn/trainn/hero-home-page-v3.jpg')"
+          backgroundImage: "url('https://res.cloudinary.com/dbtslhlgp/image/upload/v1752691746/trainn/trainn/hero-home-page-v3-full.jpg')",
+          backgroundColor: '#ffffff'
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 flex items-center">
