@@ -265,14 +265,14 @@ export default function TermsOfUsePage() {
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">b) Gift Cards.</h3>
                     <p className="mb-4">
-                      From time to time we may make available gift cards for Trainn membership. The current terms that apply to gift cards can be found here. Other than gifting a gift card as described in the gift card terms, you may not gift Offerings or credits to third parties, and your use of Trainn is personal to you. If you purchase credits with a gift card, the terms and conditions of your subscription will apply to those credits, including any limitations on how long those Credits may be valid under your monthly subscription.
+                      From time to time we may make available gift cards for Trainn membership. The current terms that apply to gift cards can be found <Link href="/terms/gifts" className="text-blue-600 hover:text-blue-800 underline">here</Link>. Other than gifting a gift card as described in the gift card terms, you may not gift Offerings or credits to third parties, and your use of Trainn is personal to you. If you purchase credits with a gift card, the terms and conditions of your subscription will apply to those credits, including any limitations on how long those Credits may be valid under your monthly subscription.
                     </p>
                   </div>
 
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">c) Refer a Friend.</h3>
                     <p className="mb-4">
-                      From time to time we may make available certain incentives for Trainn users to refer a friend to use Trainn. The current terms that apply to referrals can be found here.
+                      From time to time we may make available certain incentives for Trainn users to refer a friend to use Trainn. The current terms that apply to referrals can be found <Link href="/terms/customer-referrals" className="text-blue-600 hover:text-blue-800 underline">here</Link>.
                     </p>
                   </div>
 
@@ -326,7 +326,7 @@ export default function TermsOfUsePage() {
                     <li>Use the Site for or in connection with any purpose that is unlawful or prohibited by these Terms.</li>
                   </ul>
                   <p className="mb-4">
-                    Train Community Guidelines apply. Trainn reserves the right to refuse service, terminate accounts, remove or edit content, or cancel orders in its sole discretion.
+                    Train <Link href="/communityguidelines" className="text-blue-600 hover:text-blue-800 underline">Community Guidelines</Link> apply. Trainn reserves the right to refuse service, terminate accounts, remove or edit content, or cancel orders in its sole discretion.
                   </p>
                 </div>
 
@@ -570,7 +570,7 @@ export default function TermsOfUsePage() {
                 <div>
                   <h2 className="text-xl font-semibold mb-4">17. Infringement Policy.</h2>
                   <p className="mb-4">
-                    Please see our Digital Millennium Copyright Act document for an explanation of our copyright and trademark policies in the United States.
+                    Please see our <Link href="/terms/dmca" className="text-blue-600 hover:text-blue-800 underline">Digital Millennium Copyright Act</Link> document for an explanation of our copyright and trademark policies in the United States.
                   </p>
                 </div>
 

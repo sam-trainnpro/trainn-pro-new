@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 16, 2025. Enhanced Terms of Use page with additional hyperlinks - added 4 new clickable links: Gift Cards section (4b) to /terms/gifts, Refer a Friend section (4c) to /terms/customer-referrals, Community Guidelines (section 7) to /communityguidelines, and Digital Millennium Copyright Act (section 17) to /terms/dmca for comprehensive cross-document navigation
 - January 16, 2025. Enhanced Terms of Use page with FAQ hyperlinks - added clickable links to "here" references in sections 3g (Other Fees) and 3h (Reservation and Cancellation) that direct users to /faq page for cancellation and missed offering rules
 - January 16, 2025. Added scroll-to-top functionality to Contact Us page - users automatically scroll to top when navigating from any link (including "contacting us" link in Terms of Use)
 - January 16, 2025. Enhanced Terms of Use page with contact link - added hyperlink to "contacting us" text in Section 2j (Communications) that directs users to /contact page
