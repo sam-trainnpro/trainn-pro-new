@@ -18,7 +18,7 @@ export default function HeroSection() {
           <div className="container mx-auto px-4">
             <div className="max-w-xl text-white">
               <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4">Find Your Perfect Class</h1>
-              <p className="text-lg mb-6">Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music, art and dance classes for adults and kids</p>
+              <p className="text-lg mb-6">Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music and art classes for adults and kids</p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/classes">
                   <Button size="lg" className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto">
