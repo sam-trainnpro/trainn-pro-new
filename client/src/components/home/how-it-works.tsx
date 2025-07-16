@@ -37,7 +37,7 @@ export default function HowItWorks() {
         <div className="mt-10 text-center">
           <Link href="/classes">
             <Button size="lg" className="bg-primary text-white hover:bg-primary/90">
-              Start Your Fitness Journey
+              Start Your Journey
             </Button>
           </Link>
         </div>
