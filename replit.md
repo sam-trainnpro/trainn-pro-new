@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- July 16, 2025. Updated Stripe revenue split calculation to properly handle transaction fees - implemented 85% coach / 15% platform split AFTER deducting Stripe fees (2.9% + $0.30 per transaction) instead of before; updated payment intent metadata to track all fee components (stripeFee, netAmount, platformFee, coachPayout) for better financial reporting
 - July 16, 2025. Updated hero image on home page to new multi-panel composition with white background and improved layout - uploaded Hero Images - Trainn Home Page v3 using Cloudinary's crop: 'pad' with white background; adjusted layout to position buttons in grey gradient area for better image visibility; optimized spacing to 3 paragraph spaces between text and buttons for iPhone SE compatibility; aligned text to top of hero section to prevent title cutoff
 - July 16, 2025. Updated CTA section text and removed app store buttons - changed heading to "Ready to Trainn?" and updated description to emphasize upskilling and community building; removed App Store and Google Play download buttons from download section, keeping only iPhone web app instructions
 - July 16, 2025. Updated Sophia L. testimonial to emphasize strength classes and family benefits - changed from yoga focus to strength classes, added mention of finding sports classes for kids after school and weekends
