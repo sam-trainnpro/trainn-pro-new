@@ -10,7 +10,7 @@ export default function HeroSection() {
       <div 
         className="h-[420px] md:h-[500px] w-full bg-cover bg-center"
         style={{ 
-          backgroundImage: "url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1920&h=1080')"
+          backgroundImage: "url('/attached_assets/Family Workout 3_1752642007550.png')"
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 flex items-center">
