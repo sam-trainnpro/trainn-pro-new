@@ -29,7 +29,7 @@ export default function HowItWorks() {
             <div className="w-16 h-16 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
               <HeartPulse className="text-primary h-6 w-6" />
             </div>
-            <h3 className="font-heading font-bold text-xl mb-2">Get Fit & Review</h3>
+            <h3 className="font-heading font-bold text-xl mb-2">Trainn & Review</h3>
             <p className="text-gray-600">Attend your class, achieve your goals, have fun, and leave a review to help others find great coaches.</p>
           </div>
         </div>
