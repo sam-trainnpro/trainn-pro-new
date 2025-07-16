@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- July 16, 2025. Updated Sophia L. testimonial to emphasize strength classes and family benefits - changed from yoga focus to strength classes, added mention of finding sports classes for kids after school and weekends
 - July 16, 2025. Updated all Coach Pat's soccer classes to use Cloudinary image - replaced local upload images with optimized Cloudinary URL (Kids_Soccer_-_Ball_and_Cleat_fejyih.jpg) for consistent image display across all future soccer classes
 - July 16, 2025. Enhanced Featured Classes section with specific category prioritization - shows paid Strength & Conditioning class, Music class (prioritizing coaches other than Coach ID 1), and Soccer/Basketball class; fallback to Strength & Conditioning, Soccer, Basketball if no Music classes available
 - July 16, 2025. Updated How Trainn Works section text - changed button to "Start Your Journey", updated descriptions to mention "adults or kids class", simplified Book & Pay text, changed final step to "Trainn & Review" emphasizing fun and goal achievement

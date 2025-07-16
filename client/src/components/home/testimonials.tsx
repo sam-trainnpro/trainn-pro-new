@@ -29,7 +29,7 @@ export default function Testimonials() {
       name: "Sophia L.",
       image: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
       rating: 4.5,
-      comment: "I joined Trainn to find yoga classes, but ended up trying so many different fitness styles thanks to the variety of coaches. The outdoor classes are my favorite - there's nothing like exercising in the fresh air with an amazing instructor!"
+      comment: "I joined Trainn to find strength classes, but ended up trying so many different fitness styles thanks to the variety of classes. Plus I found some great sports classes for my kids for after school and on the weekends."
     }
   ];
 
