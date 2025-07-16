@@ -7,7 +7,8 @@ import {
   classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules,
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   contactMessages, type ContactMessage, type InsertContactMessage,
-  blogPosts, type BlogPost, type InsertBlogPost
+  blogPosts, type BlogPost, type InsertBlogPost,
+  scheduledPayouts, type ScheduledPayout, type InsertScheduledPayout
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -102,6 +103,14 @@ export interface IStorage {
   getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
   updateBlogPost(id: number, postData: Partial<BlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: number): Promise<boolean>;
+  
+  // Scheduled Payouts
+  createScheduledPayout(payoutData: InsertScheduledPayout): Promise<ScheduledPayout>;
+  getScheduledPayouts(filters?: { status?: string }): Promise<ScheduledPayout[]>;
+  getScheduledPayoutsByClass(classId: number): Promise<ScheduledPayout[]>;
+  getScheduledPayoutsByCoach(coachId: number): Promise<ScheduledPayout[]>;
+  updateScheduledPayout(id: number, payoutData: Partial<ScheduledPayout>): Promise<ScheduledPayout | undefined>;
+  getDueScheduledPayouts(): Promise<ScheduledPayout[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1005,6 +1014,55 @@ export class DatabaseStorage implements IStorage {
   async deleteBlogPost(id: number): Promise<boolean> {
     const result = await db.delete(blogPosts).where(eq(blogPosts.id, id));
     return result.rowCount > 0;
+  }
+
+  // Scheduled Payout methods
+  async createScheduledPayout(payoutData: InsertScheduledPayout): Promise<ScheduledPayout> {
+    const [payout] = await db.insert(scheduledPayouts).values(payoutData).returning();
+    return payout;
+  }
+
+  async getScheduledPayouts(filters?: { status?: string }): Promise<ScheduledPayout[]> {
+    const query = db.select().from(scheduledPayouts).orderBy(desc(scheduledPayouts.createdAt));
+    
+    if (filters?.status) {
+      return await query.where(eq(scheduledPayouts.status, filters.status));
+    }
+    
+    return await query;
+  }
+
+  async getScheduledPayoutsByClass(classId: number): Promise<ScheduledPayout[]> {
+    return await db.select()
+      .from(scheduledPayouts)
+      .where(eq(scheduledPayouts.classId, classId))
+      .orderBy(desc(scheduledPayouts.createdAt));
+  }
+
+  async getScheduledPayoutsByCoach(coachId: number): Promise<ScheduledPayout[]> {
+    return await db.select()
+      .from(scheduledPayouts)
+      .where(eq(scheduledPayouts.coachId, coachId))
+      .orderBy(desc(scheduledPayouts.createdAt));
+  }
+
+  async updateScheduledPayout(id: number, payoutData: Partial<ScheduledPayout>): Promise<ScheduledPayout | undefined> {
+    const [updatedPayout] = await db
+      .update(scheduledPayouts)
+      .set({ ...payoutData, updatedAt: new Date() })
+      .where(eq(scheduledPayouts.id, id))
+      .returning();
+    return updatedPayout || undefined;
+  }
+
+  async getDueScheduledPayouts(): Promise<ScheduledPayout[]> {
+    return await db.select()
+      .from(scheduledPayouts)
+      .where(and(
+        eq(scheduledPayouts.status, 'scheduled'),
+        sql`${scheduledPayouts.scheduledPayoutDate} <= NOW()`
+      ))
+      .orderBy(scheduledPayouts.scheduledPayoutDate);
   }
 }
 

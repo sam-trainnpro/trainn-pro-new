@@ -70,6 +70,39 @@ app.use((req, res, next) => {
       reusePort: true,
     }, () => {
       log(`serving on port ${port}`);
+      
+      // Start automated payout processing
+      if (process.env.NODE_ENV === 'production') {
+        // In production, process payouts every 4 hours
+        setInterval(async () => {
+          try {
+            const { payoutProcessor } = await import('./payout-processor');
+            const results = await payoutProcessor.processDuePayouts();
+            if (results.length > 0) {
+              console.log(`🎯 Processed ${results.length} scheduled payouts`);
+            }
+          } catch (error) {
+            console.error('Error in automated payout processing:', error);
+          }
+        }, 4 * 60 * 60 * 1000); // 4 hours in milliseconds
+        
+        log('🕐 Automated payout processing started (every 4 hours)');
+      } else {
+        // In development, process payouts every 10 minutes for testing
+        setInterval(async () => {
+          try {
+            const { payoutProcessor } = await import('./payout-processor');
+            const results = await payoutProcessor.processDuePayouts();
+            if (results.length > 0) {
+              console.log(`🎯 [DEV] Processed ${results.length} scheduled payouts`);
+            }
+          } catch (error) {
+            console.error('Error in automated payout processing:', error);
+          }
+        }, 10 * 60 * 1000); // 10 minutes in milliseconds
+        
+        log('🕐 [DEV] Automated payout processing started (every 10 minutes)');
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
