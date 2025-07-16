@@ -256,6 +256,147 @@ export default function TermsOfUsePage() {
                       From time to time we may offer a trial membership that includes access to the Trainn platform during the trial period. The Offerings, content and features available during your Trial may differ from those available during subsequent Subscription Cycles. Trials will have the duration and price communicated at the time you sign up. Unless otherwise communicated, a trial begins at the moment of sign up (even if you choose not to take your first Offering until a later date) and ends at 11:59pm local time (based on your location when you signed up for Trainn) on the last day of the trial (for a one-week trial, this would be the same weekday of following week). If you cancel your Trial, your cancellation will be processed and your Trial period will end immediately, your credits will expire, and your upcoming reservations will be cancelled, unless we communicate otherwise. Each trial membership automatically will convert to a regular monthly subscription and price unless canceled by 11:59 pm local time (based on your location when you signed up for Trainn) on the last day of trial. Unless we communicate otherwise in writing, customers that cancel and do not convert to a regular subscription may not attend Offerings taking place after the end of the trial membership period (even if booking occurred before the end of the applicable trial period). Trials, discount offers, and promotions (collectively "Trials") may be redeemed as described in the specifics of the promotion and may be subject to additional or different terms. Unless we expressly communicate otherwise, Trials cannot be transferred, sold, bartered, combined with other offers, or redeemed for cash, and they are void where prohibited. You understand and agree that unless we expressly communicate otherwise, Trials are available only to new users that have never had a Trainn account before and there is only one Trial permitted per credit card or payment method and it is a violation of these Terms to sign up for a Trial if you have signed up for an account or trial in the past or to have more than one account or trial. Trainn reserves the right, in its absolute discretion, to determine your eligibility for a Trial. If in our discretion we believe you are not eligible for a Trial, we reserve the right to prevent you from signing up for a Trial or to terminate your promotional subscription. If we terminate your Trials because you have violated these Terms, you understand that you will not be eligible for a refund.
                     </p>
                   </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">b) Gift Cards.</h3>
+                    <p className="mb-4">
+                      From time to time we may make available gift cards for Trainn membership. The current terms that apply to gift cards can be found here. Other than gifting a gift card as described in the gift card terms, you may not gift Offerings or credits to third parties, and your use of Trainn is personal to you. If you purchase credits with a gift card, the terms and conditions of your subscription will apply to those credits, including any limitations on how long those Credits may be valid under your monthly subscription.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">c) Refer a Friend.</h3>
+                    <p className="mb-4">
+                      From time to time we may make available certain incentives for Trainn users to refer a friend to use Trainn. The current terms that apply to referrals can be found here.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">d) Other Promotions.</h3>
+                    <p className="mb-4">
+                      Trainn may offer additional types of offers and promotions which will be subject to additional terms and conditions that Trainn may provide.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">5. Termination or Modification by Trainn.</h2>
+                  <p className="mb-4">
+                    You understand and agree that, at any time and without prior notice and without the need to obtain a court order or judgment Trainn may (1) terminate, cancel, deactivate, disable, delete and/or suspend your subscription, your account, any orders placed, or your access to or use of the Site, your membership and/or Offerings (or any portion thereof, including but not limited to your access to any or all Venues, credits or Offerings or services) and/or (2) discontinue, disable, suspend, modify or alter any aspect, feature or policy of the Site , including of your subscription. This includes the right to terminate or modify any subscription prior to the end of any pre-paid or committed period. Upon any termination or otherwise, we may immediately deactivate your account and all related information and/or bar any further access to your account information and the Site. Trainn shall have no liability for, and you shall have no recourse for, any such termination or deactivation, except as set forth in the following sentence. If you are subscriber, then upon any such termination by us without cause, as your sole recourse, we will issue you a pro rata refund of the prepaid portion of your subscription applicable to future unused services (less any fees or costs for Offerings or services already used). If we determine that you have violated these Terms or otherwise engaged in illegal or improper use of your membership, Offerings and/or the Site, you will not be entitled to any refund and you agree that we will not be responsible to pay any such refund. You agree that Trainn will not be liable to you or any third party for any termination or modification to the service regardless of the reason for such termination or modification. You acknowledge that your only right with respect to any dissatisfaction with any modification or discontinuation of service made by us is to cancel or terminate your subscription. If Trainn deletes your account for these reasons, you may not re-register for or use the Site and/or Offerings under any other user name, email, payment method or profile. Trainn may block your access to the Site to prevent re-registration.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">6. Privacy.</h2>
+                  <p className="mb-4">
+                    Your privacy is important to Trainn. The Trainn Privacy Policy is hereby incorporated into these Terms by reference. Please read the privacy policy carefully for information relating to Trainn collection, use, and disclosure of your personal information. When you make a reservation, the applicable Venue partner will have access to certain information about you, such as your name and email address, so it can process the applicable reservation or activity and make available Offerings and provide services to you. Please see the Privacy Policy for more information
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">7. Prohibited Conduct.</h2>
+                  <p className="mb-4">
+                    Without limiting the prohibitions and restrictions found elsewhere throughout the Terms, you agree not to:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2 mb-4">
+                    <li>Harass, threaten, stalk, disrupt or defraud users, members or staff of Trainn or Venues or any other person, or otherwise create or contribute to an unsafe, harassing, threatening or disruptive environment;</li>
+                    <li>Act in a deceptive or fraudulent manner by, among other things, impersonating another person or access another user's account or signing up for more than one account;</li>
+                    <li>Share Trainn passwords with any third party or encourage any other user to do so;</li>
+                    <li>Permit anyone to use any Offerings or services booked under your own membership, including other members;</li>
+                    <li>Reserve or cancel any Offering directly with a Venue, rather than through the Site;</li>
+                    <li>Reproduce, modify, prepare derivative works based upon, distribute, license, lease, sell, resell, transfer, publicly display, publicly perform, transmit, stream, broadcast, use for commercial purposes or otherwise exploit any portion of the Site;</li>
+                    <li>Misrepresent the source, identity, or content of information transmitted via the Site, including deleting the copyright or other proprietary rights or notices from any portion of the Site;</li>
+                    <li>Upload material (e.g. virus) that is damaging to computer systems or data of Trainn or users of the Site or otherwise use the Site in any manner that could damage, disable, overburden, or impair it or interfere with any other party's use and enjoyment of the Site;</li>
+                    <li>Upload copyrighted material that is not your own or that you do not have the legal right to distribute, display, and otherwise make available to others;</li>
+                    <li>Upload or send to Site users pornographic, threatening, embarrassing, hateful, racially or ethnically insulting, libelous, or otherwise inappropriate content;</li>
+                    <li>Decompile, reverse engineer or disassemble the Site, in whole or in part, except as may be permitted by applicable law;</li>
+                    <li>Link to, mirror or frame any portion of the Site;</li>
+                    <li>Cause or launch any programs or scripts for the purpose of scraping, indexing, surveying, or otherwise data mining any portion of the Site or unduly burdening or hindering the operation and/or functionality of any aspect of the Site;</li>
+                    <li>Attempt to gain unauthorized access to or impair any aspect of the Site or its related systems or networks or interfere or attempt to interfere with the proper working of the Site or any activities conducted on the Site;</li>
+                    <li>Make unsolicited offers, advertisements, proposals, or send junk mail or "spam" to users;</li>
+                    <li>Remove, circumvent, disable, damage or otherwise interfere with security-related features of the Site, any features that prevent or restrict use or copying of any content accessible through the Site, or any features that enforce limitations on the use of the Site or the content therein;</li>
+                    <li>Obtain or attempt to obtain any materials or information through any means not intentionally made available through the Site;</li>
+                    <li>Modify the Site in any manner or form, nor to use modified versions of the Site, including (without limitation) for the purpose of obtaining unauthorized access to the Site;</li>
+                    <li>Use any robot, spider, scraper, or other automated means to access the Site for any purpose without our express written permission or bypass our robot exclusion headers or other measures we may use to prevent or restrict access to the Site;</li>
+                    <li>Use the Site for or in connection with any purpose that is unlawful or prohibited by these Terms.</li>
+                  </ul>
+                  <p className="mb-4">
+                    Train Community Guidelines apply. Trainn reserves the right to refuse service, terminate accounts, remove or edit content, or cancel orders in its sole discretion.
+                  </p>
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">8. User Submissions.</h2>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">a) General.</h3>
+                    <p className="mb-4">
+                      The Site provides certain features which enable you and other users to submit, post, share and search for content and information, which may include (without limitation) text, graphic and pictorial works, profile information, information about reserved or attended Offerings, friend connections or any other information submitted by you and other users or arising from your use of the Site ("User Submissions"). User Submissions also include reviews, ratings and other feedback ("Reviews"). We strongly recommend that you think carefully about what you upload to, share with or make accessible to the Site. Trainn does not guarantee any anonymity or confidentiality with respect to any User Submissions. For information on how we use your personal information, please see our Privacy Policy.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">b) Reviews.</h3>
+                    <p className="mb-4">
+                      You understand and agree that Reviews may be made public without any additional notice to or consent by you and you should assume that any person (whether or not a user of Trainn's platform), including any Venue, may read or have access to your Reviews. Trainn is not responsible for the use or disclosure of any information that you disclose in connection with Reviews, including any personal information. Reviews are displayed for information purposes only and reflect the opinions of the person making the submission. They are not controlled by, and may not reflect the opinion of, Trainn. You understand that all Reviews are the sole responsibility of the person from whom such Review originated. This means that you, and not Trainn, are entirely responsible for all Reviews that you upload, post, e-mail, transmit, or otherwise make available through the Site.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">c) Right to Remove or Edit User Submissions.</h3>
+                    <p className="mb-4">
+                      Trainn makes no representations that it will publish or make available on the Site any User Submissions, and reserves the right, in its sole discretion, to refuse to allow any User Submissions on the Site, or to edit or remove any User Submission at any time with or without notice. Without limiting the generality of the preceding sentence, Trainn complies with the Digital Millennium Copyright Act, and will remove User Submissions upon receipt of a compliant takedown notice (see the "Digital Millennium Copyright Act" section below). Trainn may, but is not obligated to, monitor and edit or remove any activity or content, in whole or in part, including but not limited to content that Trainn determines in its sole discretion to violate the standards of this Site. Trainn takes no responsibility and assumes no liability for any User Submissions.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">d) License Grant by You to Trainn.</h3>
+                    <p className="mb-4">
+                      You retain all your ownership rights in original aspects of your User Submissions. By submitting User Submissions to Trainn, you hereby grant Trainn Releasees, sublicensees, partners, and designees (collectively, the "Trainn Licensees") a worldwide, non-exclusive, fully paid-up, royalty-free, perpetual, irrevocable, sublicensable, and transferable license to use, reproduce (including by making mechanical reproductions), distribute, modify, adapt, translate, prepare derivative works of, publicly display, publish, publicly perform, and otherwise exploit your User Submissions and derivatives thereof in connection with the Site and Trainn Licensees' businesses, for any purpose, including, without limitation, for marketing, promoting, and redistributing part or all of the Site (and derivative works thereof), in any media formats and through any media channels now known or hereafter discovered or developed.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">e) User Submissions Representations and Warranties.</h3>
+                    <p className="mb-4">
+                      By accessing and/or using our services, you hereby grant the Trainn Licensees a worldwide, non-exclusive, fully paid-up, royalty-free, perpetual, irrevocable, sublicensable, and transferable license to use, reproduce (including by making mechanical reproductions), distribute, modify, adapt, translate, prepare derivative works of, publicly display, publish, publicly perform, and otherwise exploit your User Submissions and derivatives thereof in connection with the Site, Offerings, and Trainn Licensees' businesses for any purpose, including, without limitation, for marketing, promoting, and redistributing part or all of the Site (and derivative works thereof), in any media formats and through any media channels now known or hereafter discovered or developed. You acknowledge that you may have what are known as "moral rights" in your User Submissions, for example the right to be named as the creator and the right not to have work subjected to derogatory treatment. You agree to waive any such moral rights you may have in User Submissions.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">f) Inaccurate or Offensive User Submissions.</h3>
+                    <p className="mb-4">
+                      You understand that when using the Site, you may be exposed to User Submissions from a variety of sources and that Trainn does not endorse and is not responsible for the accuracy, usefulness, safety, or intellectual property rights of or relating to such User Submissions. You further understand and acknowledge that you may be exposed to User Submissions that are inaccurate, offensive, indecent, or objectionable. YOU AGREE TO WAIVE, AND HEREBY DO WAIVE, ANY LEGAL OR EQUITABLE RIGHTS OR REMEDIES YOU HAVE OR MAY HAVE AGAINST TRAINN LICENSEES WITH RESPECT THERETO.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">g) Feedback.</h3>
+                    <p className="mb-4">
+                      If you provide Trainn with any comments, bug reports, feedback, or modifications proposed or suggested by you to the Site ("Feedback"), Trainn shall have the right to use such Feedback at its discretion, including, but not limited to the incorporation of such suggested changes into the Site. You hereby grant Trainn a perpetual, irrevocable, nonexclusive license under all rights necessary to incorporate and use your Feedback for any purpose without notice to, consent by or compensation to you or any third party.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">h) Infringing or Illegal Activity.</h3>
+                    <p className="mb-4">
+                      In the event of infringing or other illegal activities, we have no obligation to, but reserve the right to terminate access to the Site and remove all content submitted by any persons who are found to be infringers. Any suspected illegal activity may be referred to appropriate law enforcement authorities. These remedies are in addition to any other remedies Trainn may have at law or in equity.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">i) Trainn Ratings.</h3>
+                    <p className="mb-4">
+                      You may be required to rate your Offerings and/or other Trainn experiences that you reserve.
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">j) Advertising.</h3>
+                    <p className="mb-4">
+                      You give us permission to use and display your User Submissions next to or in connection with ads, offers, and other messages to your Trainn friends, without any compensation or advance notice. We may, for example, send an email to one of your Trainn friends to encourage them to join you in a class. You can update your preferences at any time by navigating to the Privacy Settings.
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
