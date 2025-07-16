@@ -1,19 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center">
-              Trainn Privacy Policy
-            </CardTitle>
-            <p className="text-center text-gray-600 mt-2">
-              Last Updated: June 2, 2025
-            </p>
-          </CardHeader>
-          <CardContent>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-3xl font-bold text-center">
+                Trainn Privacy Policy
+              </CardTitle>
+              <p className="text-center text-gray-600 mt-2">
+                Last Updated: June 2, 2025
+              </p>
+            </CardHeader>
+            <CardContent>
             <div className="prose max-w-none">
               <div className="mb-8">
                 <p className="mb-4">
@@ -50,6 +54,8 @@ export default function PrivacyPage() {
           </CardContent>
         </Card>
       </div>
+      </main>
+      <Footer />
     </div>
   );
 }
