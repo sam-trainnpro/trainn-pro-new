@@ -30,14 +30,7 @@ export default function DownloadApp() {
             </div>
           </div>
           
-          <div className="md:w-1/2 flex justify-center">
-            <img 
-              src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=1000" 
-              alt="Trainn Mobile App Interface" 
-              className="max-w-full h-auto rounded-xl shadow-xl"
-              style={{ maxHeight: '500px' }}
-            />
-          </div>
+          
         </div>
       </div>
     </section>
