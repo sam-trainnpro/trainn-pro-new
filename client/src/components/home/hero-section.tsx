@@ -16,7 +16,7 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 flex items-center">
           <div className="container mx-auto px-4">
             <div className="max-w-xl text-white">
-              <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4">Find Your Perfect Workout</h1>
+              <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4">Find Your Perfect Class</h1>
               <p className="text-lg mb-6">Connect with top fitness coaches in your area for personalized outdoor and gym sessions</p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/classes">
