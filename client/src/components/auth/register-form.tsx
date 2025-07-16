@@ -339,8 +339,8 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="text-sm">
-                      I agree to the <a href="#" className="text-secondary hover:underline">Terms of Service</a> and{" "}
-                      <a href="#" className="text-secondary hover:underline">Privacy Policy</a>
+                      I agree to the <a href="/terms" className="text-secondary hover:underline">Terms of Service</a> and{" "}
+                      <a href="/privacy" className="text-secondary hover:underline">Privacy Policy</a>
                     </FormLabel>
                     <FormMessage />
                   </div>
