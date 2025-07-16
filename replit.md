@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- July 16, 2025. Streamlined home page layout by removing Top Coaches and Explore Class Types sections and moving How Trainn Works section above Featured Classes - simplified user journey to focus on core value proposition before showing available classes
 - July 16, 2025. Updated hero section background image to zoomed-out family workout photo - uploaded custom family workout image to Cloudinary with wider composition showing outdoor fitness activities with adults and kids, better representing the platform's focus on diverse class offerings for all ages
 - July 16, 2025. Created backup copy of home page at client/src/pages/home-backup.tsx - preserved original layout structure with all sections for reference before making layout changes, not accessible to end users
 - July 16, 2025. Added How Trainn Works section to About Us page - copied the 3-step process (Find Your Class, Book & Pay, Get Fit & Review) from home page and positioned it above the 4 pillars boxes and below the text description, maintaining consistent styling and functionality
