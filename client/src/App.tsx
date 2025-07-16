@@ -34,6 +34,7 @@ import GiftTermsPage from "@/pages/gift-terms";
 import CustomerReferralsPage from "@/pages/customer-referrals";
 import TermsOfUsePage from "@/pages/terms-of-use";
 import PrivacyPage from "@/pages/privacy";
+import CookiesPage from "@/pages/cookies";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -131,6 +132,9 @@ function Router() {
       </Route>
       <Route path="/privacy">
         <PrivacyPage />
+      </Route>
+      <Route path="/cookies">
+        <CookiesPage />
       </Route>
       <Route>
         <NotFound />

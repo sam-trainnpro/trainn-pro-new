@@ -63,7 +63,7 @@ export default function Footer() {
             <div className="flex space-x-6">
               <Link href="/privacy" className="text-gray-400 hover:text-white transition text-sm">Privacy Policy</Link>
               <Link href="/terms" className="text-gray-400 hover:text-white transition text-sm">Terms of Use</Link>
-              <Link href="#" className="text-gray-400 hover:text-white transition text-sm">Cookie Policy</Link>
+              <Link href="/cookies" className="text-gray-400 hover:text-white transition text-sm">Cookie Policy</Link>
             </div>
           </div>
         </div>
