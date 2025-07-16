@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- July 16, 2025. Created backup copy of home page at client/src/pages/home-backup.tsx - preserved original layout structure with all sections for reference before making layout changes, not accessible to end users
 - July 16, 2025. Added How Trainn Works section to About Us page - copied the 3-step process (Find Your Class, Book & Pay, Get Fit & Review) from home page and positioned it above the 4 pillars boxes and below the text description, maintaining consistent styling and functionality
 - July 16, 2025. Fixed home page redirect issue - disabled automatic search trigger in SearchFilters component that was causing 100ms delayed redirect to /classes page after home page load, allowing users to view the complete homepage experience with hero section, search filters, featured classes, featured coaches, class categories, how it works, download app, testimonials, and CTA section
 - July 16, 2025. Enhanced Create Account form with legal document links - updated Terms of Service and Privacy Policy links in registration form to point to /terms and /privacy respectively, replacing placeholder links for proper legal document navigation
