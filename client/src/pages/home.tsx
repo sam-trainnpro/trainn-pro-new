@@ -17,6 +17,9 @@ import { useLocation } from "wouter";
 export default function Home() {
   const [, navigate] = useLocation();
   
+  // Debug: Log when home component loads
+  console.log("=== HOME PAGE COMPONENT LOADED ===");
+  
   const handleSearch = (filters: SearchFiltersType) => {
     const queryParams = new URLSearchParams();
     
