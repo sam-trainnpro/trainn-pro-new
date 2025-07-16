@@ -240,6 +240,81 @@ export default function PrivacyPage() {
                   If you have any questions relating to your rights as set out in this Privacy Policy you may contact us as explained in the "How to Contact Us" section below.
                 </p>
               </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">9. Third-Party Sites</h2>
+                <p className="mb-4">
+                  Our Site may contain links to third-party websites or mobile apps, including social sharing features and other related tools. Please be aware that Trainn does not control these linked websites or apps and that this Privacy Policy does not apply to any information you give to the owner of these websites or apps. We encourage you to read the privacy policy of any third-party website or app that you visit before you provide them with any information.
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">10. Updates to this Privacy Policy</h2>
+                <p className="mb-4">
+                  By using our Site, you agree to this Privacy Policy. We may occasionally update this Privacy Policy. Any changes we make will become effective when we post a modified version of the Privacy Policy to trainn.pro. If we make any material changes to the Privacy Policy, we will take appropriate measures to inform you consistent with the significance of the changes we make and as required by applicable law. If you continue using our products and services after any notice of such changes, it means you have accepted them. Your continued use of this Site after any notice of such changes constitutes your agreement to this Privacy Policy and any updates. If you do not agree to any changes, you must stop using our products and services, as applicable. It is your obligation to ensure that you read, understand and agree to the latest version of the Privacy Policy. The "Last Updated" legend at the top of the Privacy Policy indicates when it was last updated.
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">11. How to Contact Us</h2>
+                <p className="mb-4">
+                  If you have any questions or concerns about our use of your personal information, please contact us here
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">12. Special Terms (US Residents)</h2>
+                <p className="mb-4">
+                  If you are a resident of certain states with comprehensive privacy laws, including but not limited to California, Colorado, Connecticut, Delaware, Iowa, Indiana, Montana, New Jersey, Oregon, Texas, Tennessee, Utah or Virginia, state privacy laws require that we disclose additional information to you about the processing of your personal information and your privacy rights.
+                </p>
+                <p className="mb-4">
+                  Depending on how you interact with us, in the previous 12 months we have collected the categories of personal information from the sources set out at Section 2. We collect this information for the purposes set out at Section 3 and otherwise to accomplish our business and operational purposes (including for audits, helping to ensure the security and integrity of our systems, debugging, the effective operation of our Site and business, internal research and quality purposes), and we may disclose such categories to the third parties set out at Section 4 in furtherance of those purposes. For further information, please contact us as explained in the "How to Contact Us" section.
+                </p>
+                <p className="mb-4">
+                  Certain states, such as California, provide residents a right to limit the use of their sensitive personal information. However, we do not engage in uses or disclosures of sensitive personal information that would trigger the right to limit under state law.
+                </p>
+                <p className="mb-4">
+                  To the extent that we are in possession of de-identified data, we commit to maintaining and using de-identified data without attempting to re-identify the data.
+                </p>
+                <p className="mb-4">
+                  We retain your personal information as described under the "Data Retention" section above.
+                </p>
+                <p className="mb-4">
+                  Currently, our Site does not recognize "Do-Not-Track" requests.
+                </p>
+                <p className="mb-4">
+                  If you are a resident of any of the states listed above, you may have the right under applicable local data protection laws to exercise the following rights regarding your personal information, subject to certain exceptions and limitations:
+                </p>
+                <ul className="list-disc pl-6 mb-4 space-y-2">
+                  <li>
+                    for certain categories of personal information, the right to request a list of what personal information (if any) we disclosed to third parties for their own direct marketing purposes in the preceding calendar year and the names and addresses of those third parties;
+                  </li>
+                  <li>
+                    the right to know the categories and specific pieces of personal information we collect, use, disclose, and sell about you, the categories of sources from which we collected your personal information, our purposes for collecting or selling your personal information, the categories of your personal information that we have either sold or disclosed for a business purpose, and the categories of third parties with which we have shared personal information;
+                  </li>
+                  <li>
+                    the right to request that we delete the personal information we have collected from you or maintain about you;
+                  </li>
+                  <li>
+                    the right to correct inaccurate personal information that we maintain about you;
+                  </li>
+                  <li>
+                    the right to limit the use and disclosure of sensitive personal information; however, note that we do not use or disclose sensitive personal information in a manner that would trigger such right under applicable local data protection laws;
+                  </li>
+                  <li>
+                    the right to opt out of our sale(s) or sharing of your personal information, or use of your personal information for targeted advertising (if any);
+                  </li>
+                  <li>
+                    if we reject your request to exercise a privacy right, under certain local data protection laws you may have the right to appeal our rejection by contacting us as explained in the "How to Contact Us" section; and
+                  </li>
+                  <li>
+                    the right not to receive discriminatory treatment for the exercise of your privacy rights.
+                  </li>
+                </ul>
+                <p className="mb-4">
+                  You may designate an authorized agent to make a request on your behalf. You can do this by authorizing your agent to access your Trainn account and making a request on your behalf by contacting us as explained in the "How to Contact Us" section. Before responding to your request, we must first verify your identity using the personal information you recently provided to us. You must provide us with your full name and email address. We will take steps to verify your request by matching the information provided by you with the information we have in our records. In some cases, we may request additional information in order to verify your identity, or where necessary to process your request. If we are unable to verify your identity after a good faith attempt, we may deny the request and, if so, will explain the basis for the denial. We respond to all requests we receive from individuals wishing to exercise their data protection rights in accordance with applicable data protection laws.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
