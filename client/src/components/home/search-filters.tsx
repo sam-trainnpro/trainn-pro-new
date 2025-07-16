@@ -173,19 +173,20 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   }, [searchParams]);
   
   // Apply filters on initial mount and when search parameters change
-  useEffect(() => {
-    // Add a small delay to ensure initial render is complete
-    const timer = setTimeout(() => {
-      onSearch({
-        ...searchParams,
-        latitude: null,
-        longitude: null
-      });
-    }, 100);
-    
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // DISABLED: This was causing automatic redirect to /classes on home page load
+  // useEffect(() => {
+  //   // Add a small delay to ensure initial render is complete
+  //   const timer = setTimeout(() => {
+  //     onSearch({
+  //       ...searchParams,
+  //       latitude: null,
+  //       longitude: null
+  //     });
+  //   }, 100);
+  //   
+  //   return () => clearTimeout(timer);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
   
   return (
     <section className="bg-white py-6 shadow-sm sticky top-[61px] z-30">
