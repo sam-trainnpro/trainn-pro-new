@@ -123,6 +123,8 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- January 16, 2025. Added scroll-to-top functionality to Contact Us page - users automatically scroll to top when navigating from any link (including "contacting us" link in Terms of Use)
+- January 16, 2025. Enhanced Terms of Use page with contact link - added hyperlink to "contacting us" text in Section 2j (Communications) that directs users to /contact page
 - January 16, 2025. Enhanced Terms of Use page with interactive Privacy Policy hyperlinks - added clickable links to Privacy Policy references in sections 1a, 1c, 6 (twice), and 8 for improved user navigation between legal documents
 - January 16, 2025. Fixed AuthProvider error on legal pages by updating HeroSection component to use useSafeAuth hook instead of useAuth, ensuring legal pages load properly without authentication requirements
 - January 16, 2025. Added scroll-to-top functionality for all legal pages (Terms of Use, Privacy Policy, Cookie Policy) - users automatically scroll to document beginning when navigating to legal pages
