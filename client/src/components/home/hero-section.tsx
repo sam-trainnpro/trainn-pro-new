@@ -10,7 +10,7 @@ export default function HeroSection() {
       <div 
         className="h-[420px] md:h-[500px] w-full bg-contain bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: "url('https://res.cloudinary.com/dbtslhlgp/image/upload/v1752642223/trainn/hero-family-workout-zoomed.jpg')",
+          backgroundImage: "url('https://res.cloudinary.com/dbtslhlgp/image/upload/v1752691427/trainn/trainn/hero-home-page-v2.jpg')",
           backgroundColor: '#f0f8ff'
         }}
       >
