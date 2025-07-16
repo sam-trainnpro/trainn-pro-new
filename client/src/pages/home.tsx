@@ -4,8 +4,6 @@ import MobileNavigation from "@/components/layout/mobile-navigation";
 import HeroSection from "@/components/home/hero-section";
 import SearchFilters from "@/components/home/search-filters";
 import FeaturedClasses from "@/components/home/featured-classes";
-import FeaturedCoaches from "@/components/home/featured-coaches";
-import ClassCategories from "@/components/home/class-categories";
 import HowItWorks from "@/components/home/how-it-works";
 import DownloadApp from "@/components/home/download-app";
 import Testimonials from "@/components/home/testimonials";
@@ -50,10 +48,8 @@ export default function Home() {
       <main className="flex-grow">
         <HeroSection />
         <SearchFilters onSearch={handleSearch} />
-        <FeaturedClasses />
-        <FeaturedCoaches />
-        <ClassCategories />
         <HowItWorks />
+        <FeaturedClasses />
         <DownloadApp />
         <Testimonials />
         <CTASection />
