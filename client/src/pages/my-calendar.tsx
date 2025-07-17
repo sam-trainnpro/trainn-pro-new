@@ -120,6 +120,9 @@ export default function MyCalendarPage() {
 
   const handleDuplicate = async (classId: number) => {
     try {
+      console.log('Duplicate button clicked for class ID:', classId);
+      console.log('Current user role:', user?.role);
+      
       const response = await fetch(`/api/classes/${classId}`, {
         method: 'GET',
         credentials: 'include'
@@ -127,7 +130,10 @@ export default function MyCalendarPage() {
       
       if (response.ok) {
         const classData = await response.json();
+        console.log('Class data fetched successfully:', classData);
+        
         // Navigate to create class page with the class data for duplication
+        console.log('Navigating to create-class with duplicate data');
         setLocation('/create-class', { 
           state: { 
             duplicateData: classData,
@@ -135,9 +141,11 @@ export default function MyCalendarPage() {
           } 
         });
       } else {
+        console.error('Failed to fetch class data, response:', response.status, response.statusText);
         throw new Error('Failed to fetch class data');
       }
     } catch (error) {
+      console.error('Error in handleDuplicate:', error);
       toast({
         title: "Error",
         description: "Failed to load class data for duplication. Please try again.",

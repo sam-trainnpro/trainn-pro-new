@@ -146,6 +146,14 @@ export default function CreateClassPage() {
   // Check for duplicate data from navigation state
   const duplicateData = window.history.state?.duplicateData;
   const isDuplicating = window.history.state?.isDuplicating;
+  
+  // Debug logging
+  console.log('CreateClassPage loaded with:', {
+    duplicateData: !!duplicateData,
+    isDuplicating,
+    userRole: user?.role,
+    editClassId
+  });
 
   // Fetch class data for editing
   const { data: existingClass, isLoading: loadingClass } = useQuery({
