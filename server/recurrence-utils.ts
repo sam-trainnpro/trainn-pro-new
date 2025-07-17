@@ -35,6 +35,7 @@ export function generateRecurringInstances(
     // For weekly recurrence, check if current day is in the allowed days
     if (rule.type === 'weekly' && rule.daysOfWeek && rule.daysOfWeek.length > 0) {
       const currentDayOfWeek = currentDate.getDay();
+      console.log(`Checking day: ${currentDate.toISOString()}, dayOfWeek: ${currentDayOfWeek}, allowed: ${rule.daysOfWeek}`);
       if (rule.daysOfWeek.includes(currentDayOfWeek)) {
         const endTime = new Date(currentDate.getTime() + duration);
         instances.push({
@@ -42,6 +43,7 @@ export function generateRecurringInstances(
           endTime
         });
         count++;
+        console.log(`Created instance for day ${currentDayOfWeek} at ${currentDate.toISOString()}`);
       }
     } else {
       // For daily and monthly, or weekly without specific days
@@ -65,14 +67,20 @@ export function generateRecurringInstances(
           const sortedDays = [...rule.daysOfWeek].sort();
           const nextDay = sortedDays.find(day => day > currentDayOfWeek);
           
+          console.log(`Moving to next occurrence - current day: ${currentDayOfWeek}, sorted days: ${sortedDays}, next day: ${nextDay}`);
+          
           if (nextDay !== undefined) {
             // Next occurrence this week
-            currentDate = addDays(currentDate, nextDay - currentDayOfWeek);
+            const daysToAdd = nextDay - currentDayOfWeek;
+            console.log(`Next occurrence this week - adding ${daysToAdd} days`);
+            currentDate = addDays(currentDate, daysToAdd);
           } else {
             // Next occurrence next week (first day of allowed days)
             const daysUntilNextWeek = 7 - currentDayOfWeek + sortedDays[0];
+            console.log(`Next occurrence next week - adding ${daysUntilNextWeek} days`);
             currentDate = addDays(currentDate, daysUntilNextWeek);
           }
+          console.log(`New current date after advancement: ${currentDate.toISOString()}, day: ${currentDate.getDay()}`);
         } else {
           currentDate = addWeeks(currentDate, rule.interval);
         }
