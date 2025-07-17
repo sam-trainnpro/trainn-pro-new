@@ -559,7 +559,7 @@ export default function CreateClassPage() {
       }
       
       // Format the startTime from the startDate field
-      // Use UTC construction to avoid timezone issues completely
+      // Create time in Pacific timezone and convert to UTC
       const startDate = new Date(data.startDate);
       const [hours, minutes] = data.startTime.split(':').map(Number);
       
@@ -568,13 +568,24 @@ export default function CreateClassPage() {
       const month = startDate.getMonth();
       const day = startDate.getDate();
       
-      // Create the date/time using UTC constructor to avoid timezone conversion
-      const utcDateTime = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
+      // Create the date/time in Pacific timezone first
+      const pacificDateTime = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
+      
+      // Since we want this to be interpreted as Pacific Time, we need to add the offset
+      // California is UTC-7 during DST (summer) and UTC-8 during standard time
+      const isDST = month >= 2 && month <= 10; // Rough DST period (March-November)
+      const pacificOffset = isDST ? 7 : 8; // Hours behind UTC
+      
+      // Convert Pacific time to UTC by adding the offset
+      const utcDateTime = new Date(pacificDateTime.getTime() + (pacificOffset * 60 * 60 * 1000));
       
       // Debug logging
       console.log("Original selected date:", data.startDate);
       console.log("Selected time:", data.startTime);
       console.log("Year:", year, "Month:", month, "Day:", day);
+      console.log("Pacific time:", pacificDateTime.toISOString());
+      console.log("Pacific day of week:", pacificDateTime.getDay());
+      console.log("Is DST:", isDST, "Pacific offset:", pacificOffset);
       console.log("UTC date time:", utcDateTime.toISOString());
       console.log("UTC day of week:", utcDateTime.getDay());
       
