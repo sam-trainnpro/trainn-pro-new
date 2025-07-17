@@ -58,12 +58,13 @@ const createClassSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   categoryId: z.string().min(1, "Please select a category"),
   location: z.string().min(1, "Location name is required"),
-  addressLine1: z.string().min(1, "Address line 1 is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipCode: z.string().min(1, "ZIP code is required"),
-  // Keep address field for backwards compatibility
-  address: z.string().optional(),
+  // Individual address fields for form UI (optional for validation)
+  addressLine1: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  // Full address field - required for database
+  address: z.string().min(1, "Full address is required"),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   price: z.coerce.number().min(0, "Price must be 0 or greater"),
@@ -337,7 +338,7 @@ export default function CreateClassPage() {
         city: city,
         state: state,
         zipCode: zipCode,
-        address: duplicateClass.address || "",
+        address: duplicateClass.address || `${addressLine1}, ${city}, ${state} ${zipCode}`,
         latitude: duplicateClass.latitude || undefined,
         longitude: duplicateClass.longitude || undefined,
         price: duplicateClass.price || 0,
@@ -565,7 +566,13 @@ export default function CreateClassPage() {
       }
     
       // Combine address fields into a single address string for API compatibility
-      formattedData.address = `${data.addressLine1}, ${data.city}, ${data.state} ${data.zipCode}`;
+      // Use existing address if available, otherwise construct from individual fields
+      if (!data.address || data.address.trim() === "") {
+        const addressParts = [data.addressLine1, data.city, data.state, data.zipCode].filter(Boolean);
+        formattedData.address = addressParts.join(", ");
+      } else {
+        formattedData.address = data.address;
+      }
       
       // If coordinates are not set, we'll use the combined address string
       // The backend can handle classes with just the address string
@@ -613,8 +620,8 @@ export default function CreateClassPage() {
       }
       
       // If admin is duplicating a class, preserve the original coach's ID
-      if (isDuplicating && duplicateData && user?.role === 'admin') {
-        formattedData.coachId = duplicateData.coachId;
+      if (isDuplicating && duplicateClass && user?.role === 'admin') {
+        formattedData.coachId = duplicateClass.coachId;
       }
       
       // Submit the processed data
