@@ -559,15 +559,26 @@ export default function CreateClassPage() {
       }
       
       // Format the startTime from the startDate field
+      // Use the local date components to avoid timezone issues
       const startDate = new Date(data.startDate);
       const [hours, minutes] = data.startTime.split(':').map(Number);
-      startDate.setHours(hours, minutes, 0, 0);
+      
+      // Create a new date using local date components to avoid timezone shifts
+      const localStartDate = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        hours,
+        minutes,
+        0,
+        0
+      );
       
       // Format the startTime field as an ISO string
-      formattedData.startTime = startDate.toISOString();
+      formattedData.startTime = localStartDate.toISOString();
       
       // Calculate end time by adding duration in minutes
-      const endDate = new Date(startDate.getTime() + data.duration * 60000);
+      const endDate = new Date(localStartDate.getTime() + data.duration * 60000);
       // Add endTime to formattedData as it's expected by the API
       formattedData.endTime = endDate.toISOString();
       
