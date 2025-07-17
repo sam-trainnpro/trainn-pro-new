@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface SearchFiltersProps {
   onSearch: (filters: SearchFilters) => void;
+  showOnlyFutureCategories?: boolean;
 }
 
 export interface SearchFilters {
@@ -41,7 +42,7 @@ export interface SearchFilters {
   longitude?: number | null;
 }
 
-export default function SearchFilters({ onSearch }: SearchFiltersProps) {
+export default function SearchFilters({ onSearch, showOnlyFutureCategories = false }: SearchFiltersProps) {
   const initialFilters: SearchFilters = {
     query: '',
   };
@@ -49,11 +50,12 @@ export default function SearchFilters({ onSearch }: SearchFiltersProps) {
   const [searchParams, setSearchParams] = useState<SearchFilters>(initialFilters);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   
-  // Fetch class categories from database
+  // Fetch class categories from database - use filtered categories if requested
+  const categoriesEndpoint = showOnlyFutureCategories ? '/api/categories/with-future-classes' : '/api/categories';
   const { data: categories, isLoading: isLoadingCategories } = useQuery<ClassCategory[]>({
-    queryKey: ['/api/categories'],
+    queryKey: [categoriesEndpoint],
     queryFn: async () => {
-      const response = await fetch('/api/categories');
+      const response = await fetch(categoriesEndpoint);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }

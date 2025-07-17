@@ -217,7 +217,7 @@ export default function ClassesPage() {
       <Header />
       
       <main className="flex-grow">
-        <SearchFilters onSearch={handleSearch} />
+        <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
         
         <section className="py-8 bg-[#F7F7F7]">
           <div className="container mx-auto px-4">

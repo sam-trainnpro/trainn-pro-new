@@ -363,6 +363,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch categories" });
     }
   });
+
+  // Get categories that have future classes (for customer filtering) - must come before /:id route
+  app.get("/api/categories/with-future-classes", async (req, res) => {
+    try {
+      const categories = await storage.getCategoriesWithFutureClasses();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories with future classes:", error);
+      res.status(500).json({ message: "Failed to fetch categories with future classes" });
+    }
+  });
   
   // Get category by ID
   app.get("/api/categories/:id", async (req, res) => {

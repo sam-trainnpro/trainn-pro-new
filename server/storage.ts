@@ -36,6 +36,7 @@ export interface IStorage {
   // Class categories
   createClassCategory(category: InsertClassCategory): Promise<ClassCategory>;
   getAllClassCategories(): Promise<ClassCategory[]>;
+  getCategoriesWithFutureClasses(): Promise<ClassCategory[]>;
   getClassCategory(id: number): Promise<ClassCategory | undefined>;
   
   // City data
@@ -226,6 +227,27 @@ export class DatabaseStorage implements IStorage {
   
   async getAllClassCategories(): Promise<ClassCategory[]> {
     return await db.select().from(classCategories);
+  }
+  
+  async getCategoriesWithFutureClasses(): Promise<ClassCategory[]> {
+    try {
+      const result = await db.execute(sql`
+        SELECT DISTINCT cc.id, cc.name, cc.image
+        FROM class_categories cc
+        INNER JOIN classes c ON cc.id = c.category_id
+        WHERE c.start_time >= CURRENT_DATE
+        ORDER BY cc.name
+      `);
+      
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        image: row.image
+      }));
+    } catch (error) {
+      console.error("Error getting categories with future classes:", error);
+      return [];
+    }
   }
   
   async getClassCategory(id: number): Promise<ClassCategory | undefined> {
