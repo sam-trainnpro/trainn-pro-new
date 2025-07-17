@@ -504,9 +504,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Your coach account is pending approval" });
       }
       // Initialize class data with user ID
+      // For admins: allow specifying a different coachId (for duplicating on behalf of other coaches)
+      // For coaches: always use their own ID
       const classData: any = { 
         ...req.body, 
-        coachId: req.user!.id 
+        coachId: req.user.role === 'admin' && req.body.coachId ? req.body.coachId : req.user!.id 
       };
       
       const isRecurring = classData.isRecurring === true;

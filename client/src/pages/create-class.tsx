@@ -376,11 +376,24 @@ export default function CreateClassPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coaches"] });
+      
+      // Update success message based on user role and duplication context
+      const successMessage = isDuplicating && duplicateData && user?.role === 'admin'
+        ? "Class duplicated successfully for the original coach."
+        : "Your class has been created successfully.";
+      
       toast({
         title: "Class created",
-        description: "Your class has been created successfully.",
+        description: successMessage,
       });
-      navigate("/my-calendar");
+      
+      // Navigate based on user role
+      if (user?.role === 'admin') {
+        navigate("/my-calendar"); // Admin uses master calendar
+      } else {
+        navigate("/my-calendar");
+      }
+      
       // Refresh the page to ensure new class is visible and scroll to top
       setTimeout(() => {
         window.location.reload();
@@ -584,6 +597,11 @@ export default function CreateClassPage() {
         formattedData.recurrenceEndType = recurrenceRule.endType;
         formattedData.recurrenceEndDate = recurrenceRule.endDate?.toISOString();
         formattedData.recurrenceEndCount = recurrenceRule.endCount;
+      }
+      
+      // If admin is duplicating a class, preserve the original coach's ID
+      if (isDuplicating && duplicateData && user?.role === 'admin') {
+        formattedData.coachId = duplicateData.coachId;
       }
       
       // Submit the processed data
