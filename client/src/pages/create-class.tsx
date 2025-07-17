@@ -559,37 +559,30 @@ export default function CreateClassPage() {
       }
       
       // Format the startTime from the startDate field
-      // Create a simple date/time string that represents the intended local time
+      // Use UTC construction to avoid timezone issues completely
       const startDate = new Date(data.startDate);
       const [hours, minutes] = data.startTime.split(':').map(Number);
       
-      // Create a date string in ISO format but as local time (not UTC)
-      // This ensures the recurring class generation gets the correct day of week
+      // Get the components from the selected date
       const year = startDate.getFullYear();
-      const month = String(startDate.getMonth() + 1).padStart(2, '0');
-      const day = String(startDate.getDate()).padStart(2, '0');
-      const hourStr = String(hours).padStart(2, '0');
-      const minuteStr = String(minutes).padStart(2, '0');
+      const month = startDate.getMonth();
+      const day = startDate.getDate();
       
-      // Create a date string that represents the intended local time
-      // We'll construct it in a way that avoids timezone conversion issues
-      const dateTimeString = `${year}-${month}-${day}T${hourStr}:${minuteStr}:00`;
-      
-      // Parse as a local date/time, not UTC
-      const localDateTime = new Date(dateTimeString);
+      // Create the date/time using UTC constructor to avoid timezone conversion
+      const utcDateTime = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
       
       // Debug logging
       console.log("Original selected date:", data.startDate);
       console.log("Selected time:", data.startTime);
-      console.log("Constructed date string:", dateTimeString);
-      console.log("Local date time:", localDateTime.toISOString());
-      console.log("Local day of week:", localDateTime.getDay());
+      console.log("Year:", year, "Month:", month, "Day:", day);
+      console.log("UTC date time:", utcDateTime.toISOString());
+      console.log("UTC day of week:", utcDateTime.getDay());
       
       // Format the startTime field as an ISO string
-      formattedData.startTime = localDateTime.toISOString();
+      formattedData.startTime = utcDateTime.toISOString();
       
       // Calculate end time by adding duration in minutes
-      const endDate = new Date(localDateTime.getTime() + data.duration * 60000);
+      const endDate = new Date(utcDateTime.getTime() + data.duration * 60000);
       // Add endTime to formattedData as it's expected by the API
       formattedData.endTime = endDate.toISOString();
       
