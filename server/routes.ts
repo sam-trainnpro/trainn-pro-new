@@ -491,9 +491,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new class (coaches only)
-  app.post("/api/classes", requireCoach, async (req, res) => {
+  // Create a new class (coaches and admins)
+  app.post("/api/classes", requireAuth, async (req, res) => {
     try {
+      // Check if user is coach or admin
+      if (req.user.role !== "coach" && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Coach or admin access required" });
+      }
+      
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
+      }
       // Initialize class data with user ID
       const classData: any = { 
         ...req.body, 
@@ -686,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update a class
-  app.put("/api/classes/:id", requireCoach, async (req, res) => {
+  app.put("/api/classes/:id", requireAuth, async (req, res) => {
     try {
       const classId = parseInt(req.params.id);
       
@@ -696,9 +705,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
       
-      // Check if the class belongs to the coach
-      if (classItem.coachId !== req.user.id) {
+      // Check authorization: coach can update their own classes, admin can update any
+      const isCoachOwner = req.user.role === "coach" && classItem.coachId === req.user.id;
+      const isAdmin = req.user.role === "admin";
+      
+      if (!isCoachOwner && !isAdmin) {
         return res.status(403).json({ message: "Not authorized to update this class" });
+      }
+      
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
       }
       
       // Check if this is a recurring class
@@ -777,8 +794,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update a recurring class series (coaches only)
-  app.put("/api/classes/:id/series", requireCoach, async (req, res) => {
+  // Update a recurring class series (coaches and admins)
+  app.put("/api/classes/:id/series", requireAuth, async (req, res) => {
     try {
       const classId = parseInt(req.params.id);
       
@@ -788,9 +805,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
       
-      // Check if the class belongs to the coach
-      if (classItem.coachId !== req.user.id) {
+      // Check authorization: coach can update their own classes, admin can update any
+      const isCoachOwner = req.user.role === "coach" && classItem.coachId === req.user.id;
+      const isAdmin = req.user.role === "admin";
+      
+      if (!isCoachOwner && !isAdmin) {
         return res.status(403).json({ message: "Not authorized to update this class series" });
+      }
+      
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
       }
       
       // Verify this is actually a recurring class (check for recurringSeriesId)
