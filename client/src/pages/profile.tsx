@@ -374,7 +374,7 @@ export default function ProfilePage() {
       </Helmet>
       <Header />
       <main className="flex-1 pb-16 pt-6">
-        <div className="container">
+        <div className="container mx-auto px-4">
           <div className="mb-8">
             <h1 className="text-3xl font-bold">My Profile</h1>
             <p className="text-muted-foreground">
@@ -382,16 +382,15 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          <div className="grid gap-6">
-            <div className="space-y-6">
-              <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="profile">Profile</TabsTrigger>
-                  <TabsTrigger value="security">Security</TabsTrigger>
-                  {user.role === 'coach' && (
-                    <TabsTrigger value="payment">Payment</TabsTrigger>
-                  )}
-                </TabsList>
+          <div className="max-w-4xl mx-auto">
+            <Tabs defaultValue="profile" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="profile">Profile</TabsTrigger>
+                <TabsTrigger value="security">Security</TabsTrigger>
+                {user.role === 'coach' && (
+                  <TabsTrigger value="payment">Payment</TabsTrigger>
+                )}
+              </TabsList>
                 
                 <TabsContent value="profile">
                   <Card>
@@ -785,8 +784,7 @@ export default function ProfilePage() {
               </Tabs>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
       <Footer />
       <MobileNavigation />
     </>
