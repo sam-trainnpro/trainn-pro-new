@@ -153,8 +153,6 @@ export default function CreateClassPage() {
     if (storedDuplicateData) {
       try {
         const parsedData = JSON.parse(storedDuplicateData);
-        setDuplicateData(parsedData.duplicateData);
-        setIsDuplicating(parsedData.isDuplicating);
         
         // Clear the data from localStorage after loading
         localStorage.removeItem('duplicateClassData');
@@ -165,6 +163,12 @@ export default function CreateClassPage() {
           userRole: user?.role,
           editClassId
         });
+        
+        // Use setTimeout to ensure state updates happen after render cycle
+        setTimeout(() => {
+          setDuplicateData(parsedData.duplicateData);
+          setIsDuplicating(parsedData.isDuplicating);
+        }, 0);
       } catch (error) {
         console.error('Error parsing duplicate data from localStorage:', error);
       }
