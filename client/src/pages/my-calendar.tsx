@@ -67,7 +67,7 @@ export default function MyCalendarPage() {
   const [classToDelete, setClassToDelete] = useState<Class | null>(null);
   const [showBookingWarningModal, setShowBookingWarningModal] = useState(false);
   const [pendingDeleteClass, setPendingDeleteClass] = useState<Class | null>(null);
-  const [selectedCoachId, setSelectedCoachId] = useState<string>('');
+  const [selectedCoachId, setSelectedCoachId] = useState<string>('all');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -107,7 +107,7 @@ export default function MyCalendarPage() {
 
   // Filter classes for admin based on selected coach
   const filteredClasses = useMemo(() => {
-    if (user?.role === 'admin' && selectedCoachId) {
+    if (user?.role === 'admin' && selectedCoachId && selectedCoachId !== 'all') {
       return classes.filter(cls => cls.coachId === parseInt(selectedCoachId));
     }
     return classes;
@@ -342,7 +342,7 @@ export default function MyCalendarPage() {
                     <SelectValue placeholder="Select a coach to filter classes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Coaches</SelectItem>
+                    <SelectItem value="all">All Coaches</SelectItem>
                     {coaches.map(coach => (
                       <SelectItem key={coach.id} value={coach.id.toString()}>
                         {coach.firstName} {coach.lastName}
