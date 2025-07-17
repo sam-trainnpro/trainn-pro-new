@@ -47,7 +47,7 @@ export default function Home() {
       
       <main className="flex-grow">
         <HeroSection />
-        <SearchFilters onSearch={handleSearch} />
+        <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
         <HowItWorks />
         <FeaturedClasses />
         <DownloadApp />
