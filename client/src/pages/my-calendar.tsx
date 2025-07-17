@@ -5,6 +5,7 @@ import Header from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, ChevronLeft, ChevronRight, Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { Link, useLocation } from 'wouter';
@@ -36,6 +37,16 @@ interface Class {
   createdAt?: string;
 }
 
+interface User {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  profileImage?: string;
+  isApproved: boolean;
+}
+
 interface BookingCounts {
   total: number;
   active: number;
@@ -56,6 +67,7 @@ export default function MyCalendarPage() {
   const [classToDelete, setClassToDelete] = useState<Class | null>(null);
   const [showBookingWarningModal, setShowBookingWarningModal] = useState(false);
   const [pendingDeleteClass, setPendingDeleteClass] = useState<Class | null>(null);
+  const [selectedCoachId, setSelectedCoachId] = useState<string>('');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -64,26 +76,42 @@ export default function MyCalendarPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Redirect if not a coach
-  if (!user || user.role !== 'coach') {
+  // Redirect if not a coach or admin
+  if (!user || (user.role !== 'coach' && user.role !== 'admin')) {
     return (
       <>
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-            <p className="text-gray-600">This page is only accessible to coaches.</p>
+            <p className="text-gray-600">This page is only accessible to coaches and administrators.</p>
           </div>
         </div>
       </>
     );
   }
 
-  // Fetch coach's classes
+  // Fetch coaches for admin filter
+  const { data: coaches = [] } = useQuery<User[]>({
+    queryKey: ['/api/coaches'],
+    enabled: user?.role === 'admin',
+  });
+
+  // Fetch classes based on user role
   const { data: classes = [], isLoading, refetch } = useQuery<Class[]>({
-    queryKey: [`/api/coaches/${user.id}/classes`],
+    queryKey: user?.role === 'admin' 
+      ? ['/api/classes']
+      : [`/api/coaches/${user.id}/classes`],
     enabled: !!user?.id,
   });
+
+  // Filter classes for admin based on selected coach
+  const filteredClasses = useMemo(() => {
+    if (user?.role === 'admin' && selectedCoachId) {
+      return classes.filter(cls => cls.coachId === parseInt(selectedCoachId));
+    }
+    return classes;
+  }, [classes, selectedCoachId, user?.role]);
 
   const handleClassClick = (classItem: Class) => {
     setSelectedClass(classItem);
@@ -210,11 +238,11 @@ export default function MyCalendarPage() {
 
   // Fetch booking counts for each class
   const { data: bookingCounts = {} } = useQuery<Record<number, BookingCounts>>({
-    queryKey: ['booking-counts', classes.map(c => c.id)],
+    queryKey: ['booking-counts', filteredClasses.map(c => c.id)],
     queryFn: async () => {
       const counts: Record<number, BookingCounts> = {};
       await Promise.all(
-        classes.map(async (classItem) => {
+        filteredClasses.map(async (classItem) => {
           try {
             const response = await fetch(`/api/classes/${classItem.id}/bookings/count`);
             if (response.ok) {
@@ -227,7 +255,7 @@ export default function MyCalendarPage() {
       );
       return counts;
     },
-    enabled: classes.length > 0,
+    enabled: filteredClasses.length > 0,
   });
 
   // Calendar calculations - include leading/trailing days for proper grid alignment
@@ -248,7 +276,7 @@ export default function MyCalendarPage() {
 
   // Get classes for a specific day
   const getClassesForDay = (day: Date) => {
-    return classes.filter(classItem => {
+    return filteredClasses.filter(classItem => {
       // Skip classes without valid start times (like parent recurring classes)
       if (!classItem.startTime) {
         return false;
@@ -286,16 +314,46 @@ export default function MyCalendarPage() {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Calendar</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              {user?.role === 'admin' ? 'Master Calendar' : 'My Calendar'}
+            </h1>
             <p className="text-sm sm:text-base text-gray-600">Manage your class schedule and view upcoming sessions</p>
           </div>
-          <Link href="/create-class">
-            <Button className="w-full sm:w-auto flex items-center justify-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Class
-            </Button>
-          </Link>
+          {user?.role === 'coach' && (
+            <Link href="/create-class">
+              <Button className="w-full sm:w-auto flex items-center justify-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Class
+              </Button>
+            </Link>
+          )}
         </div>
+
+        {/* Admin Coach Filter */}
+        {user?.role === 'admin' && (
+          <div className="mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Filter by Coach</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedCoachId} onValueChange={setSelectedCoachId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a coach to filter classes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Coaches</SelectItem>
+                    {coaches.map(coach => (
+                      <SelectItem key={coach.id} value={coach.id.toString()}>
+                        {coach.firstName} {coach.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Calendar Navigation */}
         <Card className="mb-6">
@@ -513,6 +571,7 @@ export default function MyCalendarPage() {
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
         bookingCount={selectedClass ? bookingCounts[selectedClass.id] : undefined}
+        user={user}
       />
 
       {/* Delete Recurring Modal */}

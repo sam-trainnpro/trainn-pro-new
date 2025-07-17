@@ -132,11 +132,11 @@ export default function Header() {
                       <span>{user.role === 'coach' ? "My Classes" : "My Bookings"}</span>
                     </Link>
                   </DropdownMenuItem>
-                  {user.role === 'coach' && (
+                  {(user.role === 'coach' || user.role === 'admin') && (
                     <DropdownMenuItem asChild>
                       <Link href="/my-calendar" className="cursor-pointer w-full">
                         <Calendar className="mr-2 h-4 w-4" />
-                        <span>My Calendar</span>
+                        <span>{user.role === 'admin' ? 'Master Calendar' : 'My Calendar'}</span>
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -203,20 +203,22 @@ export default function Header() {
                       {user.role === 'coach' ? "My Classes" : "My Bookings"}
                     </Button>
                   </Link>
-                  {user.role === 'coach' && (
+                  {(user.role === 'coach' || user.role === 'admin') && (
                     <>
                       <Link href="/my-calendar" onClick={() => setMobileMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start">
                           <Calendar className="mr-2 h-5 w-5" />
-                          My Calendar
+                          {user.role === 'admin' ? 'Master Calendar' : 'My Calendar'}
                         </Button>
                       </Link>
-                      <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start">
-                          <User className="mr-2 h-5 w-5" />
-                          Customers
-                        </Button>
-                      </Link>
+                      {user.role === 'coach' && (
+                        <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            <User className="mr-2 h-5 w-5" />
+                            Customers
+                          </Button>
+                        </Link>
+                      )}
                     </>
                   )}
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
