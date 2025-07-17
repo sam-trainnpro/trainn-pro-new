@@ -306,74 +306,77 @@ export default function CreateClassPage() {
   // Populate form when duplicating a class
   useEffect(() => {
     if (isDuplicating && duplicateData && categories.length > 0) {
-      const startDate = duplicateData.startTime ? new Date(duplicateData.startTime) : new Date();
-      const startTime = duplicateData.startTime ? format(new Date(duplicateData.startTime), 'HH:mm') : "09:00";
-      const endTime = duplicateData.endTime ? format(new Date(duplicateData.endTime), 'HH:mm') : "";
-      
-      // Parse address components from the full address if individual fields are missing
-      let addressLine1 = duplicateData.addressLine1 || "";
-      let city = duplicateData.city || "";
-      let state = duplicateData.state || "";
-      let zipCode = duplicateData.zipCode || "";
-      
-      if (!addressLine1 && duplicateData.address) {
-        const addressParts = duplicateData.address.split(', ');
-        if (addressParts.length >= 1) addressLine1 = addressParts[0];
-        if (addressParts.length >= 2) city = addressParts[1];
-        if (addressParts.length >= 3) {
-          const stateZip = addressParts[2].split(' ');
-          state = stateZip[0] || "";
-          zipCode = stateZip[1] || "";
-        }
-      }
-      
-      // Reset form with all data
-      form.reset({
-        title: duplicateData.title || "",
-        description: duplicateData.description || "",
-        categoryId: duplicateData.categoryId?.toString() || "",
-        location: duplicateData.location || "",
-        addressLine1: addressLine1,
-        city: city,
-        state: state,
-        zipCode: zipCode,
-        address: duplicateData.address || "",
-        latitude: duplicateData.latitude || undefined,
-        longitude: duplicateData.longitude || undefined,
-        price: duplicateData.price || 0,
-        duration: duplicateData.duration || 60,
-        capacity: duplicateData.capacity || 10,
-        startDate: startDate,
-        startTime: startTime,
-        endTime: endTime,
-        whatToBring: duplicateData.whatToBring || "",
-        image: duplicateData.image || "",
-        ageGroup: duplicateData.ageGroup || "Adults",
-        isRecurring: false, // Reset recurring to false for duplicates
-      });
-
-      // Force update the categoryId field after form reset
+      // Wrap all the duplication logic in a timeout to ensure it happens after render
       setTimeout(() => {
-        if (duplicateData.categoryId) {
-          form.setValue('categoryId', duplicateData.categoryId.toString());
+        const startDate = duplicateData.startTime ? new Date(duplicateData.startTime) : new Date();
+        const startTime = duplicateData.startTime ? format(new Date(duplicateData.startTime), 'HH:mm') : "09:00";
+        const endTime = duplicateData.endTime ? format(new Date(duplicateData.endTime), 'HH:mm') : "";
+        
+        // Parse address components from the full address if individual fields are missing
+        let addressLine1 = duplicateData.addressLine1 || "";
+        let city = duplicateData.city || "";
+        let state = duplicateData.state || "";
+        let zipCode = duplicateData.zipCode || "";
+        
+        if (!addressLine1 && duplicateData.address) {
+          const addressParts = duplicateData.address.split(', ');
+          if (addressParts.length >= 1) addressLine1 = addressParts[0];
+          if (addressParts.length >= 2) city = addressParts[1];
+          if (addressParts.length >= 3) {
+            const stateZip = addressParts[2].split(' ');
+            state = stateZip[0] || "";
+            zipCode = stateZip[1] || "";
+          }
         }
-      }, 100);
-
-      // Set the duplicated image if it exists
-      if (duplicateData.image) {
-        setDuplicatedImage(duplicateData.image);
-      }
-
-      // Show success message after a delay to avoid render cycle issues
-      setTimeout(() => {
-        toast({
-          title: "Class data loaded",
-          description: "The class information has been pre-filled. Update the details and click Create Class to save."
+        
+        // Reset form with all data
+        form.reset({
+          title: duplicateData.title || "",
+          description: duplicateData.description || "",
+          categoryId: duplicateData.categoryId?.toString() || "",
+          location: duplicateData.location || "",
+          addressLine1: addressLine1,
+          city: city,
+          state: state,
+          zipCode: zipCode,
+          address: duplicateData.address || "",
+          latitude: duplicateData.latitude || undefined,
+          longitude: duplicateData.longitude || undefined,
+          price: duplicateData.price || 0,
+          duration: duplicateData.duration || 60,
+          capacity: duplicateData.capacity || 10,
+          startDate: startDate,
+          startTime: startTime,
+          endTime: endTime,
+          whatToBring: duplicateData.whatToBring || "",
+          image: duplicateData.image || "",
+          ageGroup: duplicateData.ageGroup || "Adults",
+          isRecurring: false, // Reset recurring to false for duplicates
         });
-      }, 200);
 
-      // Clear the duplicate data from history to prevent re-population on refresh
-      window.history.replaceState({}, document.title, window.location.pathname);
+        // Force update the categoryId field after form reset
+        setTimeout(() => {
+          if (duplicateData.categoryId) {
+            form.setValue('categoryId', duplicateData.categoryId.toString());
+          }
+        }, 100);
+
+        // Set the duplicated image if it exists
+        if (duplicateData.image) {
+          setDuplicatedImage(duplicateData.image);
+        }
+
+        // Show success message after a delay to avoid render cycle issues
+        setTimeout(() => {
+          toast({
+            title: "Class data loaded",
+            description: "The class information has been pre-filled. Update the details and click Create Class to save."
+          });
+        }, 200);
+
+        // Clear the duplicate data from history to prevent re-population on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 0); // Run after render cycle
     }
   }, [isDuplicating, duplicateData, categories, form, toast]);
 
