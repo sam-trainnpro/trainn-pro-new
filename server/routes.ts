@@ -549,7 +549,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: classData.price,
         capacity: classData.capacity,
         isRecurring: classData.isRecurring,
-        schedulesCount: classData.schedules?.length
+        schedulesCount: classData.schedules?.length,
+        coachId: classData.coachId,
+        originalCoachId: req.body.coachId,
+        requestUserRole: req.user.role,
+        requestUserId: req.user.id
       });
       
       // Create the class with properly formatted data
