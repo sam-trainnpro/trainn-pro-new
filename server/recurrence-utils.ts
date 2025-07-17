@@ -1,4 +1,5 @@
 import { addDays, addWeeks, addMonths, format, isAfter } from 'date-fns';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 export interface RecurrenceRule {
   type: 'daily' | 'weekly' | 'monthly';
@@ -22,40 +23,55 @@ export function generateRecurringInstances(
   const instances: ClassInstance[] = [];
   const duration = baseEndTime.getTime() - baseStartTime.getTime();
   
-  let currentDate = new Date(baseStartTime);
+  // Define the Pacific timezone
+  const pacificTimeZone = 'America/Los_Angeles';
+  
+  // Convert the base UTC time to Pacific time for date arithmetic
+  const baseStartPacific = toZonedTime(baseStartTime, pacificTimeZone);
+  console.log(`Base start time - UTC: ${baseStartTime.toISOString()}, Pacific: ${baseStartPacific}`);
+  
+  let currentDate = new Date(baseStartPacific);
   let count = 0;
   const maxInstances = rule.endType === 'count' ? (rule.endCount || 1) : 100; // Safety limit
   
   while (count < maxInstances) {
-    // Check if we've reached the end date
-    if (rule.endType === 'date' && rule.endDate && isAfter(currentDate, rule.endDate)) {
-      break;
+    // Check if we've reached the end date (convert end date to Pacific for comparison)
+    if (rule.endType === 'date' && rule.endDate) {
+      const endDatePacific = toZonedTime(rule.endDate, pacificTimeZone);
+      if (isAfter(currentDate, endDatePacific)) {
+        break;
+      }
     }
     
     // For weekly recurrence, check if current day is in the allowed days
     if (rule.type === 'weekly' && rule.daysOfWeek && rule.daysOfWeek.length > 0) {
       const currentDayOfWeek = currentDate.getDay();
-      console.log(`Checking day: ${currentDate.toISOString()}, dayOfWeek: ${currentDayOfWeek}, allowed: ${rule.daysOfWeek}`);
+      console.log(`Checking day: ${currentDate.toISOString()} (Pacific), dayOfWeek: ${currentDayOfWeek}, allowed: ${rule.daysOfWeek}`);
       if (rule.daysOfWeek.includes(currentDayOfWeek)) {
-        const endTime = new Date(currentDate.getTime() + duration);
+        // Convert back to UTC for storage
+        const utcStartTime = fromZonedTime(currentDate, pacificTimeZone);
+        const utcEndTime = new Date(utcStartTime.getTime() + duration);
+        
         instances.push({
-          startTime: new Date(currentDate),
-          endTime
+          startTime: utcStartTime,
+          endTime: utcEndTime
         });
         count++;
-        console.log(`Created instance for day ${currentDayOfWeek} at ${currentDate.toISOString()}`);
+        console.log(`Created instance for day ${currentDayOfWeek} - Pacific: ${currentDate.toISOString()}, UTC: ${utcStartTime.toISOString()}`);
       }
     } else {
       // For daily and monthly, or weekly without specific days
-      const endTime = new Date(currentDate.getTime() + duration);
+      const utcStartTime = fromZonedTime(currentDate, pacificTimeZone);
+      const utcEndTime = new Date(utcStartTime.getTime() + duration);
+      
       instances.push({
-        startTime: new Date(currentDate),
-        endTime
+        startTime: utcStartTime,
+        endTime: utcEndTime
       });
       count++;
     }
     
-    // Move to next occurrence
+    // Move to next occurrence (all date arithmetic in Pacific time)
     switch (rule.type) {
       case 'daily':
         currentDate = addDays(currentDate, rule.interval);
@@ -80,7 +96,7 @@ export function generateRecurringInstances(
             console.log(`Next occurrence next week - adding ${daysUntilNextWeek} days`);
             currentDate = addDays(currentDate, daysUntilNextWeek);
           }
-          console.log(`New current date after advancement: ${currentDate.toISOString()}, day: ${currentDate.getDay()}`);
+          console.log(`New current date after advancement: ${currentDate.toISOString()} (Pacific), day: ${currentDate.getDay()}`);
         } else {
           currentDate = addWeeks(currentDate, rule.interval);
         }
