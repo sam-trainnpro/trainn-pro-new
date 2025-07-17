@@ -558,42 +558,38 @@ export default function CreateClassPage() {
         if (!formattedData.longitude) formattedData.longitude = 0;
       }
       
-      // Format the startTime from the startDate field with proper timezone handling
+      // Format the startTime from the startDate field
+      // Create a simple date/time string that represents the intended local time
       const startDate = new Date(data.startDate);
       const [hours, minutes] = data.startTime.split(':').map(Number);
       
-      // Create a date object with the selected date and time
-      // Use the year, month, and day from the selected date
+      // Create a date string in ISO format but as local time (not UTC)
+      // This ensures the recurring class generation gets the correct day of week
       const year = startDate.getFullYear();
-      const month = startDate.getMonth();
-      const day = startDate.getDate();
+      const month = String(startDate.getMonth() + 1).padStart(2, '0');
+      const day = String(startDate.getDate()).padStart(2, '0');
+      const hourStr = String(hours).padStart(2, '0');
+      const minuteStr = String(minutes).padStart(2, '0');
       
-      // Create the date/time in Pacific timezone (for California classes)
-      // We'll create the date as if it were in Pacific time and then convert to UTC
-      const pacificDateTime = new Date(year, month, day, hours, minutes, 0, 0);
+      // Create a date string that represents the intended local time
+      // We'll construct it in a way that avoids timezone conversion issues
+      const dateTimeString = `${year}-${month}-${day}T${hourStr}:${minuteStr}:00`;
       
-      // California is UTC-8 (PST) or UTC-7 (PDT), so we need to add 8 or 7 hours to convert to UTC
-      // For simplicity, we'll determine if it's DST (roughly March-November)
-      const isDST = month >= 2 && month <= 10; // March (2) to November (10)
-      const timezoneOffset = isDST ? 7 : 8; // PDT = UTC-7, PST = UTC-8
-      
-      // Convert to UTC by adding the timezone offset
-      const utcStartTime = new Date(pacificDateTime.getTime() + (timezoneOffset * 60 * 60 * 1000));
+      // Parse as a local date/time, not UTC
+      const localDateTime = new Date(dateTimeString);
       
       // Debug logging
       console.log("Original selected date:", data.startDate);
       console.log("Selected time:", data.startTime);
-      console.log("Pacific date time:", pacificDateTime.toISOString());
-      console.log("Pacific day of week:", pacificDateTime.getDay());
-      console.log("Is DST:", isDST, "Timezone offset:", timezoneOffset);
-      console.log("UTC start time:", utcStartTime.toISOString());
-      console.log("UTC start time day of week:", utcStartTime.getDay());
+      console.log("Constructed date string:", dateTimeString);
+      console.log("Local date time:", localDateTime.toISOString());
+      console.log("Local day of week:", localDateTime.getDay());
       
       // Format the startTime field as an ISO string
-      formattedData.startTime = utcStartTime.toISOString();
+      formattedData.startTime = localDateTime.toISOString();
       
       // Calculate end time by adding duration in minutes
-      const endDate = new Date(utcStartTime.getTime() + data.duration * 60000);
+      const endDate = new Date(localDateTime.getTime() + data.duration * 60000);
       // Add endTime to formattedData as it's expected by the API
       formattedData.endTime = endDate.toISOString();
       
