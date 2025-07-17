@@ -138,42 +138,12 @@ export default function CreateClassPage() {
     }
   };
   
-  // Check if we're in edit mode
+  // Check if we're in edit mode or duplicate mode
   const urlParams = new URLSearchParams(window.location.search);
   const editClassId = urlParams.get('edit');
+  const duplicateClassId = urlParams.get('duplicate');
   const isEditMode = !!editClassId;
-
-  // Check for duplicate data from localStorage
-  const [duplicateData, setDuplicateData] = useState<any>(null);
-  const [isDuplicating, setIsDuplicating] = useState(false);
-  
-  // Load duplicate data from localStorage on mount
-  useEffect(() => {
-    const storedDuplicateData = localStorage.getItem('duplicateClassData');
-    if (storedDuplicateData) {
-      try {
-        const parsedData = JSON.parse(storedDuplicateData);
-        
-        // Clear the data from localStorage after loading
-        localStorage.removeItem('duplicateClassData');
-        
-        console.log('Duplicate data loaded from localStorage:', {
-          duplicateData: !!parsedData.duplicateData,
-          isDuplicating: parsedData.isDuplicating,
-          userRole: user?.role,
-          editClassId
-        });
-        
-        // Use setTimeout to ensure state updates happen after render cycle
-        setTimeout(() => {
-          setDuplicateData(parsedData.duplicateData);
-          setIsDuplicating(parsedData.isDuplicating);
-        }, 0);
-      } catch (error) {
-        console.error('Error parsing duplicate data from localStorage:', error);
-      }
-    }
-  }, [user?.role, editClassId]);
+  const isDuplicating = !!duplicateClassId;
 
   // Fetch class data for editing
   const { data: existingClass, isLoading: loadingClass } = useQuery({
@@ -183,6 +153,16 @@ export default function CreateClassPage() {
       return fetch(`/api/classes/${editClassId}`).then(res => res.json());
     },
     enabled: isEditMode && !!editClassId,
+  });
+
+  // Fetch class data for duplication
+  const { data: duplicateClass, isLoading: loadingDuplicate } = useQuery({
+    queryKey: ['/api/classes', duplicateClassId],
+    queryFn: ({ queryKey }) => {
+      if (!duplicateClassId) return null;
+      return fetch(`/api/classes/${duplicateClassId}`).then(res => res.json());
+    },
+    enabled: isDuplicating && !!duplicateClassId,
   });
 
   // Handle getting user's current location
@@ -325,77 +305,72 @@ export default function CreateClassPage() {
 
   // Populate form when duplicating a class
   useEffect(() => {
-    if (isDuplicating && duplicateData && categories.length > 0) {
-      // Wrap all the duplication logic in a timeout to ensure it happens after render
+    if (isDuplicating && duplicateClass && categories.length > 0 && !loadingDuplicate) {
+      const startDate = duplicateClass.startTime ? new Date(duplicateClass.startTime) : new Date();
+      const startTime = duplicateClass.startTime ? format(new Date(duplicateClass.startTime), 'HH:mm') : "09:00";
+      const endTime = duplicateClass.endTime ? format(new Date(duplicateClass.endTime), 'HH:mm') : "";
+      
+      // Parse address components from the full address if individual fields are missing
+      let addressLine1 = duplicateClass.addressLine1 || "";
+      let city = duplicateClass.city || "";
+      let state = duplicateClass.state || "";
+      let zipCode = duplicateClass.zipCode || "";
+      
+      if (!addressLine1 && duplicateClass.address) {
+        const addressParts = duplicateClass.address.split(', ');
+        if (addressParts.length >= 1) addressLine1 = addressParts[0];
+        if (addressParts.length >= 2) city = addressParts[1];
+        if (addressParts.length >= 3) {
+          const stateZip = addressParts[2].split(' ');
+          state = stateZip[0] || "";
+          zipCode = stateZip[1] || "";
+        }
+      }
+      
+      // Reset form with all data
+      form.reset({
+        title: duplicateClass.title || "",
+        description: duplicateClass.description || "",
+        categoryId: duplicateClass.categoryId?.toString() || "",
+        location: duplicateClass.location || "",
+        addressLine1: addressLine1,
+        city: city,
+        state: state,
+        zipCode: zipCode,
+        address: duplicateClass.address || "",
+        latitude: duplicateClass.latitude || undefined,
+        longitude: duplicateClass.longitude || undefined,
+        price: duplicateClass.price || 0,
+        duration: duplicateClass.duration || 60,
+        capacity: duplicateClass.capacity || 10,
+        startDate: startDate,
+        startTime: startTime,
+        endTime: endTime,
+        whatToBring: duplicateClass.whatToBring || "",
+        image: duplicateClass.image || "",
+        ageGroup: duplicateClass.ageGroup || "Adults",
+        isRecurring: false, // Reset recurring to false for duplicates
+      });
+
+      // Force update the categoryId field after form reset
       setTimeout(() => {
-        const startDate = duplicateData.startTime ? new Date(duplicateData.startTime) : new Date();
-        const startTime = duplicateData.startTime ? format(new Date(duplicateData.startTime), 'HH:mm') : "09:00";
-        const endTime = duplicateData.endTime ? format(new Date(duplicateData.endTime), 'HH:mm') : "";
-        
-        // Parse address components from the full address if individual fields are missing
-        let addressLine1 = duplicateData.addressLine1 || "";
-        let city = duplicateData.city || "";
-        let state = duplicateData.state || "";
-        let zipCode = duplicateData.zipCode || "";
-        
-        if (!addressLine1 && duplicateData.address) {
-          const addressParts = duplicateData.address.split(', ');
-          if (addressParts.length >= 1) addressLine1 = addressParts[0];
-          if (addressParts.length >= 2) city = addressParts[1];
-          if (addressParts.length >= 3) {
-            const stateZip = addressParts[2].split(' ');
-            state = stateZip[0] || "";
-            zipCode = stateZip[1] || "";
-          }
+        if (duplicateClass.categoryId) {
+          form.setValue('categoryId', duplicateClass.categoryId.toString());
         }
-        
-        // Reset form with all data
-        form.reset({
-          title: duplicateData.title || "",
-          description: duplicateData.description || "",
-          categoryId: duplicateData.categoryId?.toString() || "",
-          location: duplicateData.location || "",
-          addressLine1: addressLine1,
-          city: city,
-          state: state,
-          zipCode: zipCode,
-          address: duplicateData.address || "",
-          latitude: duplicateData.latitude || undefined,
-          longitude: duplicateData.longitude || undefined,
-          price: duplicateData.price || 0,
-          duration: duplicateData.duration || 60,
-          capacity: duplicateData.capacity || 10,
-          startDate: startDate,
-          startTime: startTime,
-          endTime: endTime,
-          whatToBring: duplicateData.whatToBring || "",
-          image: duplicateData.image || "",
-          ageGroup: duplicateData.ageGroup || "Adults",
-          isRecurring: false, // Reset recurring to false for duplicates
-        });
+      }, 100);
 
-        // Force update the categoryId field after form reset
-        setTimeout(() => {
-          if (duplicateData.categoryId) {
-            form.setValue('categoryId', duplicateData.categoryId.toString());
-          }
-        }, 100);
+      // Set the duplicated image if it exists
+      if (duplicateClass.image) {
+        setDuplicatedImage(duplicateClass.image);
+      }
 
-        // Set the duplicated image if it exists
-        if (duplicateData.image) {
-          setDuplicatedImage(duplicateData.image);
-        }
-
-        // Show success message after a delay to avoid render cycle issues
-        setTimeout(() => {
-          toast({
-            title: "Class data loaded",
-            description: "The class information has been pre-filled. Update the details and click Create Class to save."
-          });
-        }, 200);
-      }, 0); // Run after render cycle
+      // Show success message
+      toast({
+        title: "Class data loaded",
+        description: "The class information has been pre-filled. Update the details and click Create Class to save."
+      });
     }
-  }, [isDuplicating, duplicateData, categories, form, toast]);
+  }, [isDuplicating, duplicateClass, categories, form, toast, loadingDuplicate]);
 
   // Create class mutation
   const { mutateAsync: createClass } = useMutation({
@@ -408,7 +383,7 @@ export default function CreateClassPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/coaches"] });
       
       // Update success message based on user role and duplication context
-      const successMessage = isDuplicating && duplicateData && user?.role === 'admin'
+      const successMessage = isDuplicating && duplicateClass && user?.role === 'admin'
         ? "Class duplicated successfully for the original coach."
         : "Your class has been created successfully.";
       

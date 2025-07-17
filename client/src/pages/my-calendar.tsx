@@ -132,15 +132,9 @@ export default function MyCalendarPage() {
         const classData = await response.json();
         console.log('Class data fetched successfully:', classData);
         
-        // Store duplicate data in localStorage to avoid render cycle issues
-        console.log('Storing duplicate data and navigating to create-class');
-        localStorage.setItem('duplicateClassData', JSON.stringify({
-          duplicateData: classData,
-          isDuplicating: true
-        }));
-        
-        // Navigate to create class page
-        setLocation('/create-class');
+        // Navigate to create class page with duplicate query parameter
+        console.log('Navigating to create-class with duplicate parameter');
+        setLocation(`/create-class?duplicate=${classId}`);
       } else {
         console.error('Failed to fetch class data, response:', response.status, response.statusText);
         throw new Error('Failed to fetch class data');

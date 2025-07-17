@@ -87,7 +87,7 @@ export default function Header() {
           ) : (
             /* Logged in state */
             <div className="flex items-center space-x-4">
-              {user.role === 'coach' && (
+              {(user.role === 'coach' || user.role === 'admin') && (
                 <Link href="/create-class">
                   <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
                     Create Class
@@ -205,6 +205,12 @@ export default function Header() {
                   </Link>
                   {(user.role === 'coach' || user.role === 'admin') && (
                     <>
+                      <Link href="/create-class" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <BookOpen className="mr-2 h-5 w-5" />
+                          Create Class
+                        </Button>
+                      </Link>
                       <Link href="/my-calendar" onClick={() => setMobileMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start">
                           <Calendar className="mr-2 h-5 w-5" />
