@@ -364,11 +364,13 @@ export default function CreateClassPage() {
         setDuplicatedImage(duplicateData.image);
       }
 
-      // Show success message
-      toast({
-        title: "Class data loaded",
-        description: "The class information has been pre-filled. Update the details and click Create Class to save."
-      });
+      // Show success message after a delay to avoid render cycle issues
+      setTimeout(() => {
+        toast({
+          title: "Class data loaded",
+          description: "The class information has been pre-filled. Update the details and click Create Class to save."
+        });
+      }, 200);
 
       // Clear the duplicate data from history to prevent re-population on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
