@@ -630,8 +630,8 @@ export default function CreateClassPage() {
     }
   }
 
-  // If not a coach, redirect to home
-  if (user && user.role !== "coach") {
+  // If not a coach or admin, redirect to home
+  if (user && user.role !== "coach" && user.role !== "admin") {
     navigate("/");
     return null;
   }
