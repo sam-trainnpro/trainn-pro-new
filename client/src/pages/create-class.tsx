@@ -143,17 +143,33 @@ export default function CreateClassPage() {
   const editClassId = urlParams.get('edit');
   const isEditMode = !!editClassId;
 
-  // Check for duplicate data from navigation state
-  const duplicateData = window.history.state?.duplicateData;
-  const isDuplicating = window.history.state?.isDuplicating;
+  // Check for duplicate data from localStorage
+  const [duplicateData, setDuplicateData] = useState<any>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   
-  // Debug logging
-  console.log('CreateClassPage loaded with:', {
-    duplicateData: !!duplicateData,
-    isDuplicating,
-    userRole: user?.role,
-    editClassId
-  });
+  // Load duplicate data from localStorage on mount
+  useEffect(() => {
+    const storedDuplicateData = localStorage.getItem('duplicateClassData');
+    if (storedDuplicateData) {
+      try {
+        const parsedData = JSON.parse(storedDuplicateData);
+        setDuplicateData(parsedData.duplicateData);
+        setIsDuplicating(parsedData.isDuplicating);
+        
+        // Clear the data from localStorage after loading
+        localStorage.removeItem('duplicateClassData');
+        
+        console.log('Duplicate data loaded from localStorage:', {
+          duplicateData: !!parsedData.duplicateData,
+          isDuplicating: parsedData.isDuplicating,
+          userRole: user?.role,
+          editClassId
+        });
+      } catch (error) {
+        console.error('Error parsing duplicate data from localStorage:', error);
+      }
+    }
+  }, [user?.role, editClassId]);
 
   // Fetch class data for editing
   const { data: existingClass, isLoading: loadingClass } = useQuery({
@@ -373,9 +389,6 @@ export default function CreateClassPage() {
             description: "The class information has been pre-filled. Update the details and click Create Class to save."
           });
         }, 200);
-
-        // Clear the duplicate data from history to prevent re-population on refresh
-        window.history.replaceState({}, document.title, window.location.pathname);
       }, 0); // Run after render cycle
     }
   }, [isDuplicating, duplicateData, categories, form, toast]);
