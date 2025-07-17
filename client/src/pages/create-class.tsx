@@ -375,7 +375,15 @@ export default function CreateClassPage() {
   // Create class mutation
   const { mutateAsync: createClass } = useMutation({
     mutationFn: async (data: z.infer<typeof createClassSchema>) => {
-      const response = await apiRequest("POST", "/api/classes", data);
+      // If admin is duplicating a class, include the original coachId
+      const requestData = {
+        ...data,
+        ...(isDuplicating && duplicateClass && user?.role === 'admin' && {
+          coachId: duplicateClass.coachId
+        })
+      };
+      
+      const response = await apiRequest("POST", "/api/classes", requestData);
       return response.json();
     },
     onSuccess: () => {
