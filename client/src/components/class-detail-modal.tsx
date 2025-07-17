@@ -28,6 +28,16 @@ interface Class {
   createdAt?: string;
 }
 
+interface User {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  profileImage?: string;
+  isApproved: boolean;
+}
+
 interface ClassDetailModalProps {
   classItem: Class | null;
   isOpen: boolean;
@@ -35,6 +45,7 @@ interface ClassDetailModalProps {
   onDuplicate: (classId: number) => void;
   onDelete: (classItem: Class) => void;
   bookingCount?: { active: number; total: number };
+  user?: User;
 }
 
 export default function ClassDetailModal({ 
@@ -43,9 +54,13 @@ export default function ClassDetailModal({
   onClose, 
   onDuplicate, 
   onDelete,
-  bookingCount 
+  bookingCount,
+  user
 }: ClassDetailModalProps) {
   if (!classItem) return null;
+
+  // Check if user can manage this class (admin or class owner)
+  const canManageClass = user?.role === 'admin' || user?.id === classItem.coachId;
 
   const formatTime = (dateString: string) => {
     return format(parseISO(dateString), 'h:mm a');
@@ -137,33 +152,35 @@ export default function ClassDetailModal({
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-4 border-t">
-            <Link href={`/edit-class/${classItem.id}`} className="flex-1">
-              <Button variant="outline" className="w-full flex items-center gap-2">
-                <Edit3 className="h-4 w-4" />
-                Edit
+          {/* Action Buttons - Only show for class owner or admin */}
+          {canManageClass && (
+            <div className="flex gap-2 pt-4 border-t">
+              <Link href={`/edit-class/${classItem.id}`} className="flex-1">
+                <Button variant="outline" className="w-full flex items-center gap-2">
+                  <Edit3 className="h-4 w-4" />
+                  Edit
+                </Button>
+              </Link>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleDuplicate}
+                className="flex-1 flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Duplicate
               </Button>
-            </Link>
-            
-            <Button 
-              variant="outline" 
-              onClick={handleDuplicate}
-              className="flex-1 flex items-center gap-2"
-            >
-              <Copy className="h-4 w-4" />
-              Duplicate
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              onClick={handleDelete}
-              className="flex-1 flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </Button>
-          </div>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleDelete}
+                className="flex-1 flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
