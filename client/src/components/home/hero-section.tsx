@@ -12,8 +12,12 @@ export default function HeroSection() {
         <img 
           src="https://res.cloudinary.com/dbtslhlgp/image/upload/v1752879604/trainn/hero-home-page-v4-upscaled.jpg"
           alt="Fitness and creative classes for adults and kids"
-          className="w-full h-full object-cover min-h-[300px] max-h-[600px] block"
-          style={{ display: 'block', width: '100vw' }}
+          className="w-full h-full object-cover min-h-[400px] sm:min-h-[300px] max-h-[500px] sm:max-h-[600px] block"
+          style={{ 
+            display: 'block', 
+            width: '100vw',
+            objectPosition: 'center center'
+          }}
         />
         
         {/* Overlay for text readability */}
@@ -21,10 +25,26 @@ export default function HeroSection() {
         
         {/* Content overlay */}
         <div className="absolute inset-0 flex items-start">
-          <div className="container mx-auto px-4 pt-8 md:pt-16">
-            <div className="max-w-xl text-white">
-              <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4">Find Your Perfect Class</h1>
-              <p className="text-lg mb-6">Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music and art classes for adults and kids</p>
+          <div className="container mx-auto px-4 pt-4 sm:pt-8 md:pt-16">
+            <div className="max-w-lg sm:max-w-xl text-white">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mb-3 sm:mb-4">Find Your Perfect Class</h1>
+              <p className="text-sm sm:text-lg mb-4 sm:mb-6 leading-tight sm:leading-normal">Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music and art classes for adults and kids</p>
+              
+              {/* Mobile buttons - shown on image for mobile */}
+              <div className="flex md:hidden flex-col gap-2 mt-4">
+                <Link href="/classes">
+                  <Button size="sm" className="bg-primary text-white hover:bg-primary/90 w-full text-sm">
+                    Find Classes Now
+                  </Button>
+                </Link>
+                {!user && (
+                  <Link href="/register?role=coach">
+                    <Button size="sm" variant="outline" className="bg-white text-primary hover:bg-white/90 w-full text-sm">
+                      Become a Coach
+                    </Button>
+                  </Link>
+                )}
+              </div>
               
               {/* Desktop buttons - shown on image */}
               <div className="hidden md:flex flex-col sm:flex-row gap-3 mt-8">
@@ -45,26 +65,7 @@ export default function HeroSection() {
           </div>
         </div>
       </div>
-      
-      {/* Mobile buttons - shown below image on white background */}
-      <div className="md:hidden bg-white py-6">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-3">
-            <Link href="/classes">
-              <Button size="lg" className="bg-primary text-white hover:bg-primary/90 w-full">
-                Find Classes Now
-              </Button>
-            </Link>
-            {!user && (
-              <Link href="/register?role=coach">
-                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full">
-                  Become a Coach
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }
