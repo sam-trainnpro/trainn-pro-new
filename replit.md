@@ -211,6 +211,37 @@ Changelog:
 - June 18, 2025. Initial setup
 ```
 
+## Future Feature Planning
+
+### Promo Code System (Planned)
+Comprehensive promotional code system with advanced features:
+
+**Core Features:**
+- Database schema: `promo_codes` table with discount types (percentage/fixed), usage limits, date ranges
+- Coach-specific codes: Optional `coach_id` field for targeted promotions
+- First booking detection: `first_booking_only` flag for new customer acquisition
+- Usage tracking: `promo_code_usage` table to prevent duplicate usage
+
+**Platform-Subsidized Discounts:**
+- Two-payment system: Customer pays discounted amount, platform pays difference to coach
+- Maintains full coach earnings during promotions
+- Stripe implementation: Customer Payment Intent + Platform Transfer for subsidy
+- Financial tracking: `booking_subsidies` table for accounting and ROI analysis
+
+**Dynamic Commission Rates:**
+- Promo code commission overrides: Reduce platform commission (15% → 5% or 0%)
+- User tier system: VIP/Partner/Influencer rates with `user_commission_tiers` table
+- Strategic use cases: Coach acquisition, customer retention, partnership deals
+- Admin controls: Budget limits, automatic expiration, financial safeguards
+
+**Integration Points:**
+- Booking form: Promo code field with real-time validation
+- Payment processing: Adjusted Stripe Payment Intents with discount calculations
+- Admin dashboard: Campaign management, usage analytics, ROI tracking
+- Coach transparency: Commission rate visibility and history
+
+This system enables sophisticated promotional strategies while maintaining coach satisfaction and clear financial controls.
+
 ## User Preferences
 
 ```
