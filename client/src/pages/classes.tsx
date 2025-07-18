@@ -211,7 +211,7 @@ export default function ClassesPage() {
     <div className="flex flex-col min-h-screen">
       <Helmet>
         <title>Browse Fitness Classes - Trainn</title>
-        <meta name="description" content="Discover and book fitness classes from top coaches. Filter by class type, location, price, and date to find the perfect workout for your needs." />
+        <meta name="description" content="Discover and book outdoor sports, fitness, music and art classes for adults and kids in the San Francisco Bay Area. Filter by class type, location, age group, and date to find the perfect class for your needs." />
       </Helmet>
       
       <Header />
