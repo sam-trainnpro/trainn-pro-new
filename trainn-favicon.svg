@@ -1,21 +1,21 @@
 <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <!-- Sun rays -->
-  <g stroke="#FF5A5F" stroke-width="2" stroke-linecap="round">
-    <line x1="16" y1="2" x2="16" y2="6"/>
-    <line x1="16" y1="26" x2="16" y2="30"/>
-    <line x1="2" y1="16" x2="6" y2="16"/>
-    <line x1="26" y1="16" x2="30" y2="16"/>
-    <line x1="5.636" y1="5.636" x2="8.464" y2="8.464"/>
-    <line x1="23.536" y1="23.536" x2="26.364" y2="26.364"/>
-    <line x1="26.364" y1="5.636" x2="23.536" y2="8.464"/>
-    <line x1="8.464" y1="23.536" x2="5.636" y2="26.364"/>
+  <!-- Mountain silhouette -->
+  <path d="M1 31 L8 18 L12 22 L16 12 L20 16 L24 8 L28 14 L31 31 Z" fill="#FF5A5F"/>
+  
+  <!-- Person celebrating on peak -->
+  <g fill="#000000">
+    <!-- Head -->
+    <circle cx="16" cy="8" r="1.5"/>
+    <!-- Body -->
+    <rect x="15.2" y="9.5" width="1.6" height="3" rx="0.8"/>
+    <!-- Arms raised up -->
+    <rect x="12.5" y="10" width="2" height="0.8" rx="0.4" transform="rotate(-30 13.5 10.4)"/>
+    <rect x="17.5" y="10" width="2" height="0.8" rx="0.4" transform="rotate(30 18.5 10.4)"/>
+    <!-- Legs -->
+    <rect x="14.8" y="12.5" width="0.8" height="2" rx="0.4"/>
+    <rect x="16.4" y="12.5" width="0.8" height="2" rx="0.4"/>
   </g>
   
-  <!-- Sun circle -->
-  <circle cx="16" cy="16" r="9" fill="#FF5A5F" stroke="#E04A4F" stroke-width="1"/>
-  
-  <!-- Letter T -->
-  <g fill="#000000" font-family="Arial, sans-serif" font-size="12" font-weight="900">
-    <text x="16" y="21" text-anchor="middle">T</text>
-  </g>
+  <!-- Small "T" on mountain -->
+  <text x="16" y="28" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8" font-weight="bold">T</text>
 </svg>
