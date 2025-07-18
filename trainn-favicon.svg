@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sun rays -->
+  <g stroke="#FFD700" stroke-width="2" stroke-linecap="round">
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="16" y1="26" x2="16" y2="30"/>
+    <line x1="2" y1="16" x2="6" y2="16"/>
+    <line x1="26" y1="16" x2="30" y2="16"/>
+    <line x1="5.636" y1="5.636" x2="8.464" y2="8.464"/>
+    <line x1="23.536" y1="23.536" x2="26.364" y2="26.364"/>
+    <line x1="26.364" y1="5.636" x2="23.536" y2="8.464"/>
+    <line x1="8.464" y1="23.536" x2="5.636" y2="26.364"/>
+  </g>
+  
+  <!-- Sun circle -->
+  <circle cx="16" cy="16" r="9" fill="#FFD700" stroke="#FFA500" stroke-width="1"/>
+  
+  <!-- Letter T -->
+  <g fill="#FF6B35" font-family="Arial, sans-serif" font-size="12" font-weight="bold">
+    <text x="16" y="21" text-anchor="middle">T</text>
+  </g>
+</svg>
