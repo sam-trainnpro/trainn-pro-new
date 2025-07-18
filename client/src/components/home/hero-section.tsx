@@ -6,13 +6,14 @@ export default function HeroSection() {
   const { user } = useSafeAuth();
   
   return (
-    <section className="relative w-full">
+    <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
       {/* Hero Image Container */}
-      <div className="relative w-full overflow-hidden">
+      <div className="relative w-full h-full overflow-hidden">
         <img 
           src="https://res.cloudinary.com/dbtslhlgp/image/upload/v1752879604/trainn/hero-home-page-v4-upscaled.jpg"
           alt="Fitness and creative classes for adults and kids"
-          className="w-full h-auto object-cover min-h-[300px] max-h-[600px]"
+          className="w-full h-full object-cover min-h-[300px] max-h-[600px] block"
+          style={{ display: 'block', width: '100vw' }}
         />
         
         {/* Overlay for text readability */}
@@ -64,6 +65,6 @@ export default function HeroSection() {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
