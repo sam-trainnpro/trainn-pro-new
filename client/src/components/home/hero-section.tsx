@@ -35,7 +35,7 @@ export default function HeroSection() {
       </div>
       
       {/* Buttons below hero image */}
-      <div className="bg-white py-6">
+      <div className="bg-white py-3 sm:py-6">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start max-w-lg sm:max-w-xl mx-auto sm:mx-0">
             <Link href="/classes">
