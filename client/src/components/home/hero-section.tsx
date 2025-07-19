@@ -28,39 +28,28 @@ export default function HeroSection() {
             <div className="max-w-lg sm:max-w-xl text-white">
               <h1 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mb-3 sm:mb-4">Find Your Perfect Class</h1>
               <p className="text-sm sm:text-lg mb-4 sm:mb-6 leading-tight sm:leading-normal">Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music and art classes for adults and kids</p>
-              
-              {/* Mobile buttons - shown on image for mobile */}
-              <div className="flex md:hidden flex-col gap-2 mt-4">
-                <Link href="/classes">
-                  <Button size="sm" className="bg-primary text-white hover:bg-primary/90 w-full text-sm">
-                    Find Classes Now
-                  </Button>
-                </Link>
-                {!user && (
-                  <Link href="/register?role=coach">
-                    <Button size="sm" variant="outline" className="bg-white text-primary hover:bg-white/90 w-full text-sm">
-                      Become a Coach
-                    </Button>
-                  </Link>
-                )}
-              </div>
-              
-              {/* Desktop buttons - shown on image */}
-              <div className="hidden md:flex flex-col sm:flex-row gap-3 mt-8">
-                <Link href="/classes">
-                  <Button size="lg" className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto">
-                    Find Classes Now
-                  </Button>
-                </Link>
-                {!user && (
-                  <Link href="/register?role=coach">
-                    <Button size="lg" variant="outline" className="bg-white text-primary hover:bg-white/90 w-full sm:w-auto">
-                      Become a Coach
-                    </Button>
-                  </Link>
-                )}
-              </div>
+
             </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Buttons below hero image */}
+      <div className="bg-white py-6">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start max-w-lg sm:max-w-xl mx-auto sm:mx-0">
+            <Link href="/classes">
+              <Button size="lg" className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto">
+                Find Classes Now
+              </Button>
+            </Link>
+            {!user && (
+              <Link href="/register?role=coach">
+                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
+                  Become a Coach
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
