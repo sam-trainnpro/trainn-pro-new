@@ -319,12 +319,30 @@ export default function CreateClassPage() {
       
       if (!addressLine1 && duplicateClass.address) {
         const addressParts = duplicateClass.address.split(', ');
-        if (addressParts.length >= 1) addressLine1 = addressParts[0];
-        if (addressParts.length >= 2) city = addressParts[1];
-        if (addressParts.length >= 3) {
+        if (addressParts.length >= 4) {
+          // Format: "addressLine1, city, state, zipCode"
+          addressLine1 = addressParts[0];
+          city = addressParts[1];
+          state = addressParts[2];
+          zipCode = addressParts[3];
+        } else if (addressParts.length >= 3) {
+          // Format: "addressLine1, city, state zipCode" (most common from Google Maps)
+          addressLine1 = addressParts[0];
+          city = addressParts[1];
           const stateZip = addressParts[2].split(' ');
           state = stateZip[0] || "";
           zipCode = stateZip[1] || "";
+        } else if (addressParts.length >= 2) {
+          // Format: "addressLine1, city state zipCode"
+          addressLine1 = addressParts[0];
+          const cityStateZip = addressParts[1].split(' ');
+          if (cityStateZip.length >= 3) {
+            city = cityStateZip.slice(0, -2).join(' '); // Everything except last 2 parts
+            state = cityStateZip[cityStateZip.length - 2];
+            zipCode = cityStateZip[cityStateZip.length - 1];
+          }
+        } else if (addressParts.length >= 1) {
+          addressLine1 = addressParts[0];
         }
       }
       
