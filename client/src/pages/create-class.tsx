@@ -58,11 +58,11 @@ const createClassSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   categoryId: z.string().min(1, "Please select a category"),
   location: z.string().min(1, "Location name is required"),
-  // Individual address fields for form UI (optional for validation)
-  addressLine1: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zipCode: z.string().optional(),
+  // Individual address fields for form UI
+  addressLine1: z.string().min(1, "Address line 1 is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zipCode: z.string().min(1, "ZIP code is required"),
   // Full address field - required for database
   address: z.string().min(1, "Full address is required"),
   latitude: z.number().optional(),
@@ -504,6 +504,12 @@ export default function CreateClassPage() {
           if (city) form.setValue('city', city);
           if (state) form.setValue('state', state);
           if (zipCode) form.setValue('zipCode', zipCode);
+          
+          // Construct the full address for the address field
+          const addressParts = [addressLine1, city, state, zipCode].filter(Boolean);
+          if (addressParts.length > 0) {
+            form.setValue('address', addressParts.join(', '));
+          }
           
           // Set coordinates
           const lat = place.geometry.location.lat();
