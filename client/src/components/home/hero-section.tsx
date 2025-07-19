@@ -19,8 +19,8 @@ export default function HeroSection() {
           }}
         />
         
-        {/* Overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60"></div>
+        {/* Overlay for text readability - desktop only */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 hidden sm:block"></div>
         
         {/* Content overlay */}
         <div className="absolute inset-0 flex items-center sm:items-start justify-center sm:justify-start">
