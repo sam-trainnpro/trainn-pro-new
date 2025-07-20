@@ -3,6 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "../../hooks/use-auth-simple";
 import NotFound from "@/pages/not-found";
+import { useEffect } from "react";
+import { initGA } from "./lib/analytics";
+import { useAnalytics } from "./hooks/use-analytics";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/register";
@@ -38,6 +41,9 @@ import CookiesPage from "@/pages/cookies";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
+  // Track page views when routes change
+  useAnalytics();
+  
   return (
     <Switch>
       <Route path="/">
@@ -144,6 +150,16 @@ function Router() {
 }
 
 function App() {
+  // Initialize Google Analytics when app loads
+  useEffect(() => {
+    // Verify required environment variable is present
+    if (!import.meta.env.VITE_GA_MEASUREMENT_ID) {
+      console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
+    } else {
+      initGA();
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <TooltipProvider>
