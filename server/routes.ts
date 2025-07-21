@@ -2639,6 +2639,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Robots.txt route
+  app.get("/robots.txt", (req, res) => {
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(`User-agent: *
+Allow: /
+
+Sitemap: https://trainn.pro/sitemap.xml`);
+  });
+
+  // Sitemap route
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      // Set the response type to XML
+      res.setHeader('Content-Type', 'application/xml');
+      
+      // Static pages
+      const staticPages = [
+        '',
+        '/about',
+        '/classes',
+        '/coaches',
+        '/faq',
+        '/contact',
+        '/auth',
+        '/register',
+        '/terms',
+        '/privacy',
+        '/cookies',
+        '/terms/dmca',
+        '/about/communityguidelines',
+        '/terms/gifts',
+        '/terms/customer-referrals'
+      ];
+      
+      // Get all active classes
+      const allClasses = await storage.getClasses();
+      
+      // Get all approved coaches
+      const allCoaches = await storage.getCoaches();
+      const approvedCoaches = allCoaches.filter(coach => coach.isApproved);
+      
+      // Build sitemap XML
+      let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
+
+      // Add static pages
+      for (const page of staticPages) {
+        sitemap += `
+  <url>
+    <loc>https://trainn.pro${page}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>${page === '' ? '1.0' : '0.8'}</priority>
+  </url>`;
+      }
+      
+      // Add class pages
+      for (const classItem of allClasses) {
+        sitemap += `
+  <url>
+    <loc>https://trainn.pro/classes/${classItem.id}</loc>
+    <lastmod>${new Date(classItem.createdAt).toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+      }
+      
+      // Add coach pages
+      for (const coach of approvedCoaches) {
+        sitemap += `
+  <url>
+    <loc>https://trainn.pro/coaches/${coach.id}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+      }
+      
+      sitemap += `
+</urlset>`;
+
+      res.send(sitemap);
+    } catch (error) {
+      console.error('Error generating sitemap:', error);
+      res.status(500).send('Error generating sitemap');
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
