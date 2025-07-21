@@ -9,6 +9,7 @@ import { useAuth } from "../../../hooks/use-auth-simple";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
+import { EditRecurringModal, EditOption } from "@/components/edit-recurring-modal";
 import { Helmet } from "react-helmet";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "../../../hooks/use-toast";
@@ -22,7 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { 
   CalendarIcon, 
@@ -102,7 +102,8 @@ export default function EditClassPage() {
 
   // State for recurring class series
   const [isRecurringSeries, setIsRecurringSeries] = useState(false);
-  const [updateSeries, setUpdateSeries] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<EditClassFormValues | null>(null);
 
   // Initialize form with class data when it loads (wait for both class data and categories)
   useEffect(() => {
@@ -181,10 +182,10 @@ export default function EditClassPage() {
   
   // Edit class mutation
   const editMutation = useMutation({
-    mutationFn: async (data: EditClassFormValues) => {
+    mutationFn: async (data: { formData: EditClassFormValues; updateSeries?: boolean }) => {
       if (!id) throw new Error("Class ID is missing");
       
-      let imageUrl = data.image;
+      let imageUrl = data.formData.image;
       
       // Upload new image if one was selected
       if (selectedImage) {
@@ -197,28 +198,28 @@ export default function EditClassPage() {
       }
 
       // Convert classDate and startTime to a proper datetime
-      const [hours, minutes] = data.startTime.split(':').map(Number);
-      const startDateTime = new Date(data.classDate);
+      const [hours, minutes] = data.formData.startTime.split(':').map(Number);
+      const startDateTime = new Date(data.formData.classDate);
       startDateTime.setHours(hours, minutes, 0, 0);
       
       // Calculate end time based on duration
       const endDateTime = new Date(startDateTime);
-      endDateTime.setMinutes(endDateTime.getMinutes() + data.duration);
+      endDateTime.setMinutes(endDateTime.getMinutes() + data.formData.duration);
 
       const requestData = {
-        title: data.title,
-        description: data.description,
-        categoryId: data.categoryId,
-        price: data.price,
-        capacity: data.capacity,
-        location: data.location,
-        address: data.address,
-        ageGroup: data.ageGroup,
+        title: data.formData.title,
+        description: data.formData.description,
+        categoryId: data.formData.categoryId,
+        price: data.formData.price,
+        capacity: data.formData.capacity,
+        location: data.formData.location,
+        address: data.formData.address,
+        ageGroup: data.formData.ageGroup,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
-        whatToBring: data.whatToBring,
+        whatToBring: data.formData.whatToBring,
         ...(imageUrl && { image: imageUrl }),
-        ...(isRecurringSeries && { updateSeries }),
+        ...(data.updateSeries !== undefined && { updateSeries: data.updateSeries }),
       };
 
       return apiRequest('PUT', `/api/classes/${id}`, requestData);
@@ -257,14 +258,34 @@ export default function EditClassPage() {
       return;
     }
     
-    // Check if this is a recurring class that should show prompt
+    // Check if this is a recurring class that should show the modal
     if (isRecurringSeries && classData?.recurringSeriesId) {
-      // If this is a recurring class but updateSeries is not set, 
-      // the user needs to choose via the switch that's already displayed
-      // The switch is already shown above the form when isRecurringSeries is true
+      setPendingFormData(data);
+      setShowEditModal(true);
+      return;
     }
     
-    editMutation.mutate(data);
+    // For non-recurring classes, update directly
+    editMutation.mutate({ formData: data });
+  };
+
+  // Handle the edit modal confirmation
+  const handleEditModalConfirm = (option: EditOption) => {
+    if (!pendingFormData) return;
+    
+    const updateSeries = option === 'following';
+    editMutation.mutate({ 
+      formData: pendingFormData, 
+      updateSeries 
+    });
+    
+    setShowEditModal(false);
+    setPendingFormData(null);
+  };
+
+  const handleEditModalClose = () => {
+    setShowEditModal(false);
+    setPendingFormData(null);
   };
 
   // Show loading state
@@ -677,28 +698,14 @@ export default function EditClassPage() {
                   </div>
                 </div>
                 
-                {/* Add recurring series update option if applicable */}
+                {/* Show recurring series info */}
                 {isRecurringSeries && (
                   <div className="pt-4 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <h3 className="text-sm font-medium text-amber-800 mb-2">
                       This is part of a recurring class series
                     </h3>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="update-series"
-                        checked={updateSeries}
-                        onCheckedChange={setUpdateSeries}
-                      />
-                      <Label htmlFor="update-series" className="text-sm text-amber-700">
-                        {updateSeries 
-                          ? "Update entire series (all future classes)" 
-                          : "Update only this class instance"}
-                      </Label>
-                    </div>
-                    <p className="text-xs text-amber-600 mt-2">
-                      {updateSeries 
-                        ? "Your changes will apply to all classes in this series." 
-                        : "Your changes will only apply to this specific class."}
+                    <p className="text-xs text-amber-600">
+                      When you click "Update Class", you'll choose whether to update just this class or the entire series.
                     </p>
                   </div>
                 )}
@@ -759,6 +766,15 @@ export default function EditClassPage() {
       
       <Footer />
       <MobileNavigation />
+      
+      {/* Edit Recurring Modal */}
+      <EditRecurringModal
+        isOpen={showEditModal}
+        onClose={handleEditModalClose}
+        onConfirm={handleEditModalConfirm}
+        classTitle={classData?.title || ""}
+        isLoading={editMutation.isPending}
+      />
     </>
   );
 }
