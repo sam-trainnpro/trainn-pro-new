@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Class, ClassCategory } from "@shared/schema";
-import { useAuth } from "../../../hooks/use-auth";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -221,10 +221,7 @@ export default function EditClassPage() {
         ...(isRecurringSeries && { updateSeries }),
       };
 
-      return apiRequest(`/api/classes/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(requestData),
-      });
+      return apiRequest('PUT', `/api/classes/${id}`, requestData);
     },
     onSuccess: () => {
       toast({
