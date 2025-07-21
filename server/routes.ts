@@ -745,6 +745,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.capacity) updateData.capacity = parseInt(req.body.capacity);
       if (req.body.location) updateData.location = String(req.body.location);
       if (req.body.address) updateData.address = String(req.body.address);
+      if (req.body.latitude !== undefined && req.body.latitude !== null) updateData.latitude = parseFloat(req.body.latitude);
+      if (req.body.longitude !== undefined && req.body.longitude !== null) updateData.longitude = parseFloat(req.body.longitude);
       if (req.body.image) updateData.image = String(req.body.image);
       if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
@@ -842,6 +844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.capacity) updateData.capacity = parseInt(req.body.capacity);
       if (req.body.location) updateData.location = String(req.body.location);
       if (req.body.address) updateData.address = String(req.body.address);
+      if (req.body.latitude !== undefined && req.body.latitude !== null) updateData.latitude = parseFloat(req.body.latitude);
+      if (req.body.longitude !== undefined && req.body.longitude !== null) updateData.longitude = parseFloat(req.body.longitude);
       if (req.body.image) updateData.image = String(req.body.image);
       if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
