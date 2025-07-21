@@ -46,7 +46,7 @@ const editClassSchema = z.object({
   ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
   classDate: z.date(),
   startTime: z.string().min(1, "Start time is required"),
-  duration: z.coerce.number().positive("Duration must be positive"),
+  duration: z.coerce.number().int().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   whatToBring: z.string().optional(),
 });
 
@@ -663,123 +663,66 @@ export default function EditClassPage() {
                 </div>
               </div>
               
-              {/* Start Time */}
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Time</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP HH:mm")
-                            ) : (
-                              <span>Pick a date and time</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value || undefined}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                        <div className="p-3 border-t border-border">
-                          <input
-                            type="time"
-                            className="w-full px-3 py-2 border rounded-md text-sm"
-                            value={field.value ? format(field.value, "HH:mm") : ""}
-                            onChange={(e) => {
-                              const timeStr = e.target.value;
-                              if (timeStr && field.value) {
-                                const [hours, minutes] = timeStr.split(':').map(Number);
-                                const newDate = new Date(field.value);
-                                newDate.setHours(hours, minutes);
-                                field.onChange(newDate);
-                              }
-                            }}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="classDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Date <span className="text-destructive">*</span></FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className="w-full pl-3 text-left font-normal justify-start"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Select date</span>
+                              )}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
                           />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Select when your class starts
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* End Time */}
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>End Time</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP HH:mm")
-                            ) : (
-                              <span>Pick a date and time</span>
-                            )}
-                            <Clock className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value || undefined}
-                          onSelect={field.onChange}
-                          initialFocus
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Select the date when your class will take place
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="time" 
+                          {...field}
                         />
-                        <div className="p-3 border-t border-border">
-                          <input
-                            type="time"
-                            className="w-full px-3 py-2 border rounded-md text-sm"
-                            value={field.value ? format(field.value, "HH:mm") : ""}
-                            onChange={(e) => {
-                              const timeStr = e.target.value;
-                              if (timeStr && field.value) {
-                                const [hours, minutes] = timeStr.split(':').map(Number);
-                                const newDate = new Date(field.value);
-                                newDate.setHours(hours, minutes);
-                                field.onChange(newDate);
-                              }
-                            }}
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Select when your class ends
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      </FormControl>
+                      <FormDescription>
+                        Select the time when your class will start
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               {/* Add recurring series update option if applicable */}
               {isRecurringSeries && (
