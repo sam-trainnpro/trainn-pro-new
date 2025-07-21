@@ -389,8 +389,8 @@ export default function EditClassPage() {
             <p className="text-muted-foreground mb-4">
               The class you're looking for doesn't exist or you don't have permission to edit it.
             </p>
-            <Button onClick={() => navigate("/my-classes")}>
-              Return to My Classes
+            <Button onClick={() => navigate("/my-calendar")}>
+              Return to My Calendar
             </Button>
           </div>
         </main>
@@ -432,9 +432,9 @@ export default function EditClassPage() {
       <main className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
-            <Link href="/my-classes" className="inline-flex items-center text-primary hover:text-primary/80">
+            <Link href="/my-calendar" className="inline-flex items-center text-primary hover:text-primary/80">
               <ArrowLeftIcon className="mr-2 h-4 w-4" />
-              Back to My Classes
+              Back to My Calendar
             </Link>
           </div>
           
@@ -831,7 +831,7 @@ export default function EditClassPage() {
                     if (window.history.length > 1) {
                       window.history.back();
                     } else {
-                      navigate("/my-classes");
+                      navigate("/my-calendar");
                     }
                   }}>
                     Cancel
