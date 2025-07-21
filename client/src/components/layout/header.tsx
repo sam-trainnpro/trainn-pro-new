@@ -197,12 +197,14 @@ export default function Header() {
               
               {user ? (
                 <>
-                  <Link href={user.role === 'coach' ? "/my-calendar" : "/bookings"} onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Calendar className="mr-2 h-5 w-5" />
-                      {user.role === 'coach' ? "My Calendar" : "My Bookings"}
-                    </Button>
-                  </Link>
+                  {user.role === 'customer' && (
+                    <Link href="/bookings" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <Calendar className="mr-2 h-5 w-5" />
+                        My Bookings
+                      </Button>
+                    </Link>
+                  )}
                   {(user.role === 'coach' || user.role === 'admin') && (
                     <>
                       <Link href="/my-calendar" onClick={() => setMobileMenuOpen(false)}>
