@@ -642,7 +642,7 @@ export default function ClassDetailsPage() {
                             <span>${(classItem.price * quantity).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Service fee</span>
+                            <span>Processing fee</span>
                             <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
                           </div>
                           <div className="border-t pt-3 flex justify-between font-medium">
