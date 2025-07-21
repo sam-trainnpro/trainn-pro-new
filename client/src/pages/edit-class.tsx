@@ -219,10 +219,14 @@ export default function EditClassPage() {
         endTime: endDateTime.toISOString(),
         whatToBring: data.formData.whatToBring,
         ...(imageUrl && { image: imageUrl }),
-        ...(data.updateSeries !== undefined && { updateSeries: data.updateSeries }),
       };
 
-      return apiRequest('PUT', `/api/classes/${id}`, requestData);
+      // Use different endpoints based on whether we're updating a series or single class
+      if (data.updateSeries === true) {
+        return apiRequest('PUT', `/api/classes/${id}/series`, requestData);
+      } else {
+        return apiRequest('PUT', `/api/classes/${id}`, requestData);
+      }
     },
     onSuccess: () => {
       toast({
