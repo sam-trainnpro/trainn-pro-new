@@ -48,6 +48,7 @@ import {
 import {
   CalendarIcon,
   Loader2,
+  MapPin,
   RotateCcw
 } from "lucide-react";
 import * as z from "zod";
@@ -479,6 +480,32 @@ export default function CreateClassPage() {
 
 
 
+  // Helper function to extract address components from geocoding result
+  const extractAddressComponents = (addressComponents: any[]) => {
+    let addressLine1 = '';
+    let city = '';
+    let state = '';
+    let zipCode = '';
+    
+    addressComponents.forEach((component: any) => {
+      const types = component.types;
+      
+      if (types.includes('street_number')) {
+        addressLine1 = component.long_name + ' ';
+      } else if (types.includes('route')) {
+        addressLine1 += component.long_name;
+      } else if (types.includes('locality')) {
+        city = component.long_name;
+      } else if (types.includes('administrative_area_level_1')) {
+        state = component.short_name;
+      } else if (types.includes('postal_code')) {
+        zipCode = component.long_name;
+      }
+    });
+    
+    return { addressLine1: addressLine1.trim(), city, state, zipCode };
+  };
+
   // Auto-populate address fields when location name changes
   const handleLocationNameChange = async (locationName: string) => {
     if (locationName.length < 3) return;
@@ -490,41 +517,19 @@ export default function CreateClassPage() {
           const place = results[0];
           const addressComponents = place.address_components || [];
           
-          let addressLine1 = '';
-          let city = '';
-          let state = '';
-          let zipCode = '';
-          
-          // Extract address components
-          addressComponents.forEach((component: any) => {
-            const types = component.types;
-            
-            if (types.includes('street_number')) {
-              addressLine1 = component.long_name + ' ';
-            } else if (types.includes('route')) {
-              addressLine1 += component.long_name;
-            } else if (types.includes('locality')) {
-              city = component.long_name;
-            } else if (types.includes('administrative_area_level_1')) {
-              state = component.short_name;
-            } else if (types.includes('postal_code')) {
-              zipCode = component.long_name;
-            }
-          });
+          const { addressLine1, city, state, zipCode } = extractAddressComponents(addressComponents);
           
           // If no street address found, use the place name
-          if (!addressLine1.trim() && place.name) {
-            addressLine1 = place.name;
-          }
+          const finalAddressLine1 = addressLine1 || (place.name ? place.name : '');
           
           // Auto-populate the address fields
-          if (addressLine1) form.setValue('addressLine1', addressLine1.trim());
+          if (finalAddressLine1) form.setValue('addressLine1', finalAddressLine1);
           if (city) form.setValue('city', city);
           if (state) form.setValue('state', state);
           if (zipCode) form.setValue('zipCode', zipCode);
           
           // Construct the full address for the address field
-          const addressParts = [addressLine1, city, state, zipCode].filter(Boolean);
+          const addressParts = [finalAddressLine1, city, state, zipCode].filter(Boolean);
           if (addressParts.length > 0) {
             form.setValue('address', addressParts.join(', '));
           }
@@ -538,6 +543,57 @@ export default function CreateClassPage() {
       });
     } catch (error) {
       console.log('Geocoding not available:', error);
+    }
+  };
+
+  // Handle pin movement on interactive map with reverse geocoding
+  const handleMapPinChange = async (lat: number, lng: number) => {
+    // Update coordinates immediately
+    form.setValue('latitude', lat);
+    form.setValue('longitude', lng);
+    
+    // Perform reverse geocoding to update address fields
+    if (window.google && window.google.maps) {
+      try {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode(
+          { location: { lat, lng } },
+          (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+            if (status === 'OK' && results && results.length > 0) {
+              const place = results[0];
+              const addressComponents = place.address_components || [];
+              
+              const { addressLine1, city, state, zipCode } = extractAddressComponents(addressComponents);
+              
+              // Use formatted address as fallback for addressLine1
+              const finalAddressLine1 = addressLine1 || place.formatted_address.split(',')[0].trim();
+              
+              // Update address fields with reverse geocoded data
+              if (finalAddressLine1) form.setValue('addressLine1', finalAddressLine1);
+              if (city) form.setValue('city', city);
+              if (state) form.setValue('state', state);
+              if (zipCode) form.setValue('zipCode', zipCode);
+              
+              // Update full address field
+              const addressParts = [finalAddressLine1, city, state, zipCode].filter(Boolean);
+              if (addressParts.length > 0) {
+                form.setValue('address', addressParts.join(', '));
+              } else {
+                // Fallback to formatted address
+                form.setValue('address', place.formatted_address);
+              }
+              
+              // Show success message
+              toast({
+                title: "Address updated",
+                description: "Address fields updated based on pin location."
+              });
+            }
+          }
+        );
+      } catch (error) {
+        console.error("Error during reverse geocoding:", error);
+      }
     }
   };
 
@@ -1047,10 +1103,20 @@ export default function CreateClassPage() {
                       </div>
                       
                       <GoogleMapsScript>
-                        <LocationPreview 
-                          latitude={form.watch('latitude')} 
-                          longitude={form.watch('longitude')}
-                        />
+                        {form.watch('latitude') && form.watch('longitude') ? (
+                          <InteractiveLocationPicker
+                            latitude={form.watch('latitude')}
+                            longitude={form.watch('longitude')}
+                            onLocationChange={handleMapPinChange}
+                            height="300px"
+                            className="mt-2"
+                          />
+                        ) : (
+                          <div className="mt-2 p-8 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-500">
+                            <MapPin className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                            <p>Enter a location name above to show the interactive map</p>
+                          </div>
+                        )}
                       </GoogleMapsScript>
                     </div>
                     
