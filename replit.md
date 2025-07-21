@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- July 21, 2025. Fixed duration field functionality in Edit Class page - removed invalid backend duration field handling and implemented proper endTime recalculation in recurring series updates; when coaches change duration field, backend now correctly recalculates endTime for each class instance while preserving individual startTimes; works for both single class updates and "This and following classes" recurring series updates
 - July 20, 2025. Integrated Google Analytics tracking across all pages with measurement ID G-KPDW2TC9BF - implemented analytics utility files, page view tracking for single-page application, and event tracking capabilities; added proper initialization on app load and automatic page tracking on route changes
 - July 19, 2025. Fixed duplicate class ZIP code copying issue - enhanced address parsing to handle multiple address formats including comma-separated ZIP codes and "city, state zipCode" format with proper fallback support
 - July 19, 2025. Fixed critical class creation bug where address validation was blocking form submission - updated geocoding function to populate both individual address fields AND the required address field when location names like "Dolores Park" are entered; aligned validation schema with UI by making individual address fields properly required; resolved mismatch between optional validation and required UI indicators
