@@ -22,7 +22,7 @@ import ProfilePage from "@/pages/profile";
 import AdminPage from "@/pages/admin";
 import CreateClassPage from "@/pages/create-class";
 import MyClassesPage from "@/pages/my-classes";
-import EditClassPage from "@/pages/edit-class-new";
+import EditClassPage from "@/pages/edit-class";
 import ResetPasswordPage from "@/pages/reset-password";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ReviewPage from "@/pages/review";

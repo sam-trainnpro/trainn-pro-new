@@ -79,7 +79,7 @@ export default function EditClassPage() {
   } = useQuery<ClassCategory[]>({
     queryKey: ['/api/categories'],
   });
-  
+
   // Set up form
   const form = useForm<EditClassFormValues>({
     resolver: zodResolver(editClassSchema),
@@ -88,31 +88,25 @@ export default function EditClassPage() {
       description: "",
       categoryId: 0,
       price: 0,
-      capacity: 0,
+      capacity: 1,
       location: "",
       address: "",
       image: "",
       ageGroup: "Adults",
       classDate: new Date(),
-      startTime: "09:00",
+      startTime: "",
       duration: 60,
       whatToBring: "",
-    }
+    },
   });
-  
-  // Populate form when class data is loaded
+
+  // State for recurring class series
+  const [isRecurringSeries, setIsRecurringSeries] = useState(false);
+  const [updateSeries, setUpdateSeries] = useState(false);
+
+  // Initialize form with class data when it loads
   useEffect(() => {
     if (classData) {
-      // Use Pacific Time Zone for all class times
-      const timeZone = 'America/Los_Angeles';
-      
-      // Convert UTC times to Pacific Time for editing
-      const startTime = classData.startTime ? new Date(classData.startTime) : null;
-      const endTime = classData.endTime ? new Date(classData.endTime) : null;
-      
-      // Log the times for debugging
-      console.log('Original startTime (UTC):', startTime);
-      
       // Initialize recurring series state
       setIsRecurringSeries(classData.isRecurring || false);
       
@@ -158,10 +152,6 @@ export default function EditClassPage() {
   // Check if user is authorized to edit this class
   const isAuthorized = user && classData && (user.id === classData.coachId || user.role === 'admin');
   
-  // State for recurring class series
-  const [isRecurringSeries, setIsRecurringSeries] = useState(false);
-  const [updateSeries, setUpdateSeries] = useState(false);
-  
   // Handle image file selection
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -205,29 +195,17 @@ export default function EditClassPage() {
           setUploadingImage(false);
         }
       }
-      
-      // Convert the new date/time format back to startTime and endTime
+
+      // Convert classDate and startTime to a proper datetime
       const [hours, minutes] = data.startTime.split(':').map(Number);
+      const startDateTime = new Date(data.classDate);
+      startDateTime.setHours(hours, minutes, 0, 0);
       
-      // Create start time by combining class date with start time
-      const startTime = new Date(data.classDate);
-      startTime.setHours(hours, minutes, 0, 0);
-      
-      // Create end time by adding duration to start time
-      const endTime = new Date(startTime);
-      endTime.setMinutes(endTime.getMinutes() + data.duration);
-      
-      // Log the calculated dates for debugging
-      console.log('Form submission data (dates):', {
-        classDate: data.classDate,
-        startTime: data.startTime,
-        duration: data.duration,
-        calculatedStartTime: startTime.toISOString(),
-        calculatedEndTime: endTime.toISOString()
-      });
-      
-      // Format the data for the server
-      const formattedData = {
+      // Calculate end time based on duration
+      const endDateTime = new Date(startDateTime);
+      endDateTime.setMinutes(endDateTime.getMinutes() + data.duration);
+
+      const requestData = {
         title: data.title,
         description: data.description,
         categoryId: data.categoryId,
@@ -235,78 +213,65 @@ export default function EditClassPage() {
         capacity: data.capacity,
         location: data.location,
         address: data.address,
-        image: imageUrl,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        whatToBring: data.whatToBring,
         ageGroup: data.ageGroup,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        whatToBring: data.whatToBring,
+        ...(imageUrl && { image: imageUrl }),
+        ...(isRecurringSeries && { updateSeries }),
       };
-      
-      console.log('Formatted data sent to server:', formattedData);
-      
-      // Determine if we need to update the entire series or just this instance
-      const endpoint = updateSeries && classData?.isRecurring 
-        ? `/api/classes/${id}/series` 
-        : `/api/classes/${id}`;
-      
-      const response = await apiRequest("PUT", endpoint, formattedData);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        
-        // Check if this is a recurring class error
-        if (errorData.isRecurring) {
-          setIsRecurringSeries(true);
-          throw new Error(errorData.message);
-        }
-        
-        throw new Error(errorData.message || "Failed to update class");
-      }
-      return await response.json();
+
+      return apiRequest(`/api/classes/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestData),
+      });
     },
     onSuccess: () => {
       toast({
-        title: "Class updated",
-        description: "Your class has been updated successfully",
+        title: "Success!",
+        description: "Class updated successfully.",
       });
       
-      // Invalidate queries to refresh the data and show updates immediately
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: [`/api/classes/${id}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/coaches/${user?.id}/classes`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coaches/1/classes'] });
+      queryClient.invalidateQueries({ queryKey: ['my-calendar'] });
       
-      // Clear selected image after successful update
-      setSelectedImage(null);
-      
-      // Navigate to My Calendar page to show updated class
+      // Navigate back to My Calendar
       navigate("/my-calendar");
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error('Edit class error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to update class. Please try again.",
         variant: "destructive",
       });
-    }
+    },
   });
-  
-  // Handle form submission
+
   const onSubmit = (data: EditClassFormValues) => {
+    if (!isAuthorized) {
+      toast({
+        title: "Error",
+        description: "You don't have permission to edit this class.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     editMutation.mutate(data);
   };
-  
-  // If not authorized, show error
-  if (classData && !isAuthorized) {
+
+  // Show loading state
+  if (isLoadingClass) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="text-center p-8 bg-red-50 rounded-lg">
-            <h2 className="text-xl font-bold text-red-600 mb-2">Not Authorized</h2>
-            <p className="mb-4">You don't have permission to edit this class.</p>
-            <Link href="/my-classes">
-              <Button variant="outline">Back to My Classes</Button>
-            </Link>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin mr-2" />
+            <span>Loading class data...</span>
           </div>
         </main>
         <Footer />
@@ -314,33 +279,21 @@ export default function EditClassPage() {
       </div>
     );
   }
-  
-  // Handle loading state
-  if (isLoadingClass) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </main>
-        <Footer />
-        <MobileNavigation />
-      </div>
-    );
-  }
-  
-  // Handle error state
+
+  // Show error state
   if (classError || !classData) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="text-center p-8 bg-red-50 rounded-lg">
-            <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
-            <p className="mb-4">Failed to load class details. The class may no longer exist.</p>
-            <Link href="/my-classes">
-              <Button variant="outline">Back to My Classes</Button>
-            </Link>
+          <div className="text-center py-8">
+            <h1 className="text-2xl font-bold mb-4">Class Not Found</h1>
+            <p className="text-muted-foreground mb-4">
+              The class you're looking for doesn't exist or you don't have permission to edit it.
+            </p>
+            <Button onClick={() => navigate("/my-classes")}>
+              Return to My Classes
+            </Button>
           </div>
         </main>
         <Footer />
@@ -348,23 +301,21 @@ export default function EditClassPage() {
       </div>
     );
   }
-  
-  // Parent classes with recurring schedules cannot be edited with this form
-  // as it's more complex to update all the instances
-  if (classData.isRecurring) {
+
+  // Show unauthorized state
+  if (!isAuthorized) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="text-center p-8 bg-blue-50 rounded-lg">
-            <h2 className="text-xl font-bold text-blue-600 mb-2">Recurring Class Series</h2>
-            <p className="mb-4">
-              Editing a recurring class series is not supported in this version. 
-              You can edit individual sessions of this series.
+          <div className="text-center py-8">
+            <h1 className="text-2xl font-bold mb-4">Unauthorized</h1>
+            <p className="text-muted-foreground mb-4">
+              You don't have permission to edit this class.
             </p>
-            <Link href="/my-classes">
-              <Button variant="outline">Back to My Classes</Button>
-            </Link>
+            <Button onClick={() => navigate("/")}>
+              Return to Home
+            </Button>
           </div>
         </main>
         <Footer />
@@ -374,268 +325,201 @@ export default function EditClassPage() {
   }
   
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <Helmet>
         <title>Edit Class - Trainn</title>
-        <meta name="description" content="Edit your class details, schedule, pricing, and more." />
+        <meta name="description" content="Edit your fitness class details, schedule, and location." />
       </Helmet>
-      
       <Header />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Link href="/my-classes" className="inline-flex items-center text-primary hover:text-primary/80">
-            <ArrowLeftIcon className="mr-2 h-4 w-4" />
-            Back to My Classes
-          </Link>
-        </div>
-        
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold font-heading mb-6">Edit Class</h1>
+      <main className="container mx-auto py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <Link href="/my-classes" className="inline-flex items-center text-primary hover:text-primary/80">
+              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+              Back to My Classes
+            </Link>
+          </div>
           
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-6">
-                <div className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Class Title <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Morning Yoga Flow" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          The name of your class as it will appear to students
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Describe your class, what to expect, who it's for, etc." 
-                            className="min-h-32" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Provide details about your class, benefits, and experience level
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="categoryId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category <span className="text-destructive">*</span></FormLabel>
-                        <Select 
-                          onValueChange={(value) => field.onChange(parseInt(value))} 
-                          value={field.value?.toString()}
-                        >
+          <h1 className="text-2xl font-bold mb-6">Edit Class</h1>
+          
+          <div className="bg-card rounded-lg shadow-sm p-6 border">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class Title <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
+                            <Input placeholder="e.g. Morning Yoga Flow" {...field} />
                           </FormControl>
-                          <SelectContent>
-                            {isLoadingCategories ? (
-                              <div className="flex justify-center p-2">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              </div>
-                            ) : (
-                              categories?.map(category => (
-                                <SelectItem key={category.id} value={category.id.toString()}>
-                                  {category.name}
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Choose the category that best fits your class
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormDescription>
+                            The name of your class as it will appear to students
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   
-                  <FormField
-                    control={form.control}
-                    name="ageGroup"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Age Group <span className="text-destructive">*</span></FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value}
-                        >
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select age group" />
-                            </SelectTrigger>
+                            <Textarea 
+                              placeholder="Describe your class, what to expect, who it's for, etc." 
+                              className="min-h-32" 
+                              {...field} 
+                            />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Adults">Adults</SelectItem>
-                            <SelectItem value="Kids">Kids</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Choose whether this class is designed for adults or kids
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Class Image (optional)
-                    </label>
-                    <div className="mt-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="h-16 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                      />
-                      {selectedImage && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Selected: {selectedImage.name}
-                        </p>
+                          <FormDescription>
+                            Provide details about your class, benefits, and experience level
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      {uploadingImage && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Uploading image...
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Upload an image that represents your class (max 40MB)
-                    </p>
+                    />
                     
-                    {/* Show current image or selected image preview */}
-                    {(selectedImage || (classData?.image && !selectedImage)) && (
-                      <div className="space-y-2 mt-4">
-                        <Label>Image Preview</Label>
-                        <div className="relative w-full h-48 border rounded-md overflow-hidden">
-                          <img
-                            src={selectedImage ? URL.createObjectURL(selectedImage) : classData?.image || ''}
-                            alt="Class preview"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              if (!selectedImage) {
-                                const target = e.target as HTMLImageElement;
-                                target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
-                              }
-                            }}
-                          />
-                        </div>
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category <span className="text-destructive">*</span></FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(parseInt(value))} 
+                            value={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {isLoadingCategories ? (
+                                <div className="flex justify-center p-2">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                </div>
+                              ) : (
+                                categories?.map(category => (
+                                  <SelectItem key={category.id} value={category.id.toString()}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose the category that best fits your class
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="ageGroup"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age Group <span className="text-destructive">*</span></FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select age group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Adults">Adults</SelectItem>
+                              <SelectItem value="Kids">Kids</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Choose whether this class is designed for adults or kids
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div>
+                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Class Image (optional)
+                      </label>
+                      <div className="mt-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="h-16 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                        />
+                        {selectedImage && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Selected: {selectedImage.name}
+                          </p>
+                        )}
+                        {uploadingImage && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Uploading image...
+                          </p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
-                            <Input 
-                              type="number" 
-                              min="0" 
-                              step="0.01"
-                              className="pl-7" 
-                              placeholder="e.g. 25.00" 
-                              {...field}
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Upload an image that represents your class (max 40MB)
+                      </p>
+                      
+                      {/* Show current image or selected image preview */}
+                      {(selectedImage || (classData?.image && !selectedImage)) && (
+                        <div className="space-y-2 mt-4">
+                          <Label>Image Preview</Label>
+                          <div className="relative w-full h-48 border rounded-md overflow-hidden">
+                            <img
+                              src={selectedImage ? URL.createObjectURL(selectedImage) : classData?.image || ''}
+                              alt="Class preview"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                if (!selectedImage) {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+                                }
+                              }}
                             />
                           </div>
-                        </FormControl>
-                        <FormDescription>
-                          How much will each participant pay?
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   
-                  <FormField
-                    control={form.control}
-                    name="capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            placeholder="e.g. 10" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Maximum number of participants allowed
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="duration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Duration (minutes) <span className="text-destructive">*</span></FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="15" 
-                            step="5" 
-                            placeholder="e.g. 60" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          How long will your class last?
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex flex-col space-y-4">
+                  <div className="space-y-6">
                     <FormField
                       control={form.control}
-                      name="location"
+                      name="price"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
+                          <FormLabel>Price <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="e.g. Central Park, 24 Hour Fitness, Dolores Park" 
-                              {...field}
-                            />
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                className="pl-7" 
+                                placeholder="e.g. 25.00" 
+                                {...field}
+                              />
+                            </div>
                           </FormControl>
                           <FormDescription>
-                            Enter the name of the venue or area
+                            How much will each participant pay?
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -644,169 +528,233 @@ export default function EditClassPage() {
                     
                     <FormField
                       control={form.control}
-                      name="address"
+                      name="capacity"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Address <span className="text-destructive">*</span></FormLabel>
+                          <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. 123 Main St, San Francisco, CA 94102" {...field} />
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              placeholder="e.g. 10" 
+                              {...field}
+                            />
                           </FormControl>
                           <FormDescription>
-                            Provide the complete address for participants
+                            Maximum number of participants allowed
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="classDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Date <span className="text-destructive">*</span></FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
+                    
+                    <FormField
+                      control={form.control}
+                      name="duration"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Duration (minutes) <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Button
-                              variant="outline"
-                              className="w-full pl-3 text-left font-normal justify-start"
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Select date</span>
-                              )}
-                            </Button>
+                            <Input 
+                              type="number" 
+                              min="15" 
+                              step="1" 
+                              placeholder="e.g. 35" 
+                              {...field}
+                            />
                           </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormDescription>
-                        Select the date when your class will take place
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                          <FormDescription>
+                            How long will your class last? (e.g. 35, 55, 60)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex flex-col space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g. Central Park, 24 Hour Fitness, Dolores Park" 
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Enter the name of the venue or area
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Address <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. 123 Main St, San Francisco, CA 94102" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Provide the complete address for participants
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="classDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Date <span className="text-destructive">*</span></FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full pl-3 text-left font-normal justify-start"
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Select date</span>
+                                    )}
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormDescription>
+                              Select the date when your class will take place
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Time <span className="text-destructive">*</span></FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="time" 
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Select the time when your class will start
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Add recurring series update option if applicable */}
+                {isRecurringSeries && (
+                  <div className="pt-4 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <h3 className="text-sm font-medium text-amber-800 mb-2">
+                      This is part of a recurring class series
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="update-series"
+                        checked={updateSeries}
+                        onCheckedChange={setUpdateSeries}
+                      />
+                      <Label htmlFor="update-series" className="text-sm text-amber-700">
+                        {updateSeries 
+                          ? "Update entire series (all future classes)" 
+                          : "Update only this class instance"}
+                      </Label>
+                    </div>
+                    <p className="text-xs text-amber-600 mt-2">
+                      {updateSeries 
+                        ? "Your changes will apply to all classes in this series." 
+                        : "Your changes will only apply to this specific class."}
+                    </p>
+                  </div>
+                )}
                 
                 <FormField
                   control={form.control}
-                  name="startTime"
+                  name="whatToBring"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start Time <span className="text-destructive">*</span></FormLabel>
+                      <FormLabel>What to Bring</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="time" 
-                          {...field}
+                        <Textarea 
+                          placeholder="List items participants should bring to class (e.g., yoga mat, water bottle, comfortable clothes)" 
+                          className="min-h-24" 
+                          {...field} 
                         />
                       </FormControl>
                       <FormDescription>
-                        Select the time when your class will start
+                        Help participants prepare by listing what they should bring to your class
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              
-              {/* Add recurring series update option if applicable */}
-              {isRecurringSeries && (
-                <div className="pt-4 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <h3 className="text-sm font-medium text-amber-800 mb-2">
-                    This is part of a recurring class series
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="update-series"
-                      checked={updateSeries}
-                      onCheckedChange={setUpdateSeries}
-                    />
-                    <Label htmlFor="update-series" className="text-sm text-amber-700">
-                      {updateSeries 
-                        ? "Update entire series (all future classes)" 
-                        : "Update only this class instance"}
-                    </Label>
-                  </div>
-                  <p className="text-xs text-amber-600 mt-2">
-                    {updateSeries 
-                      ? "Your changes will apply to all classes in this series." 
-                      : "Your changes will only apply to this specific class."}
-                  </p>
+                
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={() => {
+                    if (window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      navigate("/my-classes");
+                    }
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={!isAuthorized || uploadingImage}
+                  >
+                    {uploadingImage ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Update Class
+                      </>
+                    )}
+                  </Button>
                 </div>
-              )}
-              
-              {/* What to Bring */}
-              <FormField
-                control={form.control}
-                name="whatToBring"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>What to Bring</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="e.g., water bottle, yoga mat, comfortable clothes, etc."
-                        className="min-h-20"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Let participants know what they should bring to the class
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="pt-4 flex justify-between">
-                <Button type="button" variant="outline" onClick={() => {
-                  if (window.history.length > 1) {
-                    window.history.back();
-                  } else {
-                    navigate("/my-classes");
-                  }
-                }}>
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-primary text-white"
-                  disabled={editMutation.isPending || uploadingImage}
-                >
-                  {(editMutation.isPending || uploadingImage) ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadingImage ? "Uploading image..." : "Saving..."}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          </div>
         </div>
       </main>
       
       <Footer />
       <MobileNavigation />
-    </div>
+    </>
   );
 }
