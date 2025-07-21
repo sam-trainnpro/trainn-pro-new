@@ -10,6 +10,8 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 import { EditRecurringModal, EditOption } from "@/components/edit-recurring-modal";
+import InteractiveLocationPicker from "@/components/maps/interactive-location-picker";
+import GoogleMapsScript from "@/components/maps/google-maps-script";
 import { Helmet } from "react-helmet";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "../../../hooks/use-toast";
@@ -42,6 +44,8 @@ const editClassSchema = z.object({
   capacity: z.coerce.number().int().positive("Capacity must be a positive integer"),
   location: z.string().min(3, "Location is required"),
   address: z.string().min(5, "Address is required"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   image: z.string().optional().nullable(),
   ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
   classDate: z.date(),
@@ -61,6 +65,65 @@ export default function EditClassPage() {
   // State for image upload
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // Helper function to extract address components from geocoding result
+  const extractAddressComponents = (addressComponents: any[]) => {
+    let addressLine1 = '';
+    let city = '';
+    let state = '';
+    let zipCode = '';
+    
+    addressComponents.forEach((component: any) => {
+      const types = component.types;
+      
+      if (types.includes('street_number')) {
+        addressLine1 = component.long_name + ' ';
+      } else if (types.includes('route')) {
+        addressLine1 += component.long_name;
+      } else if (types.includes('locality')) {
+        city = component.long_name;
+      } else if (types.includes('administrative_area_level_1')) {
+        state = component.short_name;
+      } else if (types.includes('postal_code')) {
+        zipCode = component.long_name;
+      }
+    });
+    
+    return { addressLine1: addressLine1.trim(), city, state, zipCode };
+  };
+
+  // Handle pin movement on interactive map with reverse geocoding
+  const handleMapPinChange = async (lat: number, lng: number) => {
+    // Update coordinates immediately
+    form.setValue('latitude', lat);
+    form.setValue('longitude', lng);
+    
+    // Perform reverse geocoding to update address fields
+    if (window.google && window.google.maps) {
+      try {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode(
+          { location: { lat, lng } },
+          (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+            if (status === 'OK' && results && results.length > 0) {
+              const place = results[0];
+              
+              // Update address field with the formatted address
+              form.setValue('address', place.formatted_address);
+              
+              // Show success message
+              toast({
+                title: "Address updated",
+                description: "Address updated based on pin location."
+              });
+            }
+          }
+        );
+      } catch (error) {
+        console.error("Error during reverse geocoding:", error);
+      }
+    }
+  };
   
   // Fetch the class to edit
   const {
@@ -91,6 +154,8 @@ export default function EditClassPage() {
       capacity: 1,
       location: "",
       address: "",
+      latitude: 0,
+      longitude: 0,
       image: "",
       ageGroup: "Adults",
       classDate: new Date(),
@@ -140,6 +205,8 @@ export default function EditClassPage() {
         capacity: classData.capacity,
         location: classData.location,
         address: classData.address || "",
+        latitude: classData.latitude || 0,
+        longitude: classData.longitude || 0,
         image: classData.image || "",
         ageGroup: (classData.ageGroup as "Adults" | "Kids") || "Adults",
         classDate: classDate,
@@ -214,6 +281,8 @@ export default function EditClassPage() {
         capacity: data.formData.capacity,
         location: data.formData.location,
         address: data.formData.address,
+        latitude: data.formData.latitude,
+        longitude: data.formData.longitude,
         ageGroup: data.formData.ageGroup,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
@@ -637,6 +706,30 @@ export default function EditClassPage() {
                           </FormItem>
                         )}
                       />
+                      
+                      {/* Interactive Map for Location Selection */}
+                      {form.watch('latitude') && form.watch('longitude') && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium">Adjust Location</span>
+                          </div>
+                          <GoogleMapsScript>
+                            <InteractiveLocationPicker
+                              coordinates={{
+                                lat: form.watch('latitude') || 0,
+                                lng: form.watch('longitude') || 0
+                              }}
+                              onCoordinatesChange={handleMapPinChange}
+                              height="300px"
+                            />
+                          </GoogleMapsScript>
+                          <p className="text-sm text-muted-foreground">
+                            Drag the red pin or click on the map to adjust the exact location. 
+                            The address will update automatically.
+                          </p>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-1 gap-4">
