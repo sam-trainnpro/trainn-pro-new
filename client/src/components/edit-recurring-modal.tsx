@@ -1,38 +1,46 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
-export type EditOption = "this" | "following";
+export type EditOption = 'this' | 'following';
 
 interface EditRecurringModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (option: EditOption) => void;
   classTitle: string;
+  isLoading?: boolean;
 }
 
-export default function EditRecurringModal({ 
+export function EditRecurringModal({ 
   isOpen, 
   onClose, 
   onConfirm, 
-  classTitle 
+  classTitle,
+  isLoading = false
 }: EditRecurringModalProps) {
-  const [selectedOption, setSelectedOption] = useState<EditOption>("this");
+  const [selectedOption, setSelectedOption] = React.useState<EditOption>('this');
 
   const handleConfirm = () => {
     onConfirm(selectedOption);
-    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md mx-4">
         <DialogHeader>
-          <DialogTitle>Edit recurring class</DialogTitle>
+          <DialogTitle>Update recurring class</DialogTitle>
           <DialogDescription>
-            "{classTitle}" is part of a recurring series. How would you like to apply these changes?
+            "{classTitle}" is part of a recurring series. How would you like to update it?
           </DialogDescription>
         </DialogHeader>
         
@@ -45,7 +53,7 @@ export default function EditRecurringModal({
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="this" id="this" />
               <Label htmlFor="this" className="font-normal">
-                This class only
+                This class
               </Label>
             </div>
             <div className="flex items-center space-x-2">
@@ -58,11 +66,11 @@ export default function EditRecurringModal({
         </div>
 
         <DialogFooter className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} className="bg-primary text-white">
-            Save Changes
+          <Button onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? "Updating..." : "Update"}
           </Button>
         </DialogFooter>
       </DialogContent>
