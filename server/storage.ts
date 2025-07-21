@@ -538,14 +538,30 @@ export class DatabaseStorage implements IStorage {
     // Get all classes in the series
     const seriesClasses = await this.getClassesByRecurringSeriesId(targetClass.recurringSeriesId);
     
-    // We exclude date-specific fields from the update since each instance has its own timing
+    // Check if duration has changed by comparing startTime and endTime
+    let newDurationMs: number | null = null;
+    if (classData.startTime && classData.endTime) {
+      newDurationMs = new Date(classData.endTime).getTime() - new Date(classData.startTime).getTime();
+    }
+    
+    // Exclude startTime and endTime from the base update data since each instance has its own timing
     const { startTime, endTime, ...updateData } = classData;
     
     // Update all classes in the series
     const updatedClasses: Class[] = [];
     for (const seriesClass of seriesClasses) {
+      // Prepare the update data for this specific class instance
+      const instanceUpdateData = { ...updateData };
+      
+      // If duration has changed, recalculate endTime for this instance
+      if (newDurationMs !== null && seriesClass.startTime) {
+        const classStartTime = new Date(seriesClass.startTime);
+        const newEndTime = new Date(classStartTime.getTime() + newDurationMs);
+        instanceUpdateData.endTime = newEndTime;
+      }
+      
       const result = await db.update(classes)
-        .set(updateData)
+        .set(instanceUpdateData)
         .where(eq(classes.id, seriesClass.id))
         .returning();
       
