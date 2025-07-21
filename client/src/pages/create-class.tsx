@@ -135,7 +135,7 @@ export default function CreateClassPage() {
       if (user?.role === "admin") {
         navigate("/admin");
       } else {
-        navigate("/my-classes");
+        navigate("/my-calendar");
       }
     }
   };
@@ -454,7 +454,7 @@ export default function CreateClassPage() {
         title: "Class updated",
         description: "The class has been updated successfully.",
       });
-      navigate(user?.role === "admin" ? "/admin?tab=classes" : "/my-classes");
+      navigate(user?.role === "admin" ? "/admin?tab=classes" : "/my-calendar");
     },
     onError: (error: Error) => {
       toast({
