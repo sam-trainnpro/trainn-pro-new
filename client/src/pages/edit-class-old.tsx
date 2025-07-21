@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Class, ClassCategory } from "@shared/schema";
-import { useAuth } from "../../../hooks/use-auth";
+import { useAuth } from "../../../hooks/use-auth-simple";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
