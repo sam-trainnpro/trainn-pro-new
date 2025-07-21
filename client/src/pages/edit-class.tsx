@@ -395,259 +395,272 @@ export default function EditClassPage() {
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Class Title */}
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Class Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter class title" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      A descriptive title for your class
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Class Description */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe what participants will learn and experience in your class"
-                        className="min-h-32"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Provide details about your class, what to expect, and what to bring
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Category */}
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      defaultValue={field.value.toString()}
-                      value={field.value.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {isLoadingCategories ? (
-                          <div className="flex justify-center p-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          </div>
-                        ) : (
-                          categories?.map(category => (
-                            <SelectItem 
-                              key={category.id} 
-                              value={category.id.toString()}
-                            >
-                              {category.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Select the category that best fits your class
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Age Group */}
-              <FormField
-                control={form.control}
-                name="ageGroup"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age Group</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select age group" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Adults">Adults</SelectItem>
-                        <SelectItem value="Kids">Kids</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Choose whether this class is designed for adults or kids
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Price and Capacity */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price ($)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0" 
-                          placeholder="0.00"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Cost per person
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="space-y-6">
+                <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Title <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Morning Yoga Flow" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          The name of your class as it will appear to students
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 
-                <FormField
-                  control={form.control}
-                  name="capacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Capacity</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="1" 
-                          min="1" 
-                          placeholder="10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Maximum number of participants
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              {/* Location and Address */}
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location Name</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-                        <Input className="pl-10" placeholder="e.g., Central Park, XYZ Gym" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Enter the name of the venue or area
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Full address" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Provide the full address for participants
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Class Image Upload */}
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="image-upload">Class Image (optional)</Label>
-                  <div className="mt-2">
-                    <input
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Upload an image that represents your class (max 40MB)
-                  </p>
-                </div>
-                
-                {/* Show current image or selected image preview */}
-                {(selectedImage || (classData?.image && !selectedImage)) && (
-                  <div className="space-y-2">
-                    <Label>Image Preview</Label>
-                    <div className="relative w-full h-48 border rounded-md overflow-hidden">
-                      <img
-                        src={selectedImage ? URL.createObjectURL(selectedImage) : classData?.image || ''}
-                        alt="Class preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          // If uploaded image fails to load, use fallback
-                          if (!selectedImage) {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
-                          }
-                        }}
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe your class, what to expect, who it's for, etc." 
+                            className="min-h-32" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Provide details about your class, benefits, and experience level
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category <span className="text-destructive">*</span></FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {isLoadingCategories ? (
+                              <div className="flex justify-center p-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              </div>
+                            ) : (
+                              categories?.map(category => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                  {category.name}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Choose the category that best fits your class
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="ageGroup"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Age Group <span className="text-destructive">*</span></FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select age group" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Adults">Adults</SelectItem>
+                            <SelectItem value="Kids">Kids</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Choose whether this class is designed for adults or kids
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div>
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Class Image (optional)
+                    </label>
+                    <div className="mt-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="h-16 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                       />
                       {selectedImage && (
-                        <div className="absolute top-2 right-2">
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setSelectedImage(null)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Selected: {selectedImage.name}
+                        </p>
+                      )}
+                      {uploadingImage && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Uploading image...
+                        </p>
                       )}
                     </div>
-                    {selectedImage && (
-                      <p className="text-sm text-green-600">
-                        Selected: {selectedImage.name}
-                      </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Upload an image that represents your class (max 40MB)
+                    </p>
+                    
+                    {/* Show current image or selected image preview */}
+                    {(selectedImage || (classData?.image && !selectedImage)) && (
+                      <div className="space-y-2 mt-4">
+                        <Label>Image Preview</Label>
+                        <div className="relative w-full h-48 border rounded-md overflow-hidden">
+                          <img
+                            src={selectedImage ? URL.createObjectURL(selectedImage) : classData?.image || ''}
+                            alt="Class preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              if (!selectedImage) {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
-                )}
+                </div>
+                
+                <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              step="0.01"
+                              className="pl-7" 
+                              placeholder="e.g. 25.00" 
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          How much will each participant pay?
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            placeholder="e.g. 10" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Maximum number of participants allowed
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duration (minutes) <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="15" 
+                            step="5" 
+                            placeholder="e.g. 60" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          How long will your class last?
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex flex-col space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. Central Park, 24 Hour Fitness, Dolores Park" 
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Enter the name of the venue or area
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Address <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 123 Main St, San Francisco, CA 94102" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Provide the complete address for participants
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                </div>
               </div>
               
               {/* Start Time */}
