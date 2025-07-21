@@ -205,12 +205,6 @@ export default function Header() {
                   </Link>
                   {(user.role === 'coach' || user.role === 'admin') && (
                     <>
-                      <Link href="/create-class" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start">
-                          <BookOpen className="mr-2 h-5 w-5" />
-                          Create Class
-                        </Button>
-                      </Link>
                       <Link href="/my-calendar" onClick={() => setMobileMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start">
                           <Calendar className="mr-2 h-5 w-5" />
