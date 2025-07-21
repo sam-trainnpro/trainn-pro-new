@@ -716,11 +716,9 @@ export default function EditClassPage() {
                           </div>
                           <GoogleMapsScript>
                             <InteractiveLocationPicker
-                              coordinates={{
-                                lat: form.watch('latitude') || 0,
-                                lng: form.watch('longitude') || 0
-                              }}
-                              onCoordinatesChange={handleMapPinChange}
+                              latitude={form.watch('latitude') || 0}
+                              longitude={form.watch('longitude') || 0}
+                              onLocationChange={handleMapPinChange}
                               height="300px"
                             />
                           </GoogleMapsScript>
