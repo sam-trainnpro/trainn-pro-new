@@ -123,6 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- July 21, 2025. Successfully implemented interactive maps with reverse geocoding for both Create and Edit Class pages - coaches can now drag pins to adjust exact class locations with automatic address field updates; enhanced backend API endpoints to properly save latitude and longitude coordinates to database; provides complete location editing flexibility with real-time coordinate persistence for both single classes and recurring series
 - July 21, 2025. Fixed duration field functionality in Edit Class page - removed invalid backend duration field handling and implemented proper endTime recalculation in recurring series updates; when coaches change duration field, backend now correctly recalculates endTime for each class instance while preserving individual startTimes; works for both single class updates and "This and following classes" recurring series updates
 - July 20, 2025. Integrated Google Analytics tracking across all pages with measurement ID G-KPDW2TC9BF - implemented analytics utility files, page view tracking for single-page application, and event tracking capabilities; added proper initialization on app load and automatic page tracking on route changes
 - July 19, 2025. Fixed duplicate class ZIP code copying issue - enhanced address parsing to handle multiple address formats including comma-separated ZIP codes and "city, state zipCode" format with proper fallback support
