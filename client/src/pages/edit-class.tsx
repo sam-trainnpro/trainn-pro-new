@@ -104,11 +104,11 @@ export default function EditClassPage() {
   const [isRecurringSeries, setIsRecurringSeries] = useState(false);
   const [updateSeries, setUpdateSeries] = useState(false);
 
-  // Initialize form with class data when it loads
+  // Initialize form with class data when it loads (wait for both class data and categories)
   useEffect(() => {
-    if (classData) {
-      // Initialize recurring series state
-      setIsRecurringSeries(classData.isRecurring || false);
+    if (classData && categories && !isLoadingCategories) {
+      // Initialize recurring series state  
+      setIsRecurringSeries(!!classData.recurringSeriesId);
       
       // Extract date and time information from existing class data
       const startDateTime = classData.startTime ? new Date(classData.startTime) : new Date();
@@ -147,7 +147,7 @@ export default function EditClassPage() {
         whatToBring: classData.whatToBring || "",
       });
     }
-  }, [classData, form]);
+  }, [classData, categories, isLoadingCategories, form]);
   
   // Check if user is authorized to edit this class
   const isAuthorized = user && classData && (user.id === classData.coachId || user.role === 'admin');
@@ -250,11 +250,18 @@ export default function EditClassPage() {
   const onSubmit = (data: EditClassFormValues) => {
     if (!isAuthorized) {
       toast({
-        title: "Error",
+        title: "Error", 
         description: "You don't have permission to edit this class.",
         variant: "destructive",
       });
       return;
+    }
+    
+    // Check if this is a recurring class that should show prompt
+    if (isRecurringSeries && classData?.recurringSeriesId) {
+      // If this is a recurring class but updateSeries is not set, 
+      // the user needs to choose via the switch that's already displayed
+      // The switch is already shown above the form when isRecurringSeries is true
     }
     
     editMutation.mutate(data);
