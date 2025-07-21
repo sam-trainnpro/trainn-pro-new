@@ -831,8 +831,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Parse the request body to ensure proper data types
+      const updateData: any = {};
+      
+      // Only add fields that definitely exist and have valid values
+      if (req.body.title) updateData.title = String(req.body.title);
+      if (req.body.description) updateData.description = String(req.body.description);
+      if (req.body.categoryId) updateData.categoryId = parseInt(req.body.categoryId);
+      if (req.body.price !== undefined && req.body.price !== null && req.body.price !== '') updateData.price = parseFloat(req.body.price);
+      if (req.body.capacity) updateData.capacity = parseInt(req.body.capacity);
+      if (req.body.location) updateData.location = String(req.body.location);
+      if (req.body.address) updateData.address = String(req.body.address);
+      if (req.body.image) updateData.image = String(req.body.image);
+      if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
+      if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
+      
+      // Handle date fields carefully
+      if (req.body.startTime) {
+        updateData.startTime = new Date(req.body.startTime);
+      }
+      if (req.body.endTime) {
+        updateData.endTime = new Date(req.body.endTime);
+      }
+
       // Update the entire series
-      const updatedClasses = await storage.updateClassSeries(classId, req.body);
+      const updatedClasses = await storage.updateClassSeries(classId, updateData);
       
       res.json({
         message: "Class series updated successfully",
