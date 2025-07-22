@@ -217,6 +217,7 @@ export default function CustomersPage() {
                       <TableHead>Customer Name</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead className="text-center">Spots</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Completed Classes</TableHead>
                     </TableRow>
@@ -261,6 +262,11 @@ export default function CustomersPage() {
                         </TableCell>
                         <TableCell className="text-sm text-gray-600">
                           {booking.customerEmail}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="default" className="bg-purple-50 text-purple-700 border-purple-200">
+                            {booking.quantity}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={booking.status === 'confirmed' ? 'success' : 'secondary'}>

@@ -953,11 +953,10 @@ export class DatabaseStorage implements IStorage {
               )
         )
         .orderBy(
-          classes.startTime, // Class date first
-          classes.startTime, // Class time second (same field for date/time)
-          classes.title,     // Class name third
-          users.firstName,   // Customer first name fourth
-          users.lastName     // Customer last name fifth
+          desc(classes.startTime), // Class date first (newest first)
+          classes.title,           // Class name second
+          users.firstName,         // Customer first name third
+          users.lastName           // Customer last name fourth
         );
 
       const results = await query;
