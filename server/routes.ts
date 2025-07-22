@@ -1090,6 +1090,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/all-customers", requireAdmin, async (req, res) => {
+    try {
+      const customerBookings = await storage.getAllCustomerBookings();
+      res.json(customerBookings);
+    } catch (error) {
+      console.error("Error fetching all customers:", error);
+      res.status(500).json({ message: "Failed to fetch customer bookings" });
+    }
+  });
+
   app.put("/api/admin/coaches/:id/approve", requireAdmin, async (req, res) => {
     try {
       const coachId = parseInt(req.params.id);
