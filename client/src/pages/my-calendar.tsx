@@ -527,30 +527,35 @@ export default function MyCalendarPage() {
                         onClick={() => handleClassClick(classItem)}
                       >
                         <div className="flex-1">
-                          <div className="flex items-start justify-between">
-                            <div>
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0">
+                            <div className="flex-1">
                               <h4 className={titleClasses}>{classItem.title}</h4>
-                              <div className={`flex items-center gap-4 mt-1 ${detailClasses}`}>
+                              <div className={`flex flex-wrap items-center gap-2 sm:gap-4 mt-1 ${detailClasses}`}>
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-4 w-4" />
-                                  {format(parseISO(classItem.startTime), 'MMM d, yyyy')}
+                                  <span className="sm:hidden">
+                                    {format(parseISO(classItem.startTime), 'EEEEE M/d/yy').replace(/^(.)/, '$1 ')}
+                                  </span>
+                                  <span className="hidden sm:inline">
+                                    {format(parseISO(classItem.startTime), 'MMM d, yyyy')}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-4 w-4" />
                                   {formatTime(classItem.startTime)}
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="h-4 w-4" />
-                                  {classItem.location}
+                                <div className="flex items-center gap-1 min-w-0 flex-shrink">
+                                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">{classItem.location}</span>
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <Badge variant="secondary" className="text-xs">
+                            <div className="flex items-center gap-3 sm:flex-row sm:items-center sm:mt-0">
+                              <Badge variant="secondary" className="text-xs whitespace-nowrap">
                                 <Users className="h-3 w-3 mr-1" />
                                 {bookingCounts[classItem.id]?.active || 0}/{classItem.maxParticipants || classItem.capacity}
                               </Badge>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-xs whitespace-nowrap">
                                 ${classItem.price}
                               </Badge>
                             </div>
