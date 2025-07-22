@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../../../hooks/use-auth-simple';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/layout/header';
+import MobileNavigation from '@/components/layout/mobile-navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -313,7 +314,7 @@ export default function MyCalendarPage() {
   return (
     <>
       <Header />
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 pb-20 md:pb-8">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
@@ -604,6 +605,9 @@ export default function MyCalendarPage() {
         classTitle={pendingDeleteClass?.title || ''}
         activeBookings={pendingDeleteClass ? (bookingCounts[pendingDeleteClass.id]?.active || 0) : 0}
       />
+      
+      {/* Mobile Navigation */}
+      <MobileNavigation />
     </>
   );
 }
