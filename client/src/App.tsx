@@ -29,6 +29,7 @@ import ResetPasswordPage from "@/pages/reset-password";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import ReviewPage from "@/pages/review";
 import CustomersPage from "@/pages/customers";
+import AllCustomersPage from "@/pages/all-customers";
 import MyCalendarPage from "@/pages/my-calendar";
 import BlogPage from "@/pages/blog";
 import BlogPostPage from "@/pages/blog-post";
@@ -110,6 +111,9 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/customers">
         <CustomersPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/all-customers">
+        <AllCustomersPage />
       </ProtectedRoute>
       <ProtectedRoute path="/my-calendar">
         <MyCalendarPage />

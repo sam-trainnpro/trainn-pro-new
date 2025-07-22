@@ -14,7 +14,7 @@ import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-ut
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, and, desc, inArray, sql } from "drizzle-orm";
+import { eq, and, desc, inArray, sql, lt } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -96,6 +96,7 @@ export interface IStorage {
   
   // Customer management
   getCustomersForCoach(coachId: number, userRole: string): Promise<any[]>;
+  getAllCustomerBookings(): Promise<any[]>;
   
   // Blog posts
   createBlogPost(postData: InsertBlogPost): Promise<BlogPost>;
@@ -864,6 +865,54 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(contactMessages)
       .orderBy(desc(contactMessages.createdAt));
+  }
+
+  async getAllCustomerBookings() {
+    // Use raw SQL query for better control over joins and aliases
+    const bookingsWithDetails = await db.execute(sql`
+      SELECT 
+        b.id,
+        c.title as "className",
+        c.start_time as "classDate",
+        c.start_time as "startTime", 
+        coach.first_name || ' ' || coach.last_name as "coachName",
+        customer.first_name || ' ' || customer.last_name as "customerName",
+        customer.email as "customerEmail",
+        customer.phone as "customerPhone",
+        b.user_id as "customerId",
+        b.status
+      FROM bookings b
+      INNER JOIN classes c ON b.class_id = c.id
+      INNER JOIN users coach ON c.coach_id = coach.id  
+      INNER JOIN users customer ON b.user_id = customer.id
+      WHERE b.status = 'confirmed'
+      ORDER BY c.start_time DESC
+    `);
+
+    // Get completed classes count for each customer
+    const completedClassCounts = await db.execute(sql`
+      SELECT 
+        b.user_id as "customerId",
+        COUNT(*) as "completedCount"
+      FROM bookings b
+      INNER JOIN classes c ON b.class_id = c.id  
+      WHERE b.status = 'confirmed' 
+        AND c.start_time < NOW()
+      GROUP BY b.user_id
+    `);
+
+    // Create a map for quick lookup of completed counts
+    const completedCountMap = new Map(
+      completedClassCounts.rows.map((item: any) => [item.customerId, Number(item.completedCount)])
+    );
+
+    // Add completed classes count to each booking
+    const bookingsWithCounts = bookingsWithDetails.rows.map((booking: any) => ({
+      ...booking,
+      completedClassesCount: completedCountMap.get(booking.customerId) || 0,
+    }));
+
+    return bookingsWithCounts;
   }
 
   async getCustomersForCoach(coachId: number, userRole: string): Promise<any[]> {
