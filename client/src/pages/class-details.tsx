@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
@@ -97,6 +97,11 @@ export default function ClassDetailsPage() {
   }
   
   const classId = parseInt(params.id);
+
+  // Scroll to top when component mounts or class ID changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, [classId]);
   
   // Fetch class details with schedules
   const { 
