@@ -13,6 +13,11 @@ export default function RegisterPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const role = searchParams.get('role') || "customer";
   
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, []);
+
   // Redirect if the user is already logged in
   useEffect(() => {
     if (user) {
