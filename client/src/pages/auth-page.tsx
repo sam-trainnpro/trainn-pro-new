@@ -21,6 +21,11 @@ export default function AuthPage() {
   
   const [activeTab, setActiveTab] = useState("login");
   
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }, []);
+
   // Set URL params after component mount using useEffect
   useEffect(() => {
     try {
