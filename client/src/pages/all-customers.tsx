@@ -17,6 +17,7 @@ interface CustomerBooking {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  spots: number;
   completedClassesCount: number;
   status: string;
 }
@@ -117,6 +118,7 @@ export default function AllCustomersPage() {
                     <TableHead>Customer Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead className="text-center">Spots</TableHead>
                     <TableHead className="text-center">Completed Classes</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -135,6 +137,11 @@ export default function AllCustomersPage() {
                       <TableCell>{booking.customerName}</TableCell>
                       <TableCell className="text-sm">{booking.customerEmail}</TableCell>
                       <TableCell className="text-sm">{booking.customerPhone || 'N/A'}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          {booking.spots}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-center">
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                           {booking.completedClassesCount}

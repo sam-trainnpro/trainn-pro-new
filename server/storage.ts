@@ -880,6 +880,7 @@ export class DatabaseStorage implements IStorage {
         customer.email as "customerEmail",
         customer.phone as "customerPhone",
         b.user_id as "customerId",
+        b.quantity as "spots",
         b.status
       FROM bookings b
       INNER JOIN classes c ON b.class_id = c.id
