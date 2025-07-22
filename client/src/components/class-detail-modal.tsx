@@ -44,7 +44,7 @@ interface ClassDetailModalProps {
   onClose: () => void;
   onDuplicate: (classId: number) => void;
   onDelete: (classItem: Class) => void;
-  bookingCount?: { active: number; total: number };
+  bookingCount?: { active: number; total: number; totalSpotsBooked: number; };
   user?: User;
 }
 
@@ -126,7 +126,7 @@ export default function ClassDetailModal({
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Users className="h-4 w-4" />
               <span>
-                {bookingCount?.active || 0} / {classItem.capacity || classItem.maxParticipants} participants
+                {bookingCount?.totalSpotsBooked || 0} / {classItem.capacity || classItem.maxParticipants} participants
               </span>
             </div>
 

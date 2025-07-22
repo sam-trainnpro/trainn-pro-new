@@ -451,7 +451,7 @@ export default function MyCalendarPage() {
                               </div>
                               <div className="flex items-center gap-1">
                                 <Users className="h-2 w-2 sm:h-3 sm:w-3" />
-                                {bookingData?.active || 0}/{classItem.maxParticipants || classItem.capacity}
+                                {bookingData?.totalSpotsBooked || 0}/{classItem.maxParticipants || classItem.capacity}
                               </div>
                             </div>
                           );
@@ -554,7 +554,7 @@ export default function MyCalendarPage() {
                             <div className="flex items-center gap-3 sm:flex-row sm:items-center sm:mt-0">
                               <Badge variant="secondary" className="text-xs whitespace-nowrap">
                                 <Users className="h-3 w-3 mr-1" />
-                                {bookingCounts[classItem.id]?.active || 0}/{classItem.maxParticipants || classItem.capacity}
+                                {bookingCounts[classItem.id]?.totalSpotsBooked || 0}/{classItem.maxParticipants || classItem.capacity}
                               </Badge>
                               <Badge variant="outline" className="text-xs whitespace-nowrap">
                                 ${classItem.price}

@@ -153,7 +153,7 @@ export default function AdminPage() {
     queryFn: async () => {
       if (!classes) return {};
       
-      const counts: Record<number, { active: number; total: number }> = {};
+      const counts: Record<number, { active: number; total: number; totalSpotsBooked: number; capacity: number; spotsLeft: number; }> = {};
       
       // Fetch booking counts for all classes in parallel
       const promises = classes.map(async (classItem) => {
