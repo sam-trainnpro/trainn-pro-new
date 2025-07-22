@@ -95,9 +95,10 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
   };
   
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
-      <div className="h-48 overflow-hidden relative">
-        <img 
+    <Link href={`/classes/${classItem.id}`} className="block">
+      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer">
+        <div className="h-48 overflow-hidden relative">
+          <img 
           src={classItem.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
           alt={classItem.title} 
           className="w-full h-full object-cover"
@@ -108,16 +109,19 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
               target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
             }
           }}
-        />
-        <div className="absolute top-3 left-3 bg-primary text-white text-sm font-medium px-2 py-1 rounded">
-          {isLoadingCategory ? <Skeleton className="h-4 w-16" /> : category?.name || "Class"}
+          />
+          <div className="absolute top-3 left-3 bg-primary text-white text-sm font-medium px-2 py-1 rounded">
+            {isLoadingCategory ? <Skeleton className="h-4 w-16" /> : category?.name || "Class"}
+          </div>
+          <button 
+            className="absolute top-3 right-3 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Heart className="text-primary h-5 w-5" />
+          </button>
         </div>
-        <button className="absolute top-3 right-3 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition">
-          <Heart className="text-primary h-5 w-5" />
-        </button>
-      </div>
-      
-      <div className="p-4">
+        
+        <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-heading font-bold text-lg">{classItem.title}</h3>
@@ -222,18 +226,24 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
             )} spots left
           </div>
           {bookingCount?.spotsLeft === 0 ? (
-            <Button disabled className="w-full bg-gray-300 text-gray-500 cursor-not-allowed">
+            <Button 
+              disabled 
+              className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
+              onClick={(e) => e.stopPropagation()}
+            >
               Class Full
             </Button>
           ) : (
-            <Link href={`/classes/${classItem.id}`}>
-              <Button className="w-full bg-primary text-white hover:bg-primary/90">
-                Book Now
-              </Button>
-            </Link>
+            <Button 
+              className="w-full bg-primary text-white hover:bg-primary/90"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Book Now
+            </Button>
           )}
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
