@@ -105,15 +105,10 @@ export default function ClassesPage() {
       return false;
     }
 
-    // City filter - check if class address contains the selected city
-    if (filters.city && classItem.address) {
-      // Extract city from address (assuming format: "street, city, state, country")
-      const addressParts = classItem.address.split(',');
-      if (addressParts.length >= 2) {
-        const classCity = addressParts[addressParts.length - 2].trim();
-        if (!classCity.toLowerCase().includes(filters.city.toLowerCase())) {
-          return false;
-        }
+    // City filter - use the new city field for more accurate filtering
+    if (filters.city && classItem.city) {
+      if (!classItem.city.toLowerCase().includes(filters.city.toLowerCase())) {
+        return false;
       }
     }
 

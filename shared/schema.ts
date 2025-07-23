@@ -79,7 +79,11 @@ export const classes = pgTable("classes", {
   location: text("location").notNull(),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
-  address: text("address").notNull(),
+  address: text("address").notNull(), // Keep for backward compatibility
+  street: text("street"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
   image: text("image"),
   // For single occurrence classes
   startTime: timestamp("start_time"), // Made optional
@@ -113,6 +117,10 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   latitude: true,
   longitude: true,
   address: true,
+  street: true,
+  city: true,
+  state: true,
+  zipCode: true,
   image: true,
   startTime: true,
   endTime: true,
