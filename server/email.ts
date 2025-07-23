@@ -1,4 +1,5 @@
 import { MailService } from '@sendgrid/mail';
+import { format, toZonedTime } from 'date-fns-tz';
 import type { Class, User, Booking } from '../shared/schema';
 
 if (!process.env.SENDGRID_API_KEY) {
@@ -47,22 +48,19 @@ export async function sendBookingConfirmation(
   try {
     const { booking, classData, customer, coach } = data;
     
-    // Format date and time
+    // Format date and time in Pacific Time
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
     const classDate = new Date(classData.startTime!);
     const classEndTime = new Date(classData.endTime!);
-    const formattedDate = classDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric', 
-      month: 'long',
-      day: 'numeric'
-    });
-    const formattedTime = classDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    
+    // Convert to Pacific Time
+    const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
+    const classEndTimePT = toZonedTime(classEndTime, PACIFIC_TIMEZONE);
+    
+    const formattedDate = format(classDatePT, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedTime = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
-    // Generate calendar invite URL
+    // Generate calendar invite URL (calendar invites use UTC)
     const calendarInviteUrl = generateCalendarInviteUrl(classData, classDate, classEndTime);
 
     const subject = `Trainn Confirmation and Receipt for ${classData.title} on ${formattedDate}`;
@@ -220,19 +218,16 @@ export async function sendClassReminder(
   coach: User
 ): Promise<boolean> {
   try {
+    // Format date and time in Pacific Time
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
     const classDate = new Date(classData.startTime!);
     const classEndTime = new Date(classData.endTime!);
-    const formattedDate = classDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const formattedTime = classDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    
+    // Convert to Pacific Time
+    const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
+    
+    const formattedDate = format(classDatePT, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedTime = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
     // Generate calendar invite URL for reminder
     const calendarInviteUrl = generateCalendarInviteUrl(classData, classDate, classEndTime);
@@ -355,18 +350,15 @@ export async function sendClassCancellationNotification(
   reason?: string
 ): Promise<boolean> {
   try {
+    // Format date and time in Pacific Time
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
     const classDate = new Date(classData.startTime!);
-    const formattedDate = classDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const formattedTime = classDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    
+    // Convert to Pacific Time
+    const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
+    
+    const formattedDate = format(classDatePT, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedTime = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
     const subject = `Class Cancelled: ${classData.title} on ${formattedDate}`;
 
@@ -505,18 +497,15 @@ export async function sendBookingCancellationConfirmation(
   refundAmount: number
 ): Promise<boolean> {
   try {
+    // Format date and time in Pacific Time
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
     const classDate = new Date(classData.startTime!);
-    const formattedDate = classDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const formattedTime = classDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    
+    // Convert to Pacific Time
+    const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
+    
+    const formattedDate = format(classDatePT, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedTime = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
     const subject = `Booking Cancelled: ${classData.title} on ${formattedDate}`;
 
@@ -597,18 +586,15 @@ export async function sendClassScheduleUpdateNotification(
   changes: string[]
 ): Promise<boolean> {
   try {
+    // Format date and time in Pacific Time
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
     const newClassDate = new Date(newClassData.startTime!);
-    const formattedDate = newClassDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const formattedTime = newClassDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    
+    // Convert to Pacific Time
+    const newClassDatePT = toZonedTime(newClassDate, PACIFIC_TIMEZONE);
+    
+    const formattedDate = format(newClassDatePT, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedTime = format(newClassDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
     const subject = `Class Update: ${newClassData.title} on ${formattedDate}`;
 
