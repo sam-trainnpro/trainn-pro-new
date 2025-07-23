@@ -758,18 +758,15 @@ export async function sendNewBookingNotificationToCoach(
   booking: Booking
 ): Promise<boolean> {
   try {
+    // Format date and time in Pacific Time
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
     const classDate = new Date(classData.startTime!);
-    const formattedDate = classDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const formattedTime = classDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    
+    // Convert to Pacific Time
+    const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
+    
+    const formattedDate = format(classDatePT, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedTime = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
     const subject = `New Booking: ${customer.firstName} ${customer.lastName} booked ${classData.title}`;
 
