@@ -2285,6 +2285,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ message: error.message });
       }
     });
+
+    // Test endpoint for coach notification email (development only)
+    app.get("/api/test-coach-email/:classId", async (req, res) => {
+      try {
+        const { classId } = req.params;
+        
+        if (!classId) {
+          return res.status(400).json({ message: "Class ID is required" });
+        }
+        
+        // Get class details
+        const classDetails = await storage.getClass(parseInt(classId));
+        if (!classDetails) {
+          return res.status(404).json({ message: "Class not found" });
+        }
+        
+        // Get coach details
+        const coach = await storage.getUser(classDetails.coachId);
+        if (!coach) {
+          return res.status(404).json({ message: "Coach not found" });
+        }
+        
+        // Get a test customer (first customer in database)
+        const users = await storage.getAllUsers();
+        const testCustomer = users.find(u => u.role === 'customer');
+        if (!testCustomer) {
+          return res.status(404).json({ message: "No test customer found" });
+        }
+        
+        // Create a mock booking for testing
+        const mockBooking = {
+          id: 999,
+          userId: testCustomer.id,
+          classId: parseInt(classId),
+          quantity: 1,
+          status: "confirmed" as const,
+          stripePaymentIntentId: "test_pi_" + Date.now(),
+          paymentDate: new Date(),
+          paymentMethod: "stripe" as const,
+          amount: classDetails.price * 100,
+          currency: "usd",
+          platformFee: Math.round(classDetails.price * 100 * 0.15),
+          coachPayout: Math.round(classDetails.price * 100 * 0.85),
+          createdAt: new Date(),
+          stripePaymentId: null,
+          stripeTransferId: null,
+          payoutStatus: null,
+          payoutDate: null
+        };
+        
+        // Send test coach notification email
+        const { sendNewBookingNotificationToCoach } = await import('./email');
+        const emailSent = await sendNewBookingNotificationToCoach(coach, testCustomer, classDetails, mockBooking);
+        
+        if (emailSent) {
+          res.json({ 
+            success: true, 
+            message: `Test coach notification sent to ${coach.email}`,
+            mockBooking: mockBooking,
+            emailDetails: {
+              to: coach.email,
+              className: classDetails.title,
+              classDate: classDetails.startTime,
+              customer: `${testCustomer.firstName} ${testCustomer.lastName}`,
+              spots: mockBooking.quantity
+            }
+          });
+        } else {
+          res.status(500).json({ 
+            success: false, 
+            message: "Failed to send test coach email" 
+          });
+        }
+      } catch (error: any) {
+        console.error("Test coach email error:", error);
+        res.status(500).json({ message: error.message });
+      }
+    });
   }
 
   // Get customers for coach/admin
