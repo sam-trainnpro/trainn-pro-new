@@ -260,12 +260,10 @@ export class DatabaseStorage implements IStorage {
   async getClassCities(): Promise<string[]> {
     try {
       const result = await db.execute(sql`
-        SELECT DISTINCT 
-          TRIM(SPLIT_PART(address, ',', -2)) as city
+        SELECT DISTINCT city
         FROM classes 
-        WHERE address IS NOT NULL 
-          AND address != '' 
-          AND TRIM(SPLIT_PART(address, ',', -2)) != ''
+        WHERE city IS NOT NULL 
+          AND city != '' 
           AND start_time >= CURRENT_DATE
         ORDER BY city
       `);
