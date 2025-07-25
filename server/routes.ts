@@ -2754,6 +2754,364 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== PROMO CODE ROUTES ==========
+  
+  // Get all promo codes (admin only)
+  app.get("/api/promo-codes", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { coachId, isActive, requiresApproval, isApproved } = req.query;
+      
+      const filters: any = {};
+      if (coachId) filters.coachId = parseInt(coachId as string);
+      if (isActive !== undefined) filters.isActive = isActive === 'true';
+      if (requiresApproval !== undefined) filters.requiresApproval = requiresApproval === 'true';
+      if (isApproved !== undefined) filters.isApproved = isApproved === 'true';
+      
+      const promoCodes = await storage.getPromoCodes(filters);
+      res.json(promoCodes);
+    } catch (error: any) {
+      console.error("Error fetching promo codes:", error);
+      res.status(500).json({ message: "Failed to fetch promo codes" });
+    }
+  });
+
+  // Get promo codes for current coach
+  app.get("/api/promo-codes/my", requireAuth, requireCoach, async (req, res) => {
+    try {
+      const promoCodes = await storage.getPromoCodes({ 
+        coachId: req.user!.id 
+      });
+      res.json(promoCodes);
+    } catch (error: any) {
+      console.error("Error fetching coach promo codes:", error);
+      res.status(500).json({ message: "Failed to fetch promo codes" });
+    }
+  });
+
+  // Create promo code (coaches with approval, admins direct)
+  app.post("/api/promo-codes", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      if (user.role !== 'coach' && user.role !== 'admin') {
+        return res.status(403).json({ message: "Only coaches and admins can create promo codes" });
+      }
+
+      const {
+        code,
+        name,
+        description,
+        discountType,
+        discountValue,
+        coachId,
+        firstBookingOnly,
+        usageLimit,
+        validFrom,
+        validUntil,
+        platformSubsidized,
+        commissionOverride,
+        budgetLimit
+      } = req.body;
+
+      // Validation
+      if (!code || !name || !discountType || !discountValue || !validFrom || !validUntil) {
+        return res.status(400).json({ 
+          message: "Code, name, discount type, discount value, valid from, and valid until are required" 
+        });
+      }
+
+      if (!['percentage', 'fixed'].includes(discountType)) {
+        return res.status(400).json({ message: "Discount type must be 'percentage' or 'fixed'" });
+      }
+
+      if (discountValue <= 0) {
+        return res.status(400).json({ message: "Discount value must be positive" });
+      }
+
+      if (discountType === 'percentage' && discountValue > 100) {
+        return res.status(400).json({ message: "Percentage discount cannot exceed 100%" });
+      }
+
+      // Check if code already exists
+      const existingCode = await storage.getPromoCodeByCode(code);
+      if (existingCode) {
+        return res.status(400).json({ message: "Promo code already exists" });
+      }
+
+      // Set approval settings based on user role
+      const requiresApproval = user.role === 'coach';
+      const isApproved = user.role === 'admin';
+      const finalCoachId = coachId || (user.role === 'coach' ? user.id : null);
+
+      const promoCodeData = {
+        code: code.toUpperCase(),
+        name,
+        description: description || null,
+        discountType,
+        discountValue,
+        coachId: finalCoachId,
+        isActive: true,
+        requiresApproval,
+        isApproved,
+        approvedBy: isApproved ? user.id : null,
+        approvedAt: isApproved ? new Date() : null,
+        firstBookingOnly: firstBookingOnly || false,
+        usageLimit: usageLimit || null,
+        validFrom: new Date(validFrom),
+        validUntil: new Date(validUntil),
+        platformSubsidized: platformSubsidized || false,
+        commissionOverride: commissionOverride || null,
+        budgetLimit: budgetLimit || null,
+        createdBy: user.id
+      };
+
+      const promoCode = await storage.createPromoCode(promoCodeData);
+      res.status(201).json(promoCode);
+    } catch (error: any) {
+      console.error("Error creating promo code:", error);
+      res.status(500).json({ message: "Failed to create promo code" });
+    }
+  });
+
+  // Update promo code (admin only or coach for their own pending codes)
+  app.put("/api/promo-codes/:id", requireAuth, async (req, res) => {
+    try {
+      const promoCodeId = parseInt(req.params.id);
+      const user = req.user!;
+
+      const existingPromoCode = await storage.getPromoCode(promoCodeId);
+      if (!existingPromoCode) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      // Check permissions
+      if (user.role !== 'admin' && 
+          (user.role !== 'coach' || existingPromoCode.coachId !== user.id || existingPromoCode.isApproved)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const updateData: any = {};
+      const allowedFields = ['name', 'description', 'discountType', 'discountValue', 
+                           'firstBookingOnly', 'usageLimit', 'validFrom', 'validUntil',
+                           'platformSubsidized', 'commissionOverride', 'budgetLimit', 'isActive'];
+
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      }
+
+      // Convert date strings to Date objects
+      if (updateData.validFrom) updateData.validFrom = new Date(updateData.validFrom);
+      if (updateData.validUntil) updateData.validUntil = new Date(updateData.validUntil);
+
+      const updatedPromoCode = await storage.updatePromoCode(promoCodeId, updateData);
+      res.json(updatedPromoCode);
+    } catch (error: any) {
+      console.error("Error updating promo code:", error);
+      res.status(500).json({ message: "Failed to update promo code" });
+    }
+  });
+
+  // Approve promo code (admin only)
+  app.post("/api/promo-codes/:id/approve", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const promoCodeId = parseInt(req.params.id);
+      const approvedPromoCode = await storage.approvePromoCode(promoCodeId, req.user!.id);
+      
+      if (!approvedPromoCode) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      res.json(approvedPromoCode);
+    } catch (error: any) {
+      console.error("Error approving promo code:", error);
+      res.status(500).json({ message: "Failed to approve promo code" });
+    }
+  });
+
+  // Delete promo code (admin only)
+  app.delete("/api/promo-codes/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const promoCodeId = parseInt(req.params.id);
+      const deleted = await storage.deletePromoCode(promoCodeId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      res.json({ message: "Promo code deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting promo code:", error);
+      res.status(500).json({ message: "Failed to delete promo code" });
+    }
+  });
+
+  // Validate promo code for booking
+  app.post("/api/promo-codes/validate", requireAuth, async (req, res) => {
+    try {
+      const { code, classId } = req.body;
+      
+      if (!code || !classId) {
+        return res.status(400).json({ message: "Code and class ID are required" });
+      }
+
+      const validation = await storage.validatePromoCode(code, req.user!.id, classId);
+      
+      if (!validation.valid) {
+        return res.status(400).json({ 
+          valid: false, 
+          error: validation.error 
+        });
+      }
+
+      // Get class to calculate discount
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+
+      const discountCalc = await storage.calculateDiscount(validation.promoCode!, classItem.price);
+      
+      res.json({
+        valid: true,
+        promoCode: validation.promoCode,
+        discountAmount: discountCalc.discountAmount,
+        finalAmount: discountCalc.finalAmount,
+        subsidyAmount: discountCalc.subsidyAmount
+      });
+    } catch (error: any) {
+      console.error("Error validating promo code:", error);
+      res.status(500).json({ message: "Failed to validate promo code" });
+    }
+  });
+
+  // Get promo code analytics (admin only)
+  app.get("/api/promo-codes/:id/analytics", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const promoCodeId = parseInt(req.params.id);
+      const analytics = await storage.getPromoCodeAnalytics(promoCodeId);
+      res.json(analytics);
+    } catch (error: any) {
+      console.error("Error fetching promo code analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Get booking subsidies (admin only)
+  app.get("/api/booking-subsidies", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { promoCodeId, startDate, endDate } = req.query;
+      
+      const filters: any = {};
+      if (promoCodeId) filters.promoCodeId = parseInt(promoCodeId as string);
+      if (startDate) filters.startDate = new Date(startDate as string);
+      if (endDate) filters.endDate = new Date(endDate as string);
+      
+      const subsidies = await storage.getBookingSubsidies(filters);
+      res.json(subsidies);
+    } catch (error: any) {
+      console.error("Error fetching booking subsidies:", error);
+      res.status(500).json({ message: "Failed to fetch booking subsidies" });
+    }
+  });
+
+  // User commission tiers management (admin only)
+  app.get("/api/commission-tiers", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const tiers = await storage.getUserCommissionTiers();
+      res.json(tiers);
+    } catch (error: any) {
+      console.error("Error fetching commission tiers:", error);
+      res.status(500).json({ message: "Failed to fetch commission tiers" });
+    }
+  });
+
+  app.post("/api/commission-tiers", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const {
+        userId,
+        tierName,
+        commissionRate,
+        validFrom,
+        validUntil,
+        notes
+      } = req.body;
+
+      if (!userId || !tierName || commissionRate === undefined || !validFrom) {
+        return res.status(400).json({ 
+          message: "User ID, tier name, commission rate, and valid from date are required" 
+        });
+      }
+
+      if (commissionRate < 0 || commissionRate > 100) {
+        return res.status(400).json({ message: "Commission rate must be between 0 and 100" });
+      }
+
+      const tierData = {
+        userId,
+        tierName,
+        commissionRate,
+        isActive: true,
+        validFrom: new Date(validFrom),
+        validUntil: validUntil ? new Date(validUntil) : null,
+        assignedBy: req.user!.id,
+        notes: notes || null
+      };
+
+      const tier = await storage.createUserCommissionTier(tierData);
+      res.status(201).json(tier);
+    } catch (error: any) {
+      console.error("Error creating commission tier:", error);
+      res.status(500).json({ message: "Failed to create commission tier" });
+    }
+  });
+
+  app.put("/api/commission-tiers/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const tierId = parseInt(req.params.id);
+      const updateData: any = {};
+      
+      const allowedFields = ['tierName', 'commissionRate', 'isActive', 'validFrom', 'validUntil', 'notes'];
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      }
+
+      // Convert date strings to Date objects
+      if (updateData.validFrom) updateData.validFrom = new Date(updateData.validFrom);
+      if (updateData.validUntil) updateData.validUntil = new Date(updateData.validUntil);
+
+      const updatedTier = await storage.updateUserCommissionTier(tierId, updateData);
+      
+      if (!updatedTier) {
+        return res.status(404).json({ message: "Commission tier not found" });
+      }
+
+      res.json(updatedTier);
+    } catch (error: any) {
+      console.error("Error updating commission tier:", error);
+      res.status(500).json({ message: "Failed to update commission tier" });
+    }
+  });
+
+  app.delete("/api/commission-tiers/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const tierId = parseInt(req.params.id);
+      const deleted = await storage.deleteUserCommissionTier(tierId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Commission tier not found" });
+      }
+
+      res.json({ message: "Commission tier deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting commission tier:", error);
+      res.status(500).json({ message: "Failed to delete commission tier" });
+    }
+  });
+
   // Robots.txt route
   app.get("/robots.txt", (req, res) => {
     res.setHeader('Content-Type', 'text/plain');

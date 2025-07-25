@@ -31,6 +31,7 @@ import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
+import { Input } from "@/components/ui/input";
 
 // Initialize Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
@@ -39,7 +40,13 @@ if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: number }) => {
+const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, finalAmount }: { 
+  classItem: Class; 
+  quantity: number; 
+  appliedPromoCode?: any;
+  discountAmount: number;
+  finalAmount: number;
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -84,7 +91,8 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
         const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
           paymentIntentId: paymentIntent?.id,
           classId: classItem.id,
-          quantity: quantity
+          quantity: quantity,
+          promoCode: appliedPromoCode?.code || null
         });
         
         console.log("Payment confirmation response:", confirmResponse.status);
@@ -153,14 +161,20 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
           <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
           <span>${(classItem.price * quantity).toFixed(2)}</span>
         </div>
+        {appliedPromoCode && discountAmount > 0 && (
+          <div className="flex justify-between text-green-600">
+            <span>Discount ({appliedPromoCode.code})</span>
+            <span>-${(discountAmount / 100).toFixed(2)}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span>Service fee</span>
-          <span>${(classItem.price * quantity * 0.05).toFixed(2)}</span>
+          <span>${((finalAmount * 0.05) / 100).toFixed(2)}</span>
         </div>
         <Separator />
         <div className="flex justify-between font-medium">
           <span>Total</span>
-          <span>${(classItem.price * quantity * 1.05).toFixed(2)}</span>
+          <span>${((finalAmount + (finalAmount * 0.05)) / 100).toFixed(2)}</span>
         </div>
       </div>
       
@@ -175,7 +189,7 @@ const CheckoutForm = ({ classItem, quantity }: { classItem: Class; quantity: num
             Processing Payment...
           </>
         ) : (
-          `Pay $${(classItem.price * quantity * 1.05).toFixed(2)}`
+          `Pay $${((finalAmount + (finalAmount * 0.05)) / 100).toFixed(2)}`
         )}
       </Button>
       
@@ -194,6 +208,11 @@ export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState<any>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(0);
   
   // Get quantity from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -221,6 +240,58 @@ export default function CheckoutPage() {
   } = useQuery<Class>({
     queryKey: [`/api/classes/${classId}`],
   });
+
+  // Validate promo code function
+  const validatePromoCode = async (code: string) => {
+    if (!code.trim()) return;
+    
+    setIsValidatingPromo(true);
+    try {
+      const response = await apiRequest('POST', '/api/promo-codes/validate', {
+        code: code.toUpperCase(),
+        classId: classId
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setAppliedPromoCode(result.promoCode);
+        setDiscountAmount(result.discountAmount);
+        setFinalAmount(result.finalAmount);
+        
+        toast({
+          title: "Promo Code Applied!",
+          description: `You saved $${(result.discountAmount / 100).toFixed(2)}`,
+        });
+      } else {
+        const errorResult = await response.json();
+        toast({
+          title: "Invalid Promo Code",
+          description: errorResult.error || "This promo code is not valid for this class.",
+          variant: "destructive",
+        });
+        // Reset promo code states
+        setAppliedPromoCode(null);
+        setDiscountAmount(0);
+        setFinalAmount(classItem ? classItem.price * quantity * 100 : 0);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to validate promo code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
+  // Remove promo code
+  const removePromoCode = () => {
+    setPromoCode("");
+    setAppliedPromoCode(null);
+    setDiscountAmount(0);
+    setFinalAmount(classItem ? classItem.price * quantity * 100 : 0);
+  };
   
   // Fetch booking to check if user has already booked
   const { 
@@ -311,6 +382,13 @@ export default function CheckoutPage() {
     }
   }, [paymentStatus, classItem, classId, quantity, toast, navigate, queryClient]);
 
+  // Initialize final amount when class loads
+  useEffect(() => {
+    if (classItem) {
+      setFinalAmount(classItem.price * quantity * 100); // Amount in cents
+    }
+  }, [classItem, quantity]);
+
   // Create payment intent
   useEffect(() => {
     const createPaymentIntent = async () => {
@@ -322,11 +400,16 @@ export default function CheckoutPage() {
           throw new Error("Class information not available");
         }
         
+        // Use final amount (with any discounts applied) for payment intent
+        const amountToCharge = finalAmount > 0 ? finalAmount : classItem.price * quantity * 100;
+        const totalWithFee = amountToCharge + (amountToCharge * 0.05); // Add 5% service fee
+        
         // Create a payment intent
         const res = await apiRequest("POST", "/api/payment/create-intent", { 
           classId, 
           quantity,
-          amount: classItem.price * quantity * 1.05 // Include 5% service fee for multiple spots
+          amount: totalWithFee / 100, // Convert back to dollars
+          promoCode: appliedPromoCode?.code || null
         });
         const data = await res.json();
         
@@ -343,10 +426,10 @@ export default function CheckoutPage() {
       }
     };
     
-    if (classItem && !userBooking && paymentStatus !== 'success') {
+    if (classItem && !userBooking && paymentStatus !== 'success' && finalAmount >= 0) {
       createPaymentIntent();
     }
-  }, [classItem, userBooking, classId, toast, paymentStatus]);
+  }, [classItem, userBooking, classId, toast, paymentStatus, finalAmount, appliedPromoCode]);
   
   // Format dates
   const formatDate = (dateString: string | Date | null) => {
@@ -601,9 +684,63 @@ export default function CheckoutPage() {
                       </Button>
                     </div>
                   ) : clientSecret ? (
-                    <Elements stripe={stripePromise} options={{ clientSecret }}>
-                      <CheckoutForm classItem={classItem} quantity={quantity} />
-                    </Elements>
+                    <>
+                      {/* Promo Code Section */}
+                      <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                        <h3 className="font-medium mb-3">Promo Code</h3>
+                        {appliedPromoCode ? (
+                          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                            <div className="flex items-center">
+                              <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                              <span className="text-green-800 font-medium">
+                                {appliedPromoCode.code} applied
+                              </span>
+                              <span className="ml-2 text-green-600">
+                                (-${(discountAmount / 100).toFixed(2)})
+                              </span>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={removePromoCode}
+                              className="text-green-700 hover:text-green-800"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Enter promo code"
+                              value={promoCode}
+                              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                              className="flex-1"
+                            />
+                            <Button
+                              variant="outline"
+                              onClick={() => validatePromoCode(promoCode)}
+                              disabled={!promoCode.trim() || isValidatingPromo}
+                            >
+                              {isValidatingPromo ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Apply'
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <CheckoutForm 
+                          classItem={classItem} 
+                          quantity={quantity}
+                          appliedPromoCode={appliedPromoCode}
+                          discountAmount={discountAmount}
+                          finalAmount={finalAmount}
+                        />
+                      </Elements>
+                    </>
                   ) : null}
                 </CardContent>
               </Card>

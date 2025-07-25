@@ -13,7 +13,8 @@ import {
   Search,
   UserCircle,
   Heart,
-  BookOpen
+  BookOpen,
+  Tag
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -150,12 +151,26 @@ export default function Header() {
                       </Link>
                     </DropdownMenuItem>
                   )}
+                  {user.role === 'coach' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/promo-codes" className="cursor-pointer w-full">
+                        <Tag className="mr-2 h-4 w-4" />
+                        <span>My Promo Codes</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   {user.role === 'admin' && (
                     <>
                       <DropdownMenuItem asChild>
                         <Link href="/all-customers" className="cursor-pointer w-full">
                           <User className="mr-2 h-4 w-4" />
                           <span>All Customers</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/promo-codes" className="cursor-pointer w-full">
+                          <Tag className="mr-2 h-4 w-4" />
+                          <span>Promo Codes</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
@@ -224,10 +239,26 @@ export default function Header() {
                         </Button>
                       </Link>
                       {user.role === 'coach' && (
-                        <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
+                        <>
+                          <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start">
+                              <User className="mr-2 h-5 w-5" />
+                              Customers
+                            </Button>
+                          </Link>
+                          <Link href="/promo-codes" onClick={() => setMobileMenuOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start">
+                              <Tag className="mr-2 h-5 w-5" />
+                              My Promo Codes
+                            </Button>
+                          </Link>
+                        </>
+                      )}
+                      {user.role === 'admin' && (
+                        <Link href="/admin/promo-codes" onClick={() => setMobileMenuOpen(false)}>
                           <Button variant="ghost" className="w-full justify-start">
-                            <User className="mr-2 h-5 w-5" />
-                            Customers
+                            <Tag className="mr-2 h-5 w-5" />
+                            Promo Codes
                           </Button>
                         </Link>
                       )}

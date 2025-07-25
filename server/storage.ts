@@ -8,7 +8,11 @@ import {
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   contactMessages, type ContactMessage, type InsertContactMessage,
   blogPosts, type BlogPost, type InsertBlogPost,
-  scheduledPayouts, type ScheduledPayout, type InsertScheduledPayout
+  scheduledPayouts, type ScheduledPayout, type InsertScheduledPayout,
+  promoCodes, type PromoCode, type InsertPromoCode,
+  promoCodeUsage, type PromoCodeUsage, type InsertPromoCodeUsage,
+  bookingSubsidies, type BookingSubsidy, type InsertBookingSubsidy,
+  userCommissionTiers, type UserCommissionTier, type InsertUserCommissionTier
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -556,7 +560,7 @@ export class DatabaseStorage implements IStorage {
       if (newDurationMs !== null && seriesClass.startTime) {
         const classStartTime = new Date(seriesClass.startTime);
         const newEndTime = new Date(classStartTime.getTime() + newDurationMs);
-        instanceUpdateData.endTime = newEndTime;
+        (instanceUpdateData as any).endTime = newEndTime;
       }
       
       const result = await db.update(classes)
@@ -1098,7 +1102,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBlogPost(id: number): Promise<boolean> {
     const result = await db.delete(blogPosts).where(eq(blogPosts.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Scheduled Payout methods
@@ -1148,6 +1152,305 @@ export class DatabaseStorage implements IStorage {
         sql`${scheduledPayouts.scheduledPayoutDate} <= NOW()`
       ))
       .orderBy(scheduledPayouts.scheduledPayoutDate);
+  }
+
+  // Promo Code Management Methods
+  async createPromoCode(promoCodeData: InsertPromoCode): Promise<PromoCode> {
+    const [promoCode] = await db.insert(promoCodes).values(promoCodeData).returning();
+    return promoCode;
+  }
+
+  async getPromoCode(id: number): Promise<PromoCode | undefined> {
+    const [promoCode] = await db.select().from(promoCodes).where(eq(promoCodes.id, id));
+    return promoCode || undefined;
+  }
+
+  async getPromoCodeByCode(code: string): Promise<PromoCode | undefined> {
+    const [promoCode] = await db.select()
+      .from(promoCodes)
+      .where(and(
+        eq(promoCodes.code, code.toUpperCase()),
+        eq(promoCodes.isActive, true)
+      ));
+    return promoCode || undefined;
+  }
+
+  async getPromoCodes(filters?: { 
+    coachId?: number; 
+    isActive?: boolean; 
+    requiresApproval?: boolean;
+    isApproved?: boolean;
+    createdBy?: number;
+  }): Promise<PromoCode[]> {
+    let query = db.select().from(promoCodes).orderBy(desc(promoCodes.createdAt));
+
+    const conditions = [];
+    if (filters?.coachId !== undefined) {
+      conditions.push(eq(promoCodes.coachId, filters.coachId));
+    }
+    if (filters?.isActive !== undefined) {
+      conditions.push(eq(promoCodes.isActive, filters.isActive));
+    }
+    if (filters?.requiresApproval !== undefined) {
+      conditions.push(eq(promoCodes.requiresApproval, filters.requiresApproval));
+    }
+    if (filters?.isApproved !== undefined) {
+      conditions.push(eq(promoCodes.isApproved, filters.isApproved));
+    }
+    if (filters?.createdBy !== undefined) {
+      conditions.push(eq(promoCodes.createdBy, filters.createdBy));
+    }
+
+    if (conditions.length > 0) {
+      return await query.where(and(...conditions));
+    }
+
+    return await query;
+  }
+
+  async updatePromoCode(id: number, promoCodeData: Partial<PromoCode>): Promise<PromoCode | undefined> {
+    const [updatedPromoCode] = await db
+      .update(promoCodes)
+      .set({ ...promoCodeData, updatedAt: new Date() })
+      .where(eq(promoCodes.id, id))
+      .returning();
+    return updatedPromoCode || undefined;
+  }
+
+  async deletePromoCode(id: number): Promise<boolean> {
+    const result = await db.delete(promoCodes).where(eq(promoCodes.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async approvePromoCode(id: number, approvedBy: number): Promise<PromoCode | undefined> {
+    const [approvedPromoCode] = await db
+      .update(promoCodes)
+      .set({ 
+        isApproved: true, 
+        approvedBy, 
+        approvedAt: new Date(),
+        updatedAt: new Date() 
+      })
+      .where(eq(promoCodes.id, id))
+      .returning();
+    return approvedPromoCode || undefined;
+  }
+
+  // Promo Code Validation and Application
+  async validatePromoCode(code: string, userId: number, classId: number): Promise<{
+    valid: boolean;
+    promoCode?: PromoCode;
+    error?: string;
+  }> {
+    const promoCode = await this.getPromoCodeByCode(code);
+    
+    if (!promoCode) {
+      return { valid: false, error: "Promo code not found" };
+    }
+
+    if (!promoCode.isActive) {
+      return { valid: false, error: "Promo code is inactive" };
+    }
+
+    if (!promoCode.isApproved) {
+      return { valid: false, error: "Promo code is pending approval" };
+    }
+
+    const now = new Date();
+    if (now < new Date(promoCode.validFrom)) {
+      return { valid: false, error: "Promo code is not yet valid" };
+    }
+
+    if (now > new Date(promoCode.validUntil)) {
+      return { valid: false, error: "Promo code has expired" };
+    }
+
+    // Check usage limit
+    if (promoCode.usageLimit && promoCode.usageCount >= promoCode.usageLimit) {
+      return { valid: false, error: "Promo code usage limit reached" };
+    }
+
+    // Check if user has already used this promo code
+    const existingUsage = await db.select()
+      .from(promoCodeUsage)
+      .where(and(
+        eq(promoCodeUsage.promoCodeId, promoCode.id),
+        eq(promoCodeUsage.userId, userId)
+      ))
+      .limit(1);
+
+    if (existingUsage.length > 0) {
+      return { valid: false, error: "You have already used this promo code" };
+    }
+
+    // Check first booking only restriction
+    if (promoCode.firstBookingOnly) {
+      const userBookings = await db.select()
+        .from(bookings)
+        .where(eq(bookings.userId, userId))
+        .limit(1);
+
+      if (userBookings.length > 0) {
+        return { valid: false, error: "This promo code is only valid for first bookings" };
+      }
+    }
+
+    // Check coach-specific restriction
+    if (promoCode.coachId) {
+      const classItem = await this.getClass(classId);
+      if (!classItem || classItem.coachId !== promoCode.coachId) {
+        return { valid: false, error: "This promo code is only valid for specific coach's classes" };
+      }
+    }
+
+    // Check budget limit for subsidized codes
+    if (promoCode.platformSubsidized && promoCode.budgetLimit) {
+      if (promoCode.budgetUsed >= promoCode.budgetLimit) {
+        return { valid: false, error: "Promo code budget limit reached" };
+      }
+    }
+
+    return { valid: true, promoCode };
+  }
+
+  async calculateDiscount(promoCode: PromoCode, originalAmount: number): Promise<{
+    discountAmount: number;
+    finalAmount: number;
+    subsidyAmount: number;
+  }> {
+    let discountAmount = 0;
+
+    if (promoCode.discountType === 'percentage') {
+      discountAmount = Math.round((originalAmount * promoCode.discountValue) / 100);
+    } else if (promoCode.discountType === 'fixed') {
+      discountAmount = Math.min(promoCode.discountValue, originalAmount);
+    }
+
+    const finalAmount = originalAmount - discountAmount;
+    const subsidyAmount = promoCode.platformSubsidized ? discountAmount : 0;
+
+    return { discountAmount, finalAmount, subsidyAmount };
+  }
+
+  async recordPromoCodeUsage(promoCodeUsageData: InsertPromoCodeUsage): Promise<PromoCodeUsage> {
+    const [usage] = await db.insert(promoCodeUsage).values(promoCodeUsageData).returning();
+    
+    // Update promo code usage count and budget used
+    await db
+      .update(promoCodes)
+      .set({
+        usageCount: sql`${promoCodes.usageCount} + 1`,
+        budgetUsed: sql`${promoCodes.budgetUsed} + ${promoCodeUsageData.subsidyAmount}`,
+        updatedAt: new Date()
+      })
+      .where(eq(promoCodes.id, promoCodeUsageData.promoCodeId));
+
+    return usage;
+  }
+
+  // Booking Subsidies Management
+  async createBookingSubsidy(subsidyData: InsertBookingSubsidy): Promise<BookingSubsidy> {
+    const [subsidy] = await db.insert(bookingSubsidies).values(subsidyData).returning();
+    return subsidy;
+  }
+
+  async getBookingSubsidies(filters?: { 
+    promoCodeId?: number; 
+    startDate?: Date; 
+    endDate?: Date;
+  }): Promise<BookingSubsidy[]> {
+    let query = db.select().from(bookingSubsidies).orderBy(desc(bookingSubsidies.createdAt));
+
+    const conditions = [];
+    if (filters?.promoCodeId) {
+      conditions.push(eq(bookingSubsidies.promoCodeId, filters.promoCodeId));
+    }
+    if (filters?.startDate) {
+      conditions.push(sql`${bookingSubsidies.createdAt} >= ${filters.startDate}`);
+    }
+    if (filters?.endDate) {
+      conditions.push(sql`${bookingSubsidies.createdAt} <= ${filters.endDate}`);
+    }
+
+    if (conditions.length > 0) {
+      return await query.where(and(...conditions));
+    }
+
+    return await query;
+  }
+
+  // User Commission Tiers Management
+  async createUserCommissionTier(tierData: InsertUserCommissionTier): Promise<UserCommissionTier> {
+    const [tier] = await db.insert(userCommissionTiers).values(tierData).returning();
+    return tier;
+  }
+
+  async getUserCommissionTier(userId: number): Promise<UserCommissionTier | undefined> {
+    const [tier] = await db.select()
+      .from(userCommissionTiers)
+      .where(and(
+        eq(userCommissionTiers.userId, userId),
+        eq(userCommissionTiers.isActive, true),
+        sql`${userCommissionTiers.validFrom} <= NOW()`,
+        or(
+          sql`${userCommissionTiers.validUntil} IS NULL`,
+          sql`${userCommissionTiers.validUntil} > NOW()`
+        )
+      ));
+    return tier || undefined;
+  }
+
+  async getUserCommissionTiers(): Promise<UserCommissionTier[]> {
+    return await db.select()
+      .from(userCommissionTiers)
+      .orderBy(desc(userCommissionTiers.createdAt));
+  }
+
+  async updateUserCommissionTier(id: number, tierData: Partial<UserCommissionTier>): Promise<UserCommissionTier | undefined> {
+    const [updatedTier] = await db
+      .update(userCommissionTiers)
+      .set({ ...tierData, updatedAt: new Date() })
+      .where(eq(userCommissionTiers.id, id))
+      .returning();
+    return updatedTier || undefined;
+  }
+
+  async deleteUserCommissionTier(id: number): Promise<boolean> {
+    const result = await db.delete(userCommissionTiers).where(eq(userCommissionTiers.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Get promo code analytics
+  async getPromoCodeAnalytics(promoCodeId: number): Promise<{
+    totalUsage: number;
+    totalDiscountGiven: number;
+    totalSubsidyPaid: number;
+    uniqueUsers: number;
+    conversionRate: number;
+  }> {
+    const usageStats = await db.select({
+      totalUsage: sql<number>`COUNT(*)`,
+      totalDiscountGiven: sql<number>`SUM(${promoCodeUsage.discountAmount})`,
+      totalSubsidyPaid: sql<number>`SUM(${promoCodeUsage.subsidyAmount})`,
+      uniqueUsers: sql<number>`COUNT(DISTINCT ${promoCodeUsage.userId})`
+    })
+    .from(promoCodeUsage)
+    .where(eq(promoCodeUsage.promoCodeId, promoCodeId));
+
+    const stats = usageStats[0] || {
+      totalUsage: 0,
+      totalDiscountGiven: 0,
+      totalSubsidyPaid: 0,
+      uniqueUsers: 0
+    };
+
+    // Simple conversion rate calculation (you may want to enhance this)
+    const conversionRate = stats.totalUsage > 0 ? (stats.uniqueUsers / stats.totalUsage) * 100 : 0;
+
+    return {
+      ...stats,
+      conversionRate: Math.round(conversionRate * 100) / 100
+    };
   }
 }
 
