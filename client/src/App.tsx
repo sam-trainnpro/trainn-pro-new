@@ -41,6 +41,8 @@ import CustomerReferralsPage from "@/pages/customer-referrals";
 import TermsOfUsePage from "@/pages/terms-of-use";
 import PrivacyPage from "@/pages/privacy";
 import CookiesPage from "@/pages/cookies";
+import AdminPromoCodesPage from "@/pages/admin-promo-codes";
+import CoachPromoCodesPage from "@/pages/coach-promo-codes";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -117,6 +119,12 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/my-calendar">
         <MyCalendarPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/admin/promo-codes">
+        <AdminPromoCodesPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/promo-codes">
+        <CoachPromoCodesPage />
       </ProtectedRoute>
       <Route path="/blog">
         <BlogPage />

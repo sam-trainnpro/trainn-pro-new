@@ -309,3 +309,108 @@ export const insertScheduledPayoutSchema = createInsertSchema(scheduledPayouts).
 
 export type InsertScheduledPayout = z.infer<typeof insertScheduledPayoutSchema>;
 export type ScheduledPayout = typeof scheduledPayouts.$inferSelect;
+
+// Promo Codes
+export const promoCodes = pgTable("promo_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // The actual promo code (e.g., "WELCOME10")
+  name: text("name").notNull(), // Display name for admin purposes
+  description: text("description"), // Optional description
+  discountType: text("discount_type").notNull(), // "percentage" or "fixed"
+  discountValue: integer("discount_value").notNull(), // Percentage (0-100) or fixed amount in cents
+  coachId: integer("coach_id"), // Optional: coach-specific code
+  isActive: boolean("is_active").notNull().default(true),
+  requiresApproval: boolean("requires_approval").notNull().default(false), // Coach codes need approval
+  isApproved: boolean("is_approved").notNull().default(true), // Admin codes auto-approved
+  approvedBy: integer("approved_by"), // Admin user ID who approved
+  approvedAt: timestamp("approved_at"),
+  firstBookingOnly: boolean("first_booking_only").notNull().default(false),
+  usageLimit: integer("usage_limit"), // null = unlimited
+  usageCount: integer("usage_count").notNull().default(0),
+  validFrom: timestamp("valid_from").notNull(),
+  validUntil: timestamp("valid_until").notNull(),
+  platformSubsidized: boolean("platform_subsidized").notNull().default(false), // Platform pays difference
+  commissionOverride: integer("commission_override"), // Override platform commission (0-100)
+  budgetLimit: integer("budget_limit"), // Maximum subsidy budget in cents
+  budgetUsed: integer("budget_used").notNull().default(0),
+  createdBy: integer("created_by").notNull(), // User ID who created
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({
+  id: true,
+  usageCount: true,
+  budgetUsed: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
+export type PromoCode = typeof promoCodes.$inferSelect;
+
+// Promo Code Usage Tracking
+export const promoCodeUsage = pgTable("promo_code_usage", {
+  id: serial("id").primaryKey(),
+  promoCodeId: integer("promo_code_id").notNull(),
+  userId: integer("user_id").notNull(),
+  bookingId: integer("booking_id").notNull(),
+  discountAmount: integer("discount_amount").notNull(), // Amount discounted in cents
+  subsidyAmount: integer("subsidy_amount").notNull().default(0), // Platform subsidy in cents
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPromoCodeUsageSchema = createInsertSchema(promoCodeUsage).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPromoCodeUsage = z.infer<typeof insertPromoCodeUsageSchema>;
+export type PromoCodeUsage = typeof promoCodeUsage.$inferSelect;
+
+// Booking Subsidies for ROI tracking
+export const bookingSubsidies = pgTable("booking_subsidies", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id").notNull(),
+  promoCodeId: integer("promo_code_id").notNull(),
+  promoCodeUsageId: integer("promo_code_usage_id").notNull(),
+  originalAmount: integer("original_amount").notNull(), // Full price in cents
+  customerPaid: integer("customer_paid").notNull(), // Amount customer paid in cents
+  subsidyAmount: integer("subsidy_amount").notNull(), // Platform subsidy in cents
+  coachEarnings: integer("coach_earnings").notNull(), // Coach still gets full amount
+  platformFee: integer("platform_fee").notNull(), // Platform fee in cents
+  commissionRate: integer("commission_rate").notNull(), // Commission rate used (0-100)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertBookingSubsidySchema = createInsertSchema(bookingSubsidies).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBookingSubsidy = z.infer<typeof insertBookingSubsidySchema>;
+export type BookingSubsidy = typeof bookingSubsidies.$inferSelect;
+
+// User Commission Tiers (VIP/Partner/Influencer rates)
+export const userCommissionTiers = pgTable("user_commission_tiers", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().unique(),
+  tierName: text("tier_name").notNull(), // "VIP", "Partner", "Influencer", etc.
+  commissionRate: integer("commission_rate").notNull(), // Custom commission rate (0-100)
+  isActive: boolean("is_active").notNull().default(true),
+  validFrom: timestamp("valid_from").notNull(),
+  validUntil: timestamp("valid_until"),
+  assignedBy: integer("assigned_by").notNull(), // Admin user ID
+  notes: text("notes"), // Internal notes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertUserCommissionTierSchema = createInsertSchema(userCommissionTiers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserCommissionTier = z.infer<typeof insertUserCommissionTierSchema>;
+export type UserCommissionTier = typeof userCommissionTiers.$inferSelect;
