@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "../../../hooks/use-toast";
 import { useState } from "react";
-import { Plus, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertCircle, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,8 @@ interface PromoCode {
 export default function CoachPromoCodes() {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingPromoCode, setEditingPromoCode] = useState<PromoCode | null>(null);
 
   // Fetch coach's promo codes
   const { data: promoCodes = [], isLoading } = useQuery({
@@ -87,6 +89,30 @@ export default function CoachPromoCodes() {
     }
   });
 
+  // Update promo code mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest('PUT', `/api/promo-codes/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/promo-codes/my'] });
+      setShowEditDialog(false);
+      setEditingPromoCode(null);
+      toast({
+        title: "Success",
+        description: "Promo code updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update promo code",
+        variant: "destructive",
+      });
+    }
+  });
+
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -115,6 +141,31 @@ export default function CoachPromoCodes() {
     };
 
     createMutation.mutate(data);
+  };
+
+  const handleUpdatePromoCode = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingPromoCode) return;
+    
+    const formData = new FormData(e.currentTarget);
+    
+    const data = {
+      name: formData.get('name'),
+      description: formData.get('description'),
+      discountType: formData.get('discountType'),
+      discountValue: parseInt(formData.get('discountValue') as string),
+      firstBookingOnly: formData.get('firstBookingOnly') === 'on',
+      usageLimit: formData.get('usageLimit') ? parseInt(formData.get('usageLimit') as string) : null,
+      validFrom: formData.get('validFrom'),
+      validUntil: formData.get('validUntil'),
+    };
+
+    updateMutation.mutate({ id: editingPromoCode.id, data });
+  };
+
+  const openEditDialog = (promoCode: PromoCode) => {
+    setEditingPromoCode(promoCode);
+    setShowEditDialog(true);
   };
 
   if (isLoading) {
@@ -330,6 +381,18 @@ export default function CoachPromoCodes() {
                   </CardTitle>
                   <p className="text-gray-600">{promoCode.name}</p>
                 </div>
+                <div className="flex gap-2">
+                  {(!promoCode.isApproved || !promoCode.requiresApproval) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditDialog(promoCode)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -395,6 +458,152 @@ export default function CoachPromoCodes() {
           </div>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Promo Code</DialogTitle>
+            <DialogDescription>
+              Make changes to your promotional code. Note: Only pending codes can be edited.
+            </DialogDescription>
+          </DialogHeader>
+          {editingPromoCode && (
+            <form onSubmit={handleUpdatePromoCode} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-code">Promo Code</Label>
+                  <Input
+                    id="edit-code"
+                    name="code"
+                    defaultValue={editingPromoCode.code}
+                    placeholder="SAVE20"
+                    required
+                    className="uppercase"
+                    disabled
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Code cannot be changed after creation</p>
+                </div>
+                <div>
+                  <Label htmlFor="edit-name">Display Name</Label>
+                  <Input
+                    id="edit-name"
+                    name="name"
+                    defaultValue={editingPromoCode.name}
+                    placeholder="20% Off First Class"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-description">Internal Description</Label>
+                <Textarea
+                  id="edit-description"
+                  name="description"
+                  defaultValue={editingPromoCode.description || ''}
+                  placeholder="Optional internal notes about this promo code"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-discountType">Discount Type</Label>
+                  <Select name="discountType" defaultValue={editingPromoCode.discountType} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select discount type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-discountValue">Discount Value</Label>
+                  <Input
+                    id="edit-discountValue"
+                    name="discountValue"
+                    type="number"
+                    defaultValue={editingPromoCode.discountValue}
+                    placeholder="20"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-validFrom">Valid From</Label>
+                  <Input
+                    id="edit-validFrom"
+                    name="validFrom"
+                    type="datetime-local"
+                    defaultValue={new Date(editingPromoCode.validFrom).toISOString().slice(0, 16)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-validUntil">Valid Until</Label>
+                  <Input
+                    id="edit-validUntil"
+                    name="validUntil"
+                    type="datetime-local"
+                    defaultValue={new Date(editingPromoCode.validUntil).toISOString().slice(0, 16)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-usageLimit">Usage Limit (optional)</Label>
+                <Input
+                  id="edit-usageLimit"
+                  name="usageLimit"
+                  type="number"
+                  defaultValue={editingPromoCode.usageLimit || ''}
+                  placeholder="Leave blank for unlimited"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Leave empty for unlimited uses
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="edit-firstBookingOnly" 
+                  name="firstBookingOnly" 
+                  defaultChecked={editingPromoCode.firstBookingOnly}
+                />
+                <Label htmlFor="edit-firstBookingOnly">First Booking Only</Label>
+              </div>
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Changes will require admin approval again before the code becomes active.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditDialog(false);
+                    setEditingPromoCode(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "Updating..." : "Update & Resubmit"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
       </main>
       
       <Footer />
