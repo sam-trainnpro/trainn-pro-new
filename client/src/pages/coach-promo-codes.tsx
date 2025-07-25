@@ -402,7 +402,7 @@ export default function CoachPromoCodes() {
                   <br />
                   {promoCode.discountType === 'percentage' 
                     ? `${promoCode.discountValue}%` 
-                    : formatCurrency(promoCode.discountValue)
+                    : `$${(promoCode.discountValue / 100).toFixed(2)}`
                   }
                 </div>
                 <div>
@@ -525,7 +525,9 @@ export default function CoachPromoCodes() {
                     id="edit-discountValue"
                     name="discountValue"
                     type="number"
-                    defaultValue={editingPromoCode.discountValue}
+                    defaultValue={editingPromoCode.discountType === 'fixed' 
+                      ? (editingPromoCode.discountValue / 100).toString()
+                      : editingPromoCode.discountValue.toString()}
                     placeholder="20"
                     required
                   />
