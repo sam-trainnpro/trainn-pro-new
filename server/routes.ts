@@ -2843,12 +2843,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isApproved = user.role === 'admin';
       const finalCoachId = coachId || (user.role === 'coach' ? user.id : null);
 
+      // Convert discount value: for fixed amounts, convert dollars to cents
+      const processedDiscountValue = discountType === 'fixed' 
+        ? Math.round(discountValue * 100) 
+        : discountValue;
+
       const promoCodeData = {
         code: code.toUpperCase(),
         name,
         description: description || null,
         discountType,
-        discountValue,
+        discountValue: processedDiscountValue,
         coachId: finalCoachId,
         isActive: true,
         requiresApproval,
@@ -2899,6 +2904,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (req.body[field] !== undefined) {
           updateData[field] = req.body[field];
         }
+      }
+
+      // Convert discount value: for fixed amounts, convert dollars to cents
+      if (updateData.discountValue !== undefined && updateData.discountType === 'fixed') {
+        updateData.discountValue = Math.round(updateData.discountValue * 100);
+      } else if (updateData.discountValue !== undefined && existingPromoCode.discountType === 'fixed' && updateData.discountType !== 'percentage') {
+        // If no discountType change but existing is fixed, convert to cents
+        updateData.discountValue = Math.round(updateData.discountValue * 100);
       }
 
       // Convert date strings to Date objects
