@@ -123,6 +123,8 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
+- July 28, 2025. PARTIALLY COMPLETED platform-subsidized promo code system - implemented discount calculation and usage tracking but payment subsidy transfer to coaches is NOT YET IMPLEMENTED; system correctly applies discounts to customer payments and records subsidy amounts in database for accounting; however, the automatic Stripe transfer of platform subsidy funds to coaches is missing from the payout processor; coaches currently receive only their portion of customer payments without the additional platform subsidy that should maintain their full earnings during promotions; requires enhancement to payout-processor.ts to include subsidy amounts in coach transfers for complete functionality
+- July 28, 2025. Fixed critical promo code discount bug in Stripe payment processing - resolved unit mismatch where class prices (dollars) and promo discount values (cents) caused incorrect calculations; updated payment intent creation to properly apply promo code discounts to actual Stripe charges instead of just UI display; enhanced payment confirmation to record promo code usage with metadata tracking; customers now pay correct discounted amounts instead of full price when using valid promo codes
 - July 25, 2025. Completed promo code edit functionality for both admin and coach management pages - added Edit buttons to promo code cards with pre-populated dialog forms; implemented update mutation using PUT /api/promo-codes/:id endpoint; admins can edit any promo code while coaches can only edit their own pending codes; edit dialogs include all form fields with proper default values and validation; includes permission restrictions where coaches cannot edit approved codes to maintain approval workflow integrity; provides seamless editing experience with proper error handling and success notifications
 - July 25, 2025. Completed comprehensive promo code system implementation with full frontend/backend integration - implemented complete database schema with promo_codes table supporting discount types (percentage/fixed), usage limits, date ranges, and coach-specific codes; built admin and coach interfaces for promo code management with dedicated pages at /admin/promo-codes and /promo-codes; fully integrated promo codes into checkout flow with real-time validation, discount calculation, and Stripe payment processing; added two-payment system where customer pays discounted amount and platform subsidizes the difference to coaches; added promo code management navigation links in header dropdown for admin and coach users; includes platform-subsidized discounts with financial tracking and commission rate overrides
 - January 23, 2025. Completed address field restructuring for improved city filtering - split single address field into separate street, city, state, zip_code database columns; successfully migrated 303 existing classes using SQL parsing; updated API endpoints and frontend filtering to use dedicated city field instead of address parsing; cleaned up city data to ensure consistent filtering with accurate city names ("San Francisco", "Daly City"); enhanced search functionality with more reliable location-based filtering
@@ -222,36 +224,50 @@ Changelog:
 - June 18, 2025. Initial setup
 ```
 
-## Future Feature Planning
+## Platform-Subsidized Promo Code System Status
 
-### Promo Code System (Planned)
-Comprehensive promotional code system with advanced features:
+### Current Implementation (PARTIAL)
 
-**Core Features:**
-- Database schema: `promo_codes` table with discount types (percentage/fixed), usage limits, date ranges
-- Coach-specific codes: Optional `coach_id` field for targeted promotions
-- First booking detection: `first_booking_only` flag for new customer acquisition
-- Usage tracking: `promo_code_usage` table to prevent duplicate usage
+**✅ Completed Features:**
+- Complete database schema with promo codes, usage tracking, and subsidy recording
+- Admin and coach management interfaces at /admin/promo-codes and /promo-codes
+- Real-time promo code validation and discount calculation in checkout flow
+- Stripe payment integration with correct discount amounts applied to customer charges
+- Promo code usage recording with subsidy amount tracking for accounting
+- Budget limit enforcement and usage count tracking
+- Edit functionality for existing promo codes with proper permission controls
 
-**Platform-Subsidized Discounts:**
-- Two-payment system: Customer pays discounted amount, platform pays difference to coach
-- Maintains full coach earnings during promotions
-- Stripe implementation: Customer Payment Intent + Platform Transfer for subsidy
-- Financial tracking: `booking_subsidies` table for accounting and ROI analysis
+**❌ Missing Critical Component: PLATFORM SUBSIDY TRANSFERS**
+
+The system currently tracks platform subsidies but **does not transfer the subsidy money to coaches**. 
+
+**Current Money Flow Issue:**
+1. Customer uses platform-subsidized promo code (e.g., SAVE20% on $25 class)
+2. Customer pays discounted amount ($20)  ✅ Working
+3. System records $5 platform subsidy in database  ✅ Working
+4. **❌ MISSING**: Platform should transfer $5 to coach's Stripe account
+5. Coach currently receives payout based only on $20 customer payment
+6. Platform keeps the $5 subsidy instead of transferring it to maintain coach earnings
+
+**Required Implementation:**
+- Enhance `server/payout-processor.ts` to include platform subsidy amounts in coach transfers
+- Modify payout calculation to add recorded subsidy amounts on top of customer payment portions
+- Add Stripe transfer logic for platform subsidy funds to coach connected accounts
+- Implement proper financial tracking for platform subsidy expenses
+
+**Database Support (Ready):**
+- `promo_code_usage.subsidyAmount` field tracks required transfer amounts
+- `promo_codes.budgetUsed` tracks total platform subsidy commitments
+- All accounting infrastructure exists, only missing the actual money transfer
+
+### Future Enhancements (Planned)
 
 **Dynamic Commission Rates:**
 - Promo code commission overrides: Reduce platform commission (15% → 5% or 0%)
 - User tier system: VIP/Partner/Influencer rates with `user_commission_tiers` table
 - Strategic use cases: Coach acquisition, customer retention, partnership deals
-- Admin controls: Budget limits, automatic expiration, financial safeguards
 
-**Integration Points:**
-- Booking form: Promo code field with real-time validation
-- Payment processing: Adjusted Stripe Payment Intents with discount calculations
-- Admin dashboard: Campaign management, usage analytics, ROI tracking
-- Coach transparency: Commission rate visibility and history
-
-This system enables sophisticated promotional strategies while maintaining coach satisfaction and clear financial controls.
+This system enables sophisticated promotional strategies once the platform subsidy transfer functionality is completed.
 
 ## User Preferences
 
