@@ -1563,10 +1563,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Record promo code usage if one was used
       if (promoCodeUsed && paymentIntent) {
         try {
+          console.log("=== PROMO CODE USAGE RECORDING ===");
+          console.log("Payment Intent Metadata:", paymentIntent.metadata);
+          console.log("Payment Intent Amount (charged):", paymentIntent.amount);
+          
           const originalAmount = parseFloat(paymentIntent.metadata?.originalAmount || '0') * 100;
           const finalAmount = paymentIntent.amount; // Amount charged in cents
           const discountAmount = originalAmount - finalAmount;
           const subsidyAmount = promoCodeUsed.platformSubsidized ? discountAmount : 0;
+
+          console.log("Original Amount (cents):", originalAmount);
+          console.log("Final Amount (cents):", finalAmount);
+          console.log("Calculated Discount Amount (cents):", discountAmount);
+          console.log("Calculated Subsidy Amount (cents):", subsidyAmount);
 
           await storage.recordPromoCodeUsage({
             promoCodeId: promoCodeUsed.id,
