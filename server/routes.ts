@@ -2985,7 +2985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
 
-      const discountCalc = await storage.calculateDiscount(validation.promoCode!, classItem.price);
+      const discountCalc = await storage.calculateDiscount(validation.promoCode!, classItem.price * 100);
       
       res.json({
         valid: true,
