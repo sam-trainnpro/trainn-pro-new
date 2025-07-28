@@ -123,7 +123,7 @@ Trainn is a full-stack fitness and creative activity marketplace application tha
 
 ```
 Changelog:
-- July 28, 2025. COMPLETED discount and subsidy calculation logic for platform-subsidized promo codes - fixed critical discount calculation bug where metadata stored discounted amount instead of original class price; implemented proper business logic where discount_amount reflects actual percentage discount applied (20% of $2.00 = 40 cents) and subsidy_amount represents difference in coach payouts between original and discounted scenarios after all fees (35 cents for $2.00 class with 20% discount); system now accurately tracks platform subsidy obligations for future automatic transfer implementation; payment subsidy transfer to coaches still requires enhancement to payout-processor.ts
+- July 28, 2025. COMPLETED comprehensive platform-subsidized promo code system with automatic coach subsidy transfers - implemented complete end-to-end functionality where discount_amount shows actual percentage discount applied (40 cents for 20% of $2.00) and subsidy_amount represents coach payout difference after all fees (35 cents); enhanced payout-processor.ts to automatically include platform subsidies in coach transfers via Stripe; coaches now receive full earnings when customers use platform-subsidized promo codes through automatic platform subsidy transfers; includes detailed financial tracking, enhanced logging, and comprehensive metadata for accounting transparency; complete implementation ready for production use
 - July 28, 2025. Fixed critical promo code discount bug in Stripe payment processing - resolved unit mismatch where class prices (dollars) and promo discount values (cents) caused incorrect calculations; updated payment intent creation to properly apply promo code discounts to actual Stripe charges instead of just UI display; enhanced payment confirmation to record promo code usage with metadata tracking; customers now pay correct discounted amounts instead of full price when using valid promo codes
 - July 25, 2025. Completed promo code edit functionality for both admin and coach management pages - added Edit buttons to promo code cards with pre-populated dialog forms; implemented update mutation using PUT /api/promo-codes/:id endpoint; admins can edit any promo code while coaches can only edit their own pending codes; edit dialogs include all form fields with proper default values and validation; includes permission restrictions where coaches cannot edit approved codes to maintain approval workflow integrity; provides seamless editing experience with proper error handling and success notifications
 - July 25, 2025. Completed comprehensive promo code system implementation with full frontend/backend integration - implemented complete database schema with promo_codes table supporting discount types (percentage/fixed), usage limits, date ranges, and coach-specific codes; built admin and coach interfaces for promo code management with dedicated pages at /admin/promo-codes and /promo-codes; fully integrated promo codes into checkout flow with real-time validation, discount calculation, and Stripe payment processing; added two-payment system where customer pays discounted amount and platform subsidizes the difference to coaches; added promo code management navigation links in header dropdown for admin and coach users; includes platform-subsidized discounts with financial tracking and commission rate overrides
@@ -237,28 +237,31 @@ Changelog:
 - Budget limit enforcement and usage count tracking
 - Edit functionality for existing promo codes with proper permission controls
 
-**❌ Missing Critical Component: PLATFORM SUBSIDY TRANSFERS**
+**✅ COMPLETED: PLATFORM SUBSIDY TRANSFERS**
 
-The system currently tracks platform subsidies but **does not transfer the subsidy money to coaches**. 
+The system now fully implements platform subsidy transfers to coaches.
 
-**Current Money Flow Issue:**
-1. Customer uses platform-subsidized promo code (e.g., SAVE20% on $25 class)
+**Complete Money Flow Implementation:**
+1. Customer uses platform-subsidized promo code (e.g., SAVE20% on $25 class)  ✅ Working
 2. Customer pays discounted amount ($20)  ✅ Working
 3. System records $5 platform subsidy in database  ✅ Working
-4. **❌ MISSING**: Platform should transfer $5 to coach's Stripe account
-5. Coach currently receives payout based only on $20 customer payment
-6. Platform keeps the $5 subsidy instead of transferring it to maintain coach earnings
+4. **✅ IMPLEMENTED**: Platform automatically transfers $5 to coach's Stripe account
+5. Coach receives total of $25 (their normal earnings maintained through platform subsidy)
+6. Platform covers the discount difference to ensure coaches aren't penalized
 
-**Required Implementation:**
-- Enhance `server/payout-processor.ts` to include platform subsidy amounts in coach transfers
-- Modify payout calculation to add recorded subsidy amounts on top of customer payment portions
-- Add Stripe transfer logic for platform subsidy funds to coach connected accounts
-- Implement proper financial tracking for platform subsidy expenses
+**Implementation Details:**
+- Enhanced `server/payout-processor.ts` with platform subsidy integration
+- Added `getPlatformSubsidyForBooking()` storage method for subsidy lookup
+- Modified payout calculation to include subsidy amounts on top of customer payment portions
+- Integrated Stripe transfer logic for platform subsidy funds to coach connected accounts
+- Comprehensive financial tracking with detailed logging and metadata
+- Enhanced transfer descriptions and metadata for accounting transparency
 
-**Database Support (Ready):**
-- `promo_code_usage.subsidyAmount` field tracks required transfer amounts
-- `promo_codes.budgetUsed` tracks total platform subsidy commitments
-- All accounting infrastructure exists, only missing the actual money transfer
+**Technical Features:**
+- Automatic subsidy detection and inclusion in coach payouts
+- Detailed logging showing base payout + subsidy breakdown
+- Enhanced Stripe transfer metadata tracking all financial components
+- Zero-impact on existing non-subsidized bookings and payouts
 
 ### Future Enhancements (Planned)
 
