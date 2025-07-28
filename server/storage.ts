@@ -18,7 +18,7 @@ import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-ut
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, and, desc, inArray, sql, lt } from "drizzle-orm";
+import { eq, and, or, desc, inArray, sql, lt } from "drizzle-orm";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -1454,6 +1454,17 @@ export class DatabaseStorage implements IStorage {
       ...stats,
       conversionRate: Math.round(conversionRate * 100) / 100
     };
+  }
+
+  // Get platform subsidy amount for a booking
+  async getPlatformSubsidyForBooking(bookingId: number): Promise<number> {
+    const subsidyResult = await db.select({
+      subsidyAmount: promoCodeUsage.subsidyAmount
+    })
+    .from(promoCodeUsage)
+    .where(eq(promoCodeUsage.bookingId, bookingId));
+
+    return subsidyResult[0]?.subsidyAmount || 0;
   }
 }
 

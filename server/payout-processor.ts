@@ -3,7 +3,7 @@ import Stripe from "stripe";
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-06-30.basil' })
   : null;
 
 export interface PayoutResult {
@@ -62,17 +62,31 @@ export class PayoutProcessor {
         throw new Error(`Coach ${payout.coachId} does not have a connected Stripe account`);
       }
 
-      // Create transfer to coach's connected account
+      // Get platform subsidy for this booking (if any)
+      const platformSubsidy = await storage.getPlatformSubsidyForBooking(payout.bookingId);
+      
+      // Calculate total transfer amount (original coach payout + platform subsidy)
+      const totalTransferAmount = payout.coachPayout + platformSubsidy;
+      
+      console.log(`=== PAYOUT CALCULATION ===`);
+      console.log(`Coach base payout: $${(payout.coachPayout / 100).toFixed(2)}`);
+      console.log(`Platform subsidy: $${(platformSubsidy / 100).toFixed(2)}`);
+      console.log(`Total transfer amount: $${(totalTransferAmount / 100).toFixed(2)}`);
+
+      // Create transfer to coach's connected account (including platform subsidy)
       const transfer = await stripe!.transfers.create({
-        amount: payout.coachPayout,
+        amount: totalTransferAmount,
         currency: 'usd',
         destination: coach.stripeConnectId,
-        description: `Payout for class booking ${payout.bookingId}`,
+        description: `Payout for class booking ${payout.bookingId}${platformSubsidy > 0 ? ' (includes platform subsidy)' : ''}`,
         metadata: {
           scheduledPayoutId: payout.id.toString(),
           bookingId: payout.bookingId.toString(),
           classId: payout.classId.toString(),
-          coachId: payout.coachId.toString()
+          coachId: payout.coachId.toString(),
+          baseCoachPayout: payout.coachPayout.toString(),
+          platformSubsidy: platformSubsidy.toString(),
+          totalAmount: totalTransferAmount.toString()
         }
       });
 
@@ -83,7 +97,11 @@ export class PayoutProcessor {
         completedAt: new Date()
       });
 
-      console.log(`✅ Payout processed successfully: $${(payout.coachPayout / 100).toFixed(2)} to coach ${payout.coachId}`);
+      if (platformSubsidy > 0) {
+        console.log(`✅ Payout processed successfully: $${(payout.coachPayout / 100).toFixed(2)} base + $${(platformSubsidy / 100).toFixed(2)} subsidy = $${(totalTransferAmount / 100).toFixed(2)} total to coach ${payout.coachId}`);
+      } else {
+        console.log(`✅ Payout processed successfully: $${(payout.coachPayout / 100).toFixed(2)} to coach ${payout.coachId}`);
+      }
 
       return {
         payoutId: payout.id,
