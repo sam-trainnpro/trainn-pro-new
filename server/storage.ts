@@ -1291,7 +1291,8 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
 
       if (userBookings.length > 0) {
-        return { valid: false, error: "This promo code is only valid for first bookings" };
+        console.log(`Promo code ${code} validation failed: first booking only restriction for user ${userId} who has ${userBookings.length} existing bookings`);
+        return { valid: false, error: "This promo code is only valid for new customers making their first booking" };
       }
     }
 
