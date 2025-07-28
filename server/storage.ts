@@ -1327,6 +1327,8 @@ export class DatabaseStorage implements IStorage {
       discountAmount = Math.min(promoCode.discountValue, originalAmount);
     }
 
+    console.log(`Discount calculation - Code: ${promoCode.code}, Type: ${promoCode.discountType}, Value: ${promoCode.discountValue}, Original: ${originalAmount}, Discount: ${discountAmount}`);
+
     const finalAmount = originalAmount - discountAmount;
     const subsidyAmount = promoCode.platformSubsidized ? discountAmount : 0;
 
