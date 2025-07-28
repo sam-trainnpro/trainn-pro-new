@@ -1261,10 +1261,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a payment intent for booking a class
   app.post("/api/payment/create-intent", requireAuth, async (req, res) => {
     try {
-      const { classId, amount, quantity = 1 } = req.body;
+      const { classId, amount, quantity = 1, promoCode } = req.body;
       
       if (!classId || !amount) {
         return res.status(400).json({ message: "Missing required parameters: classId, amount" });
+      }
+
+      let finalAmount = parseFloat(amount);
+      let promoCodeData = null;
+
+      // Apply promo code discount if provided
+      if (promoCode) {
+        const validation = await storage.validatePromoCode(promoCode, req.user!.id, classId);
+        if (validation.valid && validation.promoCode) {
+          const classDetails = await storage.getClass(parseInt(classId));
+          if (classDetails) {
+            const discountCalc = await storage.calculateDiscount(validation.promoCode, classDetails.price * quantity * 100);
+            // Convert back to dollars and add 5% fee
+            const discountedAmount = discountCalc.finalAmount / 100;
+            finalAmount = discountedAmount + (discountedAmount * 0.05);
+            promoCodeData = validation.promoCode;
+            
+            console.log(`Promo code ${promoCode} applied: Original $${amount}, Final $${finalAmount.toFixed(2)}`);
+          }
+        }
       }
       
       // Check if user already has confirmed bookings for this class
@@ -1293,8 +1313,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create payment intent through Stripe
       if (stripe) {
         try {
-          // Convert amount to cents
-          const amountInCents = Math.round(parseFloat(amount) * 100);
+          // Convert final amount (with discount applied) to cents
+          const amountInCents = Math.round(finalAmount * 100);
           
           // Calculate Stripe fees: 2.9% + $0.30 per transaction
           const stripeFeePercentage = 0.029;
@@ -1320,7 +1340,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               stripeFee: stripeFee.toString(),
               netAmount: netAmount.toString(),
               platformFee: platformFee.toString(),
-              coachPayout: coachPayout.toString()
+              coachPayout: coachPayout.toString(),
+              promoCode: promoCodeData?.code || '',
+              promoCodeId: promoCodeData?.id?.toString() || '',
+              originalAmount: amount,
+              discountApplied: promoCodeData ? 'true' : 'false'
             }
           };
 
@@ -1498,6 +1522,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Check for promo code usage from payment intent metadata
+      let promoCodeUsed = null;
+      let paymentIntent = null;
+      if (stripe && paymentIntentId && paymentIntentId.startsWith("pi_")) {
+        try {
+          paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          if (paymentIntent.metadata?.promoCode) {
+            const promoCode = await storage.getPromoCodeByCode(paymentIntent.metadata.promoCode);
+            if (promoCode) {
+              promoCodeUsed = promoCode;
+              console.log(`Promo code ${promoCode.code} was used in this payment`);
+            }
+          }
+        } catch (stripeError) {
+          console.log("Could not retrieve promo code from payment intent:", stripeError);
+        }
+      }
+
       // Create new confirmed booking directly (no pending status)
       console.log("Creating booking with data:", {
         userId: req.user.id,
@@ -1517,6 +1559,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentDate: new Date(),
         paymentMethod: paymentMethod
       });
+
+      // Record promo code usage if one was used
+      if (promoCodeUsed && paymentIntent) {
+        try {
+          const originalAmount = parseFloat(paymentIntent.metadata?.originalAmount || '0') * 100;
+          const finalAmount = paymentIntent.amount; // Amount charged in cents
+          const discountAmount = originalAmount - finalAmount;
+          const subsidyAmount = promoCodeUsed.platformSubsidized ? discountAmount : 0;
+
+          await storage.recordPromoCodeUsage({
+            promoCodeId: promoCodeUsed.id,
+            userId: req.user.id,
+            bookingId: booking.id,
+            discountAmount,
+            subsidyAmount
+          });
+
+          console.log(`Recorded promo code usage: ${promoCodeUsed.code}, discount: $${discountAmount/100}, subsidy: $${subsidyAmount/100}`);
+        } catch (promoError) {
+          console.error("Error recording promo code usage:", promoError);
+        }
+      }
       
       console.log("Booking created successfully:", booking);
       
