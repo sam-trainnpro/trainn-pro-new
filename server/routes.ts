@@ -2972,6 +2972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validation = await storage.validatePromoCode(code, req.user!.id, classId);
       
       if (!validation.valid) {
+        console.log(`Promo code validation failed for ${code}: ${validation.error}`);
         return res.status(400).json({ 
           valid: false, 
           error: validation.error 
