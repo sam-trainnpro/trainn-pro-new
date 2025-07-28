@@ -1269,6 +1269,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let finalAmount = parseFloat(amount);
       let promoCodeData = null;
+      let originalClassPrice = 0; // Store the original class price for metadata
+
+      // Get class details to get the original price before any discounts
+      const classDetailsForPrice = await storage.getClass(parseInt(classId));
+      if (classDetailsForPrice) {
+        originalClassPrice = classDetailsForPrice.price * quantity; // Original total price
+      }
 
       // Apply promo code discount if provided
       if (promoCode) {
@@ -1282,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             finalAmount = discountedAmount + (discountedAmount * 0.05);
             promoCodeData = validation.promoCode;
             
-            console.log(`Promo code ${promoCode} applied: Original $${amount}, Final $${finalAmount.toFixed(2)}`);
+            console.log(`Promo code ${promoCode} applied: Original $${originalClassPrice.toFixed(2)}, Final $${finalAmount.toFixed(2)}`);
           }
         }
       }
@@ -1343,7 +1350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               coachPayout: coachPayout.toString(),
               promoCode: promoCodeData?.code || '',
               promoCodeId: promoCodeData?.id?.toString() || '',
-              originalAmount: amount,
+              originalAmount: originalClassPrice.toString(),
               discountApplied: promoCodeData ? 'true' : 'false'
             }
           };
