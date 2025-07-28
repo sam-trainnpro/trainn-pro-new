@@ -1574,25 +1574,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("Payment Intent Metadata:", paymentIntent.metadata);
           console.log("Payment Intent Amount (charged):", paymentIntent.amount);
           
-          const originalAmount = parseFloat(paymentIntent.metadata?.originalAmount || '0') * 100;
-          const finalAmount = paymentIntent.amount; // Amount charged in cents
-          const discountAmount = originalAmount - finalAmount;
-          const subsidyAmount = promoCodeUsed.platformSubsidized ? discountAmount : 0;
+          const originalClassPrice = parseFloat(paymentIntent.metadata?.originalAmount || '0') * 100; // in cents
+          
+          // Calculate the actual discount applied to the class price
+          const discountCalc = await storage.calculateDiscount(promoCodeUsed, originalClassPrice);
+          const actualDiscountAmount = discountCalc.discountAmount; // This is the true 20% discount
+          
+          // Calculate subsidy amount: difference in what coach receives between original and discounted price
+          let subsidyAmount = 0;
+          if (promoCodeUsed.platformSubsidized) {
+            // Original coach payout calculation
+            const originalWithFee = originalClassPrice * 1.05; // Add 5% service fee
+            const originalStripeFee = Math.round(originalWithFee * 0.029) + 30; // 2.9% + $0.30
+            const originalNetAmount = originalWithFee - originalStripeFee;
+            const originalCoachPayout = Math.round(originalNetAmount * 0.85); // 85% to coach
+            
+            // Discounted coach payout calculation
+            const discountedPrice = originalClassPrice - actualDiscountAmount;
+            const discountedWithFee = discountedPrice * 1.05; // Add 5% service fee
+            const discountedStripeFee = Math.round(discountedWithFee * 0.029) + 30; // 2.9% + $0.30
+            const discountedNetAmount = discountedWithFee - discountedStripeFee;
+            const discountedCoachPayout = Math.round(discountedNetAmount * 0.85); // 85% to coach
+            
+            // Subsidy is the difference in coach payouts
+            subsidyAmount = originalCoachPayout - discountedCoachPayout;
+            
+            console.log("=== SUBSIDY CALCULATION ===");
+            console.log("Original class price (cents):", originalClassPrice);
+            console.log("Discounted class price (cents):", discountedPrice);
+            console.log("Original coach payout (cents):", originalCoachPayout);
+            console.log("Discounted coach payout (cents):", discountedCoachPayout);
+            console.log("Platform subsidy needed (cents):", subsidyAmount);
+          }
 
-          console.log("Original Amount (cents):", originalAmount);
-          console.log("Final Amount (cents):", finalAmount);
-          console.log("Calculated Discount Amount (cents):", discountAmount);
-          console.log("Calculated Subsidy Amount (cents):", subsidyAmount);
+          console.log("Original Class Price (cents):", originalClassPrice);
+          console.log("Actual Discount Applied (cents):", actualDiscountAmount);
+          console.log("Platform Subsidy Amount (cents):", subsidyAmount);
 
           await storage.recordPromoCodeUsage({
             promoCodeId: promoCodeUsed.id,
             userId: req.user.id,
             bookingId: booking.id,
-            discountAmount,
+            discountAmount: actualDiscountAmount,
             subsidyAmount
           });
 
-          console.log(`Recorded promo code usage: ${promoCodeUsed.code}, discount: $${discountAmount/100}, subsidy: $${subsidyAmount/100}`);
+          console.log(`Recorded promo code usage: ${promoCodeUsed.code}, discount: $${actualDiscountAmount/100}, subsidy: $${subsidyAmount/100}`);
         } catch (promoError) {
           console.error("Error recording promo code usage:", promoError);
         }
