@@ -1243,6 +1243,21 @@ export class DatabaseStorage implements IStorage {
     return approvedPromoCode || undefined;
   }
 
+  async rejectPromoCode(id: number, rejectedBy: number): Promise<PromoCode | undefined> {
+    const [rejectedPromoCode] = await db
+      .update(promoCodes)
+      .set({ 
+        isApproved: false,
+        isActive: false, // Deactivate rejected promo codes
+        approvedBy: rejectedBy, // Track who rejected it
+        approvedAt: new Date(), // Store rejection timestamp
+        updatedAt: new Date() 
+      })
+      .where(eq(promoCodes.id, id))
+      .returning();
+    return rejectedPromoCode || undefined;
+  }
+
   // Promo Code Validation and Application
   async validatePromoCode(code: string, userId: number, classId: number): Promise<{
     valid: boolean;
