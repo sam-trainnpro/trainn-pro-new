@@ -9,7 +9,8 @@ import {
   sendNewBookingNotificationToCoach, 
   sendWelcomeEmail,
   sendCoachApprovalNotification,
-  sendBookingCancellationConfirmation
+  sendBookingCancellationConfirmation,
+  sendPromoCodeApprovalRequest
 } from "./email";
 import { 
   sendClassCancellationNotifications,
@@ -3092,6 +3093,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const promoCode = await storage.createPromoCode(promoCodeData);
+      
+      // Send email notification to admin if coach created a code requiring approval
+      if (user.role === 'coach' && requiresApproval) {
+        try {
+          await sendPromoCodeApprovalRequest(user, promoCode, false);
+        } catch (emailError) {
+          console.error('Failed to send promo code approval email:', emailError);
+          // Don't fail the creation if email fails
+        }
+      }
+      
       res.status(201).json(promoCode);
     } catch (error: any) {
       console.error("Error creating promo code:", error);
@@ -3157,6 +3169,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.validUntil) updateData.validUntil = new Date(updateData.validUntil);
 
       const updatedPromoCode = await storage.updatePromoCode(promoCodeId, updateData);
+      
+      // Send email notification to admin if coach edited a code that now requires approval
+      if (user.role === 'coach' && (updateData.isApproved === false || !existingPromoCode.isApproved)) {
+        try {
+          await sendPromoCodeApprovalRequest(user, updatedPromoCode, true);
+        } catch (emailError) {
+          console.error('Failed to send promo code approval email:', emailError);
+          // Don't fail the update if email fails
+        }
+      }
+      
       res.json(updatedPromoCode);
     } catch (error: any) {
       console.error("Error updating promo code:", error);
