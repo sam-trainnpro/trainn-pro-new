@@ -522,7 +522,7 @@ export default function ProfilePage() {
                                     />
                                   </FormControl>
                                   <FormDescription>
-                                    Your bio will be displayed on your public profile
+                                    Your bio will be displayed on your public profile. Include URLs (e.g., https://linktr.ee/yourname) to share external links with clients.
                                   </FormDescription>
                                   <FormMessage />
                                 </FormItem>
