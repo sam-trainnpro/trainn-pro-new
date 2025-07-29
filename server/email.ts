@@ -432,6 +432,104 @@ export async function sendClassCancellationNotification(
 }
 
 // Coach approval notification
+// Promo code approval request notification to admin
+export async function sendPromoCodeApprovalRequest(
+  coach: User,
+  promoCode: any,
+  isEdit: boolean = false
+): Promise<boolean> {
+  try {
+    const action = isEdit ? 'edited' : 'created';
+    const subject = `Promo Code ${isEdit ? 'Edit' : 'Creation'} Requires Approval - ${promoCode.code}`;
+
+    const discountDisplay = promoCode.discountType === 'percentage' 
+      ? `${promoCode.discountValue}%`
+      : `$${(promoCode.discountValue / 100).toFixed(2)}`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Admin Notification</p>
+          </div>
+          
+          <h2 style="color: #f59e0b; margin-bottom: 20px;">⚠️ Promo Code Approval Required</h2>
+          
+          <p style="color: #333; line-height: 1.6;">
+            Coach <strong>${coach.firstName} ${coach.lastName}</strong> has ${action} a promo code that requires your approval.
+          </p>
+          
+          <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #92400e; margin-top: 0;">Promo Code Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Code:</td>
+                <td style="padding: 8px 0; color: #92400e;">${promoCode.code}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Name:</td>
+                <td style="padding: 8px 0; color: #92400e;">${promoCode.name}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Discount:</td>
+                <td style="padding: 8px 0; color: #92400e;">${discountDisplay} ${promoCode.discountType === 'fixed' ? 'fixed amount' : 'percentage off'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #92400e;">${coach.firstName} ${coach.lastName} (${coach.email})</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Valid Period:</td>
+                <td style="padding: 8px 0; color: #92400e;">${new Date(promoCode.validFrom).toLocaleDateString()} - ${new Date(promoCode.validUntil).toLocaleDateString()}</td>
+              </tr>
+              ${promoCode.usageLimit ? `
+              <tr>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Usage Limit:</td>
+                <td style="padding: 8px 0; color: #92400e;">${promoCode.usageLimit} uses</td>
+              </tr>
+              ` : ''}
+              ${promoCode.description ? `
+              <tr>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Description:</td>
+                <td style="padding: 8px 0; color: #92400e;">${promoCode.description}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://trainn.pro/admin/promo-codes" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Review & Approve Promo Code</a>
+          </div>
+          
+          <p style="color: #333; line-height: 1.6; font-size: 14px;">
+            Please review this promo code in the admin panel and approve or deny it as appropriate.
+          </p>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              This is an automated notification from Trainn
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: 'sam@trainn.pro',
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`Promo code approval request sent to admin for code: ${promoCode.code} (${action} by ${coach.email})`);
+    return true;
+  } catch (error) {
+    console.error('Promo code approval request email error:', error);
+    return false;
+  }
+}
+
 export async function sendCoachApprovalNotification(coach: User): Promise<boolean> {
   try {
     const subject = `Welcome to Trainn - Your Coach Account is Approved!`;
