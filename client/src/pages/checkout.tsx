@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { Class, Booking } from "@shared/schema";
@@ -214,6 +214,42 @@ export default function CheckoutPage() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [finalAmount, setFinalAmount] = useState(0);
   
+  // Free booking mutation for 100% discount promo codes
+  const freeBookingMutation = useMutation({
+    mutationFn: async (data: { classId: number; quantity: number; promoCode?: string }) => {
+      const response = await apiRequest("POST", "/api/bookings/free-promo", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to book with promo code");
+      }
+      return response.json();
+    },
+    onSuccess: async () => {
+      toast({
+        title: "Booking confirmed!",
+        description: "Your free class booking has been confirmed with promo code.",
+      });
+      // Invalidate and refetch booking data aggressively
+      queryClient.removeQueries({ queryKey: ["/api/bookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
+      // Force refetch bookings before navigation
+      await queryClient.refetchQueries({ queryKey: ["/api/bookings"] });
+      // Add a slight delay to ensure data is fresh
+      setTimeout(() => {
+        navigate("/bookings");
+      }, 100);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Booking failed",
+        description: error.message || "Failed to book free class with promo code",
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Get quantity from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const quantity = parseInt(urlParams.get('quantity') || '1');
@@ -389,7 +425,7 @@ export default function CheckoutPage() {
     }
   }, [classItem, quantity]);
 
-  // Create payment intent
+  // Create payment intent (only for paid bookings)
   useEffect(() => {
     const createPaymentIntent = async () => {
       try {
@@ -398,6 +434,13 @@ export default function CheckoutPage() {
         
         if (!classItem) {
           throw new Error("Class information not available");
+        }
+        
+        // Check if this is a free booking (100% discount promo code)
+        if (finalAmount === 0) {
+          console.log("Free booking detected (100% discount), skipping Stripe payment intent");
+          setIsLoading(false);
+          return;
         }
         
         // Use final amount (with any discounts applied) for payment intent
@@ -683,6 +726,82 @@ export default function CheckoutPage() {
                         Return to Class
                       </Button>
                     </div>
+                  ) : finalAmount === 0 && appliedPromoCode ? (
+                    <>
+                      {/* Promo Code Section for Free Booking */}
+                      <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                        <h3 className="font-medium mb-3">Promo Code</h3>
+                        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                          <div className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                            <span className="text-green-800 font-medium">
+                              {appliedPromoCode.code} applied - 100% OFF!
+                            </span>
+                            <span className="ml-2 text-green-600">
+                              (-${(discountAmount / 100).toFixed(2)})
+                            </span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={removePromoCode}
+                            className="text-green-700 hover:text-green-800"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Free Booking Section */}
+                      <div className="space-y-6">
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
+                            <span>${(classItem.price * quantity).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-green-600">
+                            <span>Discount ({appliedPromoCode.code})</span>
+                            <span>-${(discountAmount / 100).toFixed(2)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between font-medium text-lg">
+                            <span>Total</span>
+                            <span className="text-green-600">FREE</span>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-green-50 p-4 rounded-lg text-center">
+                          <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                          <h3 className="font-medium text-green-800 mb-1">This class is free with your promo code!</h3>
+                          <p className="text-sm text-green-600">Click below to complete your booking - no payment required.</p>
+                        </div>
+                        
+                        <Button 
+                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => {
+                            freeBookingMutation.mutate({ 
+                              classId: classItem.id, 
+                              quantity: quantity,
+                              promoCode: appliedPromoCode.code
+                            });
+                          }}
+                          disabled={freeBookingMutation.isPending}
+                        >
+                          {freeBookingMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Booking...
+                            </>
+                          ) : (
+                            <>Book Free Class {quantity > 1 ? `(${quantity} Spots)` : ''}</>
+                          )}
+                        </Button>
+                        
+                        <p className="text-xs text-muted-foreground text-center">
+                          By completing this booking, you agree to our Terms of Service and Privacy Policy.
+                        </p>
+                      </div>
+                    </>
                   ) : clientSecret ? (
                     <>
                       {/* Promo Code Section */}
@@ -740,6 +859,37 @@ export default function CheckoutPage() {
                           finalAmount={finalAmount}
                         />
                       </Elements>
+                    </>
+                  ) : !appliedPromoCode ? (
+                    <>
+                      {/* Promo Code Section without payment form */}
+                      <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                        <h3 className="font-medium mb-3">Promo Code</h3>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Enter promo code"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                            className="flex-1"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={() => validatePromoCode(promoCode)}
+                            disabled={!promoCode.trim() || isValidatingPromo}
+                          >
+                            {isValidatingPromo ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Apply'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="py-8 text-center">
+                        <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Apply a promo code to continue with your booking.</p>
+                      </div>
                     </>
                   ) : null}
                 </CardContent>

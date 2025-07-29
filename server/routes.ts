@@ -1482,6 +1482,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create free booking with promo code (100% discount)
+  app.post("/api/bookings/free-promo", requireAuth, async (req, res) => {
+    try {
+      const { classId, quantity = 1, promoCode } = req.body;
+      
+      if (!classId) {
+        return res.status(400).json({ message: "Class ID is required" });
+      }
+      
+      if (!promoCode) {
+        return res.status(400).json({ message: "Promo code is required for this endpoint" });
+      }
+      
+      // Validate class exists
+      const classDetails = await storage.getClass(parseInt(classId));
+      if (!classDetails) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      // Validate promo code provides 100% discount
+      const promoCodeRecord = await storage.getPromoCodeByCode(promoCode);
+      if (!promoCodeRecord) {
+        return res.status(400).json({ message: "Invalid promo code" });
+      }
+      
+      // Calculate discount to verify it's 100%
+      let discountAmount = 0;
+      const originalAmount = classDetails.price * quantity * 100; // Amount in cents
+      
+      if (promoCodeRecord.discountType === 'percentage') {
+        discountAmount = Math.round((originalAmount * promoCodeRecord.discountValue) / 100);
+      } else {
+        discountAmount = Math.round(promoCodeRecord.discountValue * 100); // Convert to cents
+      }
+      
+      const finalAmount = Math.max(0, originalAmount - discountAmount);
+      
+      if (finalAmount > 0) {
+        return res.status(400).json({ message: "This endpoint is only for 100% discount promo codes" });
+      }
+      
+      // Check capacity
+      const existingBookings = await storage.getClassBookings(parseInt(classId));
+      const confirmedBookings = existingBookings.filter(b => b.status === 'confirmed');
+      const totalBookedSpots = confirmedBookings.reduce((sum, b) => sum + b.quantity, 0);
+      
+      if (totalBookedSpots + quantity > classDetails.capacity) {
+        return res.status(400).json({ 
+          message: "Not enough spots available",
+          availableSpots: classDetails.capacity - totalBookedSpots
+        });
+      }
+      
+      // Check if user already has a booking for this class
+      const userBooking = existingBookings.find(b => b.userId === req.user.id);
+      if (userBooking) {
+        return res.status(400).json({ message: "You have already booked this class" });
+      }
+      
+      // Record promo code usage
+      const subsidyAmount = originalAmount - discountAmount; // Platform covers the discount
+      await storage.recordPromoCodeUsage({
+        promoCodeId: promoCodeRecord.id,
+        userId: req.user.id,
+        classId: parseInt(classId),
+        discountAmount: discountAmount,
+        subsidyAmount: subsidyAmount,
+        originalAmount: originalAmount
+      });
+      
+      // Create confirmed booking directly for free promo booking
+      const booking = await storage.createBooking({
+        userId: req.user.id,
+        classId: parseInt(classId),
+        quantity: quantity,
+        status: 'confirmed',
+        paymentMethod: 'promo_free'
+      });
+      
+      // Send confirmation email
+      try {
+        const coach = await storage.getUser(classDetails.coachId);
+        if (coach) {
+          await sendBookingConfirmation({
+            booking,
+            classData: classDetails,
+            customer: req.user,
+            coach
+          });
+          
+          // Send notification to coach
+          await sendNewBookingNotificationToCoach(
+            coach,
+            req.user,
+            classDetails,
+            booking
+          );
+        }
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+      }
+      
+      res.json({ 
+        success: true, 
+        booking,
+        message: `Free class booking confirmed with promo code ${promoCode} for ${quantity} spot(s)` 
+      });
+    } catch (error: any) {
+      console.error("Free promo booking error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Confirm payment and create confirmed booking
   app.post("/api/payment/confirm", requireAuth, async (req, res) => {
     try {
