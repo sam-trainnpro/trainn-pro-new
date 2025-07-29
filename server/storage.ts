@@ -1175,6 +1175,13 @@ export class DatabaseStorage implements IStorage {
     return promoCode || undefined;
   }
 
+  async getPromoCodeById(id: number): Promise<PromoCode | undefined> {
+    const [promoCode] = await db.select()
+      .from(promoCodes)
+      .where(eq(promoCodes.id, id));
+    return promoCode || undefined;
+  }
+
   async getPromoCodes(filters?: { 
     coachId?: number; 
     isActive?: boolean; 
