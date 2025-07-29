@@ -469,7 +469,12 @@ export default function ClassDetailsPage() {
                           {coach.bio ? (
                             <div className="mb-4">
                               <h3 className="font-medium mb-2">About</h3>
-                              <p className="text-muted-foreground">{coach.bio}</p>
+                              <div className="text-muted-foreground whitespace-pre-line" dangerouslySetInnerHTML={{ 
+                                __html: coach.bio.replace(
+                                  /(https?:\/\/[^\s]+)/g, 
+                                  '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
+                                )
+                              }} />
                             </div>
                           ) : (
                             <p className="text-muted-foreground italic mb-4">

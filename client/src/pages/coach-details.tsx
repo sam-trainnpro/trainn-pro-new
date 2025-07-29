@@ -158,7 +158,12 @@ export default function CoachDetailsPage() {
                     )}
                     
                     {coach.bio ? (
-                      <p className="mb-6 max-w-3xl">{coach.bio}</p>
+                      <div className="mb-6 max-w-3xl whitespace-pre-line" dangerouslySetInnerHTML={{ 
+                        __html: coach.bio.replace(
+                          /(https?:\/\/[^\s]+)/g, 
+                          '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
+                        )
+                      }} />
                     ) : (
                       <p className="text-muted-foreground italic mb-6">
                         This coach hasn't added a bio yet.
