@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "../../../hooks/use-toast";
 import { useState } from "react";
-import { Plus, Clock, CheckCircle, AlertCircle, Edit } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertCircle, Edit, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -108,6 +108,28 @@ export default function CoachPromoCodes() {
       toast({
         title: "Error",
         description: error.message || "Failed to update promo code",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete promo code mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (promoCodeId: number) => {
+      const response = await apiRequest('DELETE', `/api/promo-codes/${promoCodeId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/promo-codes/my'] });
+      toast({
+        title: "Success",
+        description: "Promo code deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete promo code",
         variant: "destructive",
       });
     }
@@ -392,6 +414,19 @@ export default function CoachPromoCodes() {
                       Edit
                     </Button>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete the promo code "${promoCode.code}"? This action cannot be undone.`)) {
+                        deleteMutation.mutate(promoCode.id);
+                      }
+                    }}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
                 </div>
               </div>
             </CardHeader>

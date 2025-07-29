@@ -3164,14 +3164,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete promo code (admin only)
-  app.delete("/api/promo-codes/:id", requireAuth, requireAdmin, async (req, res) => {
+  // Delete promo code (admin can delete any, coaches can delete their own unused codes)
+  app.delete("/api/promo-codes/:id", requireAuth, async (req, res) => {
     try {
       const promoCodeId = parseInt(req.params.id);
+      const user = req.user!;
+      
+      // Get the promo code to check ownership and usage
+      const promoCode = await storage.getPromoCodeById(promoCodeId);
+      if (!promoCode) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+      
+      // Check permissions
+      const isAdmin = user.role === 'admin';
+      const isOwner = promoCode.coachId === user.id || promoCode.createdBy === user.id;
+      
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: "You can only delete your own promo codes" });
+      }
+      
+      // For coaches (non-admins), add restrictions
+      if (!isAdmin) {
+        if (promoCode.usageCount > 0) {
+          return res.status(400).json({ 
+            message: "Cannot delete promo code that has already been used by customers" 
+          });
+        }
+        
+        if (promoCode.isApproved && promoCode.isActive) {
+          return res.status(400).json({ 
+            message: "Cannot delete active approved promo codes. Please contact admin for assistance." 
+          });
+        }
+      }
+      
       const deleted = await storage.deletePromoCode(promoCodeId);
       
       if (!deleted) {
-        return res.status(404).json({ message: "Promo code not found" });
+        return res.status(500).json({ message: "Failed to delete promo code" });
       }
 
       res.json({ message: "Promo code deleted successfully" });
