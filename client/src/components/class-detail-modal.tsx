@@ -140,7 +140,12 @@ export default function ClassDetailModal({
           {classItem.description && (
             <div>
               <h4 className="font-medium mb-2">Description</h4>
-              <p className="text-sm text-gray-600">{classItem.description}</p>
+              <div className="text-sm text-gray-600 whitespace-pre-line" dangerouslySetInnerHTML={{ 
+                __html: classItem.description.replace(
+                  /(https?:\/\/[^\s]+)/g, 
+                  '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
+                )
+              }} />
             </div>
           )}
 

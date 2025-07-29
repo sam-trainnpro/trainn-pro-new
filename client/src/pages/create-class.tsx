@@ -809,7 +809,7 @@ export default function CreateClassPage() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Provide details about your class, benefits, and experience level
+                            Provide details about your class, benefits, and experience level. Include URLs (e.g., https://linktr.ee/yourname) to share external links with students.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
