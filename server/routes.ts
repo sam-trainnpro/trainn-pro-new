@@ -1541,24 +1541,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You have already booked this class" });
       }
       
-      // Record promo code usage
-      const subsidyAmount = originalAmount - discountAmount; // Platform covers the discount
-      await storage.recordPromoCodeUsage({
-        promoCodeId: promoCodeRecord.id,
-        userId: req.user.id,
-        classId: parseInt(classId),
-        discountAmount: discountAmount,
-        subsidyAmount: subsidyAmount,
-        originalAmount: originalAmount
-      });
-      
-      // Create confirmed booking directly for free promo booking
+      // Create confirmed booking directly for free promo booking first
       const booking = await storage.createBooking({
         userId: req.user.id,
         classId: parseInt(classId),
         quantity: quantity,
         status: 'confirmed',
         paymentMethod: 'promo_free'
+      });
+      
+      // Record promo code usage with the booking ID
+      const subsidyAmount = originalAmount - discountAmount; // Platform covers the discount
+      await storage.recordPromoCodeUsage({
+        promoCodeId: promoCodeRecord.id,
+        userId: req.user.id,
+        classId: parseInt(classId),
+        bookingId: booking.id,
+        discountAmount: discountAmount,
+        subsidyAmount: subsidyAmount,
+        originalAmount: originalAmount
       });
       
       // Send confirmation email
