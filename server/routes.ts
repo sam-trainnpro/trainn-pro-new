@@ -3110,11 +3110,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Promo code not found" });
       }
 
-      // Check permissions
-      if (user.role !== 'admin' && 
-          (user.role !== 'coach' || existingPromoCode.coachId !== user.id)) {
+      // Debug logging
+      console.log(`PUT promo code - User ID: ${user.id}, Role: ${user.role}`);
+      console.log(`Existing promo code - ID: ${existingPromoCode.id}, CoachId: ${existingPromoCode.coachId}, CreatedBy: ${existingPromoCode.createdBy}`);
+      
+      // Check permissions - allow admins or coaches editing their own codes
+      const isAdmin = user.role === 'admin';
+      const isOwner = existingPromoCode.coachId === user.id || existingPromoCode.createdBy === user.id;
+      
+      if (!isAdmin && (!isOwner || user.role !== 'coach')) {
+        console.log(`Access denied - isAdmin: ${isAdmin}, isOwner: ${isOwner}, userRole: ${user.role}`);
         return res.status(403).json({ message: "Access denied" });
       }
+      
+      console.log(`Access granted - proceeding with update`);
 
       const updateData: any = {};
       const allowedFields = ['name', 'description', 'discountType', 'discountValue', 
