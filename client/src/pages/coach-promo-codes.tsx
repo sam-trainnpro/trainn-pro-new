@@ -101,7 +101,7 @@ export default function CoachPromoCodes() {
       setEditingPromoCode(null);
       toast({
         title: "Success",
-        description: "Promo code updated successfully",
+        description: "Promo code updated and submitted for admin re-approval",
       });
     },
     onError: (error: any) => {
