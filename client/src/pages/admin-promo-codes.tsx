@@ -114,6 +114,28 @@ export default function AdminPromoCodes() {
     }
   });
 
+  // Reject promo code mutation
+  const rejectMutation = useMutation({
+    mutationFn: async (promoCodeId: number) => {
+      const response = await apiRequest('POST', `/api/promo-codes/${promoCodeId}/reject`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/promo-codes'] });
+      toast({
+        title: "Success",
+        description: "Promo code rejected successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reject promo code",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Delete promo code mutation
   const deleteMutation = useMutation({
     mutationFn: async (promoCodeId: number) => {
@@ -469,14 +491,26 @@ export default function AdminPromoCodes() {
                 </div>
                 <div className="flex gap-2">
                   {promoCode.requiresApproval && !promoCode.isApproved && (
-                    <Button
-                      size="sm"
-                      onClick={() => approveMutation.mutate(promoCode.id)}
-                      disabled={approveMutation.isPending}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Approve
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => approveMutation.mutate(promoCode.id)}
+                        disabled={approveMutation.isPending || rejectMutation.isPending}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => rejectMutation.mutate(promoCode.id)}
+                        disabled={rejectMutation.isPending || approveMutation.isPending}
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Reject
+                      </Button>
+                    </>
                   )}
                   <Button
                     size="sm"

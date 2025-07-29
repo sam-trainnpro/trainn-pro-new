@@ -3204,6 +3204,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/promo-codes/:id/reject", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const promoCodeId = parseInt(req.params.id);
+      const rejectedPromoCode = await storage.rejectPromoCode(promoCodeId, req.user!.id);
+      
+      if (!rejectedPromoCode) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      res.json(rejectedPromoCode);
+    } catch (error: any) {
+      console.error("Error rejecting promo code:", error);
+      res.status(500).json({ message: "Failed to reject promo code" });
+    }
+  });
+
   // Delete promo code (admin can delete any, coaches can delete their own unused codes)
   app.delete("/api/promo-codes/:id", requireAuth, async (req, res) => {
     try {
