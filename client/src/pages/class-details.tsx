@@ -309,7 +309,12 @@ export default function ClassDetailsPage() {
                     
                     <TabsContent value="details" className="bg-white rounded-xl p-6 shadow-sm">
                       <h2 className="text-xl font-bold mb-4">About This Class</h2>
-                      <p className="mb-6 whitespace-pre-line">{classItem.description}</p>
+                      <div className="mb-6 whitespace-pre-line" dangerouslySetInnerHTML={{ 
+                        __html: classItem.description.replace(
+                          /(https?:\/\/[^\s]+)/g, 
+                          '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
+                        )
+                      }} />
                       
                       {classItem.whatToBring && (
                         <div className="mb-6">
