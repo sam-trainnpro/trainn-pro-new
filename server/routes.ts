@@ -3112,7 +3112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check permissions
       if (user.role !== 'admin' && 
-          (user.role !== 'coach' || existingPromoCode.coachId !== user.id || existingPromoCode.isApproved)) {
+          (user.role !== 'coach' || existingPromoCode.coachId !== user.id)) {
         return res.status(403).json({ message: "Access denied" });
       }
 
@@ -3125,6 +3125,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (req.body[field] !== undefined) {
           updateData[field] = req.body[field];
         }
+      }
+
+      // If a coach is editing an approved code, reset approval status for re-approval
+      if (user.role === 'coach' && existingPromoCode.isApproved) {
+        updateData.isApproved = false;
+        updateData.approvedBy = null;
+        updateData.approvedAt = null;
+        updateData.requiresApproval = true;
       }
 
       // Convert discount value: for fixed amounts, convert dollars to cents
