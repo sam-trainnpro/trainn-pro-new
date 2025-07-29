@@ -404,16 +404,14 @@ export default function CoachPromoCodes() {
                   <p className="text-gray-600">{promoCode.name}</p>
                 </div>
                 <div className="flex gap-2">
-                  {(!promoCode.isApproved || !promoCode.requiresApproval) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openEditDialog(promoCode)}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openEditDialog(promoCode)}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
