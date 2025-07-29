@@ -312,8 +312,8 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to validate promo code. Please try again.",
+        title: "Promo Code Not Accepted",
+        description: "This promo code has already been used or is not eligible for this purchase.",
         variant: "destructive",
       });
     } finally {
