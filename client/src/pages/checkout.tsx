@@ -302,7 +302,7 @@ export default function CheckoutPage() {
         const errorResult = await response.json();
         toast({
           title: "Invalid Promo Code",
-          description: errorResult.error || "This promo code is not valid for this class.",
+          description: "This promo code has already been used or is not eligible for this purchase.",
           variant: "destructive",
         });
         // Reset promo code states
