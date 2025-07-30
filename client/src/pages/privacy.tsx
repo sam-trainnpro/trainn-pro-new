@@ -26,7 +26,7 @@ export default function PrivacyPage() {
             <div className="prose max-w-none">
               <div className="mb-8">
                 <p className="mb-4">
-                  Trainn respects your right to privacy. This Privacy Policy explains who we are, how we and our Group Companies (defined below) collect, share, and use personal information about you, and how you can exercise your privacy rights.
+                  Trainn Global, LLC ("Trainn", "we") respects your right to privacy. This Privacy Policy explains who we are, how we and our Group Companies (defined below) collect, share, and use personal information about you, and how you can exercise your privacy rights.
                 </p>
                 
                 <p className="mb-4">
