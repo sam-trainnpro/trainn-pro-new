@@ -162,12 +162,6 @@ export default function Header() {
                   {user.role === 'admin' && (
                     <>
                       <DropdownMenuItem asChild>
-                        <Link href="/all-customers" className="cursor-pointer w-full">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>All Customers</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
                         <Link href="/admin/promo-codes" className="cursor-pointer w-full">
                           <Tag className="mr-2 h-4 w-4" />
                           <span>Promo Codes</span>
