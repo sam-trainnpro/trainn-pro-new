@@ -20,7 +20,7 @@ export default function CookiesPage() {
           <div className="space-y-8">
             <div>
               <p className="mb-4">
-                This Cookie Policy explains how Trainn and its subsidiaries (collectively " Trainn", " we", " us", and " ours" use cookies and similar technologies to recognise you when you visit our websites and use our mobile applications (" Site"). It explains what these technologies are and why we use them, as well as your rights to control our use of them.
+                This Cookie Policy explains how Trainn Global, LLC and its subsidiaries (collectively " Trainn", " we", " us", and " ours" use cookies and similar technologies to recognize you when you visit our websites and use our mobile applications (" Site"). It explains what these technologies are and why we use them, as well as your rights to control our use of them.
               </p>
             </div>
 
