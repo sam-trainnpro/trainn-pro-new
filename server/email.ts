@@ -1122,3 +1122,157 @@ The Trainn Team
     return false;
   }
 }
+
+// Send promo code approval notification to coach
+export async function sendPromoCodeApprovalEmail(coach: User, promoCode: any): Promise<boolean> {
+  try {
+    const subject = `Promo Code Approved: ${promoCode.code}`;
+    
+    const discountText = promoCode.discountType === 'percentage' 
+      ? `${promoCode.discountValue}% off`
+      : `$${promoCode.discountValue} off`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+          </div>
+          
+          <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Promo Code Approved!</h2>
+          
+          <p style="color: #333; line-height: 1.6;">Hi ${coach.firstName},</p>
+          <p style="color: #333; line-height: 1.6;">Great news! Your promo code has been approved and is now active on the platform.</p>
+          
+          <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #28a745;">
+            <h3 style="color: #155724; margin-top: 0;">Approved Promo Code Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #155724; font-weight: bold;">Code:</td>
+                <td style="padding: 8px 0; color: #155724; font-size: 18px; font-weight: bold;">${promoCode.code}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #155724; font-weight: bold;">Discount:</td>
+                <td style="padding: 8px 0; color: #155724;">${discountText}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #155724; font-weight: bold;">Usage Limit:</td>
+                <td style="padding: 8px 0; color: #155724;">${promoCode.usageLimit || 'Unlimited'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #155724; font-weight: bold;">Valid Until:</td>
+                <td style="padding: 8px 0; color: #155724;">${new Date(promoCode.validUntil).toLocaleDateString()}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <p style="color: #333; line-height: 1.6;">Your promo code is now live and customers can start using it to book your classes. You can share this code with your community to encourage bookings.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://trainn.pro/promo-codes" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Manage Promo Codes</a>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              Questions? Contact us at support@trainn.pro
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: coach.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`Promo code approval email sent to ${coach.email} for code: ${promoCode.code}`);
+    return true;
+  } catch (error) {
+    console.error('Promo code approval email error:', error);
+    return false;
+  }
+}
+
+// Send promo code rejection notification to coach
+export async function sendPromoCodeRejectionEmail(coach: User, promoCode: any): Promise<boolean> {
+  try {
+    const subject = `Promo Code Not Approved: ${promoCode.code}`;
+    
+    const discountText = promoCode.discountType === 'percentage' 
+      ? `${promoCode.discountValue}% off`
+      : `$${promoCode.discountValue} off`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+          </div>
+          
+          <h2 style="color: #dc3545; margin-bottom: 20px;">Promo Code Update</h2>
+          
+          <p style="color: #333; line-height: 1.6;">Hi ${coach.firstName},</p>
+          <p style="color: #333; line-height: 1.6;">Thank you for submitting your promo code. After review, we're unable to approve this particular code at this time.</p>
+          
+          <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #dc3545;">
+            <h3 style="color: #721c24; margin-top: 0;">Promo Code Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #721c24; font-weight: bold;">Code:</td>
+                <td style="padding: 8px 0; color: #721c24; font-size: 18px; font-weight: bold;">${promoCode.code}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #721c24; font-weight: bold;">Discount:</td>
+                <td style="padding: 8px 0; color: #721c24;">${discountText}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #721c24; font-weight: bold;">Status:</td>
+                <td style="padding: 8px 0; color: #721c24;">Not Approved</td>
+              </tr>
+            </table>
+          </div>
+          
+          <p style="color: #333; line-height: 1.6;">This code has been deactivated and won't be available for customer use. If you'd like to learn more about why this code wasn't approved or discuss different promotional options, please don't hesitate to reach out to our support team.</p>
+          
+          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <h3 style="color: #1565c0; margin-top: 0;">Next Steps:</h3>
+            <ul style="color: #1565c0; margin: 10px 0;">
+              <li>Create a new promo code with different terms</li>
+              <li>Contact our support team to discuss promotional strategies</li>
+              <li>Review our promo code guidelines in your coach dashboard</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="mailto:support@trainn.pro" style="background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-right: 10px;">Contact Support</a>
+            <a href="https://trainn.pro/promo-codes" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Create New Code</a>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              Questions? Contact us at support@trainn.pro
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: coach.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`Promo code rejection email sent to ${coach.email} for code: ${promoCode.code}`);
+    return true;
+  } catch (error) {
+    console.error('Promo code rejection email error:', error);
+    return false;
+  }
+}

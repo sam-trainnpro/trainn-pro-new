@@ -10,7 +10,9 @@ import {
   sendWelcomeEmail,
   sendCoachApprovalNotification,
   sendBookingCancellationConfirmation,
-  sendPromoCodeApprovalRequest
+  sendPromoCodeApprovalRequest,
+  sendPromoCodeApprovalEmail,
+  sendPromoCodeRejectionEmail
 } from "./email";
 import { 
   sendClassCancellationNotifications,
@@ -3197,6 +3199,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Promo code not found" });
       }
 
+      // Get the coach who created the promo code
+      const coach = await storage.getUser(approvedPromoCode.createdBy);
+      if (coach) {
+        // Send approval email to coach
+        await sendPromoCodeApprovalEmail(coach, approvedPromoCode);
+      }
+
       res.json(approvedPromoCode);
     } catch (error: any) {
       console.error("Error approving promo code:", error);
@@ -3211,6 +3220,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!rejectedPromoCode) {
         return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      // Get the coach who created the promo code
+      const coach = await storage.getUser(rejectedPromoCode.createdBy);
+      if (coach) {
+        // Send rejection email to coach
+        await sendPromoCodeRejectionEmail(coach, rejectedPromoCode);
       }
 
       res.json(rejectedPromoCode);
