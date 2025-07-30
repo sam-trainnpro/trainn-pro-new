@@ -278,6 +278,56 @@ The system now fully implements platform subsidy transfers to coaches.
 
 This system enables sophisticated promotional strategies once the platform subsidy transfer functionality is completed.
 
+## Refer a Friend Feature (Planned)
+
+### Feature Overview
+A referral system providing $5 account credits to both referrer and referee after the referee completes their first paid class.
+
+### Key Requirements Discussed
+- **Reward Structure**: $5 credit to both parties
+- **Timing**: Referrer gets reward AFTER referee completes first class (not just books)
+- **Usage**: Multiple referrals allowed per user
+- **Format**: Account credits (not promo codes) - stored in new `user_credits` table
+- **Budget Cap**: $2000 max (adjustable in code)
+- **Expiration**: Referral links expire after 60 days
+
+### Technical Architecture Planned
+
+**Database Schema:**
+- `referrals` table: Track referral relationships, codes, status, expiration
+- `user_credits` table: Transaction-based credit system with audit trail
+- Integration with existing promo code infrastructure
+
+**Credit System Design:**
+- Transaction-based credits (positive/negative entries)
+- Complete audit trail of credit sources and usage
+- Integration with checkout flow (similar to promo codes)
+- Support for partial credit usage and stacking with other discounts
+
+**Anti-Fraud Measures:**
+- Email uniqueness validation
+- IP tracking for self-referral prevention
+- Must be first paid booking (excludes $0 classes)
+- Referral code expiration enforcement
+
+**User Experience:**
+- Referral dashboard in user profile
+- Share functionality (email, SMS, WhatsApp)
+- Credit balance display in profile and checkout
+- Automatic referral code detection during signup
+
+### Integration Points
+- Leverage existing SendGrid email system for notifications
+- Use existing payment flow with credit application
+- Build on current promo code discount logic
+- Integrate with booking completion triggers
+
+### Future Considerations
+- Analytics dashboard for referral performance
+- Admin panel for budget monitoring
+- Credit expiration policies
+- Additional credit sources (loyalty, compensation)
+
 ## User Preferences
 
 ```
