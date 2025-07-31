@@ -3602,6 +3602,32 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  app.get("/api/referrals/my-status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      // Check if this user was referred by someone else (they are a referee)
+      const referralStatus = await storage.getReferralStatusForUser(userId);
+      
+      if (referralStatus) {
+        res.json({
+          isReferral: true,
+          status: referralStatus.status,
+          referrerName: referralStatus.referrerName,
+          completedAt: referralStatus.completedAt
+        });
+      } else {
+        res.json({
+          isReferral: false,
+          status: null
+        });
+      }
+    } catch (error: any) {
+      console.error('Error getting referral status:', error);
+      res.status(500).json({ message: "Error getting referral status: " + error.message });
+    }
+  });
+
   app.get("/api/credits/balance", requireAuth, async (req, res) => {
     try {
       const balance = await storage.getUserCreditBalance(req.user!.id);

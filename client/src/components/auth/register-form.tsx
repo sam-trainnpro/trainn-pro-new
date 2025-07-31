@@ -124,10 +124,16 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess, refe
       setError(null);
       console.log("Submitting registration form:", { ...data, password: "***" });
       
-      // Combine country code and phone number
-      const fullPhoneNumber = `${data.countryCode}${data.phone}`;
-      const submitData = {
+      // Include referral code in submission data
+      const submissionData = {
         ...data,
+        referralCode: referralCode || null
+      };
+      
+      // Combine country code and phone number
+      const fullPhoneNumber = `${submissionData.countryCode}${submissionData.phone}`;
+      const submitData = {
+        ...submissionData,
         phone: fullPhoneNumber,
       };
       
@@ -139,26 +145,6 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess, refe
       try {
         const user = await registerMutation.mutateAsync(backendData);
         console.log("Registration successful:", user);
-        
-        // Process referral if referral code was provided
-        if (referralCode && user) {
-          try {
-            await fetch('/api/referrals/process-signup', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                referralCode,
-                userId: user.id
-              })
-            });
-            console.log("Referral processed successfully");
-          } catch (referralError) {
-            console.error("Failed to process referral:", referralError);
-            // Don't fail registration if referral processing fails
-          }
-        }
         
         // Use window.location.href for more reliable navigation
         // after authentication state changes
