@@ -12,7 +12,9 @@ import {
   promoCodes, type PromoCode, type InsertPromoCode,
   promoCodeUsage, type PromoCodeUsage, type InsertPromoCodeUsage,
   bookingSubsidies, type BookingSubsidy, type InsertBookingSubsidy,
-  userCommissionTiers, type UserCommissionTier, type InsertUserCommissionTier
+  userCommissionTiers, type UserCommissionTier, type InsertUserCommissionTier,
+  referrals, type Referral, type InsertReferral,
+  userCredits, type UserCredit, type InsertUserCredit
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -117,6 +119,23 @@ export interface IStorage {
   getScheduledPayoutsByCoach(coachId: number): Promise<ScheduledPayout[]>;
   updateScheduledPayout(id: number, payoutData: Partial<ScheduledPayout>): Promise<ScheduledPayout | undefined>;
   getDueScheduledPayouts(): Promise<ScheduledPayout[]>;
+  
+  // Referral system
+  generateReferralCode(firstName: string, lastName: string, userId: number): string;
+  createReferral(referralData: InsertReferral): Promise<Referral>;
+  getReferralByCode(code: string): Promise<Referral | undefined>;
+  getReferralsByReferrer(referrerId: number): Promise<Referral[]>;
+  updateReferral(id: number, referralData: Partial<Referral>): Promise<Referral | undefined>;
+  
+  // User credits
+  getUserCreditBalance(userId: number): Promise<number>;
+  addUserCredit(creditData: InsertUserCredit): Promise<UserCredit>;
+  getUserCreditHistory(userId: number): Promise<UserCredit[]>;
+  applyCreditsToBooking(userId: number, amount: number, bookingId: number): Promise<UserCredit>;
+  
+  // Referral processing
+  processReferralSignup(referralCode: string, refereeId: number): Promise<Referral | undefined>;
+  processReferralCompletion(refereeId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -178,7 +197,16 @@ export class DatabaseStorage implements IStorage {
       isApproved: userData.role === 'customer' || userData.role === 'admin'
     }).returning();
     
-    return result[0];
+    const user = result[0];
+    
+    // Generate referral code for new user
+    if (!user.referralCode) {
+      const referralCode = this.generateReferralCode(user.firstName, user.lastName, user.id);
+      const updatedUser = await this.updateUser(user.id, { referralCode });
+      return updatedUser || user;
+    }
+    
+    return user;
   }
   
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
@@ -1487,6 +1515,126 @@ export class DatabaseStorage implements IStorage {
     .where(eq(promoCodeUsage.bookingId, bookingId));
 
     return subsidyResult[0]?.subsidyAmount || 0;
+  }
+
+  // Referral system methods
+  generateReferralCode(firstName: string, lastName: string, userId: number): string {
+    const namePrefix = (firstName.substring(0, 2) + lastName.substring(0, 2)).toUpperCase();
+    const userSuffix = userId.toString().padStart(4, '0');
+    const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+    return namePrefix + userSuffix + randomSuffix;
+  }
+
+  async createReferral(referralData: InsertReferral): Promise<Referral> {
+    const result = await db.insert(referrals).values(referralData).returning();
+    return result[0];
+  }
+
+  async getReferralByCode(code: string): Promise<Referral | undefined> {
+    const result = await db.select().from(referrals).where(eq(referrals.referralCode, code));
+    return result[0];
+  }
+
+  async getReferralsByReferrer(referrerId: number): Promise<Referral[]> {
+    return await db.select().from(referrals).where(eq(referrals.referrerId, referrerId)).orderBy(desc(referrals.createdAt));
+  }
+
+  async updateReferral(id: number, referralData: Partial<Referral>): Promise<Referral | undefined> {
+    const result = await db.update(referrals).set(referralData).where(eq(referrals.id, id)).returning();
+    return result[0];
+  }
+
+  // User credits methods
+  async getUserCreditBalance(userId: number): Promise<number> {
+    const result = await db.select({
+      balance: sql<number>`SUM(${userCredits.amount})`
+    })
+    .from(userCredits)
+    .where(eq(userCredits.userId, userId));
+
+    return result[0]?.balance || 0;
+  }
+
+  async addUserCredit(creditData: InsertUserCredit): Promise<UserCredit> {
+    const result = await db.insert(userCredits).values(creditData).returning();
+    return result[0];
+  }
+
+  async getUserCreditHistory(userId: number): Promise<UserCredit[]> {
+    return await db.select().from(userCredits).where(eq(userCredits.userId, userId)).orderBy(desc(userCredits.createdAt));
+  }
+
+  async applyCreditsToBooking(userId: number, amount: number, bookingId: number): Promise<UserCredit> {
+    const creditData: InsertUserCredit = {
+      userId,
+      amount: -amount, // Negative for usage
+      transactionType: 'referral_usage',
+      description: `Used $${amount / 100} credit for booking`,
+      bookingId
+    };
+    
+    return await this.addUserCredit(creditData);
+  }
+
+  // Referral processing methods
+  async processReferralSignup(referralCode: string, refereeId: number): Promise<Referral | undefined> {
+    // Find existing referral
+    const referral = await this.getReferralByCode(referralCode);
+    if (!referral || referral.status !== 'pending') {
+      return undefined;
+    }
+
+    // Check if referral hasn't expired
+    if (new Date() > new Date(referral.expiresAt)) {
+      return undefined;
+    }
+
+    // Update referral with referee ID and status
+    return await this.updateReferral(referral.id, {
+      refereeId,
+      status: 'signed_up'
+    });
+  }
+
+  async processReferralCompletion(refereeId: number): Promise<void> {
+    // Find referral where this user is the referee
+    const userReferrals = await db.select()
+      .from(referrals)
+      .where(and(
+        eq(referrals.refereeId, refereeId),
+        eq(referrals.status, 'signed_up'),
+        eq(referrals.rewardGranted, false)
+      ));
+
+    for (const referral of userReferrals) {
+      // Mark referral as completed
+      await this.updateReferral(referral.id, {
+        status: 'completed',
+        completedAt: new Date(),
+        rewardGranted: true
+      });
+
+      // Grant $5 credit to both referrer and referee
+      const creditAmount = 500; // $5 in cents
+
+      // Credit for referrer
+      await this.addUserCredit({
+        userId: referral.referrerId,
+        amount: creditAmount,
+        transactionType: 'referral_reward',
+        description: 'Referral reward - friend completed first class',
+        referralId: referral.id
+      });
+
+      // Credit for referee
+      await this.addUserCredit({
+        userId: refereeId,
+        amount: creditAmount,
+        transactionType: 'referral_reward',
+        description: 'Welcome credit for completing first class',
+        referralId: referral.id
+      });
+    }
   }
 }
 

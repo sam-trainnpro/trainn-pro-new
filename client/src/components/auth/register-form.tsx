@@ -82,9 +82,10 @@ type RegisterFormValues = z.infer<typeof registerSchemaBase>;
 interface RegisterFormProps {
   defaultRole?: string;
   onSuccess?: () => void;
+  referralCode?: string | null;
 }
 
-export default function RegisterForm({ defaultRole = "customer", onSuccess }: RegisterFormProps) {
+export default function RegisterForm({ defaultRole = "customer", onSuccess, referralCode }: RegisterFormProps) {
   const [, navigate] = useLocation();
   const { registerMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +140,26 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
         const user = await registerMutation.mutateAsync(backendData);
         console.log("Registration successful:", user);
         
+        // Process referral if referral code was provided
+        if (referralCode && user) {
+          try {
+            await fetch('/api/referrals/process-signup', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                referralCode,
+                userId: user.id
+              })
+            });
+            console.log("Referral processed successfully");
+          } catch (referralError) {
+            console.error("Failed to process referral:", referralError);
+            // Don't fail registration if referral processing fails
+          }
+        }
+        
         // Use window.location.href for more reliable navigation
         // after authentication state changes
         window.setTimeout(() => {
@@ -175,6 +196,13 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess }: Re
         <CardDescription>
           Join Trainn to find or host fitness classes
         </CardDescription>
+        {referralCode && (
+          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-700 font-medium">
+              🎉 You've been referred to Trainn! Get $5 off your first paid class.
+            </p>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Form {...form}>

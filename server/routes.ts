@@ -1744,6 +1744,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Booking created successfully:", booking);
       
+      // Check if this is the user's first paid booking to process referral rewards
+      try {
+        const userBookings = await storage.getBookingsByCustomer(req.user.id);
+        const paidBookings = userBookings.filter(b => 
+          b.status === 'confirmed' && 
+          b.paymentMethod !== 'free' && 
+          b.paymentMethod !== null &&
+          b.id !== booking.id // Exclude the current booking
+        );
+        
+        if (paidBookings.length === 0) {
+          // This is their first paid booking - process referral completion
+          await storage.processReferralCompletion(req.user.id);
+          console.log("Processed referral completion for user's first paid booking");
+        }
+      } catch (referralError) {
+        console.error("Error processing referral completion:", referralError);
+        // Don't fail the booking if referral processing fails
+      }
+      
       // Create scheduled payout for coach (2 days after class completion)
       if (stripe && paymentIntentId && paymentIntentId.startsWith("pi_")) {
         try {
@@ -3535,6 +3555,86 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     } catch (error) {
       console.error('Error generating sitemap:', error);
       res.status(500).send('Error generating sitemap');
+    }
+  });
+
+  // Referral system routes
+  app.get("/api/referrals/my-code", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      // Ensure user has a referral code
+      if (!user.referralCode) {
+        const referralCode = storage.generateReferralCode(user.firstName, user.lastName, user.id);
+        await storage.updateUser(user.id, { referralCode });
+        user.referralCode = referralCode;
+      }
+      
+      res.json({ referralCode: user.referralCode });
+    } catch (error: any) {
+      console.error('Error getting referral code:', error);
+      res.status(500).json({ message: "Error getting referral code: " + error.message });
+    }
+  });
+
+  app.get("/api/referrals/my-referrals", requireAuth, async (req, res) => {
+    try {
+      const referrals = await storage.getReferralsByReferrer(req.user!.id);
+      res.json(referrals);
+    } catch (error: any) {
+      console.error('Error getting referrals:', error);
+      res.status(500).json({ message: "Error getting referrals: " + error.message });
+    }
+  });
+
+  app.get("/api/credits/balance", requireAuth, async (req, res) => {
+    try {
+      const balance = await storage.getUserCreditBalance(req.user!.id);
+      res.json({ balance });
+    } catch (error: any) {
+      console.error('Error getting credit balance:', error);
+      res.status(500).json({ message: "Error getting credit balance: " + error.message });
+    }
+  });
+
+  app.get("/api/credits/history", requireAuth, async (req, res) => {
+    try {
+      const history = await storage.getUserCreditHistory(req.user!.id);
+      res.json(history);
+    } catch (error: any) {
+      console.error('Error getting credit history:', error);
+      res.status(500).json({ message: "Error getting credit history: " + error.message });
+    }
+  });
+
+  // Process referral signup (called during user registration)
+  app.post("/api/referrals/process-signup", async (req, res) => {
+    try {
+      const { referralCode, userId } = req.body;
+      
+      if (!referralCode || !userId) {
+        return res.status(400).json({ message: "Referral code and user ID are required" });
+      }
+      
+      const referral = await storage.processReferralSignup(referralCode, userId);
+      
+      if (!referral) {
+        return res.status(400).json({ message: "Invalid or expired referral code" });
+      }
+      
+      // Grant the referee $5 credit immediately
+      await storage.addUserCredit({
+        userId,
+        amount: 500, // $5 in cents
+        transactionType: 'referral_reward',
+        description: 'Welcome credit - $5 off your first class',
+        referralId: referral.id
+      });
+      
+      res.json({ success: true, referral });
+    } catch (error: any) {
+      console.error('Error processing referral signup:', error);
+      res.status(500).json({ message: "Error processing referral: " + error.message });
     }
   });
 
