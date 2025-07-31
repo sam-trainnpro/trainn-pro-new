@@ -213,6 +213,8 @@ export default function CheckoutPage() {
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [finalAmount, setFinalAmount] = useState(0);
+  const [appliedCredits, setAppliedCredits] = useState(0);
+  const [useCredits, setUseCredits] = useState(false);
   
   // Free booking mutation for 100% discount promo codes
   const freeBookingMutation = useMutation({
@@ -267,6 +269,14 @@ export default function CheckoutPage() {
   }
   
   const classId = parseInt(params.classId);
+  
+  // Fetch user credit balance
+  const { data: creditData } = useQuery({
+    queryKey: ['/api/credits/balance'],
+    enabled: !!user,
+  });
+  
+  const creditBalance = (creditData as { balance?: number })?.balance || 0;
   
   // Fetch class details
   const { 

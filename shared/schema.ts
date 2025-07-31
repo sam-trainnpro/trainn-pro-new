@@ -25,6 +25,8 @@ export const users = pgTable("users", {
   googleId: text("google_id"),
   authMethod: text("auth_method").notNull().default("password"), // 'password', 'google', or 'both'
   googleProfilePicture: text("google_profile_picture"),
+  // Referral system
+  referralCode: text("referral_code").unique(), // Unique referral code for each user
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -414,3 +416,46 @@ export const insertUserCommissionTierSchema = createInsertSchema(userCommissionT
 
 export type InsertUserCommissionTier = z.infer<typeof insertUserCommissionTierSchema>;
 export type UserCommissionTier = typeof userCommissionTiers.$inferSelect;
+
+// Referrals
+export const referrals = pgTable("referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").notNull(), // User who sent the referral
+  refereeId: integer("referee_id"), // User who was referred (null until they sign up)
+  referralCode: text("referral_code").notNull(), // The referrer's unique code
+  refereeEmail: text("referee_email"), // Email of referred person (optional)
+  status: text("status").notNull().default("pending"), // 'pending', 'signed_up', 'completed'
+  completedAt: timestamp("completed_at"), // When referee completed their first paid class
+  rewardGranted: boolean("reward_granted").notNull().default(false),
+  expiresAt: timestamp("expires_at").notNull(), // 60 days from creation
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+export type Referral = typeof referrals.$inferSelect;
+
+// User Credits - Transaction-based credit system
+export const userCredits = pgTable("user_credits", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  amount: integer("amount").notNull(), // Amount in cents (positive for earned, negative for used)
+  transactionType: text("transaction_type").notNull(), // 'referral_reward', 'referral_usage', 'admin_adjustment'
+  description: text("description").notNull(),
+  referralId: integer("referral_id"), // FK to referrals table (nullable)
+  bookingId: integer("booking_id"), // FK to bookings table when used (nullable)
+  expiresAt: timestamp("expires_at"), // Optional expiration for credits
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertUserCreditSchema = createInsertSchema(userCredits).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserCredit = z.infer<typeof insertUserCreditSchema>;
+export type UserCredit = typeof userCredits.$inferSelect;

@@ -9,9 +9,10 @@ export default function RegisterPage() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   
-  // Get role from URL params
+  // Get role and referral code from URL params
   const searchParams = new URLSearchParams(window.location.search);
   const role = searchParams.get('role') || "customer";
+  const referralCode = searchParams.get('ref');
   
   // Scroll to top when page loads
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function RegisterPage() {
       
       <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-md">
-          <RegisterForm defaultRole={role} />
+          <RegisterForm defaultRole={role} referralCode={referralCode} />
           
           <div className="text-center mt-6">
             <span className="text-sm text-gray-600">Already have an account?</span>{" "}

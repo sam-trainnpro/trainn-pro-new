@@ -1,9 +1,12 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useSafeAuth } from "../../../../hooks/use-auth-safe";
+import { useState } from "react";
+import ReferralModal from "../referral-modal";
 
 export default function HeroSection() {
   const { user } = useSafeAuth();
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   
   return (
     <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
@@ -38,21 +41,48 @@ export default function HeroSection() {
       <div className="bg-white py-3 sm:py-6">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start max-w-lg sm:max-w-xl mx-auto sm:mx-0">
-            <Link href="/classes">
-              <Button size="lg" className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto">
-                Find Classes Now
-              </Button>
-            </Link>
-            {!user && (
-              <Link href="/register?role=coach">
-                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
-                  Become a Coach
+            {/* Refer a Friend button - Mobile: above Find Classes, Desktop: to the right */}
+            {user && (
+              <div className="sm:order-2">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="bg-white text-coral-500 border-coral-500 hover:bg-coral-50 w-full sm:w-auto"
+                  onClick={() => setIsReferralModalOpen(true)}
+                >
+                  Refer a Friend ($5)
+                </Button>
+              </div>
+            )}
+            
+            <div className="sm:order-1">
+              <Link href="/classes">
+                <Button size="lg" className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto">
+                  Find Classes Now
                 </Button>
               </Link>
+            </div>
+            
+            {!user && (
+              <div className="sm:order-2">
+                <Link href="/register?role=coach">
+                  <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
+                    Become a Coach
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Referral Modal */}
+      {user && (
+        <ReferralModal
+          isOpen={isReferralModalOpen}
+          onClose={() => setIsReferralModalOpen(false)}
+        />
+      )}
 
     </div>
   );
