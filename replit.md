@@ -1,335 +1,50 @@
 # Trainn Fitness Marketplace
 
 ## Overview
+Trainn is a full-stack fitness and creative activity marketplace connecting fitness coaches with customers for booking local outdoor workouts and sports classes. It provides coaches with class creation and management tools, and customers with an easy-to-use booking system featuring Stripe payments. The platform aims to be a comprehensive solution for fitness and activity discovery, booking, and management.
 
-Trainn is a full-stack fitness and creative activity marketplace application that connects fitness coaches with customers for booking local outdoor workouts and sports classes. The platform enables coaches to create and manage fitness classes while providing customers with an easy-to-use booking system with integrated payments through Stripe.
+## User Preferences
+Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript and Vite for development
-- **Routing**: Wouter for client-side routing
-- **State Management**: TanStack React Query for server state management
-- **Styling**: Tailwind CSS with shadcn/ui component library
-- **UI Components**: Radix UI primitives with custom styling
-- **Maps Integration**: Google Maps API via @react-google-maps/api
-- **Payment Processing**: Stripe React integration (@stripe/react-stripe-js)
+### Frontend
+- **Framework**: React 18 with TypeScript and Vite
+- **Routing**: Wouter
+- **State Management**: TanStack React Query
+- **Styling**: Tailwind CSS with shadcn/ui and Radix UI
+- **Maps Integration**: Google Maps API
+- **Payment Integration**: Stripe React
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js server
-- **Authentication**: Passport.js with local strategy and express-session
+### Backend
+- **Runtime**: Node.js with Express.js
+- **Authentication**: Passport.js (local strategy, express-session)
 - **Database**: PostgreSQL with Drizzle ORM
-- **Email**: SendGrid for transactional emails
-- **File Uploads**: Multer for handling image uploads
+- **Email**: SendGrid
+- **File Uploads**: Multer
 - **Payment Processing**: Stripe server-side SDK
 
 ### Database Design
-- **ORM**: Drizzle with PostgreSQL dialect
-- **Schema**: Centralized in `/shared/schema.ts` with type-safe operations
-- **Key Tables**: users, classes, bookings, reviews, class_categories, class_schedules, contact_messages, password_reset_tokens
+- **ORM**: Drizzle (PostgreSQL dialect)
+- **Schema**: Centralized and type-safe
+- **Key Entities**: Users (with role-based access), Classes (with schedules, categories, locations), Bookings (with payment integration, status tracking), Reviews, Contact Messages, Password Reset Tokens.
 
-## Key Components
-
-### Authentication System
-- Role-based access control (customer, coach, admin)
-- Secure password hashing using Node.js crypto (scrypt)
-- Session-based authentication with PostgreSQL session store
-- Coach approval workflow for business verification
-
-### Class Management
-- Coaches can create, edit, and manage fitness classes
-- Support for recurring classes with schedules
-- Location-based search with Google Maps integration
-- Category-based class organization
-- Image upload capabilities for class promotional materials
-
-### Booking System
-- Real-time availability checking
-- Stripe integration for secure payment processing
-- Free class booking system for $0 classes (bypasses payment)
-- Email confirmations for successful bookings
-- Cancellation policy management
-- Booking history and status tracking
-- Direct confirmed booking creation (no pending status)
-- Aggressive cache refresh for immediate booking visibility
-
-### Review System
-- Customer review functionality for past bookings
-- 5-star rating system with optional text comments
-- Review editing capabilities with updated_at timestamps
-- Integration with My Bookings page (Add/View Review buttons)
-- Review validation preventing duplicate reviews per booking
-- Proper authentication and ownership verification
-
-### Payment Processing
-- Stripe Connect for coach payouts (infrastructure in place)
-- Customer payment processing via Stripe Payment Intents
-- Automatic email receipts via SendGrid
-- Refund handling capabilities
-
-### Location Services
-- Google Maps integration for address autocomplete
-- Interactive map views for class locations
-- Geolocation-based search functionality
-- Location preview components
-
-## Data Flow
-
-1. **User Registration/Login**: Users register with role selection → Authentication via Passport.js → Session creation
-2. **Class Creation**: Coaches create classes → Location geocoding → Database storage → Available for booking
-3. **Class Discovery**: Customers search/filter classes → Map or list view → Class details page
-4. **Booking Process**: Customer selects class → Stripe payment processing → Booking confirmation → Email notifications
-5. **Class Management**: Coaches view bookings → Manage class schedules → Edit class details
+### Core Features
+- **Authentication**: Role-based access control (customer, coach, admin), secure password hashing, session-based. Coach approval workflow.
+- **Class Management**: Coaches create/manage classes, recurring classes, location-based search, category organization, image uploads.
+- **Booking System**: Real-time availability, Stripe payments (including free class booking bypass), email confirmations, cancellation policy, booking history.
+- **Review System**: Customer reviews (5-star, text comments), review editing, integration with booking history.
+- **Payment Processing**: Stripe Connect for payouts, Payment Intents for customers, automatic email receipts, refund handling.
+- **Location Services**: Google Maps integration (autocomplete, interactive maps, geolocation search).
+- **Promo Code System**: Platform-subsidized promo codes with dynamic discounts, usage limits, and integration into the checkout flow with automatic coach subsidy transfers. Admin and coach management interfaces.
+- **Recurring Classes**: Google Calendar-style recurrence options with individual instance management.
+- **Email Notifications**: Comprehensive system for bookings, reminders, cancellations, approvals, etc.
+- **Image Hosting**: Cloudinary for permanent image storage and optimization.
 
 ## External Dependencies
 
-### Required Services
-- **Database**: PostgreSQL (configured via DATABASE_URL)
-- **Email**: SendGrid (SENDGRID_API_KEY required)
-- **Maps**: Google Maps JavaScript API (Google Maps API key needed)
-- **Payments**: Stripe (STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY required)
-- **Image Storage**: Cloudinary (CLOUDINARY_URL required)
-
-### Environment Variables
-- DATABASE_URL: PostgreSQL connection string
-- SENDGRID_API_KEY: Email service authentication
-- SESSION_SECRET: Session encryption key
-- STRIPE_SECRET_KEY: Server-side Stripe authentication
-- VITE_STRIPE_PUBLISHABLE_KEY: Client-side Stripe public key
-- CLOUDINARY_URL: Cloudinary connection string (format: cloudinary://api_key:api_secret@cloud_name)
-- Google Maps API key (for client-side integration)
-
-## Deployment Strategy
-
-### Development
-- Vite dev server for hot module replacement
-- Express server with middleware for API routes
-- Session-based authentication for development workflow
-
-### Production Build
-- Vite builds React app to `dist/public`
-- ESBuild bundles Express server to `dist/index.js`
-- Static file serving from build output
-- Session store persisted in PostgreSQL
-
-### Replit Configuration
-- Configured for Node.js 20 with PostgreSQL 16
-- Automatic deployment to Replit's autoscale infrastructure
-- Port 5000 mapped to external port 80
-- Build command: `npm run build`
-- Run command: `npm run start`
-
-## Changelog
-
-```
-Changelog:
-- July 29, 2025. COMPLETED admin promo code approval and rejection system - added green "Approve" and red "Reject" buttons to admin promo codes page with full backend functionality; when admins reject promo codes, they are automatically deactivated and marked as rejected; includes proper state management, loading states, and success/error messaging; enhanced UI with proper color coding (green for approve, red for reject) as requested
-- July 29, 2025. COMPLETED automatic admin email notifications for promo code approvals - when coaches create or edit promo codes requiring approval, sam@trainn.pro automatically receives professional HTML notification emails with full promo code details and direct admin panel link; fixed 403 "Access denied" error preventing coaches from editing their own promo codes; implemented proper re-approval workflow where edited approved codes reset to pending status; enhanced permission system with detailed debug logging for troubleshooting; complete end-to-end promo code management workflow now fully functional
-- July 29, 2025. Added Delete button functionality to coach promo codes page - coaches can now delete their own promo codes with business logic restrictions (cannot delete codes that have been used by customers or active approved codes); updated DELETE endpoint to allow coach ownership-based deletion while maintaining admin privileges for unrestricted deletion; includes confirmation dialog and proper error handling for different restriction scenarios
-- July 29, 2025. Enhanced promo code error messaging for better user experience - updated checkout error messages to show "Promo Code Not Accepted" with user-friendly description instead of technical validation errors; consistent error messaging across all promo code validation scenarios
-- July 29, 2025. Fixed 100% discount promo code Stripe error by implementing free booking flow - when promo codes provide 100% discount (e.g., SAM1CLASSFREE), system now bypasses Stripe payment processing and uses free booking endpoint instead; enhanced checkout page to detect zero final amounts and show dedicated free booking UI with green "Book Free Class" button; created new /api/bookings/free-promo endpoint to handle promo code usage tracking and subsidies; resolves Stripe minimum charge amount error for 100% discount codes
-- July 29, 2025. Implemented comprehensive hyperlink support across coach content - coaches can now include clickable URLs (e.g., https://linktr.ee/alexeirocks) in both class descriptions and bio sections; URLs are automatically converted to clickable links with proper security attributes (target="_blank", rel="noopener noreferrer"); enhanced Create Class, Edit Class, and Profile forms with helper text explaining hyperlink support; applied to class detail pages, calendar modals, coach detail pages, and coach bio displays for consistent functionality across the application
-- July 28, 2025. COMPLETED comprehensive platform-subsidized promo code system with automatic coach subsidy transfers - implemented complete end-to-end functionality where discount_amount shows actual percentage discount applied (40 cents for 20% of $2.00) and subsidy_amount represents coach payout difference after all fees (35 cents); enhanced payout-processor.ts to automatically include platform subsidies in coach transfers via Stripe; coaches now receive full earnings when customers use platform-subsidized promo codes through automatic platform subsidy transfers; includes detailed financial tracking, enhanced logging, and comprehensive metadata for accounting transparency; complete implementation ready for production use
-- July 28, 2025. Fixed critical promo code discount bug in Stripe payment processing - resolved unit mismatch where class prices (dollars) and promo discount values (cents) caused incorrect calculations; updated payment intent creation to properly apply promo code discounts to actual Stripe charges instead of just UI display; enhanced payment confirmation to record promo code usage with metadata tracking; customers now pay correct discounted amounts instead of full price when using valid promo codes
-- July 25, 2025. Completed promo code edit functionality for both admin and coach management pages - added Edit buttons to promo code cards with pre-populated dialog forms; implemented update mutation using PUT /api/promo-codes/:id endpoint; admins can edit any promo code while coaches can only edit their own pending codes; edit dialogs include all form fields with proper default values and validation; includes permission restrictions where coaches cannot edit approved codes to maintain approval workflow integrity; provides seamless editing experience with proper error handling and success notifications
-- July 25, 2025. Completed comprehensive promo code system implementation with full frontend/backend integration - implemented complete database schema with promo_codes table supporting discount types (percentage/fixed), usage limits, date ranges, and coach-specific codes; built admin and coach interfaces for promo code management with dedicated pages at /admin/promo-codes and /promo-codes; fully integrated promo codes into checkout flow with real-time validation, discount calculation, and Stripe payment processing; added two-payment system where customer pays discounted amount and platform subsidizes the difference to coaches; added promo code management navigation links in header dropdown for admin and coach users; includes platform-subsidized discounts with financial tracking and commission rate overrides
-- January 23, 2025. Completed address field restructuring for improved city filtering - split single address field into separate street, city, state, zip_code database columns; successfully migrated 303 existing classes using SQL parsing; updated API endpoints and frontend filtering to use dedicated city field instead of address parsing; cleaned up city data to ensure consistent filtering with accurate city names ("San Francisco", "Daly City"); enhanced search functionality with more reliable location-based filtering
-- January 23, 2025. Fixed email confirmation timezone bug - updated all email functions (booking confirmations, class reminders, cancellation notifications, schedule updates) to display dates and times in Pacific Time instead of server timezone; implemented date-fns-tz library for proper timezone conversion; Coach Pat's class now correctly shows "Wednesday, July 23, 2025 at 5:00 PM PT" instead of "Thursday, July 24, 2025 at 12:00 AM"
-- January 22, 2025. Fixed participant count display in My Calendar and Master Calendar to show total spots booked instead of booking count - updated calendar view, upcoming classes list, and class detail modal to display accurate participant numbers based on quantity/spots reserved rather than just number of bookings; ensures coaches and admins see correct capacity usage when customers book multiple spots
-- January 22, 2025. Enhanced All Customers admin table with Spots column showing booking quantity - admins can now see how many spots each customer booked for classes alongside existing data (date, coach, class name, customer details, completed classes count); improved data visibility for better customer support and booking management
-- July 21, 2025. Successfully implemented interactive maps with reverse geocoding for both Create and Edit Class pages - coaches can now drag pins to adjust exact class locations with automatic address field updates; enhanced backend API endpoints to properly save latitude and longitude coordinates to database; provides complete location editing flexibility with real-time coordinate persistence for both single classes and recurring series
-- July 21, 2025. Fixed duration field functionality in Edit Class page - removed invalid backend duration field handling and implemented proper endTime recalculation in recurring series updates; when coaches change duration field, backend now correctly recalculates endTime for each class instance while preserving individual startTimes; works for both single class updates and "This and following classes" recurring series updates
-- July 20, 2025. Integrated Google Analytics tracking across all pages with measurement ID G-KPDW2TC9BF - implemented analytics utility files, page view tracking for single-page application, and event tracking capabilities; added proper initialization on app load and automatic page tracking on route changes
-- July 19, 2025. Fixed duplicate class ZIP code copying issue - enhanced address parsing to handle multiple address formats including comma-separated ZIP codes and "city, state zipCode" format with proper fallback support
-- July 19, 2025. Fixed critical class creation bug where address validation was blocking form submission - updated geocoding function to populate both individual address fields AND the required address field when location names like "Dolores Park" are entered; aligned validation schema with UI by making individual address fields properly required; resolved mismatch between optional validation and required UI indicators
-- July 18, 2025. Updated favicon to mountain silhouette design symbolizing achievement - replaced sun design with warm golden gradient background and person celebrating on mountain peak; removed "T" letter for cleaner design; matches provided reference image with inspiring message of reaching fitness and training goals
-- July 17, 2025. Implemented comprehensive admin class duplication system with proper ownership preservation - fixed authorization check to allow admin access to create class page; resolved form validation schema mismatch between client and database; implemented query parameter approach for duplication data transfer; added coachId preservation logic for admin duplications; updated address field handling to support both individual and combined address formats; complete solution enables admins to create own classes and duplicate any coach's classes for customer support workflows
-- July 17, 2025. Fixed timezone issue in recurring class creation - updated generateRecurringInstances function to properly handle Pacific timezone conversion; added date-fns-tz dependency for timezone handling; converted UTC times to Pacific for date arithmetic then back to UTC for storage; resolved issue where afternoon recurring classes were being scheduled at wrong times
-- July 17, 2025. Enhanced category filtering with future classes only - created new API endpoint /api/categories/with-future-classes that returns only class categories with upcoming classes; updated SearchFilters component to accept showOnlyFutureCategories prop; applied filtered categories to both home page and Browse All Classes page for cleaner customer experience while maintaining full category list for coach Create Class functionality
-- July 16, 2025. Updated Stripe revenue split calculation to properly handle transaction fees - implemented 85% coach / 15% platform split AFTER deducting Stripe fees (2.9% + $0.30 per transaction) instead of before; updated payment intent metadata to track all fee components (stripeFee, netAmount, platformFee, coachPayout) for better financial reporting
-- July 16, 2025. Updated hero image on home page to new multi-panel composition with white background and improved layout - uploaded Hero Images - Trainn Home Page v3 using Cloudinary's crop: 'pad' with white background; adjusted layout to position buttons in grey gradient area for better image visibility; optimized spacing to 3 paragraph spaces between text and buttons for iPhone SE compatibility; aligned text to top of hero section to prevent title cutoff
-- July 16, 2025. Updated CTA section text and removed app store buttons - changed heading to "Ready to Trainn?" and updated description to emphasize upskilling and community building; removed App Store and Google Play download buttons from download section, keeping only iPhone web app instructions
-- July 16, 2025. Updated Sophia L. testimonial to emphasize strength classes and family benefits - changed from yoga focus to strength classes, added mention of finding sports classes for kids after school and weekends
-- July 16, 2025. Updated all Coach Pat's soccer classes to use Cloudinary image - replaced local upload images with optimized Cloudinary URL (Kids_Soccer_-_Ball_and_Cleat_fejyih.jpg) for consistent image display across all future soccer classes
-- July 16, 2025. Enhanced Featured Classes section with specific category prioritization - shows paid Strength & Conditioning class, Music class (prioritizing coaches other than Coach ID 1), and Soccer/Basketball class; fallback to Strength & Conditioning, Soccer, Basketball if no Music classes available
-- July 16, 2025. Updated How Trainn Works section text - changed button to "Start Your Journey", updated descriptions to mention "adults or kids class", simplified Book & Pay text, changed final step to "Trainn & Review" emphasizing fun and goal achievement
-- July 16, 2025. Streamlined home page layout by removing Top Coaches and Explore Class Types sections and moving How Trainn Works section above Featured Classes - simplified user journey to focus on core value proposition before showing available classes
-- July 16, 2025. Updated hero section background image to zoomed-out family workout photo - uploaded custom family workout image to Cloudinary with wider composition showing outdoor fitness activities with adults and kids, better representing the platform's focus on diverse class offerings for all ages
-- July 16, 2025. Created backup copy of home page at client/src/pages/home-backup.tsx - preserved original layout structure with all sections for reference before making layout changes, not accessible to end users
-- July 16, 2025. Added How Trainn Works section to About Us page - copied the 3-step process (Find Your Class, Book & Pay, Get Fit & Review) from home page and positioned it above the 4 pillars boxes and below the text description, maintaining consistent styling and functionality
-- July 16, 2025. Fixed home page redirect issue - disabled automatic search trigger in SearchFilters component that was causing 100ms delayed redirect to /classes page after home page load, allowing users to view the complete homepage experience with hero section, search filters, featured classes, featured coaches, class categories, how it works, download app, testimonials, and CTA section
-- July 16, 2025. Enhanced Create Account form with legal document links - updated Terms of Service and Privacy Policy links in registration form to point to /terms and /privacy respectively, replacing placeholder links for proper legal document navigation
-- July 16, 2025. Enhanced Terms of Use page with additional hyperlinks - added 4 new clickable links: Gift Cards section (4b) to /terms/gifts, Refer a Friend section (4c) to /terms/customer-referrals, Community Guidelines (section 7) to /communityguidelines, and Digital Millennium Copyright Act (section 17) to /terms/dmca for comprehensive cross-document navigation
-- July 16, 2025. Enhanced Terms of Use page with FAQ hyperlinks - added clickable links to "here" references in sections 3g (Other Fees) and 3h (Reservation and Cancellation) that direct users to /faq page for cancellation and missed offering rules
-- July 16, 2025. Added scroll-to-top functionality to Contact Us page - users automatically scroll to top when navigating from any link (including "contacting us" link in Terms of Use)
-- July 16, 2025. Enhanced Terms of Use page with contact link - added hyperlink to "contacting us" text in Section 2j (Communications) that directs users to /contact page
-- July 16, 2025. Enhanced Terms of Use page with interactive Privacy Policy hyperlinks - added clickable links to Privacy Policy references in sections 1a, 1c, 6 (twice), and 8 for improved user navigation between legal documents
-- July 16, 2025. Fixed AuthProvider error on legal pages by updating HeroSection component to use useSafeAuth hook instead of useAuth, ensuring legal pages load properly without authentication requirements
-- July 16, 2025. Added scroll-to-top functionality for all legal pages (Terms of Use, Privacy Policy, Cookie Policy) - users automatically scroll to document beginning when navigating to legal pages
-- July 16, 2025. Completed comprehensive Cookie Policy page at /cookies with detailed information about cookie usage, tracking technologies, browser controls, targeted advertising, and Do Not Track policies - added verbatim legal text covering first-party and third-party cookies, browser settings, and opt-out procedures
-- July 16, 2025. Completed comprehensive Privacy Policy page at /privacy with all 12 sections including data collection practices, sharing policies, security measures, international transfers, retention policies, user rights, and special terms for US residents - added verbatim legal text covering personal information handling, third-party disclosures, and compliance with state privacy laws
-- July 16, 2025. Completed comprehensive Terms of Use page at /terms with all 19 sections including platform terms, billing policies, arbitration agreement, liability limitations, and miscellaneous provisions - added verbatim legal text covering user obligations, payment processing, content rights, dispute resolution, and New York law governance
-- July 16, 2025. Added DMCA policy page at /terms/dmca with comprehensive copyright infringement procedures, contact information, and legal guidelines - accessible via direct URL but not linked in main navigation as requested
-- January 10, 2025. Successfully integrated Cloudinary cloud storage for permanent image hosting - all uploaded images (coach profiles, class images) now stored securely in the cloud with automatic optimization (1200x1200 max resolution, auto-format selection) and organized folder structure ('trainn' folder), includes graceful fallback to local storage if Cloudinary unavailable
-- January 10, 2025. Enhanced coach pages with Google Maps-style detailed review display - shows reviewer first name, star rating, relative dates (e.g. "4 months ago"), and full comment text in clean white cards; backend now limits to 5 most recent reviews ordered by updated_at timestamp
-- January 8, 2025. Eliminated all placeholder ratings (4.9 stars, 10 reviews) across the application - coaches, classes, and all components now display only authentic review data from real customers, hiding rating sections when no reviews exist
-- January 8, 2025. Fixed Amazon Pay booking workflow by resolving cross-origin navigation errors - implemented proper redirect handling that routes Amazon Pay success callbacks back to checkout page for booking confirmation, eliminating runtime errors and ensuring bookings appear correctly in My Bookings page
-- July 7, 2025. Increased maximum photo upload size from 5MB to 40MB for all image uploads (profile pictures and class images) across the application - updated multer configuration and UI text to reflect the new limit
-- January 2, 2025. Implemented admin email notification system for new coach registrations - sends professional HTML email to sam@trainn.pro when new coaches register via standard registration or Google OAuth conversion, includes coach details, areas of expertise, and bio for admin review
-- January 2, 2025. Resolved recurring Vite dependency cache corruption issues by implementing complete dependency rebuild process - fixed persistent preview loading problems that occurred multiple times during development
-- January 2, 2025. Completed Age Group UI improvements - replaced duplicate "What to Bring" section on Class Detail page with Age Group display showing "Adults" or "Kids" alongside other class information
-- January 2, 2025. Integrated Age Group filtering with Browse All Classes page - removed age group badges from individual class listings and added Age Group filter dropdown with proper URL parameter handling
-- June 26, 2025. Fixed cache invalidation bug in class editing - corrected query key format mismatch that prevented My Calendar from showing updated data immediately after editing
-- June 26, 2025. Enhanced class editing workflow - after saving changes, users are redirected to My Calendar page with auto-refreshed data to immediately see their updates in calendar view
-- June 26, 2025. Fixed class editing bug causing 500 error - corrected undefined variable reference in update class route that was preventing coaches from editing class details
-- June 26, 2025. Added calendar invite functionality to booking confirmation and reminder emails - customers can now click "Add to Calendar" button to automatically add booked classes to their Google Calendar with proper event details including title, description, location, and timing.
-- June 26, 2025. Successfully deployed app to trainn-samuelroth.replit.app and updated Google OAuth configuration for production deployment. Fixed redirect_uri_mismatch error by updating callback URLs to use deployed domain instead of preview URL.
-- June 26, 2025. Implemented complete Google OAuth "Sign In with Google" functionality - added database schema support, backend passport strategy, OAuth routes, and frontend buttons on login/register forms with role preference handling. Requires Google Cloud Console OAuth configuration with redirect URI.
-- June 24, 2025. Successfully implemented complete $0 class functionality - coaches can create free classes by setting price to $0, customers can book instantly without payment processing, includes aggressive cache refresh to ensure My Bookings page shows new bookings immediately
-- June 24, 2025. Completed Certifications section implementation with automatic page refresh to ensure data persistence - coaches can now successfully save and display their professional fitness certifications on their profiles
-- June 24, 2025. Added Certifications section to coach profiles - coaches can now list their professional fitness certifications (NASM, ISSA, ACE Fitness, NSCA, NPTI) in a free text area within their profile settings, displayed on coach detail pages
-- June 24, 2025. Implemented Areas of Expertise system for coaches - added database field, profile management interface, and display on coach cards and details pages to highlight coaching specialties
-- June 24, 2025. Added six new class categories to expand activity offerings: Surfing, Dance, Music, Painting, Boxing/Martial Arts, and Baseball with professional category images from Unsplash
-- June 24, 2025. Fixed password change functionality in Profile Security tab - implemented missing backend endpoint with proper password verification using correct hash format and timing-safe comparison
-- June 24, 2025. Added booking warning modal system for class deletion - coaches receive warning popup when trying to delete classes with active customer bookings, featuring "Delete Anyways" (grey) and "Cancel" (green) buttons across My Calendar, My Classes, and Admin pages
-- June 23, 2025. Implemented comprehensive email notification system with 7 new notification types including class reminders, cancellations, coach approvals, booking confirmations, schedule updates, welcome emails, and coach booking notifications - all emails now sent from support@trainn.pro with professional HTML templates
-- June 23, 2025. Successfully implemented Google Calendar-style delete options for recurring classes with "This class" and "This and following classes" functionality working
-- June 23, 2025. Implemented complete recurring class functionality with individual database rows per instance
-- June 23, 2025. Updated recurring class architecture - each instance is now its own database row linked by recurringSeriesId
-- June 23, 2025. Added recurringSeriesId field to allow independent management of recurring class instances
-- June 23, 2025. Implemented complete recurring class functionality with Google Calendar-style recurrence modal
-- June 23, 2025. Added recurrence fields to database schema and backend logic to generate multiple class instances
-- June 23, 2025. Created recurring class UI with custom recurrence patterns (daily/weekly/monthly) and end conditions
-- June 23, 2025. Changed mobile bottom navigation "Bookings" button to "Calendar" for coaches, directing to My Calendar page
-- June 23, 2025. Added "Customers" link to mobile navigation dropdown for coaches underneath "My Classes"
-- June 23, 2025. Added "My Calendar" link to mobile navigation dropdown for coaches underneath "My Classes"
-- June 23, 2025. Expanded Class Image input height on Create Class page for better usability
-- June 23, 2025. Expanded calendar to full card width by removing CardContent padding and calendar borders for better mobile experience
-- June 23, 2025. Optimized calendar layout for mobile devices with responsive text sizes, spacing, and simplified time format
-- June 23, 2025. Removed duplicate close button from class detail modal for cleaner UI
-- June 23, 2025. Updated "Upcoming Classes This Month" card title to "Upcoming Classes" for cleaner UI
-- June 23, 2025. Fixed calendar date alignment issue - dates now properly align with correct days of the week
-- June 23, 2025. Fixed cancel button navigation in Create/Edit Class pages to use browser back navigation with fallbacks
-- June 23, 2025. Enhanced duplicate functionality to pre-populate Create Class form instead of auto-creating classes
-- June 23, 2025. Updated duplicate to preserve original title, category, image, and address components without "(Copy)" suffix
-- June 23, 2025. Added Google Calendar-style class detail modal with edit, duplicate, and delete buttons for calendar events
-- June 23, 2025. Implemented click-to-view modal system for calendar classes with action buttons and booking counts
-- June 20, 2025. Implemented interactive "My Calendar" page for coaches with Google Calendar-style monthly view and class editing functionality
-- June 20, 2025. Added calendar navigation with month browsing, class display on dates, and click-to-edit functionality
-- June 20, 2025. Added "My Calendar" navigation link in coach dropdown menu for easy calendar access
-- June 20, 2025. Fixed admin access control for customer management system - admins can now view all customer bookings with coach information
-- June 20, 2025. Implemented complete customer management system for coaches and administrators
-- June 20, 2025. Added Customers page with booking table sorted by class date, time, name, and customer name
-- June 20, 2025. Added "Customers" navigation link in user dropdown menu for coaches and admins
-- June 20, 2025. Updated password reset sender email to noreply@trainn.pro for professional branding
-- June 20, 2025. Updated password reset emails to use production domain trainn.pro instead of Replit domains
-- June 20, 2025. Fixed password reset email links by integrating reset form into auth page and disabling SendGrid click tracking
-- June 20, 2025. Implemented complete SendGrid password reset system with email templates and secure token handling
-- June 20, 2025. Completed customer review system implementation with star ratings and text reviews for past bookings
-- June 19, 2025. Eliminated pending booking status - bookings only created after successful payment completion
-- June 18, 2025. Initial setup
-```
-
-## Platform-Subsidized Promo Code System Status
-
-### Current Implementation (PARTIAL)
-
-**✅ Completed Features:**
-- Complete database schema with promo codes, usage tracking, and subsidy recording
-- Admin and coach management interfaces at /admin/promo-codes and /promo-codes
-- Real-time promo code validation and discount calculation in checkout flow
-- Stripe payment integration with correct discount amounts applied to customer charges
-- Promo code usage recording with subsidy amount tracking for accounting
-- Budget limit enforcement and usage count tracking
-- Edit functionality for existing promo codes with proper permission controls
-
-**✅ COMPLETED: PLATFORM SUBSIDY TRANSFERS**
-
-The system now fully implements platform subsidy transfers to coaches.
-
-**Complete Money Flow Implementation:**
-1. Customer uses platform-subsidized promo code (e.g., SAVE20% on $25 class)  ✅ Working
-2. Customer pays discounted amount ($20)  ✅ Working
-3. System records $5 platform subsidy in database  ✅ Working
-4. **✅ IMPLEMENTED**: Platform automatically transfers $5 to coach's Stripe account
-5. Coach receives total of $25 (their normal earnings maintained through platform subsidy)
-6. Platform covers the discount difference to ensure coaches aren't penalized
-
-**Implementation Details:**
-- Enhanced `server/payout-processor.ts` with platform subsidy integration
-- Added `getPlatformSubsidyForBooking()` storage method for subsidy lookup
-- Modified payout calculation to include subsidy amounts on top of customer payment portions
-- Integrated Stripe transfer logic for platform subsidy funds to coach connected accounts
-- Comprehensive financial tracking with detailed logging and metadata
-- Enhanced transfer descriptions and metadata for accounting transparency
-
-**Technical Features:**
-- Automatic subsidy detection and inclusion in coach payouts
-- Detailed logging showing base payout + subsidy breakdown
-- Enhanced Stripe transfer metadata tracking all financial components
-- Zero-impact on existing non-subsidized bookings and payouts
-
-### Future Enhancements (Planned)
-
-**Dynamic Commission Rates:**
-- Promo code commission overrides: Reduce platform commission (15% → 5% or 0%)
-- User tier system: VIP/Partner/Influencer rates with `user_commission_tiers` table
-- Strategic use cases: Coach acquisition, customer retention, partnership deals
-
-This system enables sophisticated promotional strategies once the platform subsidy transfer functionality is completed.
-
-## Refer a Friend Feature (Planned)
-
-### Feature Overview
-A referral system providing $5 account credits to both referrer and referee after the referee completes their first paid class.
-
-### Key Requirements Discussed
-- **Reward Structure**: $5 credit to both parties
-- **Timing**: Referrer gets reward AFTER referee completes first class (not just books)
-- **Usage**: Multiple referrals allowed per user
-- **Format**: Account credits (not promo codes) - stored in new `user_credits` table
-- **Budget Cap**: $2000 max (adjustable in code)
-- **Expiration**: Referral links expire after 60 days
-
-### Technical Architecture Planned
-
-**Database Schema:**
-- `referrals` table: Track referral relationships, codes, status, expiration
-- `user_credits` table: Transaction-based credit system with audit trail
-- Integration with existing promo code infrastructure
-
-**Credit System Design:**
-- Transaction-based credits (positive/negative entries)
-- Complete audit trail of credit sources and usage
-- Integration with checkout flow (similar to promo codes)
-- Support for partial credit usage and stacking with other discounts
-
-**Anti-Fraud Measures:**
-- Email uniqueness validation
-- IP tracking for self-referral prevention
-- Must be first paid booking (excludes $0 classes)
-- Referral code expiration enforcement
-
-**User Experience:**
-- Referral dashboard in user profile
-- Share functionality (email, SMS, WhatsApp)
-- Credit balance display in profile and checkout
-- Automatic referral code detection during signup
-
-### Integration Points
-- Leverage existing SendGrid email system for notifications
-- Use existing payment flow with credit application
-- Build on current promo code discount logic
-- Integrate with booking completion triggers
-
-### Future Considerations
-- Analytics dashboard for referral performance
-- Admin panel for budget monitoring
-- Credit expiration policies
-- Additional credit sources (loyalty, compensation)
-
-## User Preferences
-
-```
-Preferred communication style: Simple, everyday language.
-```
+- **Database**: PostgreSQL
+- **Email Service**: SendGrid
+- **Mapping Service**: Google Maps JavaScript API
+- **Payment Gateway**: Stripe
+- **Cloud Storage**: Cloudinary
