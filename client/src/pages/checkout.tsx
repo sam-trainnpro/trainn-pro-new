@@ -40,12 +40,14 @@ if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, finalAmount }: { 
+const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, finalAmount, appliedCredits = 0, useCredits = false }: { 
   classItem: Class; 
   quantity: number; 
   appliedPromoCode?: any;
   discountAmount: number;
   finalAmount: number;
+  appliedCredits?: number;
+  useCredits?: boolean;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -165,6 +167,12 @@ const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, f
           <div className="flex justify-between text-green-600">
             <span>Discount ({appliedPromoCode.code})</span>
             <span>-${(discountAmount / 100).toFixed(2)}</span>
+          </div>
+        )}
+        {useCredits && appliedCredits > 0 && (
+          <div className="flex justify-between text-blue-600">
+            <span>Credits Applied</span>
+            <span>-${(appliedCredits / 100).toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between">
@@ -385,7 +393,8 @@ export default function CheckoutPage() {
           const confirmResponse = await apiRequest("POST", "/api/payment/confirm", {
             paymentIntentId: paymentIntentId,
             classId: classItem.id,
-            quantity: quantity
+            quantity: quantity,
+            appliedCredits: appliedCredits
           });
           
           if (confirmResponse.ok) {
@@ -462,7 +471,9 @@ export default function CheckoutPage() {
           classId, 
           quantity,
           amount: totalWithFee / 100, // Convert back to dollars
-          promoCode: appliedPromoCode?.code || null
+          promoCode: appliedPromoCode?.code || null,
+          useCredits: useCredits,
+          appliedCredits: appliedCredits
         });
         const data = await res.json();
         
@@ -860,6 +871,44 @@ export default function CheckoutPage() {
                         )}
                       </div>
 
+                      {/* Credit Application Section */}
+                      {creditBalance > 0 && (
+                        <div className="mb-6 p-4 border rounded-lg bg-blue-50">
+                          <h3 className="font-medium mb-3">Account Credits</h3>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-blue-600">Available: ${(creditBalance / 100).toFixed(2)}</p>
+                              {useCredits && (
+                                <p className="text-sm text-blue-800 font-medium">
+                                  Applying: ${Math.min(creditBalance, finalAmount > 0 ? finalAmount : classItem.price * quantity * 100) / 100}
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant={useCredits ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => {
+                                const toggle = !useCredits;
+                                setUseCredits(toggle);
+                                if (toggle) {
+                                  const maxCredit = Math.min(creditBalance, finalAmount > 0 ? finalAmount : classItem.price * quantity * 100);
+                                  setAppliedCredits(maxCredit);
+                                  setFinalAmount((finalAmount > 0 ? finalAmount : classItem.price * quantity * 100) - maxCredit);
+                                } else {
+                                  setAppliedCredits(0);
+                                  setFinalAmount(appliedPromoCode ? 
+                                    (classItem.price * quantity * 100) - discountAmount :
+                                    classItem.price * quantity * 100
+                                  );
+                                }
+                              }}
+                            >
+                              {useCredits ? 'Remove Credits' : 'Apply Credits'}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
                       <Elements stripe={stripePromise} options={{ clientSecret }}>
                         <CheckoutForm 
                           classItem={classItem} 
@@ -867,6 +916,8 @@ export default function CheckoutPage() {
                           appliedPromoCode={appliedPromoCode}
                           discountAmount={discountAmount}
                           finalAmount={finalAmount}
+                          appliedCredits={appliedCredits}
+                          useCredits={useCredits}
                         />
                       </Elements>
                     </>

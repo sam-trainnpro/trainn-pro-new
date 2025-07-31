@@ -7,7 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { useToast } from "../../../hooks/use-toast";
 import { ClassCategory } from "@shared/schema";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, DollarSign, Users, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,6 +68,76 @@ const passwordFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
+// Dashboard Component
+function DashboardContent() {
+  const { user } = useAuth();
+  
+  // Fetch user credit balance 
+  const { data: creditData } = useQuery({
+    queryKey: ['/api/credits/balance'],
+    enabled: !!user,
+  });
+  
+  const creditBalance = (creditData as { balance?: number })?.balance || 0;
+  
+  // Fetch referral data if available
+  const { data: referralData } = useQuery({
+    queryKey: ['/api/referrals/my-referrals'],
+    enabled: !!user,
+  });
+  
+  const referrals = (referralData as any[]) || [];
+  const completedReferrals = referrals.filter((r: any) => r.status === 'completed').length;
+  
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Account Balance
+          </CardTitle>
+          <CardDescription>
+            Your current account credit balance and referral earnings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-green-600 mb-2">
+            ${(creditBalance / 100).toFixed(2)}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Available to use on your next class booking
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift className="h-5 w-5" />
+            Referral Program
+          </CardTitle>
+          <CardDescription>
+            Earn $5 for every friend you refer who completes their first class
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{referrals.length}</div>
+              <p className="text-sm text-muted-foreground">Total Referrals</p>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{completedReferrals}</div>
+              <p className="text-sm text-muted-foreground">Completed</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -383,14 +453,19 @@ export default function ProfilePage() {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs defaultValue="dashboard" className="w-full">
+              <TabsList className={`grid w-full ${user.role === 'coach' ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="security">Security</TabsTrigger>
                 {user.role === 'coach' && (
                   <TabsTrigger value="payment">Payment</TabsTrigger>
                 )}
               </TabsList>
+                
+                <TabsContent value="dashboard">
+                  <DashboardContent />
+                </TabsContent>
                 
                 <TabsContent value="profile">
                   <Card>

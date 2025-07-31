@@ -1264,7 +1264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a payment intent for booking a class
   app.post("/api/payment/create-intent", requireAuth, async (req, res) => {
     try {
-      const { classId, amount, quantity = 1, promoCode } = req.body;
+      const { classId, amount, quantity = 1, promoCode, useCredits = false } = req.body;
       
       if (!classId || !amount) {
         return res.status(400).json({ message: "Missing required parameters: classId, amount" });
@@ -1602,12 +1602,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Confirm payment and create confirmed booking
   app.post("/api/payment/confirm", requireAuth, async (req, res) => {
     try {
-      const { paymentIntentId, classId, quantity = 1 } = req.body;
+      const { paymentIntentId, classId, quantity = 1, appliedCredits = 0 } = req.body;
       
       console.log("=== PAYMENT CONFIRMATION STARTED ===");
       console.log("Payment Intent ID:", paymentIntentId);
       console.log("Class ID:", classId);
       console.log("Quantity:", quantity);
+      console.log("Applied Credits:", appliedCredits);
       console.log("User:", req.user.id, req.user.email);
       
       if (!paymentIntentId || !classId) {
@@ -1739,6 +1740,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Recorded promo code usage: ${promoCodeUsed.code}, discount: $${actualDiscountAmount/100}, subsidy: $${subsidyAmount/100}`);
         } catch (promoError) {
           console.error("Error recording promo code usage:", promoError);
+        }
+      }
+      
+      // Process credit deduction if credits were applied
+      if (appliedCredits > 0) {
+        try {
+          console.log("=== CREDIT DEDUCTION ===");
+          console.log("Deducting credits:", appliedCredits, "cents");
+          
+          await storage.deductUserCredits(req.user.id, appliedCredits, `Class booking: ${classItem.title}`, booking.id);
+          console.log(`Successfully deducted ${appliedCredits} cents in credits for booking ${booking.id}`);
+        } catch (creditError) {
+          console.error("Error deducting user credits:", creditError);
+          // Don't fail the booking if credit deduction fails, but log the error
         }
       }
       
