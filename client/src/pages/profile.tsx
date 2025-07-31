@@ -69,6 +69,14 @@ const passwordFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
+// Stripe Status Interface
+interface StripeStatus {
+  connected: boolean;
+  onboarded: boolean;
+  canReceivePayments: boolean;
+  accountId?: string;
+}
+
 // Dashboard Component
 function DashboardContent() {
   const { user } = useAuth();
@@ -367,7 +375,7 @@ export default function ProfilePage() {
   });
 
   // Check Stripe Connect status
-  const { data: stripeStatus, isLoading: isLoadingStripeStatus, refetch: refetchStripeStatus } = useQuery({
+  const { data: stripeStatus, isLoading: isLoadingStripeStatus, refetch: refetchStripeStatus } = useQuery<StripeStatus>({
     queryKey: [`/api/coaches/${user?.id}/stripe-status`],
     enabled: !!user && user.role === 'coach',
     refetchOnWindowFocus: true,

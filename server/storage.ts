@@ -955,8 +955,8 @@ export class DatabaseStorage implements IStorage {
           classDate: classes.startTime,
           classTime: classes.startTime,
           className: classes.title,
-          customerFirstName: users.firstName,
-          customerLastName: users.lastName,
+          customerFirstName: users.first_name,
+          customerLastName: users.last_name,
           customerPhone: users.phone,
           customerEmail: users.email,
           quantity: bookings.quantity,
@@ -985,8 +985,8 @@ export class DatabaseStorage implements IStorage {
         .orderBy(
           desc(classes.startTime), // Class date first (newest first)
           classes.title,           // Class name second
-          users.firstName,         // Customer first name third
-          users.lastName           // Customer last name fourth
+          users.first_name,        // Customer first name third
+          users.last_name          // Customer last name fourth
         );
 
       const results = await query;
@@ -999,8 +999,8 @@ export class DatabaseStorage implements IStorage {
         
         const coaches = await db.select({
           id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName
+          firstName: users.first_name,
+          lastName: users.last_name
         }).from(users).where(inArray(users.id, coachIds));
         
         const coachMap = new Map(coaches.map(coach => [coach.id, coach]));
