@@ -98,8 +98,11 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">
+          <DialogTitle className="text-xl font-bold text-center flex items-center justify-center gap-2">
             Refer a friend and get $5
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#FF6B6B">
+              <path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/>
+            </svg>
           </DialogTitle>
         </DialogHeader>
         
@@ -125,7 +128,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
           {/* Share Options - All in a Row */}
           <div className="space-y-3">
             <p className="text-sm font-medium text-center text-gray-700">Share with friends:</p>
-            <div className="flex justify-center items-center gap-1 px-4">
+            <div className="flex justify-center items-center gap-1 mx-auto max-w-xs">
               <Button
                 variant="ghost"
                 size="sm"
@@ -199,12 +202,6 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
           <p className="text-xs text-gray-500 text-center">
             Limited time offer. T&Cs apply.
           </p>
-          
-          {/* Your referral code display */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-500 mb-1">Your referral code:</p>
-            <p className="font-mono text-sm font-semibold">{referralCode}</p>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
