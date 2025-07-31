@@ -136,6 +136,7 @@ export interface IStorage {
   // Referral processing
   processReferralSignup(referralCode: string, refereeId: number): Promise<Referral | undefined>;
   processReferralCompletion(refereeId: number): Promise<void>;
+  getReferralStatusForUser(userId: number): Promise<{ status: string; referrerName: string; completedAt: Date | null } | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -955,8 +956,8 @@ export class DatabaseStorage implements IStorage {
           classDate: classes.startTime,
           classTime: classes.startTime,
           className: classes.title,
-          customerFirstName: users.first_name,
-          customerLastName: users.last_name,
+          customerFirstName: users.firstName,
+          customerLastName: users.lastName,
           customerPhone: users.phone,
           customerEmail: users.email,
           quantity: bookings.quantity,
@@ -985,8 +986,8 @@ export class DatabaseStorage implements IStorage {
         .orderBy(
           desc(classes.startTime), // Class date first (newest first)
           classes.title,           // Class name second
-          users.first_name,        // Customer first name third
-          users.last_name          // Customer last name fourth
+          users.firstName,        // Customer first name third
+          users.lastName          // Customer last name fourth
         );
 
       const results = await query;
@@ -999,8 +1000,8 @@ export class DatabaseStorage implements IStorage {
         
         const coaches = await db.select({
           id: users.id,
-          firstName: users.first_name,
-          lastName: users.last_name
+          firstName: users.firstName,
+          lastName: users.lastName
         }).from(users).where(inArray(users.id, coachIds));
         
         const coachMap = new Map(coaches.map(coach => [coach.id, coach]));
@@ -1647,6 +1648,32 @@ export class DatabaseStorage implements IStorage {
         referralId: referral.id
       });
     }
+  }
+
+  async getReferralStatusForUser(userId: number): Promise<{ status: string; referrerName: string; completedAt: Date | null } | null> {
+    // Check if this user was referred by someone else (they are a referee)
+    const referralData = await db
+      .select({
+        status: referrals.status,
+        completedAt: referrals.completedAt,
+        referrerFirstName: users.firstName,
+        referrerLastName: users.lastName
+      })
+      .from(referrals)
+      .innerJoin(users, eq(referrals.referrerId, users.id))
+      .where(eq(referrals.refereeId, userId))
+      .limit(1);
+
+    if (referralData.length === 0) {
+      return null;
+    }
+
+    const data = referralData[0];
+    return {
+      status: data.status,
+      referrerName: `${data.referrerFirstName} ${data.referrerLastName}`,
+      completedAt: data.completedAt
+    };
   }
 }
 

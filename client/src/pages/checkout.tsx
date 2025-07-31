@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
@@ -286,6 +286,29 @@ export default function CheckoutPage() {
   
   const creditBalance = (creditData as { balance?: number })?.balance || 0;
   
+  // Fetch user's referral status to check if they should get automatic credit
+  const { data: referralStatus } = useQuery({
+    queryKey: ['/api/referrals/my-status'],
+    enabled: !!user,
+  });
+  
+  // Fetch user's booking history to check if this is their first purchase
+  const { data: userBookings } = useQuery({   
+    queryKey: ['/api/bookings'],
+    enabled: !!user,
+  });
+  
+  // Check if user is eligible for automatic referral credit (first-time purchase via referral)
+  const isFirstTimeReferralUser = React.useMemo(() => {
+    if (!referralStatus || !userBookings) return false;
+    
+    // User must have signed up via referral and not yet completed their first purchase
+    const hasReferral = referralStatus.status === 'signed_up';
+    const hasNoCompletedBookings = !userBookings || userBookings.length === 0;
+    
+    return hasReferral && hasNoCompletedBookings;
+  }, [referralStatus, userBookings]);
+  
   // Fetch class details
   const { 
     data: classItem, 
@@ -437,12 +460,33 @@ export default function CheckoutPage() {
     }
   }, [paymentStatus, classItem, classId, quantity, toast, navigate, queryClient]);
 
+  // Automatically apply $5 credit for first-time referral users
+  useEffect(() => {
+    if (isFirstTimeReferralUser && classItem && appliedCredits === 0) {
+      console.log("Applying automatic $5 referral credit for first-time user");
+      const creditAmount = Math.min(500, creditBalance * 100); // $5 or available balance in cents
+      setAppliedCredits(creditAmount);
+      setUseCredits(true);
+      
+      toast({
+        title: "Referral Credit Applied!",
+        description: `You've received $${(creditAmount / 100).toFixed(2)} credit for joining via referral.`,
+      });
+    }
+  }, [isFirstTimeReferralUser, classItem, creditBalance, appliedCredits, toast]);
+
   // Initialize final amount when class loads
   useEffect(() => {
     if (classItem) {
-      setFinalAmount(classItem.price * quantity * 100); // Amount in cents
+      const baseAmount = classItem.price * quantity * 100; // Amount in cents
+      const creditToApply = useCredits ? appliedCredits : 0;
+      const discountToApply = appliedPromoCode ? discountAmount : 0;
+      
+      // Calculate final amount: base - promo discount - credit
+      const calculatedAmount = Math.max(0, baseAmount - discountToApply - creditToApply);
+      setFinalAmount(calculatedAmount);
     }
-  }, [classItem, quantity]);
+  }, [classItem, quantity, useCredits, appliedCredits, appliedPromoCode, discountAmount]);
 
   // Create payment intent (only for paid bookings)
   useEffect(() => {
@@ -873,8 +917,17 @@ export default function CheckoutPage() {
 
                       {/* Credit Application Section */}
                       {creditBalance > 0 && (
-                        <div className="mb-6 p-4 border rounded-lg bg-blue-50">
-                          <h3 className="font-medium mb-3">Account Credits</h3>
+                        <div className={`mb-6 p-4 border rounded-lg ${isFirstTimeReferralUser ? 'bg-green-50 border-green-200' : 'bg-blue-50'}`}>
+                          <h3 className="font-medium mb-3">
+                            {isFirstTimeReferralUser ? '🎉 Referral Credit Applied!' : 'Account Credits'}
+                          </h3>
+                          {isFirstTimeReferralUser && (
+                            <div className="mb-3 p-3 bg-green-100 border border-green-300 rounded">
+                              <p className="text-sm text-green-800 font-medium">
+                                Welcome bonus! You've automatically received $5.00 credit for joining via referral.
+                              </p>
+                            </div>
+                          )}
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm text-blue-600">Available: ${(creditBalance / 100).toFixed(2)}</p>

@@ -143,7 +143,7 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName, phone, role } = req.body;
+      const { email, password, firstName, lastName, phone, role, referralCode } = req.body;
       
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
@@ -180,6 +180,21 @@ export function setupAuth(app: Express) {
         } catch (emailError) {
           console.error('Failed to send admin notification for new coach:', emailError);
           // Don't fail registration if email fails
+        }
+      }
+
+      // Process referral if referral code was provided
+      if (referralCode && role === 'customer') {
+        try {
+          const referralResult = await storage.processReferralSignup(referralCode, user.id);
+          if (referralResult) {
+            console.log('Referral processed successfully for user:', user.email);
+          } else {
+            console.log('Referral code invalid or expired:', referralCode);
+          }
+        } catch (referralError) {
+          console.error('Failed to process referral signup:', referralError);
+          // Don't fail registration if referral processing fails
         }
       }
 
