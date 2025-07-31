@@ -1576,6 +1576,18 @@ export class DatabaseStorage implements IStorage {
     return await this.addUserCredit(creditData);
   }
 
+  async deductUserCredits(userId: number, amountCents: number, description: string, bookingId?: number): Promise<UserCredit> {
+    const creditData: InsertUserCredit = {
+      userId,
+      amount: -amountCents, // Negative amount for deduction
+      transactionType: 'booking_payment',
+      description,
+      bookingId
+    };
+    
+    return await this.addUserCredit(creditData);
+  }
+
   // Referral processing methods
   async processReferralSignup(referralCode: string, refereeId: number): Promise<Referral | undefined> {
     // Find existing referral
