@@ -50,7 +50,7 @@ export default function HeroSection() {
                   className="bg-white text-coral-500 border-coral-500 hover:bg-coral-50 w-full sm:w-auto"
                   onClick={() => setIsReferralModalOpen(true)}
                 >
-                  Refer a Friend ($5)
+                  Refer a Friend
                 </Button>
               </div>
             )}
