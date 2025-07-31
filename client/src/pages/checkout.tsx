@@ -279,12 +279,19 @@ export default function CheckoutPage() {
   const classId = parseInt(params.classId);
   
   // Fetch user credit balance
-  const { data: creditData } = useQuery({
+  const { data: creditData, refetch: refetchCredits } = useQuery({
     queryKey: ['/api/credits/balance'],
     enabled: !!user,
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always fetch fresh data
   });
   
   const creditBalance = (creditData as { balance?: number })?.balance || 0;
+  
+  // Log credit balance for debugging
+  useEffect(() => {
+    console.log('Credit balance fetched:', creditBalance);
+  }, [creditBalance]);
   
   // Fetch user's referral status to check if they should get automatic credit
   const { data: referralStatus } = useQuery({
@@ -302,9 +309,12 @@ export default function CheckoutPage() {
   const isFirstTimeReferralUser = React.useMemo(() => {
     if (!referralStatus || !userBookings) return false;
     
+    // Type the referralStatus properly
+    const status = referralStatus as { status?: string; isReferral?: boolean };
+    
     // User must have signed up via referral and not yet completed their first purchase
-    const hasReferral = referralStatus.status === 'signed_up';
-    const hasNoCompletedBookings = !userBookings || userBookings.length === 0;
+    const hasReferral = status.status === 'signed_up';
+    const hasNoCompletedBookings = !userBookings || (Array.isArray(userBookings) && userBookings.length === 0);
     
     return hasReferral && hasNoCompletedBookings;
   }, [referralStatus, userBookings]);
