@@ -31,7 +31,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
   });
 
   const referralCode = referralData?.referralCode;
-  const referralLink = referralCode ? `${window.location.origin}/signup?ref=${referralCode}` : '';
+  const referralLink = referralCode ? `${window.location.origin}/register?ref=${referralCode}` : '';
   
   const shareMessage = `Hey! I want to invite you to try Trainn with a $5 discount on your first paid class. Trainn builds stronger communities through fitness, creativity, and play. Use my referral link: ${referralLink}`;
 
