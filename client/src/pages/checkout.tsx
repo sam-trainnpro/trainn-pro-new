@@ -534,8 +534,15 @@ export default function CheckoutPage() {
           return;
         }
         
-        // Use final amount (with any discounts applied) for payment intent
-        const amountToCharge = finalAmount > 0 ? finalAmount : classItem.price * quantity * 100;
+        // Ensure finalAmount is properly calculated (never use fallback that ignores discounts)
+        if (finalAmount < 0) {
+          console.log("Invalid final amount, waiting for proper calculation...");
+          setIsLoading(false);
+          return;
+        }
+        
+        // Use the calculated final amount (already includes all discounts and credits)
+        const amountToCharge = finalAmount; // Never fall back to full price!
         const totalWithFee = amountToCharge + (amountToCharge * 0.05); // Add 5% service fee
         
         console.log("Creating payment intent:", {
@@ -571,7 +578,21 @@ export default function CheckoutPage() {
       }
     };
     
-    if (classItem && !userBooking && paymentStatus !== 'success' && finalAmount >= 0 && !clientSecret) {
+    // Only create payment intent when all conditions are met:
+    // 1. Class data is loaded
+    // 2. No existing booking
+    // 3. Payment not completed
+    // 4. finalAmount is calculated (> 0 for paid bookings)
+    // 5. No existing client secret
+    // 6. Credit calculations are complete (if applicable)
+    const shouldCreateIntent = classItem && 
+                              !userBooking && 
+                              paymentStatus !== 'success' && 
+                              finalAmount > 0 && 
+                              !clientSecret &&
+                              (!isFirstTimeReferralUser || useCredits || creditBalance < 500);
+    
+    if (shouldCreateIntent) {
       createPaymentIntent();
     }
   }, [classItem, userBooking, classId, toast, paymentStatus, finalAmount, appliedPromoCode, useCredits, appliedCredits, isFirstTimeReferralUser, creditBalance, clientSecret]);
