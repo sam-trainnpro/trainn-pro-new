@@ -33,6 +33,12 @@ interface BookingConfirmationData {
   classData: Class;
   customer: User;
   coach: User;
+  pricingDetails?: {
+    originalPrice: number;
+    discountAmount: number;
+    finalAmount: number;
+    discountSource: string; // e.g., "Referral Credit", "Promo Code", etc.
+  };
 }
 
 export async function sendBookingConfirmation(
@@ -46,7 +52,7 @@ export async function sendBookingConfirmation(
   });
   
   try {
-    const { booking, classData, customer, coach } = data;
+    const { booking, classData, customer, coach, pricingDetails } = data;
     
     // Format date and time in Pacific Time
     const PACIFIC_TIMEZONE = 'America/Los_Angeles';
@@ -94,10 +100,25 @@ export async function sendBookingConfirmation(
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">What To Bring:</td>
                 <td style="padding: 8px 0; color: #333;">${classData.whatToBring || 'Nothing specific required'}</td>
               </tr>
+              ${pricingDetails && pricingDetails.discountAmount > 0 ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Class Price:</td>
+                <td style="padding: 8px 0; color: #333;">$${pricingDetails.originalPrice.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">${pricingDetails.discountSource} Discount:</td>
+                <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">-$${pricingDetails.discountAmount.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Total Paid:</td>
+                <td style="padding: 8px 0; color: #333; font-weight: bold;">$${pricingDetails.finalAmount.toFixed(2)}</td>
+              </tr>
+              ` : `
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Total Cost:</td>
                 <td style="padding: 8px 0; color: #333; font-weight: bold;">$${(classData.price * booking.quantity).toFixed(2)}</td>
               </tr>
+              `}
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Spots Booked:</td>
                 <td style="padding: 8px 0; color: #333;">${booking.quantity}</td>
