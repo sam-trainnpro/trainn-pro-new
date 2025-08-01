@@ -234,16 +234,24 @@ export default function CheckoutPage() {
       }
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      const isCreditsBooking = !result.message.includes('promo code');
       toast({
         title: "Booking confirmed!",
-        description: "Your free class booking has been confirmed with promo code.",
+        description: isCreditsBooking 
+          ? "Your free class booking has been confirmed with account credits."
+          : "Your free class booking has been confirmed with promo code.",
       });
       // Invalidate and refetch booking data aggressively
       queryClient.removeQueries({ queryKey: ["/api/bookings"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
       queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
       queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
+      // Refresh credit balance if credits were used
+      if (isCreditsBooking) {
+        await queryClient.invalidateQueries({ queryKey: ['/api/credits/balance'] });
+        await refetchCredits();
+      }
       // Force refetch bookings before navigation
       await queryClient.refetchQueries({ queryKey: ["/api/bookings"] });
       // Add a slight delay to ensure data is fresh
@@ -252,9 +260,12 @@ export default function CheckoutPage() {
       }, 100);
     },
     onError: (error: Error) => {
+      const isCreditsError = error.message?.includes('credits') || error.message?.includes('Insufficient');
       toast({
         title: "Booking failed",
-        description: error.message || "Failed to book free class with promo code",
+        description: error.message || (isCreditsError 
+          ? "Failed to book free class with account credits" 
+          : "Failed to book free class with promo code"),
         variant: "destructive",
       });
     },
@@ -497,15 +508,30 @@ export default function CheckoutPage() {
 
   // Removed separate credit auto-application - now handled in payment intent logic
 
-  // Initialize final amount when class loads
+  // Automatic credit application logic - runs when class loads or credit balance changes
   useEffect(() => {
-    if (classItem) {
+    if (classItem && creditBalance !== undefined) {
       const baseAmount = classItem.price * quantity * 100; // Amount in cents
-      const creditToApply = useCredits ? appliedCredits : 0;
       const discountToApply = appliedPromoCode ? discountAmount : 0;
+      const amountAfterPromo = Math.max(0, baseAmount - discountToApply);
       
-      // Calculate final amount: base - promo discount - credit
-      const calculatedAmount = Math.max(0, baseAmount - discountToApply - creditToApply);
+      // AUTOMATICALLY APPLY CREDITS if user has any available
+      if (creditBalance > 0 && !useCredits) {
+        console.log("🎯 AUTOMATICALLY APPLYING CREDITS:", {
+          creditBalance: creditBalance / 100,
+          classPrice: baseAmount / 100,
+          amountAfterPromo: amountAfterPromo / 100
+        });
+        
+        // Apply up to the amount needed or available balance
+        const creditsToApply = Math.min(creditBalance, amountAfterPromo);
+        setUseCredits(true);
+        setAppliedCredits(creditsToApply);
+      }
+      
+      // Calculate final amount with credits
+      const creditToApply = useCredits ? appliedCredits : 0;
+      const calculatedAmount = Math.max(0, amountAfterPromo - creditToApply);
       
       console.log("💰 Final amount calculation:", {
         baseAmount: baseAmount / 100,
@@ -519,7 +545,7 @@ export default function CheckoutPage() {
       
       setFinalAmount(calculatedAmount);
     }
-  }, [classItem, quantity, useCredits, appliedCredits, appliedPromoCode, discountAmount]);
+  }, [classItem, quantity, creditBalance, appliedPromoCode, discountAmount, useCredits, appliedCredits]);
 
   // Consolidated payment intent creation - ensures proper sequencing
   useEffect(() => {
@@ -876,31 +902,51 @@ export default function CheckoutPage() {
                         Return to Class
                       </Button>
                     </div>
-                  ) : finalAmount === 0 && appliedPromoCode ? (
+                  ) : finalAmount === 0 && (appliedPromoCode || (useCredits && appliedCredits > 0)) ? (
                     <>
                       {/* Promo Code Section for Free Booking */}
-                      <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                        <h3 className="font-medium mb-3">Promo Code</h3>
-                        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
-                          <div className="flex items-center">
-                            <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                            <span className="text-green-800 font-medium">
-                              {appliedPromoCode.code} applied - 100% OFF!
-                            </span>
-                            <span className="ml-2 text-green-600">
-                              (-${(discountAmount / 100).toFixed(2)})
-                            </span>
+                      {appliedPromoCode && (
+                        <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                          <h3 className="font-medium mb-3">Promo Code</h3>
+                          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                            <div className="flex items-center">
+                              <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                              <span className="text-green-800 font-medium">
+                                {appliedPromoCode.code} applied - 100% OFF!
+                              </span>
+                              <span className="ml-2 text-green-600">
+                                (-${(discountAmount / 100).toFixed(2)})
+                              </span>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={removePromoCode}
+                              className="text-green-700 hover:text-green-800"
+                            >
+                              Remove
+                            </Button>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={removePromoCode}
-                            className="text-green-700 hover:text-green-800"
-                          >
-                            Remove
-                          </Button>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Credit Application Section for Free Booking */}
+                      {useCredits && appliedCredits > 0 && (
+                        <div className="mb-6 p-4 border rounded-lg bg-blue-50 border-blue-200">
+                          <h3 className="font-medium mb-3">Account Credits Applied</h3>
+                          <div className="flex items-center justify-between p-3 bg-blue-100 border border-blue-200 rounded">
+                            <div className="flex items-center">
+                              <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                              <span className="text-blue-800 font-medium">
+                                Credits Applied - 100% OFF!
+                              </span>
+                              <span className="ml-2 text-blue-600">
+                                (-${(appliedCredits / 100).toFixed(2)})
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Free Booking Section */}
                       <div className="space-y-6">
@@ -909,10 +955,18 @@ export default function CheckoutPage() {
                             <span>Class price {quantity > 1 ? `(${quantity} × $${classItem.price.toFixed(2)})` : ''}</span>
                             <span>${(classItem.price * quantity).toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between text-green-600">
-                            <span>Discount ({appliedPromoCode.code})</span>
-                            <span>-${(discountAmount / 100).toFixed(2)}</span>
-                          </div>
+                          {appliedPromoCode && discountAmount > 0 && (
+                            <div className="flex justify-between text-green-600">
+                              <span>Discount ({appliedPromoCode.code})</span>
+                              <span>-${(discountAmount / 100).toFixed(2)}</span>
+                            </div>
+                          )}
+                          {useCredits && appliedCredits > 0 && (
+                            <div className="flex justify-between text-blue-600">
+                              <span>Credits Applied</span>
+                              <span>-${(appliedCredits / 100).toFixed(2)}</span>
+                            </div>
+                          )}
                           <Separator />
                           <div className="flex justify-between font-medium text-lg">
                             <span>Total</span>
@@ -920,20 +974,32 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         
-                        <div className="bg-green-50 p-4 rounded-lg text-center">
-                          <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                          <h3 className="font-medium text-green-800 mb-1">This class is free with your promo code!</h3>
-                          <p className="text-sm text-green-600">Click below to complete your booking - no payment required.</p>
+                        <div className={`p-4 rounded-lg text-center ${appliedPromoCode ? 'bg-green-50' : 'bg-blue-50'}`}>
+                          <CheckCircle className={`h-8 w-8 mx-auto mb-2 ${appliedPromoCode ? 'text-green-600' : 'text-blue-600'}`} />
+                          <h3 className={`font-medium mb-1 ${appliedPromoCode ? 'text-green-800' : 'text-blue-800'}`}>
+                            {appliedPromoCode ? 'This class is free with your promo code!' : 'This class is free with your account credits!'}
+                          </h3>
+                          <p className={`text-sm ${appliedPromoCode ? 'text-green-600' : 'text-blue-600'}`}>
+                            Click below to complete your booking - no payment required.
+                          </p>
                         </div>
                         
                         <Button 
-                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          className={`w-full text-white ${appliedPromoCode ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                           onClick={() => {
-                            freeBookingMutation.mutate({ 
-                              classId: classItem.id, 
-                              quantity: quantity,
-                              promoCode: appliedPromoCode.code
-                            });
+                            if (appliedPromoCode) {
+                              freeBookingMutation.mutate({ 
+                                classId: classItem.id, 
+                                quantity: quantity,
+                                promoCode: appliedPromoCode.code
+                              });
+                            } else {
+                              // Handle free booking with credits
+                              freeBookingMutation.mutate({ 
+                                classId: classItem.id, 
+                                quantity: quantity
+                              });
+                            }
                           }}
                           disabled={freeBookingMutation.isPending}
                         >

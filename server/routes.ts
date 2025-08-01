@@ -1499,7 +1499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create free booking with promo code (100% discount)
+  // Create free booking with promo code (100% discount) OR credits covering full cost
   app.post("/api/bookings/free-promo", requireAuth, async (req, res) => {
     try {
       const { classId, quantity = 1, promoCode } = req.body;
@@ -1508,36 +1508,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Class ID is required" });
       }
       
-      if (!promoCode) {
-        return res.status(400).json({ message: "Promo code is required for this endpoint" });
-      }
-      
       // Validate class exists
       const classDetails = await storage.getClass(parseInt(classId));
       if (!classDetails) {
         return res.status(404).json({ message: "Class not found" });
       }
       
-      // Validate promo code provides 100% discount
-      const promoCodeRecord = await storage.getPromoCodeByCode(promoCode);
-      if (!promoCodeRecord) {
-        return res.status(400).json({ message: "Invalid promo code" });
-      }
-      
-      // Calculate discount to verify it's 100%
-      let discountAmount = 0;
       const originalAmount = classDetails.price * quantity * 100; // Amount in cents
+      let discountAmount = 0;
+      let promoCodeRecord = null;
+      let isCreditsOnly = false;
       
-      if (promoCodeRecord.discountType === 'percentage') {
-        discountAmount = Math.round((originalAmount * promoCodeRecord.discountValue) / 100);
+      if (promoCode) {
+        // Validate promo code provides 100% discount
+        promoCodeRecord = await storage.getPromoCodeByCode(promoCode);
+        if (!promoCodeRecord) {
+          return res.status(400).json({ message: "Invalid promo code" });
+        }
+        
+        // Calculate discount to verify it's 100%
+        if (promoCodeRecord.discountType === 'percentage') {
+          discountAmount = Math.round((originalAmount * promoCodeRecord.discountValue) / 100);
+        } else {
+          discountAmount = Math.round(promoCodeRecord.discountValue * 100); // Convert to cents
+        }
+        
+        const finalAmount = Math.max(0, originalAmount - discountAmount);
+        
+        if (finalAmount > 0) {
+          return res.status(400).json({ message: "This endpoint is only for 100% discount promo codes" });
+        }
       } else {
-        discountAmount = Math.round(promoCodeRecord.discountValue * 100); // Convert to cents
-      }
-      
-      const finalAmount = Math.max(0, originalAmount - discountAmount);
-      
-      if (finalAmount > 0) {
-        return res.status(400).json({ message: "This endpoint is only for 100% discount promo codes" });
+        // Check if user has enough credits to cover the full cost
+        const userCreditBalance = await storage.getUserCreditBalance(req.user.id);
+        if (userCreditBalance < originalAmount) {
+          return res.status(400).json({ 
+            message: "Insufficient credits for free booking", 
+            required: originalAmount,
+            available: userCreditBalance 
+          });
+        }
+        isCreditsOnly = true;
       }
       
       // Check capacity
@@ -1558,37 +1569,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You have already booked this class" });
       }
       
-      // Create confirmed booking directly for free promo booking first
+      // Create confirmed booking directly for free booking
       const booking = await storage.createBooking({
         userId: req.user.id,
         classId: parseInt(classId),
         quantity: quantity,
         status: 'confirmed',
-        paymentMethod: 'promo_free'
+        paymentMethod: isCreditsOnly ? 'credit_free' : 'promo_free'
       });
       
-      // Record promo code usage with the booking ID
-      const subsidyAmount = originalAmount - discountAmount; // Platform covers the discount
-      await storage.recordPromoCodeUsage({
-        promoCodeId: promoCodeRecord.id,
-        userId: req.user.id,
-        classId: parseInt(classId),
-        bookingId: booking.id,
-        discountAmount: discountAmount,
-        subsidyAmount: subsidyAmount,
-        originalAmount: originalAmount
-      });
+      if (promoCodeRecord) {
+        // Record promo code usage with the booking ID
+        const subsidyAmount = originalAmount - discountAmount; // Platform covers the discount
+        await storage.recordPromoCodeUsage({
+          promoCodeId: promoCodeRecord.id,
+          userId: req.user.id,
+          classId: parseInt(classId),
+          bookingId: booking.id,
+          discountAmount: discountAmount,
+          subsidyAmount: subsidyAmount,
+          originalAmount: originalAmount
+        });
+      } else {
+        // Apply credits for credit-only free booking
+        await storage.applyCreditsToBooking(req.user.id, originalAmount, booking.id);
+        console.log(`✅ Applied ${originalAmount} cents in credits for free booking ${booking.id}`);
+      }
       
       // Send confirmation email
       try {
         const coach = await storage.getUser(classDetails.coachId);
         if (coach) {
-          // For free promo bookings, show pricing details with discount
+          // For free bookings, show pricing details with discount/credit source
           const pricingDetails = {
             originalPrice: originalAmount / 100, // Convert from cents to dollars
-            discountAmount: discountAmount / 100, // Convert from cents to dollars  
-            finalAmount: 0, // Free after discount
-            discountSource: `Promo Code (${promoCode})`
+            discountAmount: isCreditsOnly ? originalAmount / 100 : discountAmount / 100, // Convert from cents to dollars  
+            finalAmount: 0, // Free after discount/credits
+            discountSource: isCreditsOnly ? "Account Credits" : `Promo Code (${promoCode})`
           };
           
           await sendBookingConfirmation({
@@ -1614,7 +1631,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         booking,
-        message: `Free class booking confirmed with promo code ${promoCode} for ${quantity} spot(s)` 
+        message: isCreditsOnly 
+          ? `Free class booking confirmed with account credits for ${quantity} spot(s)` 
+          : `Free class booking confirmed with promo code ${promoCode} for ${quantity} spot(s)` 
       });
     } catch (error: any) {
       console.error("Free promo booking error:", error);

@@ -21,6 +21,7 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
 import { eq, and, or, desc, inArray, sql, lt } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -1720,6 +1721,9 @@ export class DatabaseStorage implements IStorage {
     console.log("=== PROCESSING REFERRER REWARDS ===");
     
     // Find all referrals where referee has completed their first class but referrer hasn't been rewarded
+    const referrerTable = alias(users, 'referrer');
+    const refereeTable = alias(users, 'referee');
+    
     const eligibleReferrals = await db
       .select({
         referralId: referrals.id,
@@ -1727,14 +1731,14 @@ export class DatabaseStorage implements IStorage {
         refereeId: referrals.refereeId,
         status: referrals.status,
         rewardGranted: referrals.rewardGranted,
-        referrerEmail: sql<string>`referrer.email`,
-        refereeEmail: sql<string>`referee.email`,
+        referrerEmail: referrerTable.email,
+        refereeEmail: refereeTable.email,
         bookingId: bookings.id,
         classEndTime: classes.endTime
       })
       .from(referrals)
-      .innerJoin(users.as('referrer'), eq(referrals.referrerId, sql`referrer.id`))
-      .innerJoin(users.as('referee'), eq(referrals.refereeId, sql`referee.id`))
+      .innerJoin(referrerTable, eq(referrals.referrerId, referrerTable.id))
+      .innerJoin(refereeTable, eq(referrals.refereeId, refereeTable.id))
       .innerJoin(bookings, and(
         eq(bookings.userId, referrals.refereeId),
         eq(bookings.status, 'confirmed')
@@ -1791,15 +1795,16 @@ export class DatabaseStorage implements IStorage {
     console.log(`=== CHECKING REWARDS FOR REFERRER ${referrerId} ===`);
     
     // Find all pending referrals for this referrer where referee completed first class
+    const referee = alias(users, 'referee');
     const eligibleReferrals = await db
       .select({
         referralId: referrals.id,
         refereeId: referrals.refereeId,
-        refereeEmail: sql<string>`referee.email`,
+        refereeEmail: referee.email,
         classEndTime: classes.endTime
       })
       .from(referrals)
-      .innerJoin(users.as('referee'), eq(referrals.refereeId, sql`referee.id`))
+      .innerJoin(referee, eq(referrals.refereeId, referee.id))
       .innerJoin(bookings, and(
         eq(bookings.userId, referrals.refereeId),
         eq(bookings.status, 'confirmed')
