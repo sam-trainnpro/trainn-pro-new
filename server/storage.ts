@@ -131,12 +131,18 @@ export interface IStorage {
   getUserCreditBalance(userId: number): Promise<number>;
   addUserCredit(creditData: InsertUserCredit): Promise<UserCredit>;
   getUserCreditHistory(userId: number): Promise<UserCredit[]>;
+  getUserCredits(userId: number): Promise<UserCredit[]>;
   applyCreditsToBooking(userId: number, amount: number, bookingId: number): Promise<UserCredit>;
   
   // Referral processing
   processReferralSignup(referralCode: string, refereeId: number): Promise<Referral | undefined>;
   processReferralCompletion(refereeId: number): Promise<void>;
   getReferralStatusForUser(userId: number): Promise<{ status: string; referrerName: string; completedAt: Date | null } | null>;
+  getUserReferralStatus(userId: number): Promise<{ status: string; isReferral: boolean } | null>;
+  
+  // Referrer reward processing
+  processReferrerRewards(): Promise<void>;
+  checkAndAwardReferrerRewards(referrerId: number): Promise<number>;
   
   // Platform subsidies
   createBookingSubsidy(subsidyData: InsertBookingSubsidy): Promise<BookingSubsidy>;
@@ -1574,6 +1580,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(userCredits).where(eq(userCredits.userId, userId)).orderBy(desc(userCredits.createdAt));
   }
 
+  async getUserCredits(userId: number): Promise<UserCredit[]> {
+    return await this.getUserCreditHistory(userId);
+  }
+
   async applyCreditsToBooking(userId: number, amount: number, bookingId: number): Promise<UserCredit> {
     const creditData: InsertUserCredit = {
       userId,
@@ -1683,6 +1693,163 @@ export class DatabaseStorage implements IStorage {
       referrerName: `${data.referrerFirstName} ${data.referrerLastName}`,
       completedAt: data.completedAt
     };
+  }
+
+  async getUserReferralStatus(userId: number): Promise<{ status: string; isReferral: boolean } | null> {
+    // Check if this user was referred by someone (they are a referee)
+    const referralData = await db
+      .select({
+        status: referrals.status
+      })
+      .from(referrals)
+      .where(eq(referrals.refereeId, userId))
+      .limit(1);
+
+    if (referralData.length === 0) {
+      return null;
+    }
+
+    return {
+      status: referralData[0].status,
+      isReferral: true
+    };
+  }
+
+  // Process referrer rewards for completed classes
+  async processReferrerRewards(): Promise<void> {
+    console.log("=== PROCESSING REFERRER REWARDS ===");
+    
+    // Find all referrals where referee has completed their first class but referrer hasn't been rewarded
+    const eligibleReferrals = await db
+      .select({
+        referralId: referrals.id,
+        referrerId: referrals.referrerId,
+        refereeId: referrals.refereeId,
+        status: referrals.status,
+        rewardGranted: referrals.rewardGranted,
+        referrerEmail: sql<string>`referrer.email`,
+        refereeEmail: sql<string>`referee.email`,
+        bookingId: bookings.id,
+        classEndTime: classes.endTime
+      })
+      .from(referrals)
+      .innerJoin(users.as('referrer'), eq(referrals.referrerId, sql`referrer.id`))
+      .innerJoin(users.as('referee'), eq(referrals.refereeId, sql`referee.id`))
+      .innerJoin(bookings, and(
+        eq(bookings.userId, referrals.refereeId),
+        eq(bookings.status, 'confirmed')
+      ))
+      .innerJoin(classes, eq(bookings.classId, classes.id))
+      .where(and(
+        eq(referrals.status, 'signed_up'),
+        eq(referrals.rewardGranted, false),
+        lt(classes.endTime, new Date()) // Class has ended
+      ));
+
+    console.log(`Found ${eligibleReferrals.length} eligible referrals for rewards`);
+
+    // Group by referral to avoid duplicates (one referee might have multiple bookings)
+    const processedReferrals = new Set<number>();
+
+    for (const referral of eligibleReferrals) {
+      if (processedReferrals.has(referral.referralId)) {
+        continue; // Skip if already processed this referral
+      }
+
+      console.log(`Processing referral ${referral.referralId}: ${referral.referrerEmail} → ${referral.refereeEmail}`);
+
+      try {
+        // Award $5 credit to referrer
+        await this.addUserCredit({
+          userId: referral.referrerId,
+          amount: 500, // $5 in cents
+          transactionType: 'referral_reward',
+          description: `Referral reward - ${referral.refereeEmail} completed first class`,
+          referralId: referral.referralId
+        });
+
+        // Mark referral as completed and reward granted
+        await this.updateReferral(referral.referralId, {
+          status: 'completed',
+          completedAt: new Date(),
+          rewardGranted: true
+        });
+
+        console.log(`✅ Awarded $5 to referrer ${referral.referrerEmail} for referral ${referral.referralId}`);
+        processedReferrals.add(referral.referralId);
+
+      } catch (error) {
+        console.error(`❌ Error processing referral ${referral.referralId}:`, error);
+      }
+    }
+
+    console.log(`=== COMPLETED: Processed ${processedReferrals.size} referrer rewards ===`);
+  }
+
+  // Check and award rewards for a specific referrer
+  async checkAndAwardReferrerRewards(referrerId: number): Promise<number> {
+    console.log(`=== CHECKING REWARDS FOR REFERRER ${referrerId} ===`);
+    
+    // Find all pending referrals for this referrer where referee completed first class
+    const eligibleReferrals = await db
+      .select({
+        referralId: referrals.id,
+        refereeId: referrals.refereeId,
+        refereeEmail: sql<string>`referee.email`,
+        classEndTime: classes.endTime
+      })
+      .from(referrals)
+      .innerJoin(users.as('referee'), eq(referrals.refereeId, sql`referee.id`))
+      .innerJoin(bookings, and(
+        eq(bookings.userId, referrals.refereeId),
+        eq(bookings.status, 'confirmed')
+      ))
+      .innerJoin(classes, eq(bookings.classId, classes.id))
+      .where(and(
+        eq(referrals.referrerId, referrerId),
+        eq(referrals.status, 'signed_up'),
+        eq(referrals.rewardGranted, false),
+        lt(classes.endTime, new Date()) // Class has ended
+      ));
+
+    console.log(`Found ${eligibleReferrals.length} eligible referrals for referrer ${referrerId}`);
+
+    let rewardsAwarded = 0;
+    const processedReferrals = new Set<number>();
+
+    for (const referral of eligibleReferrals) {
+      if (processedReferrals.has(referral.referralId)) {
+        continue;
+      }
+
+      try {
+        // Award $5 credit to referrer
+        await this.addUserCredit({
+          userId: referrerId,
+          amount: 500, // $5 in cents
+          transactionType: 'referral_reward',
+          description: `Referral reward - ${referral.refereeEmail} completed first class`,
+          referralId: referral.referralId
+        });
+
+        // Mark referral as completed
+        await this.updateReferral(referral.referralId, {
+          status: 'completed',
+          completedAt: new Date(),
+          rewardGranted: true
+        });
+
+        console.log(`✅ Awarded $5 to referrer ${referrerId} for referral ${referral.referralId}`);
+        rewardsAwarded++;
+        processedReferrals.add(referral.referralId);
+
+      } catch (error) {
+        console.error(`❌ Error processing referral ${referral.referralId}:`, error);
+      }
+    }
+
+    console.log(`=== COMPLETED: Awarded ${rewardsAwarded} rewards to referrer ${referrerId} ===`);
+    return rewardsAwarded;
   }
 }
 
