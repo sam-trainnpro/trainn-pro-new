@@ -470,6 +470,14 @@ export default function CheckoutPage() {
     }
   }, [paymentStatus, classItem, classId, quantity, toast, navigate, queryClient]);
 
+  // Reset client secret when key parameters change to ensure new payment intent creation
+  useEffect(() => {
+    if (clientSecret) {
+      console.log("Resetting client secret due to parameter change");
+      setClientSecret("");
+    }
+  }, [appliedCredits, useCredits, appliedPromoCode, discountAmount]);
+
   // Automatically apply $5 credit for first-time referral users on classes >$5
   useEffect(() => {
     if (isFirstTimeReferralUser && classItem && appliedCredits === 0 && creditBalance >= 500) {
@@ -518,9 +526,25 @@ export default function CheckoutPage() {
           return;
         }
         
+        // Wait for all credit calculations to complete before creating payment intent
+        // This prevents multiple payment intents from being created as state updates
+        if (isFirstTimeReferralUser && creditBalance >= 500 && !useCredits && finalAmount > 500) {
+          console.log("Waiting for automatic credit application to complete...");
+          setIsLoading(false);
+          return;
+        }
+        
         // Use final amount (with any discounts applied) for payment intent
         const amountToCharge = finalAmount > 0 ? finalAmount : classItem.price * quantity * 100;
         const totalWithFee = amountToCharge + (amountToCharge * 0.05); // Add 5% service fee
+        
+        console.log("Creating payment intent:", {
+          finalAmount: finalAmount / 100,
+          amountToCharge: amountToCharge / 100,
+          totalWithFee: totalWithFee / 100,
+          appliedCredits: appliedCredits,
+          useCredits: useCredits
+        });
         
         // Create a payment intent
         const res = await apiRequest("POST", "/api/payment/create-intent", { 
@@ -534,6 +558,7 @@ export default function CheckoutPage() {
         const data = await res.json();
         
         setClientSecret(data.clientSecret);
+        console.log("Payment intent created successfully with amount:", totalWithFee / 100);
       } catch (err: any) {
         setError(err.message || "Failed to initialize payment. Please try again.");
         toast({
@@ -546,10 +571,10 @@ export default function CheckoutPage() {
       }
     };
     
-    if (classItem && !userBooking && paymentStatus !== 'success' && finalAmount >= 0) {
+    if (classItem && !userBooking && paymentStatus !== 'success' && finalAmount >= 0 && !clientSecret) {
       createPaymentIntent();
     }
-  }, [classItem, userBooking, classId, toast, paymentStatus, finalAmount, appliedPromoCode]);
+  }, [classItem, userBooking, classId, toast, paymentStatus, finalAmount, appliedPromoCode, useCredits, appliedCredits, isFirstTimeReferralUser, creditBalance, clientSecret]);
   
   // Format dates
   const formatDate = (dateString: string | Date | null) => {
