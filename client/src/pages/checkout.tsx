@@ -495,30 +495,7 @@ export default function CheckoutPage() {
     }
   }, [appliedCredits, useCredits, appliedPromoCode, discountAmount]);
 
-  // Automatically apply $5 credit for first-time referral users on classes >$5
-  useEffect(() => {
-    console.log("💳 Credit auto-apply check:", {
-      isFirstTimeReferralUser,
-      hasClassItem: !!classItem,
-      appliedCredits,
-      creditBalance,
-      classPrice: classItem ? classItem.price * quantity * 100 : 0
-    });
-    
-    if (isFirstTimeReferralUser && classItem && appliedCredits === 0 && creditBalance >= 500) {
-      // Only auto-apply if class price is >$5 (500 cents)
-      if (classItem.price * quantity * 100 > 500) {
-        console.log("✅ Applying automatic $5 referral credit for first-time user");
-        setAppliedCredits(500); // Always apply exactly $5 (500 cents)
-        setUseCredits(true);
-        
-        toast({
-          title: "Referral Credit Applied!",
-          description: "You've received $5.00 credit for joining via referral.",
-        });
-      }
-    }
-  }, [isFirstTimeReferralUser, classItem, creditBalance, appliedCredits, quantity, toast]);
+  // Removed separate credit auto-application - now handled in payment intent logic
 
   // Initialize final amount when class loads
   useEffect(() => {
@@ -544,61 +521,78 @@ export default function CheckoutPage() {
     }
   }, [classItem, quantity, useCredits, appliedCredits, appliedPromoCode, discountAmount]);
 
-  // Create payment intent (only for paid bookings) - with debouncing to prevent multiple calls
+  // Consolidated payment intent creation - ensures proper sequencing
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const createPaymentIntent = async () => {
       try {
+        console.log("🚦 Payment Intent Decision Point:", {
+          hasClassItem: !!classItem,
+          hasUserBooking: !!userBooking,
+          paymentStatus,
+          finalAmount: finalAmount / 100,
+          hasClientSecret: !!clientSecret,
+          isFirstTimeReferralUser,
+          creditBalance,
+          useCredits,
+          appliedCredits,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Strict validation - all data must be loaded
+        if (!classItem || !referralStatus || !userBookings || creditBalance === null) {
+          console.log("⏳ Waiting for all data to load...");
+          return;
+        }
+        
+        // No booking for existing bookings or successful payments
+        if (userBooking || paymentStatus === 'success') {
+          console.log("⚠️ Skip payment intent - already booked or paid");
+          return;
+        }
+        
+        // Don't create if we already have a client secret
+        if (clientSecret) {
+          console.log("⚠️ Skip payment intent - already exists");
+          return;
+        }
+        
+        // For free bookings, skip payment intent
+        if (finalAmount === 0) {
+          console.log("💰 Free booking detected, skipping payment intent");
+          return;
+        }
+        
+        // For referral users: FORCE credit application before payment intent
+        if (isFirstTimeReferralUser && creditBalance >= 500 && !useCredits) {
+          console.log("🎁 FORCING referral credit application before payment intent");
+          setAppliedCredits(500);
+          setUseCredits(true);
+          return; // Wait for next cycle with credits applied
+        }
+        
         setIsLoading(true);
         setError(null);
         
-        if (!classItem) {
-          throw new Error("Class information not available");
-        }
+        // Calculate final amount
+        const amountToCharge = finalAmount;
+        const totalWithFee = amountToCharge + (amountToCharge * 0.05);
         
-        // Check if this is a free booking (100% discount promo code)
-        if (finalAmount === 0) {
-          console.log("Free booking detected (100% discount), skipping Stripe payment intent");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Wait for all credit calculations to complete before creating payment intent
-        // This prevents multiple payment intents from being created as state updates
-        if (isFirstTimeReferralUser && creditBalance >= 500 && !useCredits && finalAmount > 500) {
-          console.log("⏳ Waiting for automatic credit application to complete...");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Ensure finalAmount is properly calculated (never use fallback that ignores discounts)
-        if (finalAmount < 0) {
-          console.log("❌ Invalid final amount, waiting for proper calculation...");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Use the calculated final amount (already includes all discounts and credits)
-        const amountToCharge = finalAmount; // Never fall back to full price!
-        const totalWithFee = amountToCharge + (amountToCharge * 0.05); // Add 5% service fee
-        
-        console.log("🔥 CREATING PAYMENT INTENT:", {
+        console.log("🔥 CREATING SINGLE PAYMENT INTENT:", {
           finalAmount: finalAmount / 100,
-          amountToCharge: amountToCharge / 100,
           totalWithFee: totalWithFee / 100,
-          appliedCredits: appliedCredits,
-          useCredits: useCredits,
-          classPrice: classItem.price,
-          quantity: quantity,
+          appliedCredits,
+          useCredits,
           isFirstTimeReferralUser,
           creditBalance,
           timestamp: new Date().toISOString()
         });
         
-        // Create a payment intent
         const res = await apiRequest("POST", "/api/payment/create-intent", { 
           classId, 
           quantity,
-          amount: totalWithFee / 100, // Convert back to dollars
+          amount: totalWithFee / 100,
           promoCode: appliedPromoCode?.code || null,
           useCredits: useCredits,
           appliedCredits: appliedCredits
@@ -606,9 +600,10 @@ export default function CheckoutPage() {
         const data = await res.json();
         
         setClientSecret(data.clientSecret);
-        console.log("✅ Payment intent created successfully with amount:", totalWithFee / 100);
+        console.log("✅ Payment intent created with amount:", totalWithFee / 100);
+        
       } catch (err: any) {
-        setError(err.message || "Failed to initialize payment. Please try again.");
+        setError(err.message || "Failed to initialize payment");
         toast({
           title: "Payment Initialization Failed",
           description: err.message || "An unexpected error occurred.",
@@ -619,24 +614,15 @@ export default function CheckoutPage() {
       }
     };
     
-    // Only create payment intent when ALL conditions are met (prevents race conditions):
-    const shouldCreateIntent = classItem && 
-                              !userBooking && 
-                              paymentStatus !== 'success' && 
-                              finalAmount > 0 && 
-                              !clientSecret &&
-                              // For referral users: wait until credits are applied OR they're not eligible
-                              (!isFirstTimeReferralUser || useCredits || creditBalance < 500);
+    // Run with slight delay to allow state to stabilize
+    timeoutId = setTimeout(createPaymentIntent, 150);
     
-    if (shouldCreateIntent) {
-      // Add small debounce to prevent rapid successive calls
-      const timeoutId = setTimeout(() => {
-        createPaymentIntent();
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [classItem, userBooking, classId, toast, paymentStatus, finalAmount, appliedPromoCode, useCredits, appliedCredits, isFirstTimeReferralUser, creditBalance, clientSecret]);
+    return () => clearTimeout(timeoutId);
+  }, [
+    classItem, userBooking, paymentStatus, clientSecret, finalAmount,
+    isFirstTimeReferralUser, creditBalance, useCredits, appliedCredits, 
+    referralStatus, userBookings, appliedPromoCode, classId, quantity, toast
+  ]);
   
   // Format dates
   const formatDate = (dateString: string | Date | null) => {
