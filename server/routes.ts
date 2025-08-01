@@ -2002,6 +2002,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test endpoint to send confirmation email with new format
+  app.post("/api/test/send-confirmation-email", async (req, res) => {
+    try {
+      // Create test data for confirmation email
+      const testBooking = {
+        id: 999,
+        quantity: 1,
+        status: 'confirmed' as const
+      };
+      
+      const testClassData = {
+        id: 123,
+        title: "Morning Yoga Flow (Test)",
+        description: "A relaxing morning yoga session to start your day right",
+        startTime: new Date('2025-08-02T08:00:00-08:00'),
+        endTime: new Date('2025-08-02T09:00:00-08:00'),
+        address: "Golden Gate Park, San Francisco, CA",
+        whatToBring: "Yoga mat and water bottle",
+        price: 15.00,
+        coachId: 456,
+        categoryId: 1,
+        capacity: 20,
+        image: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const testCustomer = {
+        id: 123,
+        email: "kseniya.kapytouskaya+5c@gmail.com",
+        firstName: "Kseniya",
+        lastName: "Test",
+        username: "kseniya_test",
+        password: "test",
+        role: 'customer' as const,
+        isApproved: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const testCoach = {
+        id: 456,
+        firstName: "Sarah",
+        lastName: "Johnson",
+        email: "coach@example.com",
+        username: "sarah_coach",
+        password: "test",
+        role: 'coach' as const,
+        isApproved: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Test pricing details showing referral credit discount
+      const testPricingDetails = {
+        originalPrice: 15.00,
+        discountAmount: 5.00,
+        finalAmount: 10.00,
+        discountSource: "Referral Credit"
+      };
+
+      const emailSent = await sendBookingConfirmation({
+        booking: testBooking,
+        classData: testClassData,
+        customer: testCustomer,
+        coach: testCoach,
+        pricingDetails: testPricingDetails
+      });
+
+      if (emailSent) {
+        res.json({ 
+          success: true, 
+          message: 'Test confirmation email sent successfully to kseniya.kapytouskaya+5c@gmail.com',
+          details: 'Email shows "Total Paid: $10.00" with new simplified format'
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to send test email' 
+        });
+      }
+    } catch (error: any) {
+      console.error("Test email error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message 
+      });
+    }
+  });
+
   // Get payout statistics (admin only)
   app.get("/api/admin/payout-stats", requireAdmin, async (req, res) => {
     try {
