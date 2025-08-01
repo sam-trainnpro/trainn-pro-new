@@ -70,6 +70,9 @@ Preferred communication style: Simple, everyday language.
 - **✅ Transaction Tracking**: All credit usage properly tracked in user_credits table with positive/negative transactions
 - **✅ Coach Payment Subsidies**: Fixed referral credit charging issue - coaches now receive full earnings through platform subsidies matching promo code system
 - **✅ AUTO-DETECTION SYSTEM (August 2025)**: Implemented automatic credit deduction for ALL referral users - backend now automatically detects first-time referral users and applies credits regardless of frontend state, ensuring 100% reliable credit processing
+- **✅ REFERRER REWARD SYSTEM (August 2025)**: Fixed missing bidirectional reward system - referrers now automatically receive $5 for each referee who completes their first class, with credit stacking support and automated processing every 10 minutes
+- **✅ AUTOMATED PROCESSING**: Integrated referrer reward processing into the payout scheduler - runs every 10 minutes to detect completed classes and award $5 credits to referrers
+- **✅ MANUAL CORRECTION COMPLETED**: Fixed affected users' balances (kseniya.kapytouskaya@gmail.com now shows correct $80 for 16 completed referrals)
 
 ### TypeScript & Database Schema Fixes (January 2025)
 - **TypeScript Resolution**: Fixed Profile page compilation errors by adding proper StripeStatus interface
