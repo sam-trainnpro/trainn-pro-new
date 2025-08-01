@@ -68,12 +68,20 @@ Preferred communication style: Simple, everyday language.
 - **✅ User Experience**: Streamlined interface with green referral banner on registration form, automatic credit application
 - **✅ Payment Processing**: Fixed double-deduction bug - backend now correctly processes frontend-calculated amounts without re-applying credits
 - **✅ Transaction Tracking**: All credit usage properly tracked in user_credits table with positive/negative transactions
+- **✅ Coach Payment Subsidies**: Fixed referral credit charging issue - coaches now receive full earnings through platform subsidies matching promo code system
 
 ### TypeScript & Database Schema Fixes (January 2025)
 - **TypeScript Resolution**: Fixed Profile page compilation errors by adding proper StripeStatus interface
 - **Database Consistency**: Corrected all column name references from firstName/lastName to first_name/last_name
 - **Credit System Stability**: Ensured proper typing for payment status checks in coach payment settings
 - **API Reliability**: Fixed database queries to use correct column names for consistent data retrieval
+
+### Platform Subsidy System Enhancement (January 2025)
+- **✅ Referral Credit Subsidies**: Implemented platform subsidy creation for referral credits in payment confirmation
+- **✅ Coach Payment Protection**: Coaches receive full earnings while Trainn covers referral credit differences from platform funds
+- **✅ Financial Calculation Accuracy**: Using precise formula: [Original amount calculation] - [Discounted amount calculation] = Platform subsidy
+- **✅ Payout Integration**: Enhanced payout processor to include platform subsidies in coach transfers via Stripe Connect
+- **✅ Detailed Logging**: Comprehensive subsidy calculation logging shows exact amounts and breakdown for transparency
 
 ## Implementation History
 
