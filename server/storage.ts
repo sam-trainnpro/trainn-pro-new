@@ -190,6 +190,11 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(users).where(eq(users.email, email));
     return result[0];
   }
+
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.referralCode, referralCode));
+    return result[0];
+  }
   
   async createUser(userData: InsertUser): Promise<User> {
     const result = await db.insert(users).values({
