@@ -1771,29 +1771,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (paymentIntent && paymentIntent.metadata) {
             const originalClassPrice = parseFloat(paymentIntent.metadata.originalAmount || '0') * 100; // in cents
             
-            // Calculate subsidy amount: difference in coach payout between original and credit-discounted price
-            const originalWithFee = originalClassPrice * 1.05; // Add 5% service fee
-            const originalStripeFee = Math.round(originalWithFee * 0.029) + 30; // 2.9% + $0.30
-            const originalNetAmount = originalWithFee - originalStripeFee;
-            const originalCoachPayout = Math.round(originalNetAmount * 0.85); // 85% to coach
+            // Calculate subsidy amount using your exact formula:
+            // [$15 *1.05 - 0.30 - (15*1.05 * 2.9%) * 85% ] - [$10*1.05 - $0.3 - ($10*1.05*2.9%) * 85%]
             
-            // Credit-discounted coach payout calculation
-            const creditDiscountedPrice = originalClassPrice - appliedCredits;
-            const creditDiscountedWithFee = creditDiscountedPrice * 1.05; // Add 5% service fee
-            const creditDiscountedStripeFee = Math.round(creditDiscountedWithFee * 0.029) + 30;
-            const creditDiscountedNetAmount = creditDiscountedWithFee - creditDiscountedStripeFee;
-            const creditDiscountedCoachPayout = Math.round(creditDiscountedNetAmount * 0.85);
+            // Original class calculation (in cents)
+            const originalBaseCents = originalClassPrice; // Already in cents
+            const originalWithFeeCents = Math.round(originalBaseCents * 1.05); // Add 5% service fee
+            const originalStripeFee = Math.round(originalWithFeeCents * 0.029) + 30; // 2.9% + $0.30
+            const originalNetCents = originalWithFeeCents - originalStripeFee;
+            const originalCoachPayout = Math.round(originalNetCents * 0.85); // 85% to coach
             
-            // Platform subsidy is the difference in coach payouts
-            const subsidyAmount = originalCoachPayout - creditDiscountedCoachPayout;
+            // Credit-discounted calculation (in cents) 
+            const discountedBaseCents = originalClassPrice - appliedCredits;
+            const discountedWithFeeCents = Math.round(discountedBaseCents * 1.05); // Add 5% service fee
+            const discountedStripeFee = Math.round(discountedWithFeeCents * 0.029) + 30; // 2.9% + $0.30
+            const discountedNetCents = discountedWithFeeCents - discountedStripeFee;
+            const discountedCoachPayout = Math.round(discountedNetCents * 0.85); // 85% to coach
+            
+            // Platform subsidy = difference in coach payouts (what Trainn pays to make coach whole)
+            const subsidyAmount = originalCoachPayout - discountedCoachPayout;
             
             console.log("=== REFERRAL CREDIT SUBSIDY CALCULATION ===");
-            console.log("Original class price (cents):", originalClassPrice);
+            console.log("Original class price (cents):", originalBaseCents);
+            console.log("Original + 5% fee (cents):", originalWithFeeCents);
+            console.log("Original Stripe fee (cents):", originalStripeFee);
+            console.log("Original net after Stripe (cents):", originalNetCents);
+            console.log("Original coach payout 85% (cents):", originalCoachPayout);
+            console.log("---");
             console.log("Credits applied (cents):", appliedCredits);
-            console.log("Credit-discounted price (cents):", creditDiscountedPrice);
-            console.log("Original coach payout (cents):", originalCoachPayout);
-            console.log("Credit-discounted coach payout (cents):", creditDiscountedCoachPayout);
+            console.log("Discounted base price (cents):", discountedBaseCents);
+            console.log("Discounted + 5% fee (cents):", discountedWithFeeCents);
+            console.log("Discounted Stripe fee (cents):", discountedStripeFee);
+            console.log("Discounted net after Stripe (cents):", discountedNetCents);
+            console.log("Discounted coach payout 85% (cents):", discountedCoachPayout);
+            console.log("---");
             console.log("Platform subsidy needed (cents):", subsidyAmount);
+            console.log("Coach gets: Original payout + Platform subsidy =", originalCoachPayout, "+", subsidyAmount, "=", originalCoachPayout + subsidyAmount, "cents");
             
             if (subsidyAmount > 0) {
               // Create booking subsidy record for referral credits
