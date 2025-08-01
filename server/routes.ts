@@ -1766,20 +1766,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Process credit deduction if credits were applied
-      if (appliedCredits > 0) {
+      // AUTO-DETECT AND APPLY CREDIT DEDUCTION FOR REFERRAL USERS
+      // This ensures ALL referral users get their credits properly deducted
+      const userCreditBalance = await storage.getUserCreditBalance(req.user.id);
+      const userReferralStatus = await storage.getUserReferralStatus(req.user.id);
+      const userBookings = await storage.getBookingsByUser(req.user.id);
+      
+      // Check if this is a first-time referral user with credits who should get automatic deduction
+      const isFirstTimeReferralUser = userReferralStatus?.status === 'signed_up';
+      const completedBookings = userBookings.filter(b => b.status === 'confirmed');
+      const isFirstPaidBooking = completedBookings.length === 0; // This booking will be their first
+      const hasCreditsToApply = userCreditBalance > 0;
+      
+      console.log("=== CREDIT DEDUCTION ANALYSIS ===");
+      console.log("User ID:", req.user.id, "Email:", req.user.email);
+      console.log("Is referral user:", isFirstTimeReferralUser);
+      console.log("Is first paid booking:", isFirstPaidBooking);
+      console.log("Credit balance:", userCreditBalance, "cents");
+      console.log("Applied credits from frontend:", appliedCredits, "cents");
+      
+      // AUTO-APPLY CREDITS for first-time referral users
+      let actualCreditsToDeduct = appliedCredits;
+      if (isFirstTimeReferralUser && isFirstPaidBooking && hasCreditsToApply && appliedCredits === 0) {
+        // Frontend didn't apply credits but user should get them automatically
+        actualCreditsToDeduct = Math.min(userCreditBalance, totalAmount); // Apply up to full amount or balance
+        console.log("🎯 AUTO-APPLYING referral credits:", actualCreditsToDeduct, "cents");
+      }
+
+      // Process credit deduction if credits should be applied
+      if (actualCreditsToDeduct > 0) {
         try {
           console.log("=== CREDIT DEDUCTION & PLATFORM SUBSIDY ===");
-          console.log("User ID:", req.user.id, "Email:", req.user.email);
           console.log("Booking ID:", booking.id);
-          console.log("Deducting credits:", appliedCredits, "cents");
+          console.log("Deducting credits:", actualCreditsToDeduct, "cents");
           
           // Check user balance before deduction
           const balanceBefore = await storage.getUserCreditBalance(req.user.id);
           console.log("User credit balance BEFORE deduction:", balanceBefore, "cents");
           
-          await storage.applyCreditsToBooking(req.user.id, appliedCredits, booking.id);
-          console.log(`✅ Successfully deducted ${appliedCredits} cents in credits for booking ${booking.id}`);
+          await storage.applyCreditsToBooking(req.user.id, actualCreditsToDeduct, booking.id);
+          console.log(`✅ Successfully deducted ${actualCreditsToDeduct} cents in credits for booking ${booking.id}`);
           
           // Verify balance after deduction
           const balanceAfter = await storage.getUserCreditBalance(req.user.id);
@@ -1787,9 +1813,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("Balance difference:", balanceBefore - balanceAfter, "cents (should equal applied credits)");
           
           // Ensure credit deduction worked properly
-          if ((balanceBefore - balanceAfter) !== appliedCredits) {
+          if ((balanceBefore - balanceAfter) !== actualCreditsToDeduct) {
             console.error("⚠️ WARNING: Credit deduction mismatch!");
-            console.error("Expected difference:", appliedCredits);
+            console.error("Expected difference:", actualCreditsToDeduct);
             console.error("Actual difference:", balanceBefore - balanceAfter);
           } else {
             console.log("✅ Credit deduction verified successfully");
@@ -1811,7 +1837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const originalCoachPayout = Math.round(originalNetCents * 0.85); // 85% to coach
             
             // Credit-discounted calculation (in cents) 
-            const discountedBaseCents = originalClassPrice - appliedCredits;
+            const discountedBaseCents = originalClassPrice - actualCreditsToDeduct;
             const discountedWithFeeCents = Math.round(discountedBaseCents * 1.05); // Add 5% service fee
             const discountedStripeFee = Math.round(discountedWithFeeCents * 0.029) + 30; // 2.9% + $0.30
             const discountedNetCents = discountedWithFeeCents - discountedStripeFee;
@@ -1827,7 +1853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("Original net after Stripe (cents):", originalNetCents);
             console.log("Original coach payout 85% (cents):", originalCoachPayout);
             console.log("---");
-            console.log("Credits applied (cents):", appliedCredits);
+            console.log("Credits applied (cents):", actualCreditsToDeduct);
             console.log("Discounted base price (cents):", discountedBaseCents);
             console.log("Discounted + 5% fee (cents):", discountedWithFeeCents);
             console.log("Discounted Stripe fee (cents):", discountedStripeFee);
@@ -1843,10 +1869,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 bookingId: booking.id,
                 userId: req.user.id,
                 classId: parseInt(classId),
-                discountAmount: appliedCredits,
+                discountAmount: actualCreditsToDeduct,
                 subsidyAmount: subsidyAmount,
                 sourceType: 'referral_credit',
-                sourceDescription: `Platform subsidy for $${(appliedCredits/100).toFixed(2)} referral credit applied`
+                sourceDescription: `Platform subsidy for $${(actualCreditsToDeduct/100).toFixed(2)} referral credit applied`
               });
               
               console.log(`✅ Created platform subsidy of $${(subsidyAmount/100).toFixed(2)} for referral credit usage`);

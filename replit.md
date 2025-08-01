@@ -69,6 +69,7 @@ Preferred communication style: Simple, everyday language.
 - **✅ Payment Processing**: Fixed double-deduction bug - backend now correctly processes frontend-calculated amounts without re-applying credits
 - **✅ Transaction Tracking**: All credit usage properly tracked in user_credits table with positive/negative transactions
 - **✅ Coach Payment Subsidies**: Fixed referral credit charging issue - coaches now receive full earnings through platform subsidies matching promo code system
+- **✅ AUTO-DETECTION SYSTEM (August 2025)**: Implemented automatic credit deduction for ALL referral users - backend now automatically detects first-time referral users and applies credits regardless of frontend state, ensuring 100% reliable credit processing
 
 ### TypeScript & Database Schema Fixes (January 2025)
 - **TypeScript Resolution**: Fixed Profile page compilation errors by adding proper StripeStatus interface
