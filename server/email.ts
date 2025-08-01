@@ -102,14 +102,6 @@ export async function sendBookingConfirmation(
               </tr>
               ${pricingDetails && pricingDetails.discountAmount > 0 ? `
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Class Price:</td>
-                <td style="padding: 8px 0; color: #333;">$${pricingDetails.originalPrice.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">${pricingDetails.discountSource} Discount:</td>
-                <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">-$${pricingDetails.discountAmount.toFixed(2)}</td>
-              </tr>
-              <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Total Paid:</td>
                 <td style="padding: 8px 0; color: #333; font-weight: bold;">$${pricingDetails.finalAmount.toFixed(2)}</td>
               </tr>
