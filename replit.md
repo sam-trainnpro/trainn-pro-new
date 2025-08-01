@@ -66,6 +66,8 @@ Preferred communication style: Simple, everyday language.
 - **✅ UI Enhancements**: Polished referral modal with gift icon, improved button layouts, and brand-colored sharing icons
 - **✅ Sharing Options**: Five sharing methods (Messages, WhatsApp, Messenger, Copy Link, Share) with proper brand colors
 - **✅ User Experience**: Streamlined interface with green referral banner on registration form, automatic credit application
+- **✅ Payment Processing**: Fixed double-deduction bug - backend now correctly processes frontend-calculated amounts without re-applying credits
+- **✅ Transaction Tracking**: All credit usage properly tracked in user_credits table with positive/negative transactions
 
 ### TypeScript & Database Schema Fixes (January 2025)
 - **TypeScript Resolution**: Fixed Profile page compilation errors by adding proper StripeStatus interface
