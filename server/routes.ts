@@ -1760,14 +1760,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process credit deduction if credits were applied
       if (appliedCredits > 0) {
         try {
-          console.log("=== CREDIT DEDUCTION ===");
+          console.log("=== CREDIT DEDUCTION & PLATFORM SUBSIDY ===");
           console.log("Deducting credits:", appliedCredits, "cents");
           
           await storage.applyCreditsToBooking(req.user.id, appliedCredits, booking.id);
           console.log(`Successfully deducted ${appliedCredits} cents in credits for booking ${booking.id}`);
+          
+          // CREATE PLATFORM SUBSIDY for referral credits (like promo codes)
+          // This ensures coaches get paid the full amount while Trainn covers the credit difference
+          if (paymentIntent && paymentIntent.metadata) {
+            const originalClassPrice = parseFloat(paymentIntent.metadata.originalAmount || '0') * 100; // in cents
+            
+            // Calculate subsidy amount: difference in coach payout between original and credit-discounted price
+            const originalWithFee = originalClassPrice * 1.05; // Add 5% service fee
+            const originalStripeFee = Math.round(originalWithFee * 0.029) + 30; // 2.9% + $0.30
+            const originalNetAmount = originalWithFee - originalStripeFee;
+            const originalCoachPayout = Math.round(originalNetAmount * 0.85); // 85% to coach
+            
+            // Credit-discounted coach payout calculation
+            const creditDiscountedPrice = originalClassPrice - appliedCredits;
+            const creditDiscountedWithFee = creditDiscountedPrice * 1.05; // Add 5% service fee
+            const creditDiscountedStripeFee = Math.round(creditDiscountedWithFee * 0.029) + 30;
+            const creditDiscountedNetAmount = creditDiscountedWithFee - creditDiscountedStripeFee;
+            const creditDiscountedCoachPayout = Math.round(creditDiscountedNetAmount * 0.85);
+            
+            // Platform subsidy is the difference in coach payouts
+            const subsidyAmount = originalCoachPayout - creditDiscountedCoachPayout;
+            
+            console.log("=== REFERRAL CREDIT SUBSIDY CALCULATION ===");
+            console.log("Original class price (cents):", originalClassPrice);
+            console.log("Credits applied (cents):", appliedCredits);
+            console.log("Credit-discounted price (cents):", creditDiscountedPrice);
+            console.log("Original coach payout (cents):", originalCoachPayout);
+            console.log("Credit-discounted coach payout (cents):", creditDiscountedCoachPayout);
+            console.log("Platform subsidy needed (cents):", subsidyAmount);
+            
+            if (subsidyAmount > 0) {
+              // Create booking subsidy record for referral credits
+              await storage.createBookingSubsidy({
+                bookingId: booking.id,
+                userId: req.user.id,
+                classId: parseInt(classId),
+                discountAmount: appliedCredits,
+                subsidyAmount: subsidyAmount,
+                sourceType: 'referral_credit',
+                sourceDescription: `Platform subsidy for $${(appliedCredits/100).toFixed(2)} referral credit applied`
+              });
+              
+              console.log(`✅ Created platform subsidy of $${(subsidyAmount/100).toFixed(2)} for referral credit usage`);
+            }
+          }
         } catch (creditError) {
-          console.error("Error deducting user credits:", creditError);
-          // Don't fail the booking if credit deduction fails, but log the error
+          console.error("Error processing credits/subsidy:", creditError);
+          // Don't fail the booking if credit processing fails, but log the error
         }
       }
       

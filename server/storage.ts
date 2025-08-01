@@ -137,6 +137,10 @@ export interface IStorage {
   processReferralSignup(referralCode: string, refereeId: number): Promise<Referral | undefined>;
   processReferralCompletion(refereeId: number): Promise<void>;
   getReferralStatusForUser(userId: number): Promise<{ status: string; referrerName: string; completedAt: Date | null } | null>;
+  
+  // Platform subsidies
+  createBookingSubsidy(subsidyData: InsertBookingSubsidy): Promise<BookingSubsidy>;
+  getPlatformSubsidyForBooking(bookingId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
