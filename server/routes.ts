@@ -2056,11 +2056,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date()
       };
       
-      // Test pricing details showing referral credit discount
+      // Test pricing details for new user scenario: $15 class + $0.75 service fee - $5 referral credit = $10.75
+      const classPrice = 15.00;
+      const serviceFee = 0.75;
+      const originalTotal = classPrice + serviceFee; // $15.75
+      const referralDiscount = 5.00;
+      const finalAmount = originalTotal - referralDiscount; // $10.75
+      
       const testPricingDetails = {
-        originalPrice: 15.00,
-        discountAmount: 5.00,
-        finalAmount: 10.00,
+        originalPrice: originalTotal,
+        discountAmount: referralDiscount,
+        finalAmount: finalAmount,
         discountSource: "Referral Credit"
       };
 
