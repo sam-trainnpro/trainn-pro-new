@@ -76,6 +76,12 @@ Preferred communication style: Simple, everyday language.
 - **Credit System Stability**: Ensured proper typing for payment status checks in coach payment settings
 - **API Reliability**: Fixed database queries to use correct column names for consistent data retrieval
 
+### Email Confirmation Improvements (August 2025)
+- **✅ Simplified Pricing Display**: Updated email confirmations to show clean "Total Paid" for discounted purchases
+- **✅ Enhanced User Experience**: Customers using referral credits or promo codes now see simplified one-line pricing
+- **✅ Maintained Clarity**: Regular purchases without discounts continue showing "Total Cost" as before
+- **✅ Tested & Verified**: Successfully sent test confirmation email demonstrating new format
+
 ### Platform Subsidy System Enhancement (January 2025)
 - **✅ Referral Credit Subsidies**: Implemented platform subsidy creation for referral credits in payment confirmation
 - **✅ Coach Payment Protection**: Coaches receive full earnings while Trainn covers referral credit differences from platform funds
