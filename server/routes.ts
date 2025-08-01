@@ -2197,6 +2197,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Process referrer rewards - manually trigger reward processing
+  app.post("/api/admin/process-referrer-rewards", requireAdmin, async (req, res) => {
+    try {
+      console.log("=== MANUAL REFERRER REWARD PROCESSING ===");
+      await storage.processReferrerRewards();
+      
+      res.json({
+        success: true,
+        message: "Referrer rewards processed successfully"
+      });
+    } catch (error) {
+      console.error("Error processing referrer rewards:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to process referrer rewards",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Check and award rewards for specific referrer
+  app.post("/api/admin/check-referrer-rewards/:referrerId", requireAdmin, async (req, res) => {
+    try {
+      const referrerId = parseInt(req.params.referrerId);
+      const rewardsAwarded = await storage.checkAndAwardReferrerRewards(referrerId);
+      
+      res.json({
+        success: true,
+        message: `Processed ${rewardsAwarded} referrer rewards`,
+        rewardsAwarded
+      });
+    } catch (error) {
+      console.error("Error checking referrer rewards:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to check referrer rewards",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Get payout statistics (admin only)
   app.get("/api/admin/payout-stats", requireAdmin, async (req, res) => {
     try {
