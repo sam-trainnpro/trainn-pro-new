@@ -1270,6 +1270,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required parameters: classId, amount" });
       }
 
+      // The frontend sends the 'amount' that already includes all discounts and credits applied
+      // We just need to use this amount directly without further modifications
       let finalAmount = parseFloat(amount);
       let promoCodeData = null;
       let originalClassPrice = 0; // Store the original class price for metadata
@@ -1281,32 +1283,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         originalClassPrice = classDetailsForPrice.price * quantity; // Original total price
       }
 
-      // Apply promo code discount if provided
+      // Get promo code data if provided (for metadata only, don't apply discount again)
       if (promoCode) {
         const validation = await storage.validatePromoCode(promoCode, req.user!.id, classId);
         if (validation.valid && validation.promoCode) {
-          const classDetails = await storage.getClass(parseInt(classId));
-          if (classDetails) {
-            const discountCalc = await storage.calculateDiscount(validation.promoCode, classDetails.price * quantity * 100);
-            // Convert back to dollars and add 5% fee
-            const discountedAmount = discountCalc.finalAmount / 100;
-            finalAmount = discountedAmount + (discountedAmount * 0.05);
-            promoCodeData = validation.promoCode;
-            
-            console.log(`Promo code ${promoCode} applied: Original $${originalClassPrice.toFixed(2)}, Final $${finalAmount.toFixed(2)}`);
-          }
+          promoCodeData = validation.promoCode;
+          console.log(`Promo code ${promoCode} metadata stored`);
         }
       }
       
-      // Apply user credits if requested
+      // Store credits applied for metadata (frontend already deducted from amount)
       if (useCredits && appliedCredits > 0) {
-        // Convert credits from cents to dollars for calculation
-        const creditsInDollars = appliedCredits / 100;
-        finalAmount = Math.max(0, finalAmount - creditsInDollars);
         creditsApplied = appliedCredits; // Store in cents for metadata
-        
-        console.log(`Credits applied: $${creditsInDollars.toFixed(2)}, Final amount after credits: $${finalAmount.toFixed(2)}`);
+        console.log(`Credits metadata stored: ${appliedCredits} cents ($${(appliedCredits/100).toFixed(2)})`);
       }
+      
+      console.log(`Payment Intent Creation: Original price $${originalClassPrice.toFixed(2)}, Final amount to charge: $${finalAmount.toFixed(2)}`)
       
       // Check if user already has confirmed bookings for this class
       const userBookings = await storage.getUserBookings(req.user.id);
