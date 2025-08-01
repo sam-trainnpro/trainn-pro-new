@@ -470,20 +470,22 @@ export default function CheckoutPage() {
     }
   }, [paymentStatus, classItem, classId, quantity, toast, navigate, queryClient]);
 
-  // Automatically apply $5 credit for first-time referral users
+  // Automatically apply $5 credit for first-time referral users on classes >$5
   useEffect(() => {
-    if (isFirstTimeReferralUser && classItem && appliedCredits === 0) {
-      console.log("Applying automatic $5 referral credit for first-time user");
-      const creditAmount = Math.min(500, creditBalance * 100); // $5 or available balance in cents
-      setAppliedCredits(creditAmount);
-      setUseCredits(true);
-      
-      toast({
-        title: "Referral Credit Applied!",
-        description: `You've received $${(creditAmount / 100).toFixed(2)} credit for joining via referral.`,
-      });
+    if (isFirstTimeReferralUser && classItem && appliedCredits === 0 && creditBalance >= 500) {
+      // Only auto-apply if class price is >$5 (500 cents)
+      if (classItem.price * quantity * 100 > 500) {
+        console.log("Applying automatic $5 referral credit for first-time user");
+        setAppliedCredits(500); // Always apply exactly $5 (500 cents)
+        setUseCredits(true);
+        
+        toast({
+          title: "Referral Credit Applied!",
+          description: "You've received $5.00 credit for joining via referral.",
+        });
+      }
     }
-  }, [isFirstTimeReferralUser, classItem, creditBalance, appliedCredits, toast]);
+  }, [isFirstTimeReferralUser, classItem, creditBalance, appliedCredits, quantity, toast]);
 
   // Initialize final amount when class loads
   useEffect(() => {
@@ -938,36 +940,13 @@ export default function CheckoutPage() {
                               </p>
                             </div>
                           )}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-blue-600">Available: ${(creditBalance / 100).toFixed(2)}</p>
-                              {useCredits && (
-                                <p className="text-sm text-blue-800 font-medium">
-                                  Applying: ${Math.min(creditBalance, finalAmount > 0 ? finalAmount : classItem.price * quantity * 100) / 100}
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              variant={useCredits ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => {
-                                const toggle = !useCredits;
-                                setUseCredits(toggle);
-                                if (toggle) {
-                                  const maxCredit = Math.min(creditBalance, finalAmount > 0 ? finalAmount : classItem.price * quantity * 100);
-                                  setAppliedCredits(maxCredit);
-                                  setFinalAmount((finalAmount > 0 ? finalAmount : classItem.price * quantity * 100) - maxCredit);
-                                } else {
-                                  setAppliedCredits(0);
-                                  setFinalAmount(appliedPromoCode ? 
-                                    (classItem.price * quantity * 100) - discountAmount :
-                                    classItem.price * quantity * 100
-                                  );
-                                }
-                              }}
-                            >
-                              {useCredits ? 'Remove Credits' : 'Apply Credits'}
-                            </Button>
+                          <div>
+                            <p className="text-sm text-blue-600">Available: ${(creditBalance / 100).toFixed(2)}</p>
+                            {useCredits && appliedCredits > 0 && (
+                              <p className="text-sm text-blue-800 font-medium">
+                                Applying: ${(appliedCredits / 100).toFixed(2)}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}

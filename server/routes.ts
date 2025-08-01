@@ -1264,7 +1264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a payment intent for booking a class
   app.post("/api/payment/create-intent", requireAuth, async (req, res) => {
     try {
-      const { classId, amount, quantity = 1, promoCode, useCredits = false } = req.body;
+      const { classId, amount, quantity = 1, promoCode, useCredits = false, appliedCredits = 0 } = req.body;
       
       if (!classId || !amount) {
         return res.status(400).json({ message: "Missing required parameters: classId, amount" });
@@ -1273,6 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let finalAmount = parseFloat(amount);
       let promoCodeData = null;
       let originalClassPrice = 0; // Store the original class price for metadata
+      let creditsApplied = 0; // Track credits applied in cents
 
       // Get class details to get the original price before any discounts
       const classDetailsForPrice = await storage.getClass(parseInt(classId));
@@ -1295,6 +1296,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`Promo code ${promoCode} applied: Original $${originalClassPrice.toFixed(2)}, Final $${finalAmount.toFixed(2)}`);
           }
         }
+      }
+      
+      // Apply user credits if requested
+      if (useCredits && appliedCredits > 0) {
+        // Convert credits from cents to dollars for calculation
+        const creditsInDollars = appliedCredits / 100;
+        finalAmount = Math.max(0, finalAmount - creditsInDollars);
+        creditsApplied = appliedCredits; // Store in cents for metadata
+        
+        console.log(`Credits applied: $${creditsInDollars.toFixed(2)}, Final amount after credits: $${finalAmount.toFixed(2)}`);
       }
       
       // Check if user already has confirmed bookings for this class
@@ -1354,7 +1365,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               promoCode: promoCodeData?.code || '',
               promoCodeId: promoCodeData?.id?.toString() || '',
               originalAmount: originalClassPrice.toString(),
-              discountApplied: promoCodeData ? 'true' : 'false'
+              discountApplied: promoCodeData ? 'true' : 'false',
+              creditsApplied: creditsApplied.toString(),
+              creditsUsed: useCredits ? 'true' : 'false'
             }
           };
 
