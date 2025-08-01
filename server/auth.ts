@@ -56,7 +56,7 @@ export function setupAuth(app: Express) {
       async (email, password, done) => {
         try {
           const user = await storage.getUserByEmail(email);
-          if (!user || !(await comparePasswords(password, user.password))) {
+          if (!user || !user.password || !(await comparePasswords(password, user.password))) {
             return done(null, false);
           } else {
             return done(null, user);
@@ -183,17 +183,44 @@ export function setupAuth(app: Express) {
         }
       }
 
-      // Process referral if referral code was provided
-      if (referralCode && role === 'customer') {
+      // Process referral signup if referral code provided
+      if (referralCode) {
         try {
-          const referralResult = await storage.processReferralSignup(referralCode, user.id);
-          if (referralResult) {
-            console.log('Referral processed successfully for user:', user.email);
+          console.log('Processing referral signup with code:', referralCode);
+          
+          // Find the referrer by their referral code
+          const referrer = await storage.getUserByReferralCode(referralCode);
+          if (referrer) {
+            console.log('Found referrer:', referrer.email);
+            
+            // Create referral entry
+            const referral = await storage.createReferral({
+              referrerId: referrer.id,
+              refereeId: user.id,
+              referralCode: referralCode,
+              refereeEmail: user.email,
+              status: 'signed_up',
+              rewardGranted: false,
+              expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 days from now
+            });
+            
+            console.log('Created referral entry:', referral.id);
+            
+            // Grant immediate $5 credit to the new user
+            await storage.addUserCredit({
+              userId: user.id,
+              amount: 500, // $5 in cents
+              transactionType: 'referral_reward',
+              description: 'Welcome credit - $5 off your first class',
+              referralId: referral.id
+            });
+            
+            console.log('Granted $5 referral credit to new user:', user.email);
           } else {
-            console.log('Referral code invalid or expired:', referralCode);
+            console.log('Referral code not found or invalid:', referralCode);
           }
         } catch (referralError) {
-          console.error('Failed to process referral signup:', referralError);
+          console.error('Error processing referral signup:', referralError);
           // Don't fail registration if referral processing fails
         }
       }
@@ -212,7 +239,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ message: "Invalid email or password" });
