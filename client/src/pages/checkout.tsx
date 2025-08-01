@@ -314,7 +314,19 @@ export default function CheckoutPage() {
     
     // User must have signed up via referral and not yet completed their first purchase
     const hasReferral = status.status === 'signed_up';
-    const hasNoCompletedBookings = !userBookings || (Array.isArray(userBookings) && userBookings.length === 0);
+    
+    // Check for COMPLETED bookings only (not pending ones from failed attempts)
+    const completedBookings = Array.isArray(userBookings) ? 
+      userBookings.filter((booking: any) => booking.status === 'confirmed') : [];
+    const hasNoCompletedBookings = completedBookings.length === 0;
+    
+    console.log("🎯 Referral eligibility check:", {
+      hasReferral,
+      totalBookings: Array.isArray(userBookings) ? userBookings.length : 0,
+      completedBookings: completedBookings.length,
+      hasNoCompletedBookings,
+      isEligible: hasReferral && hasNoCompletedBookings
+    });
     
     return hasReferral && hasNoCompletedBookings;
   }, [referralStatus, userBookings]);
@@ -532,7 +544,7 @@ export default function CheckoutPage() {
     }
   }, [classItem, quantity, useCredits, appliedCredits, appliedPromoCode, discountAmount]);
 
-  // Create payment intent (only for paid bookings)
+  // Create payment intent (only for paid bookings) - with debouncing to prevent multiple calls
   useEffect(() => {
     const createPaymentIntent = async () => {
       try {
@@ -553,14 +565,14 @@ export default function CheckoutPage() {
         // Wait for all credit calculations to complete before creating payment intent
         // This prevents multiple payment intents from being created as state updates
         if (isFirstTimeReferralUser && creditBalance >= 500 && !useCredits && finalAmount > 500) {
-          console.log("Waiting for automatic credit application to complete...");
+          console.log("⏳ Waiting for automatic credit application to complete...");
           setIsLoading(false);
           return;
         }
         
         // Ensure finalAmount is properly calculated (never use fallback that ignores discounts)
         if (finalAmount < 0) {
-          console.log("Invalid final amount, waiting for proper calculation...");
+          console.log("❌ Invalid final amount, waiting for proper calculation...");
           setIsLoading(false);
           return;
         }
@@ -577,6 +589,8 @@ export default function CheckoutPage() {
           useCredits: useCredits,
           classPrice: classItem.price,
           quantity: quantity,
+          isFirstTimeReferralUser,
+          creditBalance,
           timestamp: new Date().toISOString()
         });
         
@@ -592,7 +606,7 @@ export default function CheckoutPage() {
         const data = await res.json();
         
         setClientSecret(data.clientSecret);
-        console.log("Payment intent created successfully with amount:", totalWithFee / 100);
+        console.log("✅ Payment intent created successfully with amount:", totalWithFee / 100);
       } catch (err: any) {
         setError(err.message || "Failed to initialize payment. Please try again.");
         toast({
@@ -605,22 +619,22 @@ export default function CheckoutPage() {
       }
     };
     
-    // Only create payment intent when all conditions are met:
-    // 1. Class data is loaded
-    // 2. No existing booking
-    // 3. Payment not completed
-    // 4. finalAmount is calculated (> 0 for paid bookings)
-    // 5. No existing client secret
-    // 6. Credit calculations are complete (if applicable)
+    // Only create payment intent when ALL conditions are met (prevents race conditions):
     const shouldCreateIntent = classItem && 
                               !userBooking && 
                               paymentStatus !== 'success' && 
                               finalAmount > 0 && 
                               !clientSecret &&
+                              // For referral users: wait until credits are applied OR they're not eligible
                               (!isFirstTimeReferralUser || useCredits || creditBalance < 500);
     
     if (shouldCreateIntent) {
-      createPaymentIntent();
+      // Add small debounce to prevent rapid successive calls
+      const timeoutId = setTimeout(() => {
+        createPaymentIntent();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [classItem, userBooking, classId, toast, paymentStatus, finalAmount, appliedPromoCode, useCredits, appliedCredits, isFirstTimeReferralUser, creditBalance, clientSecret]);
   
