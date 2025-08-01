@@ -1770,10 +1770,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (appliedCredits > 0) {
         try {
           console.log("=== CREDIT DEDUCTION & PLATFORM SUBSIDY ===");
+          console.log("User ID:", req.user.id, "Email:", req.user.email);
+          console.log("Booking ID:", booking.id);
           console.log("Deducting credits:", appliedCredits, "cents");
           
+          // Check user balance before deduction
+          const balanceBefore = await storage.getUserCreditBalance(req.user.id);
+          console.log("User credit balance BEFORE deduction:", balanceBefore, "cents");
+          
           await storage.applyCreditsToBooking(req.user.id, appliedCredits, booking.id);
-          console.log(`Successfully deducted ${appliedCredits} cents in credits for booking ${booking.id}`);
+          console.log(`✅ Successfully deducted ${appliedCredits} cents in credits for booking ${booking.id}`);
+          
+          // Verify balance after deduction
+          const balanceAfter = await storage.getUserCreditBalance(req.user.id);
+          console.log("User credit balance AFTER deduction:", balanceAfter, "cents");
+          console.log("Balance difference:", balanceBefore - balanceAfter, "cents (should equal applied credits)");
+          
+          // Ensure credit deduction worked properly
+          if ((balanceBefore - balanceAfter) !== appliedCredits) {
+            console.error("⚠️ WARNING: Credit deduction mismatch!");
+            console.error("Expected difference:", appliedCredits);
+            console.error("Actual difference:", balanceBefore - balanceAfter);
+          } else {
+            console.log("✅ Credit deduction verified successfully");
+          }
           
           // CREATE PLATFORM SUBSIDY for referral credits (like promo codes)
           // This ensures coaches get paid the full amount while Trainn covers the credit difference
@@ -2095,6 +2115,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: error.message 
+      });
+    }
+  });
+
+  // Test endpoint for credit deduction - helping debug the issue
+  app.post("/api/test/credit-deduction", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { appliedCredits = 500 } = req.body; // Default to $5.00 in cents
+      
+      console.log("=== TESTING CREDIT DEDUCTION ===");
+      console.log("User ID:", userId);
+      console.log("Applied Credits:", appliedCredits, "cents");
+      
+      // Check current balance
+      const balanceBefore = await storage.getUserCreditBalance(userId);
+      console.log("Balance before:", balanceBefore, "cents");
+      
+      // Create a test booking for the deduction
+      const testBookingId = 999999; // Fake booking ID for testing
+      
+      // Apply credit deduction
+      await storage.applyCreditsToBooking(userId, appliedCredits, testBookingId);
+      console.log("Credit deduction applied successfully");
+      
+      // Check balance after
+      const balanceAfter = await storage.getUserCreditBalance(userId);
+      console.log("Balance after:", balanceAfter, "cents");
+      
+      // Get the credit transaction that was just created
+      const recentTransactions = await storage.getUserCredits(userId);
+      const latestTransaction = recentTransactions[0]; // Most recent
+      
+      res.json({
+        success: true,
+        message: "Credit deduction test completed",
+        data: {
+          userId,
+          appliedCredits,
+          balanceBefore,
+          balanceAfter,
+          difference: balanceBefore - balanceAfter,
+          latestTransaction
+        }
+      });
+      
+    } catch (error) {
+      console.error("Credit deduction test error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Credit deduction test failed",
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });
