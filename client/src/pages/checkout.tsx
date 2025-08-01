@@ -473,17 +473,30 @@ export default function CheckoutPage() {
   // Reset client secret when key parameters change to ensure new payment intent creation
   useEffect(() => {
     if (clientSecret) {
-      console.log("Resetting client secret due to parameter change");
+      console.log("🔄 Resetting client secret due to parameter change", {
+        appliedCredits,
+        useCredits,
+        appliedPromoCode: appliedPromoCode?.code,
+        discountAmount
+      });
       setClientSecret("");
     }
   }, [appliedCredits, useCredits, appliedPromoCode, discountAmount]);
 
   // Automatically apply $5 credit for first-time referral users on classes >$5
   useEffect(() => {
+    console.log("💳 Credit auto-apply check:", {
+      isFirstTimeReferralUser,
+      hasClassItem: !!classItem,
+      appliedCredits,
+      creditBalance,
+      classPrice: classItem ? classItem.price * quantity * 100 : 0
+    });
+    
     if (isFirstTimeReferralUser && classItem && appliedCredits === 0 && creditBalance >= 500) {
       // Only auto-apply if class price is >$5 (500 cents)
       if (classItem.price * quantity * 100 > 500) {
-        console.log("Applying automatic $5 referral credit for first-time user");
+        console.log("✅ Applying automatic $5 referral credit for first-time user");
         setAppliedCredits(500); // Always apply exactly $5 (500 cents)
         setUseCredits(true);
         
@@ -504,6 +517,17 @@ export default function CheckoutPage() {
       
       // Calculate final amount: base - promo discount - credit
       const calculatedAmount = Math.max(0, baseAmount - discountToApply - creditToApply);
+      
+      console.log("💰 Final amount calculation:", {
+        baseAmount: baseAmount / 100,
+        creditToApply: creditToApply / 100,
+        discountToApply: discountToApply / 100,
+        calculatedAmount: calculatedAmount / 100,
+        useCredits,
+        appliedCredits,
+        hasPromoCode: !!appliedPromoCode
+      });
+      
       setFinalAmount(calculatedAmount);
     }
   }, [classItem, quantity, useCredits, appliedCredits, appliedPromoCode, discountAmount]);
@@ -545,12 +569,15 @@ export default function CheckoutPage() {
         const amountToCharge = finalAmount; // Never fall back to full price!
         const totalWithFee = amountToCharge + (amountToCharge * 0.05); // Add 5% service fee
         
-        console.log("Creating payment intent:", {
+        console.log("🔥 CREATING PAYMENT INTENT:", {
           finalAmount: finalAmount / 100,
           amountToCharge: amountToCharge / 100,
           totalWithFee: totalWithFee / 100,
           appliedCredits: appliedCredits,
-          useCredits: useCredits
+          useCredits: useCredits,
+          classPrice: classItem.price,
+          quantity: quantity,
+          timestamp: new Date().toISOString()
         });
         
         // Create a payment intent
