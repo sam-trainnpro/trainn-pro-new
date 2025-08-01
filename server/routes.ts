@@ -1762,7 +1762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("=== CREDIT DEDUCTION ===");
           console.log("Deducting credits:", appliedCredits, "cents");
           
-          await storage.deductUserCredits(req.user.id, appliedCredits, `Class booking: ${classItem.title}`, booking.id);
+          await storage.applyCreditsToBooking(req.user.id, appliedCredits, booking.id);
           console.log(`Successfully deducted ${appliedCredits} cents in credits for booking ${booking.id}`);
         } catch (creditError) {
           console.error("Error deducting user credits:", creditError);
