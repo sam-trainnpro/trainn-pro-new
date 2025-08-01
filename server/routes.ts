@@ -1298,7 +1298,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Credits metadata stored: ${appliedCredits} cents ($${(appliedCredits/100).toFixed(2)})`);
       }
       
-      console.log(`Payment Intent Creation: Original price $${originalClassPrice.toFixed(2)}, Final amount to charge: $${finalAmount.toFixed(2)}`)
+      console.log(`🔥 BACKEND PAYMENT INTENT Creation:`, {
+        originalPrice: `$${originalClassPrice.toFixed(2)}`,
+        finalAmountToCharge: `$${finalAmount.toFixed(2)}`,
+        useCredits,
+        appliedCredits: `${appliedCredits} cents ($${(appliedCredits/100).toFixed(2)})`,
+        promoCode: promoCode || 'none',
+        userId: req.user!.id,
+        classId,
+        timestamp: new Date().toISOString()
+      });
       
       // Check if user already has confirmed bookings for this class
       const userBookings = await storage.getUserBookings(req.user.id);
