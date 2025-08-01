@@ -1583,11 +1583,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const coach = await storage.getUser(classDetails.coachId);
         if (coach) {
+          // For free promo bookings, show pricing details with discount
+          const pricingDetails = {
+            originalPrice: originalAmount / 100, // Convert from cents to dollars
+            discountAmount: discountAmount / 100, // Convert from cents to dollars  
+            finalAmount: 0, // Free after discount
+            discountSource: `Promo Code (${promoCode})`
+          };
+          
           await sendBookingConfirmation({
             booking,
             classData: classDetails,
             customer: req.user,
-            coach
+            coach,
+            pricingDetails: pricingDetails
           });
           
           // Send notification to coach
@@ -1904,11 +1913,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Use the first confirmed booking for email data
               const confirmedBooking = updatedBookings.find(b => b?.status === "confirmed");
               if (confirmedBooking) {
+                // Calculate pricing details for email
+                let pricingDetails = undefined;
+                if (paymentIntent && paymentIntent.metadata) {
+                  const originalAmount = parseFloat(paymentIntent.metadata.originalAmount || '0');
+                  const chargedAmount = paymentIntent.amount / 100; // Convert from cents to dollars
+                  const discountAmount = originalAmount - chargedAmount;
+                  
+                  if (discountAmount > 0) {
+                    let discountSource = "Discount";
+                    
+                    // Determine discount source
+                    if (appliedCredits > 0) {
+                      discountSource = "Referral Credit";
+                    } else if (paymentIntent.metadata.promoCode) {
+                      discountSource = "Promo Code";
+                    }
+                    
+                    pricingDetails = {
+                      originalPrice: originalAmount,
+                      discountAmount: discountAmount,
+                      finalAmount: chargedAmount,
+                      discountSource: discountSource
+                    };
+                  }
+                }
+                
                 const emailSent = await sendBookingConfirmation({
                   booking: confirmedBooking,
                   classData: classDetails,
                   customer: req.user,
-                  coach: coach
+                  coach: coach,
+                  pricingDetails: pricingDetails
                 });
                 
                 if (emailSent) {
