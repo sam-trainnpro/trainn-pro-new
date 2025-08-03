@@ -1647,7 +1647,7 @@ export class DatabaseStorage implements IStorage {
         rewardGranted: true
       });
 
-      // Grant $5 credit to both referrer and referee
+      // Grant $5 credit to referrer only (referee already got signup credit)
       const creditAmount = 500; // $5 in cents
 
       // Credit for referrer
@@ -1656,15 +1656,6 @@ export class DatabaseStorage implements IStorage {
         amount: creditAmount,
         transactionType: 'referral_reward',
         description: 'Referral reward - friend completed first class',
-        referralId: referral.id
-      });
-
-      // Credit for referee
-      await this.addUserCredit({
-        userId: refereeId,
-        amount: creditAmount,
-        transactionType: 'referral_reward',
-        description: 'Welcome credit for completing first class',
         referralId: referral.id
       });
     }
