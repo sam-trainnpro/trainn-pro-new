@@ -1804,9 +1804,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Credit balance:", userCreditBalance, "cents");
       console.log("Applied credits from frontend:", appliedCredits, "cents");
       
-      // AUTO-APPLY CREDITS for first-time referral users
+      // Process credits that were applied by frontend OR auto-apply for first-time referral users
       let actualCreditsToDeduct = appliedCredits;
-      if (isFirstTimeReferralUser && isFirstPaidBooking && hasCreditsToApply && appliedCredits === 0) {
+      
+      // If frontend applied credits, use those
+      if (appliedCredits > 0) {
+        console.log("✅ Using credits applied by frontend:", appliedCredits, "cents");
+        actualCreditsToDeduct = appliedCredits;
+      }
+      // Otherwise, auto-apply for first-time referral users
+      else if (isFirstTimeReferralUser && isFirstPaidBooking && hasCreditsToApply) {
         // Frontend didn't apply credits but user should get them automatically
         actualCreditsToDeduct = Math.min(userCreditBalance, paymentIntent.amount); // Apply up to full amount or balance
         console.log("🎯 AUTO-APPLYING referral credits:", actualCreditsToDeduct, "cents");

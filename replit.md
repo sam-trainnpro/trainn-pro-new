@@ -94,6 +94,10 @@ Preferred communication style: Simple, everyday language.
 - **✅ Database Fix**: Resolved alias import errors preventing automated reward processing
 - **✅ Retroactive Fix**: Corrected booking #172 issue where referral credit wasn't applied during payment processing
 - **✅ Enhanced UI**: Blue-themed styling for credit applications with clear messaging about automatic application
+- **✅ COMPLETE CREDIT PROCESSING FIX (August 2025)**: Fixed critical method name bugs (getBookingsByUser → getUserBookings) that caused booking confirmation failures
+- **✅ Universal Credit Deduction**: Backend now processes ALL frontend-applied credits, not just first-time user credits
+- **✅ Real-time Balance Updates**: Credit balances properly deducted and reflected in user profiles and transaction history
+- **✅ End-to-end Testing Verified**: User 137 successfully tested complete flow - $5 credit applied, booking confirmed, balance updated to $0
 
 ### Platform Subsidy System Enhancement (January 2025)
 - **✅ Referral Credit Subsidies**: Implemented platform subsidy creation for referral credits in payment confirmation
