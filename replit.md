@@ -86,6 +86,15 @@ Preferred communication style: Simple, everyday language.
 - **✅ Maintained Clarity**: Regular purchases without discounts continue showing "Total Cost" as before
 - **✅ Tested & Verified**: Successfully sent test confirmation email demonstrating new format
 
+### Automatic Credit Application System (August 2025)
+- **✅ Frontend Auto-Application**: Checkout page automatically detects and applies available credits when user visits any class booking page
+- **✅ Backend Auto-Detection**: Server-side logic automatically applies credits for first-time referral users even if frontend fails
+- **✅ Free Booking Flow**: Enhanced free booking endpoint to handle both promo codes and credit-covered purchases 
+- **✅ Balance Management**: Excess credits remain in account for future use when credits exceed class price
+- **✅ Database Fix**: Resolved alias import errors preventing automated reward processing
+- **✅ Retroactive Fix**: Corrected booking #172 issue where referral credit wasn't applied during payment processing
+- **✅ Enhanced UI**: Blue-themed styling for credit applications with clear messaging about automatic application
+
 ### Platform Subsidy System Enhancement (January 2025)
 - **✅ Referral Credit Subsidies**: Implemented platform subsidy creation for referral credits in payment confirmation
 - **✅ Coach Payment Protection**: Coaches receive full earnings while Trainn covers referral credit differences from platform funds
