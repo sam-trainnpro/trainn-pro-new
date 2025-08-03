@@ -1912,25 +1912,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Booking created successfully:", booking);
       
-      // Check if this is the user's first paid booking to process referral rewards
-      try {
-        const userBookings = await storage.getUserBookings(req.user.id);
-        const paidBookings = userBookings.filter((b: any) => 
-          b.status === 'confirmed' && 
-          b.paymentMethod !== 'free' && 
-          b.paymentMethod !== null &&
-          b.id !== booking.id // Exclude the current booking
-        );
-        
-        if (paidBookings.length === 0) {
-          // This is their first paid booking - process referral completion
-          await storage.processReferralCompletion(req.user.id);
-          console.log("Processed referral completion for user's first paid booking");
-        }
-      } catch (referralError) {
-        console.error("Error processing referral completion:", referralError);
-        // Don't fail the booking if referral processing fails
-      }
+      // NOTE: Referral rewards are now handled by the automated payout processor
+      // to prevent duplicate credits and ensure proper timing after class completion
       
       // Create scheduled payout for coach (2 days after class completion)
       if (stripe && paymentIntentId && paymentIntentId.startsWith("pi_")) {
