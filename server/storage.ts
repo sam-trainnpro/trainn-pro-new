@@ -1756,7 +1756,7 @@ export class DatabaseStorage implements IStorage {
       console.log(`Processing referral ${referral.referralId}: ${referral.referrerEmail} → ${referral.refereeEmail}`);
       console.log(`  - Class start time: ${referral.classStartTime}`);
       console.log(`  - Current time: ${currentTime.toISOString()}`);
-      console.log(`  - Class has started: ${referral.classStartTime < currentTime}`);
+      console.log(`  - Class has started: ${referral.classStartTime ? referral.classStartTime < currentTime : false}`);
 
       try {
         // Award $5 credit to referrer
