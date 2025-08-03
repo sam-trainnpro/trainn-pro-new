@@ -1789,11 +1789,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This ensures ALL referral users get their credits properly deducted
       const userCreditBalance = await storage.getUserCreditBalance(req.user.id);
       const userReferralStatus = await storage.getUserReferralStatus(req.user.id);
-      const userBookings = await storage.getBookingsByUser(req.user.id);
+      const userBookings = await storage.getUserBookings(req.user.id);
       
       // Check if this is a first-time referral user with credits who should get automatic deduction
       const isFirstTimeReferralUser = userReferralStatus?.status === 'signed_up';
-      const completedBookings = userBookings.filter(b => b.status === 'confirmed');
+      const completedBookings = userBookings.filter((b: any) => b.status === 'confirmed');
       const isFirstPaidBooking = completedBookings.length === 0; // This booking will be their first
       const hasCreditsToApply = userCreditBalance > 0;
       
@@ -1808,7 +1808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let actualCreditsToDeduct = appliedCredits;
       if (isFirstTimeReferralUser && isFirstPaidBooking && hasCreditsToApply && appliedCredits === 0) {
         // Frontend didn't apply credits but user should get them automatically
-        actualCreditsToDeduct = Math.min(userCreditBalance, totalAmount); // Apply up to full amount or balance
+        actualCreditsToDeduct = Math.min(userCreditBalance, paymentIntent.amount); // Apply up to full amount or balance
         console.log("🎯 AUTO-APPLYING referral credits:", actualCreditsToDeduct, "cents");
       }
 
@@ -1907,8 +1907,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if this is the user's first paid booking to process referral rewards
       try {
-        const userBookings = await storage.getBookingsByCustomer(req.user.id);
-        const paidBookings = userBookings.filter(b => 
+        const userBookings = await storage.getUserBookings(req.user.id);
+        const paidBookings = userBookings.filter((b: any) => 
           b.status === 'confirmed' && 
           b.paymentMethod !== 'free' && 
           b.paymentMethod !== null &&
