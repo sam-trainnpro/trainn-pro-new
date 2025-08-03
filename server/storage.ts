@@ -1725,7 +1725,7 @@ export class DatabaseStorage implements IStorage {
         referrerEmail: referrerTable.email,
         refereeEmail: refereeTable.email,
         bookingId: bookings.id,
-        classEndTime: classes.endTime
+        classStartTime: classes.startTime
       })
       .from(referrals)
       .innerJoin(referrerTable, eq(referrals.referrerId, referrerTable.id))
@@ -1738,7 +1738,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(referrals.status, 'signed_up'),
         eq(referrals.rewardGranted, false),
-        lt(classes.endTime, new Date()) // Class has ended
+        lt(classes.startTime, new Date()) // Class has started
       ));
 
     console.log(`Found ${eligibleReferrals.length} eligible referrals for rewards`);
@@ -1792,7 +1792,7 @@ export class DatabaseStorage implements IStorage {
         referralId: referrals.id,
         refereeId: referrals.refereeId,
         refereeEmail: referee.email,
-        classEndTime: classes.endTime
+        classStartTime: classes.startTime
       })
       .from(referrals)
       .innerJoin(referee, eq(referrals.refereeId, referee.id))
@@ -1805,7 +1805,7 @@ export class DatabaseStorage implements IStorage {
         eq(referrals.referrerId, referrerId),
         eq(referrals.status, 'signed_up'),
         eq(referrals.rewardGranted, false),
-        lt(classes.endTime, new Date()) // Class has ended
+        lt(classes.startTime, new Date()) // Class has started
       ));
 
     console.log(`Found ${eligibleReferrals.length} eligible referrals for referrer ${referrerId}`);
