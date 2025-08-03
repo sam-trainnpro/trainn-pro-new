@@ -1710,6 +1710,8 @@ export class DatabaseStorage implements IStorage {
   // Process referrer rewards for completed classes
   async processReferrerRewards(): Promise<void> {
     console.log("=== PROCESSING REFERRER REWARDS ===");
+    const currentTime = new Date();
+    console.log(`Current time (UTC): ${currentTime.toISOString()}`);
     
     // Find all referrals where referee has completed their first class but referrer hasn't been rewarded
     const referrerTable = alias(users, 'referrer');
@@ -1738,7 +1740,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(referrals.status, 'signed_up'),
         eq(referrals.rewardGranted, false),
-        lt(classes.startTime, new Date()) // Class has started
+        lt(classes.startTime, currentTime) // Class has started
       ));
 
     console.log(`Found ${eligibleReferrals.length} eligible referrals for rewards`);
@@ -1752,6 +1754,9 @@ export class DatabaseStorage implements IStorage {
       }
 
       console.log(`Processing referral ${referral.referralId}: ${referral.referrerEmail} → ${referral.refereeEmail}`);
+      console.log(`  - Class start time: ${referral.classStartTime}`);
+      console.log(`  - Current time: ${currentTime.toISOString()}`);
+      console.log(`  - Class has started: ${referral.classStartTime < currentTime}`);
 
       try {
         // Award $5 credit to referrer
@@ -1805,7 +1810,7 @@ export class DatabaseStorage implements IStorage {
         eq(referrals.referrerId, referrerId),
         eq(referrals.status, 'signed_up'),
         eq(referrals.rewardGranted, false),
-        lt(classes.startTime, new Date()) // Class has started
+        lt(classes.startTime, new Date()) // Class has started  
       ));
 
     console.log(`Found ${eligibleReferrals.length} eligible referrals for referrer ${referrerId}`);
