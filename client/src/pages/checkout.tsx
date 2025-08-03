@@ -94,7 +94,8 @@ const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, f
           paymentIntentId: paymentIntent?.id,
           classId: classItem.id,
           quantity: quantity,
-          promoCode: appliedPromoCode?.code || null
+          promoCode: appliedPromoCode?.code || null,
+          appliedCredits: appliedCredits
         });
         
         console.log("Payment confirmation response:", confirmResponse.status);
