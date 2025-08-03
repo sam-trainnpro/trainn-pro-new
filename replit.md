@@ -98,6 +98,9 @@ Preferred communication style: Simple, everyday language.
 - **✅ Universal Credit Deduction**: Backend now processes ALL frontend-applied credits, not just first-time user credits
 - **✅ Real-time Balance Updates**: Credit balances properly deducted and reflected in user profiles and transaction history
 - **✅ End-to-end Testing Verified**: User 137 successfully tested complete flow - $5 credit applied, booking confirmed, balance updated to $0
+- **✅ REFEREE EXTRA CREDIT BUG FIX (August 2025)**: Fixed processReferralCompletion method that was incorrectly giving referees an extra $5 credit after completing their first class
+- **✅ Frontend Parameter Bug Fix**: Added missing appliedCredits parameter to payment confirmation API call
+- **✅ Correct Referral Logic**: Only referrers receive $5 rewards when their friends complete classes; referees only get initial signup credit
 
 ### Platform Subsidy System Enhancement (January 2025)
 - **✅ Referral Credit Subsidies**: Implemented platform subsidy creation for referral credits in payment confirmation
