@@ -43,6 +43,10 @@ import PrivacyPage from "@/pages/privacy";
 import CookiesPage from "@/pages/cookies";
 import AdminPromoCodesPage from "@/pages/admin-promo-codes";
 import CoachPromoCodesPage from "@/pages/coach-promo-codes";
+import CoachResourcesPage from "@/pages/coach-resources";
+import SuccessStoriesPage from "@/pages/success-stories";
+import BusinessToolsPage from "@/pages/business-tools";
+import CoachCommunityPage from "@/pages/coach-community";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -155,6 +159,18 @@ function Router() {
       </Route>
       <Route path="/cookies">
         <CookiesPage />
+      </Route>
+      <Route path="/coach-resources">
+        <CoachResourcesPage />
+      </Route>
+      <Route path="/success-stories">
+        <SuccessStoriesPage />
+      </Route>
+      <Route path="/business-tools">
+        <BusinessToolsPage />
+      </Route>
+      <Route path="/coach-community">
+        <CoachCommunityPage />
       </Route>
       <Route>
         <NotFound />
