@@ -10,36 +10,35 @@ export default function HeroSection() {
   
   return (
     <>
-      {/* Hero Image Container - Full viewport width with no margins */}
-      <div className="bg-white"
+      {/* Hero Image Container - Full viewport width */}
+      <div className="relative"
            style={{
              marginLeft: 'calc(-50vw + 50%)',
              marginRight: 'calc(-50vw + 50%)',
-             width: '100vw'
+             width: '100vw',
+             backgroundColor: 'white'
            }}>
-        <div className="relative w-full flex justify-center">
+        {/* Image with overlay wrapper */}
+        <div className="relative inline-block w-full">
           <img 
             src="/hero-v6-updated.png"
             alt="Fitness and creative classes for adults and kids"
-            className="w-full h-auto object-contain"
+            className="w-full h-auto block"
             style={{
               maxHeight: '600px',
-              display: 'block'
+              objectFit: 'contain',
+              margin: '0 auto'
             }}
           />
           
-          {/* Overlay for text readability - positioned over the image only */}
-          <div className="absolute inset-0 bg-black/40" style={{
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: 0
-          }}></div>
-          
-          {/* Text content overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="container mx-auto px-4 text-center">
-              <div className="max-w-4xl mx-auto">
+          {/* Overlay that matches image exactly */}
+          <div className="absolute inset-0 pointer-events-none"
+               style={{
+                 background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5))'
+               }}>
+            {/* Text content */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="px-4 text-center">
                 <h1 className="text-3xl sm:text-4xl md:text-6xl font-heading font-bold mb-4 text-white">
                   Find Your Perfect Class
                 </h1>
