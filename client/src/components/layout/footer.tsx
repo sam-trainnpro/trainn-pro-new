@@ -1,5 +1,30 @@
 import { Link } from "wouter";
 import { Instagram, Facebook, Twitter, Linkedin } from "lucide-react";
+import { useSafeAuth } from "../../../../hooks/use-auth-safe";
+import { useState } from "react";
+import ReferralModal from "../referral-modal";
+
+function ReferralLink() {
+  const { user } = useSafeAuth();
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+
+  if (!user) return null;
+
+  return (
+    <>
+      <button 
+        onClick={() => setIsReferralModalOpen(true)}
+        className="text-gray-400 hover:text-white transition text-left"
+      >
+        Refer a Friend
+      </button>
+      <ReferralModal
+        isOpen={isReferralModalOpen}
+        onClose={() => setIsReferralModalOpen(false)}
+      />
+    </>
+  );
+}
 
 export default function Footer() {
   return (
@@ -31,6 +56,7 @@ export default function Footer() {
               <li><Link href="/auth?register=true" className="text-gray-400 hover:text-white transition">Join Now</Link></li>
               <li><Link href="/classes" className="text-gray-400 hover:text-white transition">Find Classes</Link></li>
               <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Coaches</Link></li>
+              <li><ReferralLink /></li>
             </ul>
           </div>
           
