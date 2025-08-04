@@ -11,10 +11,10 @@ export default function HeroSection() {
   return (
     <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
       {/* Hero Image Container */}
-      <div className="relative w-full overflow-hidden h-auto sm:h-[600px]"
+      <div className="relative w-full overflow-hidden h-auto sm:h-[500px]"
            style={{
              backgroundImage: 'url(/hero-v6.png)',
-             backgroundSize: '100% 100%',
+             backgroundSize: 'cover',
              backgroundPosition: 'center',
              backgroundRepeat: 'no-repeat',
              minHeight: '300px'
