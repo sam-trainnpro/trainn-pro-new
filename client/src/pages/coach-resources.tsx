@@ -75,7 +75,7 @@ export default function CoachResources() {
 
           {/* Notification Signup */}
           <div className="bg-blue-50 rounded-lg p-8 mt-12 text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Get Notified When We Launch</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">Stay Tuned For When We Launch This Page</h3>
             <p className="text-gray-600 mb-6">
               Be the first to access our comprehensive coach resource center
             </p>
