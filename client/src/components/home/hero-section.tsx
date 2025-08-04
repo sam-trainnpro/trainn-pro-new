@@ -9,21 +9,22 @@ export default function HeroSection() {
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   
   return (
-    <div className="w-full">
-      {/* Hero Image Container - Full viewport width */}
-      <div className="relative w-screen -ml-[50vw] left-1/2 overflow-hidden h-auto sm:h-[500px]"
+    <>
+      {/* Hero Image Container - Full viewport width with no margins */}
+      <div className="relative w-full h-auto sm:h-[500px] overflow-hidden"
            style={{
-             backgroundImage: 'url(/hero-v6.png)',
+             marginLeft: 'calc(-50vw + 50%)',
+             marginRight: 'calc(-50vw + 50%)',
+             width: '100vw',
+             backgroundImage: 'url(/hero-v6-updated.png)',
              backgroundSize: 'cover',
              backgroundPosition: 'center',
              backgroundRepeat: 'no-repeat',
-             minHeight: '300px',
-             width: '100vw',
-             maxWidth: '100vw'
+             minHeight: '300px'
            }}>
         {/* Mobile fallback image */}
         <img 
-          src="/hero-v6.png"
+          src="/hero-v6-updated.png"
           alt="Fitness and creative classes for adults and kids"
           className="w-full h-auto object-contain min-h-[300px] block sm:hidden"
         />
@@ -44,7 +45,12 @@ export default function HeroSection() {
       </div>
       
       {/* Buttons below hero image - Full width */}
-      <div className="bg-white py-3 sm:py-6 w-screen -ml-[50vw] left-1/2 relative">
+      <div className="bg-white py-3 sm:py-6 w-full"
+           style={{
+             marginLeft: 'calc(-50vw + 50%)',
+             marginRight: 'calc(-50vw + 50%)',
+             width: '100vw'
+           }}>
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start max-w-lg sm:max-w-xl mx-auto sm:mx-0">
             {/* Refer a Friend button - Mobile: above Find Classes, Desktop: to the right */}
@@ -90,6 +96,6 @@ export default function HeroSection() {
         />
       )}
 
-    </div>
+    </>
   );
 }
