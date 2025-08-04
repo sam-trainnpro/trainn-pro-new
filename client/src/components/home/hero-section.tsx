@@ -11,32 +11,22 @@ export default function HeroSection() {
   return (
     <>
       {/* Hero Image Container - Full viewport width with no margins */}
-      <div className="relative w-full h-auto sm:h-[600px] overflow-hidden"
+      <div className="relative w-full h-auto overflow-hidden bg-white"
            style={{
              marginLeft: 'calc(-50vw + 50%)',
              marginRight: 'calc(-50vw + 50%)',
-             width: '100vw',
-             backgroundImage: 'url(/hero-v6-updated.png)',
-             backgroundSize: 'contain',
-             backgroundPosition: 'center',
-             backgroundRepeat: 'no-repeat',
-             backgroundColor: 'white',
-             minHeight: '300px'
+             width: '100vw'
            }}>
-        
-        {/* Overlay for text readability - desktop only */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 hidden sm:block"></div>
-        
-        {/* Content overlay */}
-        <div className="absolute inset-0 flex items-center sm:items-start justify-center sm:justify-start">
-          <div className="container mx-auto px-4 pt-4 sm:pt-8 md:pt-16 text-center sm:text-left">
-            <div className="max-w-lg sm:max-w-xl text-white">
-              <h1 className="text-2xl sm:text-3xl md:text-5xl font-heading font-bold mb-3 sm:mb-4">Find Your Perfect Class</h1>
-              <p className="text-sm sm:text-lg mb-4 sm:mb-6 leading-tight sm:leading-normal">Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music and art classes for adults and kids</p>
-
-            </div>
-          </div>
-        </div>
+        <img 
+          src="/hero-v6-updated.png"
+          alt="Fitness and creative classes for adults and kids"
+          className="w-full h-auto object-contain"
+          style={{
+            maxHeight: '600px',
+            margin: '0 auto',
+            display: 'block'
+          }}
+        />
       </div>
       
       {/* Buttons below hero image - Full width */}
