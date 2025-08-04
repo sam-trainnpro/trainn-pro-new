@@ -22,12 +22,6 @@ export default function HeroSection() {
              backgroundRepeat: 'no-repeat',
              minHeight: '300px'
            }}>
-        {/* Mobile fallback image */}
-        <img 
-          src="/hero-v6-updated.png"
-          alt="Fitness and creative classes for adults and kids"
-          className="w-full h-auto object-contain min-h-[300px] block sm:hidden"
-        />
         
         {/* Overlay for text readability - desktop only */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 hidden sm:block"></div>
