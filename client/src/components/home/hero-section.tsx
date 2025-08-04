@@ -11,15 +11,14 @@ export default function HeroSection() {
   return (
     <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
       {/* Hero Image Container */}
-      <div className="relative w-full overflow-hidden" style={{ height: 'auto' }}>
+      <div className="relative w-full overflow-hidden h-auto sm:h-[500px]">
         <img 
           src="/hero-v6.png"
           alt="Fitness and creative classes for adults and kids"
-          className="w-full h-auto object-contain sm:w-full sm:h-auto sm:object-cover min-h-[300px] sm:min-h-[400px] max-h-none sm:max-h-[600px] block"
+          className="w-full h-auto object-contain sm:w-full sm:h-full sm:object-cover min-h-[300px] block"
           style={{ 
             display: 'block', 
-            width: '100%',
-            maxWidth: 'none'
+            width: '100%'
           }}
         />
         
