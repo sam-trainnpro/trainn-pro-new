@@ -64,10 +64,10 @@ export default function Footer() {
             <h4 className="font-medium mb-4">For Coaches</h4>
             <ul className="space-y-2">
               <li><Link href="/auth?register=true&role=coach" className="text-gray-400 hover:text-white transition">Join as Coach</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Coach Resources</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
-              <li><Link href="#" className="text-gray-400 hover:text-white transition">Coach Community</Link></li>
+              <li><Link href="/coach-resources" className="text-gray-400 hover:text-white transition">Coach Resources</Link></li>
+              <li><Link href="/success-stories" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
+              <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
+              <li><Link href="/coach-community" className="text-gray-400 hover:text-white transition">Coach Community</Link></li>
             </ul>
           </div>
           
