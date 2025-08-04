@@ -21,7 +21,7 @@ export default function HeroSection() {
         {/* Image with overlay wrapper */}
         <div className="relative inline-block w-full">
           <img 
-            src="/hero-v6-updated.png"
+            src="/hero-v6-no-border.png"
             alt="Fitness and creative classes for adults and kids"
             className="w-full h-auto block"
             style={{
