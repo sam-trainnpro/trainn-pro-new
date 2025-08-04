@@ -39,7 +39,8 @@ Preferred communication style: Simple, everyday language.
 - **Recurring Classes**: Google Calendar-style recurrence options with individual instance management.
 - **Email Notifications**: Comprehensive system for bookings, reminders, cancellations, and approvals.
 - **Image Hosting**: Cloudinary for permanent image storage and optimization.
-- **Referral System**: Awards $5 credit to both referrer and referee after the referee's first completed paid class, with automatic credit application during checkout and platform subsidy for coaches.
+- **Referral System**: Awards $5 credit to both referrer and referee after the referee's first completed paid class, with automatic credit application during checkout. Platform subsidy system ensures coaches receive full compensation when customers use credits.
+- **Platform Subsidy Architecture**: Automated system ensuring coaches always receive full payouts (85% of original class price) even when customers use account balance credits. The platform covers the difference between reduced customer payments and full coach compensation.
 
 ## External Dependencies
 
