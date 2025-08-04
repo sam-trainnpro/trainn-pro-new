@@ -1,18 +1,12 @@
 import { Link } from "wouter";
 import { ArrowLeft, Calculator, BarChart3, Calendar, CreditCard, MessageSquare, Shield } from "lucide-react";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
 
 export default function BusinessTools() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 transition">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-        </div>
-      </div>
+      <Header />
 
       {/* Coming Soon Banner */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-8">
@@ -138,6 +132,8 @@ export default function BusinessTools() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
