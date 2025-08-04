@@ -27,6 +27,23 @@ export default function HeroSection() {
             display: 'block'
           }}
         />
+        
+        {/* Overlay for text readability */}
+        <div className="absolute inset-0 bg-black/40"></div>
+        
+        {/* Text content overlay */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="container mx-auto px-4 text-center">
+            <div className="max-w-4xl mx-auto">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-heading font-bold mb-4 text-white">
+                Find Your Perfect Class
+              </h1>
+              <p className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto">
+                Connect with top coaches and teachers in the San Francisco Bay Area for outdoor sports, workouts, music and art classes for adults and kids
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
       
       {/* Buttons below hero image - Full width */}
