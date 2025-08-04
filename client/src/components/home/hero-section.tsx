@@ -9,15 +9,17 @@ export default function HeroSection() {
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   
   return (
-    <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-      {/* Hero Image Container */}
-      <div className="relative w-full overflow-hidden h-auto sm:h-[500px]"
+    <div className="w-full">
+      {/* Hero Image Container - Full viewport width */}
+      <div className="relative w-screen -ml-[50vw] left-1/2 overflow-hidden h-auto sm:h-[500px]"
            style={{
              backgroundImage: 'url(/hero-v6.png)',
              backgroundSize: 'cover',
              backgroundPosition: 'center',
              backgroundRepeat: 'no-repeat',
-             minHeight: '300px'
+             minHeight: '300px',
+             width: '100vw',
+             maxWidth: '100vw'
            }}>
         {/* Mobile fallback image */}
         <img 
@@ -41,8 +43,8 @@ export default function HeroSection() {
         </div>
       </div>
       
-      {/* Buttons below hero image */}
-      <div className="bg-white py-3 sm:py-6">
+      {/* Buttons below hero image - Full width */}
+      <div className="bg-white py-3 sm:py-6 w-screen -ml-[50vw] left-1/2 relative">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start max-w-lg sm:max-w-xl mx-auto sm:mx-0">
             {/* Refer a Friend button - Mobile: above Find Classes, Desktop: to the right */}
