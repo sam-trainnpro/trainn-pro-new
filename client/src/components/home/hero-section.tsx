@@ -13,7 +13,7 @@ export default function HeroSection() {
       {/* Hero Image Container */}
       <div className="relative w-full h-full overflow-hidden">
         <img 
-          src="@assets/Hero Images - Trainn Home Page v6 upscaled_1754334276690.png"
+          src="/hero-v6.png"
           alt="Fitness and creative classes for adults and kids"
           className="w-full h-auto sm:h-full object-contain sm:object-cover min-h-[300px] sm:min-h-[300px] max-h-none sm:max-h-[600px] block"
           style={{ 
