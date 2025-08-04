@@ -20,7 +20,7 @@ export default function HeroSection() {
              backgroundSize: 'contain',
              backgroundPosition: 'center',
              backgroundRepeat: 'no-repeat',
-             backgroundColor: '#f5f5f5',
+             backgroundColor: 'white',
              minHeight: '300px'
            }}>
         
