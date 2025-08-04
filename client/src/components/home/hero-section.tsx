@@ -11,15 +11,16 @@ export default function HeroSection() {
   return (
     <>
       {/* Hero Image Container - Full viewport width with no margins */}
-      <div className="relative w-full h-auto sm:h-[500px] overflow-hidden"
+      <div className="relative w-full h-auto sm:h-[600px] overflow-hidden"
            style={{
              marginLeft: 'calc(-50vw + 50%)',
              marginRight: 'calc(-50vw + 50%)',
              width: '100vw',
              backgroundImage: 'url(/hero-v6-updated.png)',
-             backgroundSize: 'cover',
+             backgroundSize: 'contain',
              backgroundPosition: 'center',
              backgroundRepeat: 'no-repeat',
+             backgroundColor: '#f5f5f5',
              minHeight: '300px'
            }}>
         
