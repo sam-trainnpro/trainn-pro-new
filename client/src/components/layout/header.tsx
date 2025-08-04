@@ -14,7 +14,8 @@ import {
   UserCircle,
   Heart,
   BookOpen,
-  Tag
+  Tag,
+  Users
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import ReferralModal from "../referral-modal";
 
 export default function Header() {
   const [location] = useLocation();
@@ -42,6 +44,7 @@ export default function Header() {
   }
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -176,6 +179,10 @@ export default function Header() {
                     </>
                   )}
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsReferralModalOpen(true)} className="cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Refer a Friend</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sign Out</span>
@@ -288,6 +295,17 @@ export default function Header() {
                     </>
                   )}
                   <Button 
+                    variant="ghost" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsReferralModalOpen(true);
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <Users className="mr-2 h-5 w-5" />
+                    Refer a Friend
+                  </Button>
+                  <Button 
                     variant="outline" 
                     className="w-full justify-start text-destructive border-destructive"
                     onClick={() => {
@@ -317,6 +335,14 @@ export default function Header() {
           </SheetContent>
         </Sheet>
       </div>
+      
+      {/* Referral Modal */}
+      {user && (
+        <ReferralModal
+          isOpen={isReferralModalOpen}
+          onClose={() => setIsReferralModalOpen(false)}
+        />
+      )}
     </header>
   );
 }
