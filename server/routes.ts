@@ -1889,19 +1889,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("Platform subsidy needed (cents):", subsidyAmount);
             console.log("Coach gets: Original payout + Platform subsidy =", originalCoachPayout, "+", subsidyAmount, "=", originalCoachPayout + subsidyAmount, "cents");
             
+            // Note: Credit subsidy calculation is now handled in storage.calculateCreditSubsidyForBooking()
+            // This ensures coaches get paid the full amount when credits are used
             if (subsidyAmount > 0) {
-              // Create booking subsidy record for referral credits
-              await storage.createBookingSubsidy({
-                bookingId: booking.id,
-                userId: req.user.id,
-                classId: parseInt(classId),
-                discountAmount: actualCreditsToDeduct,
-                subsidyAmount: subsidyAmount,
-                sourceType: 'referral_credit',
-                sourceDescription: `Platform subsidy for $${(actualCreditsToDeduct/100).toFixed(2)} referral credit applied`
-              });
-              
-              console.log(`✅ Created platform subsidy of $${(subsidyAmount/100).toFixed(2)} for referral credit usage`);
+              console.log(`✅ Platform will subsidize $${(subsidyAmount/100).toFixed(2)} for referral credit usage`);
+              console.log(`   Coach will receive full payout despite customer using credits`);
             }
           }
         } catch (creditError) {
@@ -1927,6 +1919,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const payoutDate = new Date(classEndTime);
             payoutDate.setDate(payoutDate.getDate() + 2);
             
+            // CRITICAL FIX: Calculate payout based on ORIGINAL class price, not reduced amount
+            // When credits are used, coach should still get full payout (platform subsidizes)
+            let payoutAmountCents, payoutStripeFee, payoutNetAmount, finalCoachPayout, finalPlatformFee;
+            
+            if (actualCreditsToDeduct > 0) {
+              console.log("=== CALCULATING FULL PAYOUT FOR CREDIT USAGE ===");
+              // Use original class price for payout calculation
+              const originalClassPrice = parseFloat(metadata.originalAmount || '0') * 100; // in cents
+              const originalWithFee = Math.round(originalClassPrice * 1.05); // Add 5% service fee
+              const originalStripeFee = Math.round(originalWithFee * 0.029) + 30; // 2.9% + $0.30
+              const originalNetAmount = originalWithFee - originalStripeFee;
+              finalCoachPayout = Math.round(originalNetAmount * 0.85); // 85% to coach
+              finalPlatformFee = originalNetAmount - finalCoachPayout;
+              
+              // Store original pricing for payout
+              payoutAmountCents = originalWithFee;
+              payoutStripeFee = originalStripeFee;
+              payoutNetAmount = originalNetAmount;
+              
+              console.log("Original class price (cents):", originalClassPrice);
+              console.log("Original with 5% fee (cents):", originalWithFee);
+              console.log("Original Stripe fee (cents):", originalStripeFee);
+              console.log("Original net amount (cents):", originalNetAmount);
+              console.log("FULL coach payout (cents):", finalCoachPayout);
+              console.log("Platform fee (cents):", finalPlatformFee);
+              console.log("Coach gets FULL amount despite customer using credits!");
+            } else {
+              // No credits used, use standard calculation
+              payoutAmountCents = parseInt(metadata.amount || '0');
+              payoutStripeFee = parseInt(metadata.stripeFee || '0');
+              payoutNetAmount = parseInt(metadata.netAmount || '0');
+              finalCoachPayout = parseInt(metadata.coachPayout || '0');
+              finalPlatformFee = parseInt(metadata.platformFee || '0');
+            }
+            
             // Create scheduled payout record
             await storage.createScheduledPayout({
               bookingId: booking.id,
@@ -1934,16 +1961,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               coachId: classItem.coachId,
               customerId: req.user.id,
               stripePaymentIntentId: paymentIntentId,
-              amountCents: parseInt(metadata.amount || '0'),
-              stripeFee: parseInt(metadata.stripeFee || '0'),
-              netAmount: parseInt(metadata.netAmount || '0'),
-              coachPayout: parseInt(metadata.coachPayout || '0'),
-              platformFee: parseInt(metadata.platformFee || '0'),
+              amountCents: payoutAmountCents,
+              stripeFee: payoutStripeFee,
+              netAmount: payoutNetAmount,
+              coachPayout: finalCoachPayout,
+              platformFee: finalPlatformFee,
               scheduledPayoutDate: payoutDate,
               status: 'scheduled'
             });
             
-            console.log(`Scheduled payout created for coach ${classItem.coachId}, payout date: ${payoutDate.toISOString()}`);
+            console.log(`✅ Scheduled payout created for coach ${classItem.coachId}`);
+            console.log(`   Coach payout: $${(finalCoachPayout/100).toFixed(2)}`);
+            console.log(`   Payout date: ${payoutDate.toISOString()}`);
+            if (actualCreditsToDeduct > 0) {
+              console.log(`   🎯 FULL PAYOUT despite $${(actualCreditsToDeduct/100).toFixed(2)} credits used by customer`);
+            }
           }
         } catch (error) {
           console.error("Error creating scheduled payout:", error);
@@ -2154,53 +2186,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test endpoint for credit deduction - helping debug the issue
-  app.post("/api/test/credit-deduction", requireAuth, async (req, res) => {
+  // Test endpoint for subsidy calculation
+  app.post("/api/test/subsidy-calculation", requireAuth, async (req, res) => {
     try {
-      const userId = req.user.id;
-      const { appliedCredits = 500 } = req.body; // Default to $5.00 in cents
+      const { bookingId } = req.body;
       
-      console.log("=== TESTING CREDIT DEDUCTION ===");
-      console.log("User ID:", userId);
-      console.log("Applied Credits:", appliedCredits, "cents");
+      if (!bookingId) {
+        return res.status(400).json({
+          success: false,
+          message: "Booking ID is required"
+        });
+      }
       
-      // Check current balance
-      const balanceBefore = await storage.getUserCreditBalance(userId);
-      console.log("Balance before:", balanceBefore, "cents");
+      console.log("=== TESTING SUBSIDY CALCULATION ===");
+      console.log("Booking ID:", bookingId);
       
-      // Create a test booking for the deduction
-      const testBookingId = 999999; // Fake booking ID for testing
+      // Get platform subsidy for this booking
+      const subsidyAmount = await storage.getPlatformSubsidyForBooking(bookingId);
+      console.log("Platform subsidy calculated:", subsidyAmount, "cents");
       
-      // Apply credit deduction
-      await storage.applyCreditsToBooking(userId, appliedCredits, testBookingId);
-      console.log("Credit deduction applied successfully");
-      
-      // Check balance after
-      const balanceAfter = await storage.getUserCreditBalance(userId);
-      console.log("Balance after:", balanceAfter, "cents");
-      
-      // Get the credit transaction that was just created
-      const recentTransactions = await storage.getUserCredits(userId);
-      const latestTransaction = recentTransactions[0]; // Most recent
+      // Get booking details for context
+      const booking = await storage.getBooking(bookingId);
+      const classItem = booking ? await storage.getClass(booking.classId) : null;
       
       res.json({
         success: true,
-        message: "Credit deduction test completed",
+        message: "Subsidy calculation test completed",
         data: {
-          userId,
-          appliedCredits,
-          balanceBefore,
-          balanceAfter,
-          difference: balanceBefore - balanceAfter,
-          latestTransaction
+          bookingId,
+          subsidyAmount,
+          subsidyDollars: (subsidyAmount / 100).toFixed(2),
+          booking: booking ? {
+            id: booking.id,
+            classId: booking.classId,
+            userId: booking.userId,
+            status: booking.status
+          } : null,
+          class: classItem ? {
+            id: classItem.id,
+            title: classItem.title,
+            price: classItem.price
+          } : null
         }
       });
       
     } catch (error) {
-      console.error("Credit deduction test error:", error);
+      console.error("Subsidy calculation test error:", error);
       res.status(500).json({
         success: false,
-        message: "Credit deduction test failed",
+        message: "Subsidy calculation test failed",
         error: error instanceof Error ? error.message : String(error)
       });
     }

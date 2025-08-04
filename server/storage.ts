@@ -1525,13 +1525,82 @@ export class DatabaseStorage implements IStorage {
 
   // Get platform subsidy amount for a booking
   async getPlatformSubsidyForBooking(bookingId: number): Promise<number> {
-    const subsidyResult = await db.select({
+    // Check for promo code subsidies first
+    const promoSubsidyResult = await db.select({
       subsidyAmount: promoCodeUsage.subsidyAmount
     })
     .from(promoCodeUsage)
     .where(eq(promoCodeUsage.bookingId, bookingId));
 
-    return subsidyResult[0]?.subsidyAmount || 0;
+    const promoSubsidy = promoSubsidyResult[0]?.subsidyAmount || 0;
+
+    // Check for credit subsidies by looking at credit usage for this booking
+    const creditSubsidy = await this.calculateCreditSubsidyForBooking(bookingId);
+
+    // Return total subsidy (promo + credit)
+    return promoSubsidy + creditSubsidy;
+  }
+
+  // Calculate platform subsidy needed for credit usage
+  async calculateCreditSubsidyForBooking(bookingId: number): Promise<number> {
+    try {
+      // Get booking details
+      const booking = await this.getBooking(bookingId);
+      if (!booking) return 0;
+
+      // Get class details to get original price
+      const classItem = await this.getClass(booking.classId);
+      if (!classItem) return 0;
+
+      // Check if credits were used for this booking
+      const creditUsage = await db.select({
+        amount: userCredits.amount
+      })
+      .from(userCredits)
+      .where(and(
+        eq(userCredits.bookingId, bookingId),
+        eq(userCredits.transactionType, 'referral_usage')
+      ));
+
+      if (!creditUsage.length) return 0;
+
+      // Calculate total credits used (amount is negative for usage)
+      const totalCreditsUsed = Math.abs(creditUsage.reduce((sum, credit) => sum + credit.amount, 0));
+      
+      if (totalCreditsUsed === 0) return 0;
+
+      console.log("=== CALCULATING CREDIT SUBSIDY ===");
+      console.log("Booking ID:", bookingId);
+      console.log("Class price:", classItem.price);
+      console.log("Credits used:", totalCreditsUsed, "cents");
+
+      // Calculate what coach should earn at full price
+      const originalPrice = classItem.price * (booking.quantity || 1); // Original price in dollars
+      const originalPriceCents = originalPrice * 100; // Convert to cents
+      const originalWithFee = Math.round(originalPriceCents * 1.05); // Add 5% service fee
+      const originalStripeFee = Math.round(originalWithFee * 0.029) + 30; // 2.9% + $0.30
+      const originalNetAmount = originalWithFee - originalStripeFee;
+      const fullCoachPayout = Math.round(originalNetAmount * 0.85); // 85% to coach
+
+      // Calculate what coach would earn at reduced price
+      const reducedPriceCents = Math.max(0, originalPriceCents - totalCreditsUsed);
+      const reducedWithFee = Math.round(reducedPriceCents * 1.05); // Add 5% service fee
+      const reducedStripeFee = reducedPriceCents > 0 ? (Math.round(reducedWithFee * 0.029) + 30) : 0;
+      const reducedNetAmount = reducedWithFee - reducedStripeFee;
+      const reducedCoachPayout = Math.round(reducedNetAmount * 0.85); // 85% to coach
+
+      // Platform subsidy = difference in coach payouts
+      const subsidyAmount = fullCoachPayout - reducedCoachPayout;
+
+      console.log("Original coach payout (cents):", fullCoachPayout);
+      console.log("Reduced coach payout (cents):", reducedCoachPayout);
+      console.log("Platform credit subsidy (cents):", subsidyAmount);
+
+      return Math.max(0, subsidyAmount);
+    } catch (error) {
+      console.error("Error calculating credit subsidy for booking", bookingId, ":", error);
+      return 0;
+    }
   }
 
   // Referral system methods
