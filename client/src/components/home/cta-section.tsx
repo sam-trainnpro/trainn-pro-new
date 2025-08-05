@@ -16,7 +16,7 @@ export default function CTASection() {
           </Link>
           <Link href="/auth?register=true&role=coach">
             <Button size="lg" variant="outline" className="bg-transparent border border-white text-white hover:bg-white/10 w-full sm:w-auto">
-              Become a Coach
+              Become a Provider
             </Button>
           </Link>
         </div>

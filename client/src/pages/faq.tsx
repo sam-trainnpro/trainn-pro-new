@@ -30,7 +30,7 @@ export default function FAQPage() {
     {
       id: "insurance",
       question: "Does your company provide insurance?",
-      answer: "We recommend that participants have their own personal health and accident insurance. Our coaches are expected and encouraged to maintain professional liability insurance."
+      answer: "We recommend that participants have their own personal health and accident insurance. Our providers are expected and encouraged to maintain professional liability insurance."
     }
   ];
 

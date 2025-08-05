@@ -154,7 +154,7 @@ export default function AboutPage() {
                   Find Classes
                 </a>
                 <a 
-                  href="/register?role=coach" 
+                  href="/auth?register=true&role=coach" 
                   className="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-white font-medium rounded-lg hover:bg-white hover:text-primary transition-colors"
                 >
                   Become a Provider
