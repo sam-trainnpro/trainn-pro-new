@@ -37,6 +37,7 @@ interface PromoCode {
   approvedBy: number | null;
   approvedAt: string | null;
   firstBookingOnly: boolean;
+  minimumQuantity: number;
   usageLimit: number | null;
   usageCount: number;
   validFrom: string;
