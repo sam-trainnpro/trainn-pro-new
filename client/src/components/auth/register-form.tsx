@@ -223,7 +223,7 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess, refe
                             className="sr-only"
                           />
                           <label htmlFor="coach" className="cursor-pointer font-medium w-full h-full block">
-                            Coach
+                            Provider
                           </label>
                         </div>
                       </RadioGroup>
