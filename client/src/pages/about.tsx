@@ -157,7 +157,7 @@ export default function AboutPage() {
                   href="/register?role=coach" 
                   className="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-white font-medium rounded-lg hover:bg-white hover:text-primary transition-colors"
                 >
-                  Become a Coach
+                  Become a Provider
                 </a>
               </div>
             </CardContent>
