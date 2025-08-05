@@ -37,8 +37,8 @@ export default function CoachesPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>Top Fitness Coaches - Trainn</title>
-        <meta name="description" content="Find and connect with the best fitness coaches in your area. View profiles, specialties, and book personalized training sessions." />
+        <title>Top Fitness Providers - Trainn</title>
+        <meta name="description" content="Find and connect with the best fitness providers in your area. View profiles, specialties, and book personalized training sessions." />
       </Helmet>
       
       <Header />
