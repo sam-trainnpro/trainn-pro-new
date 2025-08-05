@@ -447,7 +447,7 @@ export default function CoachPromoCodes() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <strong>Discount:</strong>
                   <br />
@@ -462,6 +462,11 @@ export default function CoachPromoCodes() {
                   {promoCode.usageCount}
                   {promoCode.usageLimit && ` / ${promoCode.usageLimit}`}
                   {!promoCode.usageLimit && ' (unlimited)'}
+                </div>
+                <div>
+                  <strong>Min. Tickets:</strong>
+                  <br />
+                  {promoCode.minimumQuantity || 1}
                 </div>
                 <div>
                   <strong>Valid Period:</strong>
