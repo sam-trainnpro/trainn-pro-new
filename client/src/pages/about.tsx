@@ -41,7 +41,7 @@ export default function AboutPage() {
                   Trainn's leadership team is passionate about helping people build new skills, get in shape, and build community. We created Trainn to make it really simple to find and sign up for local outdoor workouts, sports classes, art, music, gym training sessions, and other fun activities for adults and kids.
                 </p>
                 <p className="text-lg text-gray-700 leading-relaxed">
-                  This platform empowers coaches and trainers to grow their business and meet the needs of their community.
+                  This platform empowers providers to grow their business and meet the needs of their community.
                 </p>
               </div>
             </CardContent>
@@ -73,7 +73,7 @@ export default function AboutPage() {
                   <HeartPulse className="text-primary h-6 w-6" />
                 </div>
                 <h3 className="font-heading font-bold text-xl mb-2">Trainn & Review</h3>
-                <p className="text-gray-600">Attend your class, achieve your goals, have fun, and leave a review to help others find great coaches.</p>
+                <p className="text-gray-600">Attend your class, achieve your goals, have fun, and leave a review to help others find great providers.</p>
               </div>
             </div>
             
@@ -131,7 +131,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">Empowerment</h3>
                 <p className="text-sm text-gray-600">
-                  Helping coaches grow their business and impact
+                  Helping providers grow their business and impact
                 </p>
               </CardContent>
             </Card>
