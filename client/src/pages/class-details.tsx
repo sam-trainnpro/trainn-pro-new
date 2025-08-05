@@ -128,7 +128,7 @@ export default function ClassDetailsPage() {
     enabled: !!classItem,
   });
   
-  // Get coach data
+  // Get provider data
   const { 
     data: coach, 
     isLoading: isLoadingCoach 
@@ -155,14 +155,14 @@ export default function ClassDetailsPage() {
     enabled: !!classId,
   });
 
-  // Get rating statistics for the coach
+  // Get rating statistics for the provider
   const { data: coachRatingStats } = useQuery({
     queryKey: ['/api/reviews/coach', classItem?.coachId, 'stats'],
     queryFn: () => fetch(`/api/reviews/coach/${classItem?.coachId}/stats`).then(res => res.json()),
     enabled: !!classItem?.coachId,
   });
   
-  // Get recent reviews for the coach
+  // Get recent reviews for the provider
   const { data: coachReviews } = useQuery({
     queryKey: [`/api/reviews/coach/${classItem?.coachId}`, { limit: 2 }],
     queryFn: () => fetch(`/api/reviews/coach/${classItem?.coachId}?limit=2`).then(res => res.json()),
@@ -378,7 +378,7 @@ export default function ClassDetailsPage() {
                         <div className="flex items-center">
                           <Users className="h-5 w-5 mr-3 text-primary" />
                           <div>
-                            <p className="text-sm text-muted-foreground">Coach</p>
+                            <p className="text-sm text-muted-foreground">Provider</p>
                             <p className="font-medium">
                               {isLoadingCoach ? (
                                 <Skeleton className="h-4 w-24 inline-block" />
