@@ -3709,13 +3709,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Validate promo code for booking
   app.post("/api/promo-codes/validate", requireAuth, async (req, res) => {
     try {
-      const { code, classId } = req.body;
+      const { code, classId, quantity = 1 } = req.body;
       
       if (!code || !classId) {
         return res.status(400).json({ message: "Code and class ID are required" });
       }
 
-      const validation = await storage.validatePromoCode(code, req.user!.id, classId);
+      const validation = await storage.validatePromoCode(code, req.user!.id, classId, quantity);
       
       if (!validation.valid) {
         console.log(`Promo code validation failed for ${code}: ${validation.error}`);
@@ -3731,7 +3731,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
 
-      const discountCalc = await storage.calculateDiscount(validation.promoCode!, classItem.price * 100);
+      // Calculate discount based on total price (class price * quantity)
+      const totalPrice = classItem.price * quantity * 100; // Convert to cents
+      const discountCalc = await storage.calculateDiscount(validation.promoCode!, totalPrice);
       
       res.json({
         valid: true,

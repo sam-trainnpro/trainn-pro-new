@@ -38,6 +38,7 @@ interface PromoCode {
   approvedBy: number | null;
   approvedAt: string | null;
   firstBookingOnly: boolean;
+  minimumQuantity: number;
   usageLimit: number | null;
   usageCount: number;
   validFrom: string;
@@ -157,6 +158,7 @@ export default function CoachPromoCodes() {
       discountType: formData.get('discountType'),
       discountValue: parseInt(formData.get('discountValue') as string),
       firstBookingOnly: formData.get('firstBookingOnly') === 'on',
+      minimumQuantity: parseInt(formData.get('minimumQuantity') as string) || 1,
       usageLimit: formData.get('usageLimit') ? parseInt(formData.get('usageLimit') as string) : null,
       validFrom: formData.get('validFrom'),
       validUntil: formData.get('validUntil'),
@@ -177,6 +179,7 @@ export default function CoachPromoCodes() {
       discountType: formData.get('discountType'),
       discountValue: parseInt(formData.get('discountValue') as string),
       firstBookingOnly: formData.get('firstBookingOnly') === 'on',
+      minimumQuantity: parseInt(formData.get('minimumQuantity') as string) || 1,
       usageLimit: formData.get('usageLimit') ? parseInt(formData.get('usageLimit') as string) : null,
       validFrom: formData.get('validFrom'),
       validUntil: formData.get('validUntil'),
@@ -313,6 +316,21 @@ export default function CoachPromoCodes() {
                     required
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="minimumQuantity">Minimum Tickets Required</Label>
+                <Input
+                  id="minimumQuantity"
+                  name="minimumQuantity"
+                  type="number"
+                  placeholder="1"
+                  min="1"
+                  defaultValue="1"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Minimum number of tickets required to use this promo code
+                </p>
               </div>
 
               <div>
