@@ -46,7 +46,7 @@ export default function CoachesPage() {
       <main className="flex-grow">
         <section className="bg-primary py-12">
           <div className="container mx-auto px-4 text-center text-white">
-            <h1 className="text-3xl md:text-4xl font-heading font-bold mb-4">Find Your Perfect Coach</h1>
+            <h1 className="text-3xl md:text-4xl font-heading font-bold mb-4">Find Your Perfect Provider</h1>
             <p className="max-w-2xl mx-auto mb-8">
               Connect with experienced fitness, sports, and creative professionals who will help you achieve your goals
             </p>
@@ -54,7 +54,7 @@ export default function CoachesPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input 
                 type="text" 
-                placeholder="Search for coaches by name or specialty..." 
+                placeholder="Search for providers by name or specialty..." 
                 className="w-full pl-10 pr-4 py-3 text-foreground border-gray-300 bg-white"
                 value={searchQuery}
                 onChange={handleSearchChange}
@@ -66,10 +66,10 @@ export default function CoachesPage() {
         <section className="py-10 bg-[#F7F7F7]">
           <div className="container mx-auto px-4">
             <div className="mb-8">
-              <h2 className="text-2xl font-heading font-bold">Our Coaches</h2>
+              <h2 className="text-2xl font-heading font-bold">Our Providers</h2>
               {filteredCoaches && (
                 <p className="text-muted-foreground">
-                  Showing {filteredCoaches.length} {filteredCoaches.length === 1 ? 'coach' : 'coaches'}
+                  Showing {filteredCoaches.length} {filteredCoaches.length === 1 ? 'provider' : 'providers'}
                 </p>
               )}
             </div>
@@ -87,7 +87,7 @@ export default function CoachesPage() {
               </div>
             ) : error ? (
               <div className="p-8 text-center text-red-500">
-                <p>Error loading coaches. Please try again later.</p>
+                <p>Error loading providers. Please try again later.</p>
               </div>
             ) : filteredCoaches && filteredCoaches.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -97,10 +97,10 @@ export default function CoachesPage() {
               </div>
             ) : (
               <div className="bg-white p-8 rounded-xl text-center shadow-sm">
-                <h3 className="text-xl font-medium mb-2">No coaches found</h3>
+                <h3 className="text-xl font-medium mb-2">No providers found</h3>
                 <p className="text-muted-foreground">
                   {searchQuery 
-                    ? "Try a different search term or check back later for new coaches." 
+                    ? "Try a different search term or check back later for new providers." 
                     : "Check back later as we onboard more fitness professionals."}
                 </p>
               </div>
