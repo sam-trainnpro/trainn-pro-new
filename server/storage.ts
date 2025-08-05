@@ -1304,7 +1304,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Promo Code Validation and Application
-  async validatePromoCode(code: string, userId: number, classId: number): Promise<{
+  async validatePromoCode(code: string, userId: number, classId: number, quantity: number = 1): Promise<{
     valid: boolean;
     promoCode?: PromoCode;
     error?: string;
@@ -1321,6 +1321,15 @@ export class DatabaseStorage implements IStorage {
 
     if (!promoCode.isApproved) {
       return { valid: false, error: "Promo code is pending approval" };
+    }
+
+    // Check minimum quantity requirement
+    if (quantity < promoCode.minimumQuantity) {
+      if (promoCode.minimumQuantity === 2) {
+        return { valid: false, error: "This promo code requires at least 2 tickets" };
+      } else {
+        return { valid: false, error: `This promo code requires at least ${promoCode.minimumQuantity} tickets` };
+      }
     }
 
     const now = new Date();

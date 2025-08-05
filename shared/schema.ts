@@ -327,6 +327,7 @@ export const promoCodes = pgTable("promo_codes", {
   approvedBy: integer("approved_by"), // Admin user ID who approved
   approvedAt: timestamp("approved_at"),
   firstBookingOnly: boolean("first_booking_only").notNull().default(false),
+  minimumQuantity: integer("minimum_quantity").notNull().default(1), // Minimum tickets required for discount
   usageLimit: integer("usage_limit"), // null = unlimited
   usageCount: integer("usage_count").notNull().default(0),
   validFrom: timestamp("valid_from").notNull(),

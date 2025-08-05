@@ -383,7 +383,7 @@ export default function AdminPromoCodes() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="usageLimit">Usage Limit (Optional)</Label>
                   <Input
@@ -391,6 +391,17 @@ export default function AdminPromoCodes() {
                     name="usageLimit"
                     type="number"
                     placeholder="100"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="minimumQuantity">Minimum Tickets Required</Label>
+                  <Input
+                    id="minimumQuantity"
+                    name="minimumQuantity"
+                    type="number"
+                    placeholder="1"
+                    min="1"
+                    defaultValue="1"
                   />
                 </div>
                 <div>

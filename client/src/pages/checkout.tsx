@@ -360,7 +360,8 @@ export default function CheckoutPage() {
     try {
       const response = await apiRequest('POST', '/api/promo-codes/validate', {
         code: code.toUpperCase(),
-        classId: classId
+        classId: classId,
+        quantity: quantity
       });
       
       if (response.ok) {
