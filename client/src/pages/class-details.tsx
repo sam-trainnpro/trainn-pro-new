@@ -304,7 +304,7 @@ export default function ClassDetailsPage() {
                     <TabsList className="mb-4">
                       <TabsTrigger value="details">Details</TabsTrigger>
                       <TabsTrigger value="location">Location</TabsTrigger>
-                      <TabsTrigger value="coach">Coach</TabsTrigger>
+                      <TabsTrigger value="coach">Provider</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="details" className="bg-white rounded-xl p-6 shadow-sm">
@@ -451,7 +451,7 @@ export default function ClassDetailsPage() {
                               )}
                             </div>
                             <div>
-                              <h2 className="text-xl font-bold">Coach {coach.firstName} {coach.lastName}</h2>
+                              <h2 className="text-xl font-bold">Provider {coach.firstName} {coach.lastName}</h2>
                               {coachRatingStats?.totalReviews > 0 && (
                                 <div className="flex items-center">
                                   <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
@@ -478,7 +478,7 @@ export default function ClassDetailsPage() {
                             </div>
                           ) : (
                             <p className="text-muted-foreground italic mb-4">
-                              This coach hasn't added a bio yet.
+                              This provider hasn't added a bio yet.
                             </p>
                           )}
                           
@@ -529,7 +529,7 @@ export default function ClassDetailsPage() {
                           </Button>
                         </div>
                       ) : (
-                        <p className="text-muted-foreground">Coach information not available</p>
+                        <p className="text-muted-foreground">Provider information not available</p>
                       )}
                     </TabsContent>
                   </Tabs>
