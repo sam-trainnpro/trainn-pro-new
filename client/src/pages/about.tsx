@@ -38,7 +38,7 @@ export default function AboutPage() {
             <CardContent className="p-8 md:p-12">
               <div className="prose prose-lg max-w-none">
                 <p className="text-lg text-gray-700 leading-relaxed mb-6">
-                  Trainn's leadership team is passionate about helping people build new skills, get in shape, and build community. We created Trainn to make it really simple to find and sign up for local outdoor workouts, sports classes, art, music, and gym training sessions for adults and kids.
+                  Trainn's leadership team is passionate about helping people build new skills, get in shape, and build community. We created Trainn to make it really simple to find and sign up for local outdoor workouts, sports classes, art, music, gym training sessions, and other fun activities for adults and kids.
                 </p>
                 <p className="text-lg text-gray-700 leading-relaxed">
                   This platform empowers coaches and trainers to grow their business and meet the needs of their community.
