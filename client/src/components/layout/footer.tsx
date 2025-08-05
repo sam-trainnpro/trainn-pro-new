@@ -33,7 +33,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <h3 className="text-xl font-heading font-bold mb-4">Trainn</h3>
-            <p className="text-gray-400 mb-4">Connecting people of all ages with top coaches for personalized outdoor sports, fitness, music and art classes.</p>
+            <p className="text-gray-400 mb-4">Connecting people of all ages with top providers for personalized sports, fitness, music and art classes.</p>
             <div className="flex space-x-4">
               <a href="https://www.instagram.com/trainn_global/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
                 <Instagram className="h-5 w-5" />
