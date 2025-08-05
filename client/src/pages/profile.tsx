@@ -50,6 +50,7 @@ import { Helmet } from "react-helmet";
 const profileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  businessName: z.string().optional(),
   phone: z.string().optional(),
   bio: z.string().optional(),
   profileImage: z.string().optional(),
@@ -171,6 +172,7 @@ export default function ProfilePage() {
     defaultValues: {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
+      businessName: user?.businessName || "",
       phone: user?.phone || "",
       bio: user?.bio || "",
       profileImage: user?.profileImage || "",
@@ -253,6 +255,7 @@ export default function ProfilePage() {
       const profileData = {
         firstName: data.firstName,
         lastName: data.lastName,
+        businessName: data.businessName,
         phone: data.phone,
         bio: data.bio,
         certifications: data.certifications,
@@ -515,6 +518,25 @@ export default function ProfilePage() {
                               )}
                             />
                           </div>
+
+                          {user?.role === 'coach' && (
+                            <FormField
+                              control={profileForm.control}
+                              name="businessName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Business Name (Optional)</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="e.g. FitLife Training Studio" />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Add your business name if you operate under a business entity
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
 
                           <FormField
                             control={profileForm.control}
