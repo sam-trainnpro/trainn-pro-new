@@ -36,7 +36,9 @@ export default function CoachCard({ coach }: CoachCardProps) {
         {coach.profileImage ? (
           <img 
             src={coach.profileImage} 
-            alt={`${coach.firstName} ${coach.lastName}`}
+            alt={coach.displayBusinessName && coach.businessName 
+              ? coach.businessName 
+              : `${coach.firstName} ${coach.lastName}`}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -44,7 +46,11 @@ export default function CoachCard({ coach }: CoachCardProps) {
         )}
       </div>
       
-      <h3 className="font-heading font-bold text-lg">{coach.firstName} {coach.lastName}</h3>
+      <h3 className="font-heading font-bold text-lg">
+        {coach.displayBusinessName && coach.businessName 
+          ? coach.businessName 
+          : `${coach.firstName} ${coach.lastName}`}
+      </h3>
       <p className="text-sm text-gray-600 mb-2">
         {expertiseNames.length > 0 ? expertiseNames.join(', ') : 'Fitness Expert'}
       </p>

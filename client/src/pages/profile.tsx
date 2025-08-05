@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -51,6 +52,7 @@ const profileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   businessName: z.string().optional(),
+  displayBusinessName: z.boolean().optional(),
   phone: z.string().optional(),
   bio: z.string().optional(),
   profileImage: z.string().optional(),
@@ -173,6 +175,7 @@ export default function ProfilePage() {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       businessName: user?.businessName || "",
+      displayBusinessName: user?.displayBusinessName || false,
       phone: user?.phone || "",
       bio: user?.bio || "",
       profileImage: user?.profileImage || "",
@@ -256,6 +259,7 @@ export default function ProfilePage() {
         firstName: data.firstName,
         lastName: data.lastName,
         businessName: data.businessName,
+        displayBusinessName: data.displayBusinessName,
         phone: data.phone,
         bio: data.bio,
         certifications: data.certifications,
@@ -520,22 +524,44 @@ export default function ProfilePage() {
                           </div>
 
                           {user?.role === 'coach' && (
-                            <FormField
-                              control={profileForm.control}
-                              name="businessName"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Business Name (Optional)</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} placeholder="e.g. FitLife Training Studio" />
-                                  </FormControl>
-                                  <FormDescription>
-                                    Add your business name if you operate under a business entity
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                            <>
+                              <FormField
+                                control={profileForm.control}
+                                name="businessName"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Business Name (Optional)</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="e.g. FitLife Training Studio" />
+                                    </FormControl>
+                                    <FormDescription>
+                                      Add your business name if you operate under a business entity
+                                    </FormDescription>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={profileForm.control}
+                                name="displayBusinessName"
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                      <FormLabel>
+                                        Display your Business Name to customers?
+                                      </FormLabel>
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+                            </>
                           )}
 
                           <FormField
