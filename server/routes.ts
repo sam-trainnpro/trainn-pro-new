@@ -3563,7 +3563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updateData: any = {};
       const allowedFields = ['name', 'description', 'discountType', 'discountValue', 
-                           'firstBookingOnly', 'usageLimit', 'validFrom', 'validUntil',
+                           'firstBookingOnly', 'minimumQuantity', 'usageLimit', 'validFrom', 'validUntil',
                            'platformSubsidized', 'commissionOverride', 'budgetLimit', 'isActive'];
 
       for (const field of allowedFields) {
