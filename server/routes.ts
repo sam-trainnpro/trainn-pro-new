@@ -3560,6 +3560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`Access granted - proceeding with update`);
+      console.log(`Request body:`, JSON.stringify(req.body, null, 2));
 
       const updateData: any = {};
       const allowedFields = ['name', 'description', 'discountType', 'discountValue', 
@@ -3571,6 +3572,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateData[field] = req.body[field];
         }
       }
+      
+      console.log(`Update data before storage:`, JSON.stringify(updateData, null, 2));
 
       // If a coach is editing an approved code, reset approval status for re-approval
       if (user.role === 'coach' && existingPromoCode.isApproved) {
