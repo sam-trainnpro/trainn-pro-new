@@ -52,19 +52,19 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="/auth?register=true" className="text-gray-400 hover:text-white transition">Join Now</Link></li>
               <li><Link href="/classes" className="text-gray-400 hover:text-white transition">Find Classes</Link></li>
-              <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Coaches</Link></li>
+              <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Providers</Link></li>
               <li><ReferralLink /></li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-medium mb-4">For Coaches</h4>
+            <h4 className="font-medium mb-4">For Providers</h4>
             <ul className="space-y-2">
-              <li><Link href="/auth?register=true&role=coach" className="text-gray-400 hover:text-white transition">Join as Coach</Link></li>
-              <li><Link href="/coach-resources" className="text-gray-400 hover:text-white transition">Coach Resources</Link></li>
+              <li><Link href="/auth?register=true&role=coach" className="text-gray-400 hover:text-white transition">Join as a Provider</Link></li>
+              <li><Link href="/coach-resources" className="text-gray-400 hover:text-white transition">Provider Resources</Link></li>
               <li><Link href="/success-stories" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
               <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
-              <li><Link href="/coach-community" className="text-gray-400 hover:text-white transition">Coach Community</Link></li>
+              <li><Link href="/coach-community" className="text-gray-400 hover:text-white transition">Provider Community</Link></li>
             </ul>
           </div>
           

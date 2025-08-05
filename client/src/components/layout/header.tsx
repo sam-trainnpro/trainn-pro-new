@@ -71,7 +71,7 @@ export default function Header() {
             Classes
           </Link>
           <Link href="/coaches" className={`text-foreground hover:text-primary transition font-medium ${location === '/coaches' ? 'text-primary' : ''}`}>
-            Coaches
+            Providers
           </Link>
           
           {/* Not logged in state */}
@@ -217,7 +217,7 @@ export default function Header() {
               <Link href="/coaches" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start">
                   <User className="mr-2 h-5 w-5" />
-                  Coaches
+                  Providers
                 </Button>
               </Link>
               
