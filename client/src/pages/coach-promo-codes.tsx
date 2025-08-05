@@ -613,18 +613,35 @@ export default function CoachPromoCodes() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="edit-usageLimit">Usage Limit (optional)</Label>
-                <Input
-                  id="edit-usageLimit"
-                  name="usageLimit"
-                  type="number"
-                  defaultValue={editingPromoCode.usageLimit || ''}
-                  placeholder="Leave blank for unlimited"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Leave empty for unlimited uses
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-usageLimit">Usage Limit (optional)</Label>
+                  <Input
+                    id="edit-usageLimit"
+                    name="usageLimit"
+                    type="number"
+                    defaultValue={editingPromoCode.usageLimit || ''}
+                    placeholder="Leave blank for unlimited"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Leave empty for unlimited uses
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="edit-minimumQuantity">Minimum Tickets Required</Label>
+                  <Input
+                    id="edit-minimumQuantity"
+                    name="minimumQuantity"
+                    type="number"
+                    min="1"
+                    defaultValue={editingPromoCode.minimumQuantity || 1}
+                    placeholder="1"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Minimum number of tickets for discount
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
