@@ -61,7 +61,7 @@ export default function Header() {
         <Link href="/" className="flex flex-col items-start">
           <span className="text-primary text-2xl font-heading font-bold">Trainn</span>
           <span className="text-xs text-gray-600 leading-tight font-bold">
-            Outdoor sports, fitness, music and art classes for adults and kids in San Francisco
+            Sports, fitness, music, art and other fun classes for adults and kids in San Francisco
           </span>
         </Link>
         
