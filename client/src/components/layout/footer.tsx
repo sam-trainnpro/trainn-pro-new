@@ -38,7 +38,7 @@ export default function Footer() {
               <a href="https://www.instagram.com/trainn_global/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
+              <a href="https://www.facebook.com/profile.php?id=61578989286567" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
                 <Facebook className="h-5 w-5" />
               </a>
               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition">
