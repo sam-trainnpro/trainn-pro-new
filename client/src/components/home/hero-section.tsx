@@ -86,7 +86,7 @@ export default function HeroSection() {
               <div className="sm:order-2">
                 <Link href="/register?role=coach">
                   <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
-                    Become a Coach
+                    Become a Provider
                   </Button>
                 </Link>
               </div>
