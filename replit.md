@@ -41,6 +41,7 @@ Preferred communication style: Simple, everyday language.
 - **Image Hosting**: Cloudinary for permanent image storage and optimization.
 - **Referral System**: Awards $5 credit to both referrer and referee after the referee's first completed paid class, with automatic credit application during checkout. Platform subsidy system ensures coaches receive full compensation when customers use credits.
 - **Platform Subsidy Architecture**: Automated system ensuring coaches always receive full payouts (85% of original class price) even when customers use account balance credits. The platform covers the difference between reduced customer payments and full coach compensation.
+- **Multi-Ticket Promo Codes**: Complete implementation allowing promo codes to require minimum ticket quantities. Includes admin management interface, coach creation/editing capabilities, checkout validation, and proper database persistence. System validates minimum requirements before applying discounts.
 
 ## External Dependencies
 
