@@ -199,7 +199,11 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
             {isLoadingCoach ? (
               <Skeleton className="h-4 w-24" />
             ) : (
-              coach ? `Coach ${coach.firstName}` : "Coach"
+              coach ? (
+                coach.displayBusinessName && coach.businessName 
+                  ? coach.businessName
+                  : `${coach.firstName}`
+              ) : "Provider"
             )}
           </span>
           

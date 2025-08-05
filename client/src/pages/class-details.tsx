@@ -383,7 +383,9 @@ export default function ClassDetailsPage() {
                               {isLoadingCoach ? (
                                 <Skeleton className="h-4 w-24 inline-block" />
                               ) : coach ? (
-                                `${coach.firstName} ${coach.lastName}`
+                                coach.displayBusinessName && coach.businessName 
+                                  ? coach.businessName
+                                  : `${coach.firstName} ${coach.lastName}`
                               ) : (
                                 'Loading...'
                               )}
@@ -451,7 +453,12 @@ export default function ClassDetailsPage() {
                               )}
                             </div>
                             <div>
-                              <h2 className="text-xl font-bold">Provider {coach.firstName} {coach.lastName}</h2>
+                              <h2 className="text-xl font-bold">
+                                {coach.displayBusinessName && coach.businessName 
+                                  ? coach.businessName
+                                  : `${coach.firstName} ${coach.lastName}`
+                                }
+                              </h2>
                               {coachRatingStats?.totalReviews > 0 && (
                                 <div className="flex items-center">
                                   <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />

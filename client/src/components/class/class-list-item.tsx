@@ -118,7 +118,11 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center">
               <div className="text-gray-600 text-sm">
-                {isLoadingCoach ? 'Loading coach...' : coach?.firstName ? `${coach.firstName} ${coach.lastName}` : 'Unknown Coach'}
+                {isLoadingCoach ? 'Loading provider...' : coach?.firstName ? (
+                  coach.displayBusinessName && coach.businessName 
+                    ? coach.businessName
+                    : `${coach.firstName} ${coach.lastName}`
+                ) : 'Unknown Provider'}
               </div>
               {hasRealCoachReviews && coachRatingStats && (
                 <div className="ml-2 flex items-center text-sm">
