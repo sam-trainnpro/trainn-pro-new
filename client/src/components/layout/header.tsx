@@ -311,6 +311,17 @@ export default function Header() {
                     Refer a Friend
                   </Button>
                   <Button 
+                    variant="ghost" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      /* TODO: Add refer provider functionality */
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <UserPlus className="mr-2 h-5 w-5" />
+                    Refer a Provider
+                  </Button>
+                  <Button 
                     variant="outline" 
                     className="w-full justify-start text-destructive border-destructive"
                     onClick={() => {
