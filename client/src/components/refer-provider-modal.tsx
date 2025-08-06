@@ -114,9 +114,7 @@ export default function ReferProviderModal({ isOpen, onClose }: ReferProviderMod
     setTimeout(() => setIsSharing(false), 1000);
   };
 
-  if (!referralCode) {
-    return null;
-  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -179,9 +177,10 @@ export default function ReferProviderModal({ isOpen, onClose }: ReferProviderMod
             )}
           </div>
 
-          {/* Share Options - All in a Row */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-center text-gray-700">Share with providers:</p>
+          {/* Share Options - Only show if referral code exists */}
+          {referralCode && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-center text-gray-700">Share with providers:</p>
             <div className="flex justify-center items-center gap-1 mx-auto max-w-xs">
               <Button
                 variant="ghost"
@@ -250,7 +249,8 @@ export default function ReferProviderModal({ isOpen, onClose }: ReferProviderMod
                 <span className="text-xs text-gray-600">Share</span>
               </Button>
             </div>
-          </div>
+            </div>
+          )}
 
           {/* Terms */}
           <p className="text-xs text-gray-500 text-center">
