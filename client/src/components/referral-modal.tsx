@@ -61,11 +61,27 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
         shareUrl = `sms:?body=${encodeURIComponent(shareMessage)}`;
         break;
       case 'whatsapp':
-        shareUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+        shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
         break;
       case 'messenger':
-        shareUrl = `https://m.me/?text=${encodeURIComponent(shareMessage)}`;
-        break;
+        // For Messenger, we'll use a fallback approach since it requires app-specific setup
+        if (navigator.share) {
+          navigator.share({
+            title: 'Join Trainn with $5 off!',
+            text: shareMessage,
+            url: referralLink,
+          }).catch(console.error);
+          setIsSharing(false);
+          return;
+        }
+        // Fallback to copy link with toast message
+        handleCopyLink();
+        toast({
+          title: "Copy and share manually",
+          description: "The message has been copied. You can paste it in Messenger.",
+        });
+        setIsSharing(false);
+        return;
       case 'share':
         // Use Web Share API if available
         if (navigator.share) {
