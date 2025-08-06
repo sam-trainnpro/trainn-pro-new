@@ -3994,6 +3994,25 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // Get or create user's provider referral code
+  app.get("/api/provider-referrals/my-code", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      
+      // Ensure user has a provider referral code
+      if (!user.providerReferralCode) {
+        const providerReferralCode = storage.generateProviderReferralCode(user.firstName, user.lastName, user.id);
+        await storage.updateUser(user.id, { providerReferralCode });
+        user.providerReferralCode = providerReferralCode;
+      }
+      
+      res.json({ providerReferralCode: user.providerReferralCode });
+    } catch (error: any) {
+      console.error('Error getting provider referral code:', error);
+      res.status(500).json({ message: "Error getting provider referral code: " + error.message });
+    }
+  });
+
   app.get("/api/referrals/my-referrals", requireAuth, async (req, res) => {
     try {
       const referrals = await storage.getReferralsByReferrer(req.user!.id);

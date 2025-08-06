@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   googleProfilePicture: text("google_profile_picture"),
   // Referral system
   referralCode: text("referral_code").unique(), // Unique referral code for each user
+  providerReferralCode: text("provider_referral_code").unique(), // Unique provider referral code for each user
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

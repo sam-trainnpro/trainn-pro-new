@@ -1630,6 +1630,13 @@ export class DatabaseStorage implements IStorage {
     return namePrefix + userSuffix + randomSuffix;
   }
 
+  generateProviderReferralCode(firstName: string, lastName: string, userId: number): string {
+    const namePrefix = (firstName.substring(0, 2) + lastName.substring(0, 2)).toUpperCase();
+    const userSuffix = userId.toString().padStart(4, '0');
+    const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+    return 'PROV-' + namePrefix + userSuffix + randomSuffix;
+  }
+
   async createReferral(referralData: InsertReferral): Promise<Referral> {
     const result = await db.insert(referrals).values(referralData).returning();
     return result[0];
