@@ -91,6 +91,9 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess, refe
   const { registerMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   
+  // Debug logging
+  console.log("RegisterForm received props:", { defaultRole, referralCode, providerReferralCode });
+  
   // Use effect for navigation instead of conditional rendering
   // Commented out since AuthPage already handles this redirect
   // This prevents double redirection which could cause runtime errors
