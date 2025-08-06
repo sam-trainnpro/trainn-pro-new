@@ -63,24 +63,8 @@ export default function ReferProviderModal({ isOpen, onClose }: ReferProviderMod
         shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
         break;
       case 'messenger':
-        // For Messenger, we'll use a fallback approach since it requires app-specific setup
-        if (navigator.share) {
-          navigator.share({
-            title: 'Join Trainn as a Provider!',
-            text: shareMessage,
-            url: referralLink,
-          }).catch(console.error);
-          setIsSharing(false);
-          return;
-        }
-        // Fallback to copy link with toast message
-        handleCopyLink();
-        toast({
-          title: "Copy and share manually",
-          description: "The message has been copied. You can paste it in Messenger.",
-        });
-        setIsSharing(false);
-        return;
+        shareUrl = `fb-messenger://compose/?text=${encodeURIComponent(shareMessage)}`;
+        break;
       case 'share':
         // Use Web Share API if available
         if (navigator.share) {
