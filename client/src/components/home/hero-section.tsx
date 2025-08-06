@@ -59,19 +59,31 @@ export default function HeroSection() {
              width: '100vw'
            }}>
         <div className="container mx-auto px-4">
-          <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start max-w-lg sm:max-w-xl mx-auto sm:mx-0">
-            {/* Refer a Friend button - Mobile: above Find Classes, Desktop: to the right */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start max-w-lg sm:max-w-2xl mx-auto sm:mx-0">
+            {/* Refer buttons - Mobile: above Find Classes, Desktop: to the right */}
             {user && (
-              <div className="sm:order-2">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="bg-white text-coral-500 border-coral-500 hover:bg-coral-50 w-full sm:w-auto"
-                  onClick={() => setIsReferralModalOpen(true)}
-                >
-                  Refer a Friend
-                </Button>
-              </div>
+              <>
+                <div className="sm:order-2">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white text-coral-500 border-coral-500 hover:bg-coral-50 w-full sm:w-auto"
+                    onClick={() => setIsReferralModalOpen(true)}
+                  >
+                    Refer a Friend
+                  </Button>
+                </div>
+                <div className="sm:order-3">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-white text-primary border-primary hover:bg-primary hover:text-white w-full sm:w-auto"
+                    onClick={() => {/* TODO: Add refer provider functionality */}}
+                  >
+                    Refer a Provider
+                  </Button>
+                </div>
+              </>
             )}
             
             <div className="sm:order-1">

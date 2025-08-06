@@ -26,6 +26,21 @@ function ReferralLink() {
   );
 }
 
+function ReferProviderLink() {
+  const { user } = useSafeAuth();
+
+  if (!user) return null;
+
+  return (
+    <button 
+      onClick={() => {/* TODO: Add refer provider functionality */}}
+      className="text-gray-400 hover:text-white transition text-left"
+    >
+      Refer a Provider
+    </button>
+  );
+}
+
 export default function Footer() {
   return (
     <footer className="bg-[#333333] text-white pt-12 pb-6">
@@ -54,6 +69,7 @@ export default function Footer() {
               <li><Link href="/classes" className="text-gray-400 hover:text-white transition">Find Classes</Link></li>
               <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Providers</Link></li>
               <li><ReferralLink /></li>
+              <li><ReferProviderLink /></li>
             </ul>
           </div>
           
