@@ -3,6 +3,7 @@ import { Instagram, Facebook, Linkedin } from "lucide-react";
 import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { useState } from "react";
 import ReferralModal from "../referral-modal";
+import ReferProviderModal from "../refer-provider-modal";
 
 function ReferralLink() {
   const { user } = useSafeAuth();
@@ -28,16 +29,23 @@ function ReferralLink() {
 
 function ReferProviderLink() {
   const { user } = useSafeAuth();
+  const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
 
-  if (!user) return null;
+  if (!user || user.role !== 'customer') return null;
 
   return (
-    <button 
-      onClick={() => {/* TODO: Add refer provider functionality */}}
-      className="text-gray-400 hover:text-white transition text-left"
-    >
-      Refer a Provider
-    </button>
+    <>
+      <button 
+        onClick={() => setIsReferProviderModalOpen(true)}
+        className="text-gray-400 hover:text-white transition text-left"
+      >
+        Refer a Provider
+      </button>
+      <ReferProviderModal
+        isOpen={isReferProviderModalOpen}
+        onClose={() => setIsReferProviderModalOpen(false)}
+      />
+    </>
   );
 }
 

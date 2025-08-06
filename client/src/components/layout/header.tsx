@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import ReferralModal from "../referral-modal";
+import ReferProviderModal from "../refer-provider-modal";
 
 export default function Header() {
   const [location] = useLocation();
@@ -46,6 +47,7 @@ export default function Header() {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -184,10 +186,12 @@ export default function Header() {
                     <Users className="mr-2 h-4 w-4" />
                     <span>Refer a Friend</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {/* TODO: Add refer provider functionality */}} className="cursor-pointer">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    <span>Refer a Provider</span>
-                  </DropdownMenuItem>
+                  {user.role === 'customer' && (
+                    <DropdownMenuItem onClick={() => setIsReferProviderModalOpen(true)} className="cursor-pointer">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      <span>Refer a Provider</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sign Out</span>
@@ -310,17 +314,19 @@ export default function Header() {
                     <Users className="mr-2 h-5 w-5" />
                     Refer a Friend
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      /* TODO: Add refer provider functionality */
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <UserPlus className="mr-2 h-5 w-5" />
-                    Refer a Provider
-                  </Button>
+                  {user.role === 'customer' && (
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setIsReferProviderModalOpen(true);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <UserPlus className="mr-2 h-5 w-5" />
+                      Refer a Provider
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     className="w-full justify-start text-destructive border-destructive"
@@ -357,6 +363,14 @@ export default function Header() {
         <ReferralModal
           isOpen={isReferralModalOpen}
           onClose={() => setIsReferralModalOpen(false)}
+        />
+      )}
+      
+      {/* Refer Provider Modal - Only for customers */}
+      {user?.role === 'customer' && (
+        <ReferProviderModal
+          isOpen={isReferProviderModalOpen}
+          onClose={() => setIsReferProviderModalOpen(false)}
         />
       )}
     </header>
