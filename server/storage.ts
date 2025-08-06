@@ -216,6 +216,11 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(users).where(eq(users.referralCode, referralCode));
     return result[0];
   }
+
+  async getUserByProviderReferralCode(providerReferralCode: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.providerReferralCode, providerReferralCode));
+    return result[0];
+  }
   
   async createUser(userData: InsertUser): Promise<User> {
     const result = await db.insert(users).values({
@@ -1983,17 +1988,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async processProviderReferralSignup(referralCode: string, providerId: number): Promise<ProviderReferral | undefined> {
-    // Find the provider referral by code
-    const providerReferral = await this.getProviderReferralByCode(referralCode);
-    if (!providerReferral) {
+    // Find the referrer user by their provider referral code
+    const referrer = await this.getUserByProviderReferralCode(referralCode);
+    if (!referrer) {
+      console.log('Provider referrer not found for code:', referralCode);
       return undefined;
     }
 
-    // Update the provider referral with the provider ID and status
-    return await this.updateProviderReferral(providerReferral.id, {
-      providerId,
-      status: 'signed_up'
+    // Get the provider's details
+    const provider = await this.getUser(providerId);
+    if (!provider) {
+      console.log('Provider not found for ID:', providerId);
+      return undefined;
+    }
+
+    // Create a new provider referral entry
+    const providerReferral = await this.createProviderReferral({
+      referrerId: referrer.id,
+      providerId: providerId,
+      referralCode: referralCode,
+      providerEmail: provider.email,
+      status: 'signed_up',
+      paidBookingsCount: 0,
+      providerRewardGranted: false,
+      referrerRewardGranted: false,
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days from now
     });
+
+    console.log('Created provider referral entry:', providerReferral.id);
+    return providerReferral;
   }
 
   async updateProviderReferralBookingCount(providerId: number): Promise<void> {

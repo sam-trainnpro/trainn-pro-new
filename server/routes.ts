@@ -4015,8 +4015,17 @@ Sitemap: https://trainn.pro/sitemap.xml`);
 
   app.get("/api/referrals/my-referrals", requireAuth, async (req, res) => {
     try {
-      const referrals = await storage.getReferralsByReferrer(req.user!.id);
-      res.json(referrals);
+      // Get both friend referrals and provider referrals
+      const friendReferrals = await storage.getReferralsByReferrer(req.user!.id);
+      const providerReferrals = await storage.getProviderReferralsByReferrer(req.user!.id);
+      
+      // Combine and format both types of referrals
+      const combinedReferrals = [
+        ...friendReferrals.map(r => ({ ...r, type: 'friend' })),
+        ...providerReferrals.map(r => ({ ...r, type: 'provider' }))
+      ];
+      
+      res.json(combinedReferrals);
     } catch (error: any) {
       console.error('Error getting referrals:', error);
       res.status(500).json({ message: "Error getting referrals: " + error.message });
