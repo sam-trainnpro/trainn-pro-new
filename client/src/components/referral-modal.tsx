@@ -64,7 +64,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
         shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
         break;
       case 'messenger':
-        shareUrl = `fb-messenger://compose/?text=${encodeURIComponent(shareMessage)}`;
+        shareUrl = `https://m.me/?text=${encodeURIComponent(shareMessage)}`;
         break;
       case 'share':
         // Use Web Share API if available
