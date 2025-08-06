@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "../../../hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 interface ReferProviderModalProps {
@@ -18,21 +18,46 @@ interface ReferProviderModalProps {
 export default function ReferProviderModal({ isOpen, onClose }: ReferProviderModalProps) {
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Get user's referral code (reusing the existing referral code system)
-  const { data: referralData } = useQuery({
-    queryKey: ['/api/referrals/my-code'],
+  // Get user's provider referrals
+  const { data: providerReferrals, isLoading } = useQuery({
+    queryKey: ['/api/provider-referrals'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/referrals/my-code');
+      const response = await apiRequest('GET', '/api/provider-referrals');
       return response.json();
     },
     enabled: isOpen
   });
 
-  const referralCode = referralData?.referralCode;
-  const referralLink = referralCode ? `${window.location.origin}/auth?register=true&role=coach&ref=${referralCode}` : '';
+  // Create a new provider referral code
+  const createProviderReferralMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/provider-referrals');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/provider-referrals'] });
+      toast({
+        title: "Referral code created!",
+        description: "Your provider referral code is ready to share.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to create referral code. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Get the most recent active provider referral
+  const activeReferral = providerReferrals?.find((ref: any) => ref.status === 'active') || providerReferrals?.[0];
+  const referralCode = activeReferral?.referralCode;
+  const referralLink = referralCode ? `${window.location.origin}/auth?register=true&role=coach&providerRef=${referralCode}` : '';
   
-  const shareMessage = `Hey! I want to invite you to join Trainn as a provider and start earning money teaching what you love. You'll get $25 once you have 3 paid bookings. Use my referral link: ${referralLink}`;
+  const shareMessage = `Hey! I want to invite you to join Trainn as a provider and start earning money teaching what you love. You'll get $25 once you have 3 paid bookings, and I'll get $25 too! Use my referral link: ${referralLink}`;
 
   const handleCopyLink = async () => {
     try {
@@ -119,6 +144,39 @@ export default function ReferProviderModal({ isOpen, onClose }: ReferProviderMod
                 <span>Receive $25 in your account balance for future classes</span>
               </li>
             </ul>
+          </div>
+
+          {/* Referral Code Section */}
+          <div className="space-y-3">
+            {isLoading ? (
+              <div className="text-center text-sm text-gray-500">Loading your referral code...</div>
+            ) : !referralCode ? (
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-3">Create your provider referral code to start sharing:</p>
+                <Button 
+                  onClick={() => createProviderReferralMutation.mutate()}
+                  disabled={createProviderReferralMutation.isPending}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {createProviderReferralMutation.isPending ? "Creating..." : "Create Referral Code"}
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Your provider referral code:</p>
+                <div className="flex items-center justify-between bg-white rounded border p-2">
+                  <code className="text-sm font-mono text-gray-800">{referralCode}</code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyLink}
+                    className="text-xs px-2 py-1 h-auto"
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Share Options - All in a Row */}

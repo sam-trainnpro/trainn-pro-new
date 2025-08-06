@@ -143,7 +143,7 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName, phone, role, referralCode } = req.body;
+      const { email, password, firstName, lastName, phone, role, referralCode, providerReferralCode } = req.body;
       
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
@@ -222,6 +222,23 @@ export function setupAuth(app: Express) {
         } catch (referralError) {
           console.error('Error processing referral signup:', referralError);
           // Don't fail registration if referral processing fails
+        }
+      }
+
+      // Process provider referral signup if provider referral code provided (only for coach registrations)
+      if (providerReferralCode && role === 'coach') {
+        try {
+          console.log('Processing provider referral signup with code:', providerReferralCode);
+          
+          const providerReferral = await storage.processProviderReferralSignup(providerReferralCode, user.id);
+          if (providerReferral) {
+            console.log('Successfully linked provider referral:', providerReferral.id);
+          } else {
+            console.log('Provider referral code not found or invalid:', providerReferralCode);
+          }
+        } catch (providerReferralError) {
+          console.error('Error processing provider referral signup:', providerReferralError);
+          // Don't fail registration if provider referral processing fails
         }
       }
 

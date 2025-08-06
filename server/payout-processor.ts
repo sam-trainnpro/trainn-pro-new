@@ -28,6 +28,10 @@ export class PayoutProcessor {
       console.log("=== PROCESSING REFERRER REWARDS ===");
       await storage.processReferrerRewards();
 
+      // Process provider referral rewards
+      console.log("=== PROCESSING PROVIDER REFERRAL REWARDS ===");
+      await storage.processProviderReferralRewards();
+
       // Then process due payouts
       const duePayouts = await storage.getDueScheduledPayouts();
       console.log(`Found ${duePayouts.length} due payouts to process`);
