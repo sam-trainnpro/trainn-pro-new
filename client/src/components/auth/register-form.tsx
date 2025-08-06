@@ -114,7 +114,8 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess, refe
       countryCode: "+1",
       phone: "",
       password: "",
-      role: defaultRole as "customer" | "coach",
+      // If there's a provider referral code, default to coach role, otherwise use the provided default
+      role: providerReferralCode ? "coach" : (defaultRole as "customer" | "coach"),
       termsAccepted: false,
     },
   });
@@ -188,6 +189,13 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess, refe
           <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-sm text-green-700 font-medium">
               🎉 You've been referred to Trainn! Get $5 off your first paid class.
+            </p>
+          </div>
+        )}
+        {providerReferralCode && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700 font-medium">
+              🎉 You've been invited to become a provider! Get $25 after your first 3 bookings.
             </p>
           </div>
         )}
