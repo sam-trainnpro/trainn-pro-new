@@ -56,7 +56,7 @@ export default function AuthPage() {
       setActiveTab(tabValue);
       
       console.log("Auth page path:", path);
-      console.log("Auth params set:", { tab: tabValue, role, hasToken: !!resetToken });
+      console.log("Auth params set:", { tab: tabValue, role, hasToken: !!resetToken, referralCode, providerReferralCode });
     } catch (err) {
       console.error("Error parsing URL params:", err);
     }
