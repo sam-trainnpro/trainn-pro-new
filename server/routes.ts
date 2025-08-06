@@ -2055,6 +2055,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Don't fail the booking if email fails
         console.error("Email sending error:", emailError);
       }
+
+      // Update provider referral booking count for the coach
+      try {
+        await storage.updateProviderReferralBookingCount(classItem.coachId);
+        console.log(`Updated provider referral booking count for coach ${classItem.coachId}`);
+      } catch (providerReferralError) {
+        console.error("Error updating provider referral booking count:", providerReferralError);
+        // Don't fail the booking if provider referral update fails
+      }
       
       res.json({ 
         success: true, 
@@ -4069,6 +4078,61 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     } catch (error: any) {
       console.error('Error processing referral signup:', error);
       res.status(500).json({ message: "Error processing referral: " + error.message });
+    }
+  });
+
+  // Provider Referral Routes
+  
+  // Create a new provider referral with auto-generated code
+  app.post("/api/provider-referrals", requireAuth, async (req, res) => {
+    try {
+      // Generate a unique provider referral code
+      const referralCode = `PROV-${req.user.firstName.toUpperCase()}${req.user.lastName.toUpperCase()}-${Date.now().toString(36)}`;
+      
+      const providerReferral = await storage.createProviderReferral({
+        referrerId: req.user.id,
+        referralCode,
+        status: 'active',
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
+      });
+      
+      res.status(201).json(providerReferral);
+    } catch (error: any) {
+      console.error("Error creating provider referral:", error);
+      res.status(500).json({ message: "Failed to create provider referral" });
+    }
+  });
+
+  // Get provider referrals for current user
+  app.get("/api/provider-referrals", requireAuth, async (req, res) => {
+    try {
+      const providerReferrals = await storage.getProviderReferralsByReferrer(req.user.id);
+      res.json(providerReferrals);
+    } catch (error: any) {
+      console.error("Error fetching provider referrals:", error);
+      res.status(500).json({ message: "Failed to fetch provider referrals" });
+    }
+  });
+
+  // Process provider referral signup
+  app.post("/api/provider-referrals/signup", requireAuth, async (req, res) => {
+    try {
+      const { referralCode, providerId } = req.body;
+      
+      if (!referralCode || !providerId) {
+        return res.status(400).json({ message: "Referral code and provider ID are required" });
+      }
+      
+      const providerReferral = await storage.processProviderReferralSignup(referralCode, providerId);
+      
+      if (!providerReferral) {
+        return res.status(400).json({ message: "Invalid or expired provider referral code" });
+      }
+      
+      res.json({ success: true, providerReferral });
+    } catch (error: any) {
+      console.error("Error processing provider referral signup:", error);
+      res.status(500).json({ message: "Failed to process provider referral signup" });
     }
   });
 

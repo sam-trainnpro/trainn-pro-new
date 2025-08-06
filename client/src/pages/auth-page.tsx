@@ -16,7 +16,9 @@ export default function AuthPage() {
   const [authParams, setAuthParams] = useState({
     defaultTab: "login",
     defaultRole: "customer",
-    resetToken: ""
+    resetToken: "",
+    referralCode: "",
+    providerReferralCode: ""
   });
   
   const [activeTab, setActiveTab] = useState("login");
@@ -36,6 +38,8 @@ export default function AuthPage() {
       const isReset = tab === 'reset';
       const role = searchParams.get('role') || "customer";
       const resetToken = searchParams.get('token') || "";
+      const referralCode = searchParams.get('ref') || "";
+      const providerReferralCode = searchParams.get('providerRef') || "";
       
       let tabValue = "login";
       if (hasRegister) tabValue = "register";
@@ -44,7 +48,9 @@ export default function AuthPage() {
       setAuthParams({
         defaultTab: tabValue,
         defaultRole: role,
-        resetToken: resetToken
+        resetToken: resetToken,
+        referralCode: referralCode,
+        providerReferralCode: providerReferralCode
       });
       
       setActiveTab(tabValue);
@@ -100,7 +106,11 @@ export default function AuthPage() {
                 <LoginForm />
               </TabsContent>
               <TabsContent value="register">
-                <RegisterForm defaultRole={authParams.defaultRole} />
+                <RegisterForm 
+                  defaultRole={authParams.defaultRole} 
+                  referralCode={authParams.referralCode}
+                  providerReferralCode={authParams.providerReferralCode}
+                />
               </TabsContent>
             </Tabs>
           )}

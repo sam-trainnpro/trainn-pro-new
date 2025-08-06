@@ -286,16 +286,18 @@ export type BlogPost = typeof blogPosts.$inferSelect;
 // Scheduled Payouts
 export const scheduledPayouts = pgTable("scheduled_payouts", {
   id: serial("id").primaryKey(),
-  bookingId: integer("booking_id").notNull(),
-  classId: integer("class_id").notNull(),
+  bookingId: integer("booking_id"), // Nullable for referral rewards
+  classId: integer("class_id"), // Nullable for referral rewards
   coachId: integer("coach_id").notNull(),
-  customerId: integer("customer_id").notNull(),
-  stripePaymentIntentId: text("stripe_payment_intent_id").notNull(),
+  customerId: integer("customer_id"), // Nullable for referral rewards
+  stripePaymentIntentId: text("stripe_payment_intent_id"), // Nullable for referral rewards
   amountCents: integer("amount_cents").notNull(), // Total payment amount
-  stripeFee: integer("stripe_fee").notNull(), // Stripe processing fee
+  stripeFee: integer("stripe_fee").notNull().default(0), // Stripe processing fee
   netAmount: integer("net_amount").notNull(), // Amount after Stripe fees
   coachPayout: integer("coach_payout").notNull(), // Amount to pay coach
-  platformFee: integer("platform_fee").notNull(), // Platform fee
+  platformFee: integer("platform_fee").notNull().default(0), // Platform fee
+  payoutType: text("payout_type").notNull().default("booking"), // 'booking', 'provider_referral_reward'
+  providerReferralId: integer("provider_referral_id"), // FK for provider referral rewards
   scheduledPayoutDate: timestamp("scheduled_payout_date").notNull(), // When to pay coach
   status: text("status").notNull().default("scheduled"), // scheduled, processing, completed, failed
   stripeTransferId: text("stripe_transfer_id"), // Stripe transfer ID when completed
@@ -462,3 +464,27 @@ export const insertUserCreditSchema = createInsertSchema(userCredits).omit({
 
 export type InsertUserCredit = z.infer<typeof insertUserCreditSchema>;
 export type UserCredit = typeof userCredits.$inferSelect;
+
+// Provider Referrals - Track when providers are referred
+export const providerReferrals = pgTable("provider_referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").notNull(), // Customer who referred the provider
+  providerId: integer("provider_id"), // Provider who was referred (null until they sign up)
+  referralCode: text("referral_code").notNull(), // The referrer's unique code
+  providerEmail: text("provider_email"), // Email of referred provider (optional)
+  status: text("status").notNull().default("pending"), // 'pending', 'signed_up', 'qualified', 'completed'
+  paidBookingsCount: integer("paid_bookings_count").notNull().default(0), // Track paid bookings by referred provider
+  qualifiedAt: timestamp("qualified_at"), // When provider reached 3 paid bookings
+  providerRewardGranted: boolean("provider_reward_granted").notNull().default(false), // $25 to provider
+  referrerRewardGranted: boolean("referrer_reward_granted").notNull().default(false), // $25 credit to referrer
+  expiresAt: timestamp("expires_at").notNull(), // 60 days from creation
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProviderReferralSchema = createInsertSchema(providerReferrals).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProviderReferral = z.infer<typeof insertProviderReferralSchema>;
+export type ProviderReferral = typeof providerReferrals.$inferSelect;

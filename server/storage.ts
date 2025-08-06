@@ -14,7 +14,8 @@ import {
   bookingSubsidies, type BookingSubsidy, type InsertBookingSubsidy,
   userCommissionTiers, type UserCommissionTier, type InsertUserCommissionTier,
   referrals, type Referral, type InsertReferral,
-  userCredits, type UserCredit, type InsertUserCredit
+  userCredits, type UserCredit, type InsertUserCredit,
+  providerReferrals, type ProviderReferral, type InsertProviderReferral
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -148,6 +149,15 @@ export interface IStorage {
   // Platform subsidies
   createBookingSubsidy(subsidyData: InsertBookingSubsidy): Promise<BookingSubsidy>;
   getPlatformSubsidyForBooking(bookingId: number): Promise<number>;
+  
+  // Provider Referral system
+  createProviderReferral(referralData: InsertProviderReferral): Promise<ProviderReferral>;
+  getProviderReferralByCode(code: string): Promise<ProviderReferral | undefined>;
+  getProviderReferralsByReferrer(referrerId: number): Promise<ProviderReferral[]>;
+  updateProviderReferral(id: number, referralData: Partial<ProviderReferral>): Promise<ProviderReferral | undefined>;
+  processProviderReferralSignup(referralCode: string, providerId: number): Promise<ProviderReferral | undefined>;
+  updateProviderReferralBookingCount(providerId: number): Promise<void>;
+  processProviderReferralRewards(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1929,6 +1939,171 @@ export class DatabaseStorage implements IStorage {
 
     console.log(`=== COMPLETED: Awarded ${rewardsAwarded} rewards to referrer ${referrerId} ===`);
     return rewardsAwarded;
+  }
+
+  // Provider Referral system methods
+  async createProviderReferral(referralData: InsertProviderReferral): Promise<ProviderReferral> {
+    const result = await db.insert(providerReferrals).values({
+      ...referralData,
+      createdAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async getProviderReferralByCode(code: string): Promise<ProviderReferral | undefined> {
+    const result = await db
+      .select()
+      .from(providerReferrals)
+      .where(eq(providerReferrals.referralCode, code))
+      .limit(1);
+    return result[0];
+  }
+
+  async getProviderReferralsByReferrer(referrerId: number): Promise<ProviderReferral[]> {
+    return await db
+      .select()
+      .from(providerReferrals)
+      .where(eq(providerReferrals.referrerId, referrerId));
+  }
+
+  async updateProviderReferral(id: number, referralData: Partial<ProviderReferral>): Promise<ProviderReferral | undefined> {
+    const result = await db
+      .update(providerReferrals)
+      .set(referralData)
+      .where(eq(providerReferrals.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async processProviderReferralSignup(referralCode: string, providerId: number): Promise<ProviderReferral | undefined> {
+    // Find the provider referral by code
+    const providerReferral = await this.getProviderReferralByCode(referralCode);
+    if (!providerReferral) {
+      return undefined;
+    }
+
+    // Update the provider referral with the provider ID and status
+    return await this.updateProviderReferral(providerReferral.id, {
+      providerId,
+      status: 'signed_up'
+    });
+  }
+
+  async updateProviderReferralBookingCount(providerId: number): Promise<void> {
+    // Find all provider referrals for this provider
+    const providerReferralsForProvider = await db
+      .select()
+      .from(providerReferrals)
+      .where(and(
+        eq(providerReferrals.providerId, providerId),
+        eq(providerReferrals.status, 'signed_up')
+      ));
+
+    if (providerReferralsForProvider.length === 0) {
+      return;
+    }
+
+    // Count confirmed bookings for classes taught by this provider
+    const confirmedBookingsCount = await db
+      .select({ count: sql`count(*)` })
+      .from(bookings)
+      .innerJoin(classes, eq(bookings.classId, classes.id))
+      .where(and(
+        eq(classes.coachId, providerId),
+        eq(bookings.status, 'confirmed'),
+        // Only count paid bookings (price > 0 or payment intent exists)
+        or(
+          sql`${classes.price} > 0`,
+          sql`${bookings.stripePaymentIntentId} IS NOT NULL`
+        )
+      ));
+
+    const totalPaidBookings = Number(confirmedBookingsCount[0]?.count || 0);
+
+    // Update each provider referral with the current booking count
+    for (const providerReferral of providerReferralsForProvider) {
+      await this.updateProviderReferral(providerReferral.id, {
+        paidBookingsCount: totalPaidBookings
+      });
+
+      // Check if provider has reached 3 paid bookings and needs rewards
+      if (totalPaidBookings >= 3 && providerReferral.status === 'signed_up') {
+        await this.updateProviderReferral(providerReferral.id, {
+          status: 'qualified',
+          qualifiedAt: new Date()
+        });
+      }
+    }
+  }
+
+  async processProviderReferralRewards(): Promise<void> {
+    console.log("=== PROCESSING PROVIDER REFERRAL REWARDS ===");
+    
+    // Find all qualified provider referrals where rewards haven't been granted
+    const qualifiedReferrals = await db
+      .select({
+        id: providerReferrals.id,
+        referrerId: providerReferrals.referrerId,
+        providerId: providerReferrals.providerId,
+        paidBookingsCount: providerReferrals.paidBookingsCount,
+        providerRewardGranted: providerReferrals.providerRewardGranted,
+        referrerRewardGranted: providerReferrals.referrerRewardGranted
+      })
+      .from(providerReferrals)
+      .where(and(
+        eq(providerReferrals.status, 'qualified'),
+        sql`${providerReferrals.paidBookingsCount} >= 3`
+      ));
+
+    console.log(`Found ${qualifiedReferrals.length} qualified provider referrals to process`);
+
+    for (const referral of qualifiedReferrals) {
+      try {
+        // Award $25 to provider if not already granted
+        if (!referral.providerRewardGranted && referral.providerId) {
+          await this.createScheduledPayout({
+            coachId: referral.providerId,
+            amountCents: 2500, // $25 in cents
+            stripeFee: 0,
+            netAmount: 2500,
+            coachPayout: 2500,
+            platformFee: 0,
+            payoutType: 'provider_referral_reward',
+            providerReferralId: referral.id,
+            scheduledPayoutDate: new Date(), // Pay immediately
+            status: 'scheduled'
+          });
+
+          await this.updateProviderReferral(referral.id, {
+            providerRewardGranted: true
+          });
+
+          console.log(`✅ Scheduled $25 payout for provider ${referral.providerId} (referral ${referral.id})`);
+        }
+
+        // Award $25 credit to referrer if not already granted
+        if (!referral.referrerRewardGranted) {
+          await this.addUserCredit({
+            userId: referral.referrerId,
+            amount: 2500, // $25 in cents
+            transactionType: 'provider_referral_reward',
+            description: `Provider referral reward - Referred provider reached 3 paid bookings`
+          });
+
+          await this.updateProviderReferral(referral.id, {
+            referrerRewardGranted: true,
+            status: 'completed'
+          });
+
+          console.log(`✅ Awarded $25 credit to referrer ${referral.referrerId} (referral ${referral.id})`);
+        }
+
+      } catch (error) {
+        console.error(`❌ Error processing provider referral ${referral.id}:`, error);
+      }
+    }
+
+    console.log("=== COMPLETED: Provider referral rewards processing ===");
   }
 }
 
