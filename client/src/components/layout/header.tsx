@@ -15,7 +15,8 @@ import {
   Heart,
   BookOpen,
   Tag,
-  Users
+  Users,
+  UserPlus
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -182,6 +183,10 @@ export default function Header() {
                   <DropdownMenuItem onClick={() => setIsReferralModalOpen(true)} className="cursor-pointer">
                     <Users className="mr-2 h-4 w-4" />
                     <span>Refer a Friend</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {/* TODO: Add refer provider functionality */}} className="cursor-pointer">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>Refer a Provider</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
