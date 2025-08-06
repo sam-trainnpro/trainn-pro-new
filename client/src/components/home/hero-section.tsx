@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { useState } from "react";
 import ReferralModal from "../referral-modal";
+import ReferProviderModal from "../refer-provider-modal";
 
 export default function HeroSection() {
   const { user } = useSafeAuth();
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
   
   return (
     <>
@@ -78,7 +80,7 @@ export default function HeroSection() {
                     size="lg"
                     variant="outline"
                     className="bg-white text-primary border-primary hover:bg-primary hover:text-white w-full sm:w-auto"
-                    onClick={() => {/* TODO: Add refer provider functionality */}}
+                    onClick={() => user?.role === 'customer' && setIsReferProviderModalOpen(true)}
                   >
                     Refer a Provider
                   </Button>
@@ -112,6 +114,14 @@ export default function HeroSection() {
         <ReferralModal
           isOpen={isReferralModalOpen}
           onClose={() => setIsReferralModalOpen(false)}
+        />
+      )}
+
+      {/* Refer Provider Modal - Only for customers */}
+      {user?.role === 'customer' && (
+        <ReferProviderModal
+          isOpen={isReferProviderModalOpen}
+          onClose={() => setIsReferProviderModalOpen(false)}
         />
       )}
 
