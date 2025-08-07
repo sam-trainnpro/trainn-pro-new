@@ -2041,10 +2041,11 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(classes.coachId, providerId),
         eq(bookings.status, 'confirmed'),
-        // Only count paid bookings (price > 0 or payment intent exists)
+        // Count paid bookings: price > 0, payment intent exists, OR credit-only booking
         or(
           sql`${classes.price} > 0`,
-          sql`${bookings.stripePaymentIntentId} IS NOT NULL`
+          sql`${bookings.stripePaymentIntentId} IS NOT NULL`,
+          sql`${bookings.paymentMethod} = 'credit_free'`
         )
       ));
 
@@ -2134,6 +2135,13 @@ export class DatabaseStorage implements IStorage {
     }
 
     console.log("=== COMPLETED: Provider referral rewards processing ===");
+  }
+
+  async getProviderReferralsByProvider(providerId: number): Promise<ProviderReferral[]> {
+    return await db
+      .select()
+      .from(providerReferrals)
+      .where(eq(providerReferrals.providerId, providerId));
   }
 }
 
