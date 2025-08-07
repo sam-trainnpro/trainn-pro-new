@@ -753,6 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.image) updateData.image = String(req.body.image);
       if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
+      if (req.body.toFindUs !== undefined) updateData.toFindUs = req.body.toFindUs ? String(req.body.toFindUs) : null;
       
       // Handle date fields carefully
       if (req.body.startTime) {
@@ -852,6 +853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.image) updateData.image = String(req.body.image);
       if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
+      if (req.body.toFindUs !== undefined) updateData.toFindUs = req.body.toFindUs ? String(req.body.toFindUs) : null;
       
       // Handle date fields carefully
       if (req.body.startTime) {
