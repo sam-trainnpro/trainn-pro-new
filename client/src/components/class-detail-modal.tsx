@@ -157,6 +157,14 @@ export default function ClassDetailModal({
             </div>
           )}
 
+          {/* To Find Us */}
+          {classItem.toFindUs && (
+            <div>
+              <h4 className="font-medium mb-2">How to Find Us</h4>
+              <p className="text-sm text-gray-600">{classItem.toFindUs}</p>
+            </div>
+          )}
+
           {/* Action Buttons - Only show for class owner or admin */}
           {canManageClass && (
             <div className="flex gap-2 pt-4 border-t">
