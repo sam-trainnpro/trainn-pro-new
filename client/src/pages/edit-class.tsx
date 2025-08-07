@@ -52,6 +52,7 @@ const editClassSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   duration: z.coerce.number().int().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   whatToBring: z.string().optional(),
+  toFindUs: z.string().optional(),
 });
 
 type EditClassFormValues = z.infer<typeof editClassSchema>;
@@ -162,6 +163,7 @@ export default function EditClassPage() {
       startTime: "",
       duration: 60,
       whatToBring: "",
+      toFindUs: "",
     },
   });
 
@@ -213,6 +215,7 @@ export default function EditClassPage() {
         startTime: timeString,
         duration: duration > 0 ? duration : 60, // Default to 60 minutes if calculation fails
         whatToBring: classData.whatToBring || "",
+        toFindUs: classData.toFindUs || "",
       });
     }
   }, [classData, categories, isLoadingCategories, form]);
@@ -287,6 +290,7 @@ export default function EditClassPage() {
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         whatToBring: data.formData.whatToBring,
+        toFindUs: data.formData.toFindUs,
         ...(imageUrl && { image: imageUrl }),
       };
 
@@ -820,6 +824,27 @@ export default function EditClassPage() {
                       </FormControl>
                       <FormDescription>
                         Help participants prepare by listing what they should bring to your class
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="toFindUs"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>To Find Us</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Provide specific instructions on how to find your exact location (e.g., meet at the picnic tables, north entrance near the playground)" 
+                          className="min-h-24" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Help participants locate you at the class location with detailed directions
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
