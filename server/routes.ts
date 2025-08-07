@@ -1598,6 +1598,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`✅ Applied ${originalAmount} cents in credits for free booking ${booking.id}`);
       }
       
+      // Create scheduled payout for coach (always needed when booking is confirmed)
+      const coach = await storage.getUser(classDetails.coachId);
+      if (coach && coach.stripeConnectId) {
+        const amountCents = originalAmount; // Full class price in cents
+        const coachPayout = Math.round(amountCents * 0.85); // 85% of class price
+        
+        // Calculate payout date: 2 days after class end time
+        const classEndTime = new Date(classDetails.endTime || classDetails.startTime);
+        const payoutDate = new Date(classEndTime);
+        payoutDate.setDate(payoutDate.getDate() + 2);
+        
+        console.log(`🏦 Creating fully subsidized payout for coach ${classDetails.coachId}`);
+        console.log(`Amount: $${(amountCents / 100).toFixed(2)}, Coach payout: $${(coachPayout / 100).toFixed(2)}`);
+        
+        await storage.createScheduledPayout({
+          bookingId: booking.id,
+          classId: parseInt(classId),
+          coachId: classDetails.coachId,
+          customerId: req.user.id,
+          stripePaymentIntentId: null, // No payment intent for credit_free bookings
+          amountCents: amountCents,
+          stripeFee: 0, // No stripe fee for credit_free
+          netAmount: amountCents,
+          coachPayout: coachPayout,
+          platformFee: 0,
+          payoutType: 'fully_subsidized_booking',
+          scheduledPayoutDate: payoutDate
+        });
+        
+        console.log(`✅ Scheduled fully subsidized payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
+      }
+      
       // Send confirmation email
       try {
         const coach = await storage.getUser(classDetails.coachId);

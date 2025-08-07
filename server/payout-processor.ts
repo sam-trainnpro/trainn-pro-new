@@ -93,6 +93,24 @@ export class PayoutProcessor {
         console.log(`=== PROVIDER REFERRAL REWARD PAYOUT ===`);
         console.log(`Provider referral reward: $${(totalTransferAmount / 100).toFixed(2)}`);
         
+      } else if (payout.payoutType === 'fully_subsidized_booking') {
+        // Fully subsidized bookings - platform covers 100%
+        totalTransferAmount = payout.coachPayout;
+        description = `Fully subsidized payout for class booking ${payout.bookingId} (credit-only booking)`;
+        
+        metadata = {
+          scheduledPayoutId: payout.id.toString(),
+          bookingId: payout.bookingId.toString(),
+          classId: payout.classId.toString(),
+          coachId: payout.coachId.toString(),
+          payoutType: 'fully_subsidized_booking',
+          coachPayout: payout.coachPayout.toString(),
+          totalAmount: totalTransferAmount.toString()
+        };
+        
+        console.log(`=== FULLY SUBSIDIZED BOOKING PAYOUT ===`);
+        console.log(`Credit-only booking payout: $${(totalTransferAmount / 100).toFixed(2)} (100% platform subsidized)`);
+        
       } else {
         // Regular booking payouts - get platform subsidy
         platformSubsidy = await storage.getPlatformSubsidyForBooking(payout.bookingId);
@@ -133,6 +151,8 @@ export class PayoutProcessor {
 
       if (payout.payoutType === 'provider_referral_reward') {
         console.log(`✅ Provider referral reward processed successfully: $${(totalTransferAmount / 100).toFixed(2)} to coach ${payout.coachId}`);
+      } else if (payout.payoutType === 'fully_subsidized_booking') {
+        console.log(`✅ Fully subsidized payout processed successfully: $${(totalTransferAmount / 100).toFixed(2)} to coach ${payout.coachId} (credit-only booking)`);
       } else if (platformSubsidy > 0) {
         console.log(`✅ Payout processed successfully: $${(payout.coachPayout / 100).toFixed(2)} base + $${(platformSubsidy / 100).toFixed(2)} subsidy = $${(totalTransferAmount / 100).toFixed(2)} total to coach ${payout.coachId}`);
       } else {

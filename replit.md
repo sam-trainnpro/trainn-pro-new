@@ -44,6 +44,7 @@ Preferred communication style: Simple, everyday language.
 - **Platform Subsidy Architecture**: Automated system ensuring coaches always receive full payouts (85% of original class price) even when customers use account balance credits. The platform covers the difference between reduced customer payments and full coach compensation.
 - **Multi-Ticket Promo Codes**: Complete implementation allowing promo codes to require minimum ticket quantities. Includes admin management interface, coach creation/editing capabilities, checkout validation, and proper database persistence. System validates minimum requirements before applying discounts.
 - **Business Name Display Options**: Providers can optionally add a business name to their profile and choose whether to display it to customers instead of their personal name. When enabled, the business name appears on provider listings, maintaining professional branding flexibility.
+- **Fully Subsidized Booking Payouts**: Enhanced payout system to ensure providers receive compensation for all confirmed bookings, including those paid entirely with customer account credits. Added "fully_subsidized_booking" payout type where platform covers 100% of provider compensation (85% of class price) from Trainn Global Stripe Account, maintaining provider payment consistency regardless of customer payment method.
 
 ## External Dependencies
 
