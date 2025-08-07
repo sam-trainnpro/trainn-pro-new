@@ -86,10 +86,10 @@ export default function CoachDetailsPage() {
     <div className="flex flex-col min-h-screen">
       {coach && (
         <Helmet>
-          <title>Coach {coach.firstName} {coach.lastName} - Trainn Fitness</title>
+          <title>{coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`} - Trainn Fitness</title>
           <meta 
             name="description" 
-            content={coach.bio || `Book fitness classes with Coach ${coach.firstName} ${coach.lastName}. View upcoming classes, specialties, and more.`} 
+            content={coach.bio || `Book fitness classes with ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}. View upcoming classes, specialties, and more.`} 
           />
         </Helmet>
       )}
@@ -115,7 +115,7 @@ export default function CoachDetailsPage() {
         ) : coachError ? (
           <div className="container mx-auto px-4 py-12 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Coach Not Found</h2>
+            <h2 className="text-2xl font-bold mb-2">Provider Not Found</h2>
             <p className="text-muted-foreground mb-4">
               The coach you're looking for doesn't exist or may have been removed.
             </p>
@@ -142,7 +142,7 @@ export default function CoachDetailsPage() {
                   
                   <div className="flex-1 text-center md:text-left">
                     <h1 className="text-2xl md:text-3xl font-heading font-bold">
-                      Coach {coach.firstName} {coach.lastName}
+                      {coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}
                     </h1>
                     
                     {ratingStats?.totalReviews > 0 && (
