@@ -71,24 +71,35 @@ export class PayoutProcessor {
         throw new Error(`Coach ${payout.coachId} does not have a connected Stripe account`);
       }
 
-      // Get platform subsidy for this booking (if any)
-      const platformSubsidy = await storage.getPlatformSubsidyForBooking(payout.bookingId);
-      
-      // Calculate total transfer amount (original coach payout + platform subsidy)
-      const totalTransferAmount = payout.coachPayout + platformSubsidy;
-      
-      console.log(`=== PAYOUT CALCULATION ===`);
-      console.log(`Coach base payout: $${(payout.coachPayout / 100).toFixed(2)}`);
-      console.log(`Platform subsidy: $${(platformSubsidy / 100).toFixed(2)}`);
-      console.log(`Total transfer amount: $${(totalTransferAmount / 100).toFixed(2)}`);
+      // Handle different payout types
+      let platformSubsidy = 0;
+      let totalTransferAmount;
+      let description;
+      let metadata: any;
 
-      // Create transfer to coach's connected account (including platform subsidy)
-      const transfer = await stripe!.transfers.create({
-        amount: totalTransferAmount,
-        currency: 'usd',
-        destination: coach.stripeConnectId,
-        description: `Payout for class booking ${payout.bookingId}${platformSubsidy > 0 ? ' (includes platform subsidy)' : ''}`,
-        metadata: {
+      if (payout.payoutType === 'provider_referral_reward') {
+        // Provider referral rewards don't need platform subsidy calculation
+        totalTransferAmount = payout.coachPayout;
+        description = `Provider referral reward - $25`;
+        
+        metadata = {
+          scheduledPayoutId: payout.id.toString(),
+          coachId: payout.coachId.toString(),
+          payoutType: 'provider_referral_reward',
+          providerReferralId: payout.providerReferralId?.toString() || 'unknown',
+          amount: totalTransferAmount.toString()
+        };
+        
+        console.log(`=== PROVIDER REFERRAL REWARD PAYOUT ===`);
+        console.log(`Provider referral reward: $${(totalTransferAmount / 100).toFixed(2)}`);
+        
+      } else {
+        // Regular booking payouts - get platform subsidy
+        platformSubsidy = await storage.getPlatformSubsidyForBooking(payout.bookingId);
+        totalTransferAmount = payout.coachPayout + platformSubsidy;
+        description = `Payout for class booking ${payout.bookingId}${platformSubsidy > 0 ? ' (includes platform subsidy)' : ''}`;
+        
+        metadata = {
           scheduledPayoutId: payout.id.toString(),
           bookingId: payout.bookingId.toString(),
           classId: payout.classId.toString(),
@@ -96,7 +107,21 @@ export class PayoutProcessor {
           baseCoachPayout: payout.coachPayout.toString(),
           platformSubsidy: platformSubsidy.toString(),
           totalAmount: totalTransferAmount.toString()
-        }
+        };
+        
+        console.log(`=== BOOKING PAYOUT CALCULATION ===`);
+        console.log(`Coach base payout: $${(payout.coachPayout / 100).toFixed(2)}`);
+        console.log(`Platform subsidy: $${(platformSubsidy / 100).toFixed(2)}`);
+        console.log(`Total transfer amount: $${(totalTransferAmount / 100).toFixed(2)}`);
+      }
+
+      // Create transfer to coach's connected account
+      const transfer = await stripe!.transfers.create({
+        amount: totalTransferAmount,
+        currency: 'usd',
+        destination: coach.stripeConnectId,
+        description: description,
+        metadata: metadata
       });
 
       // Update payout as completed
@@ -106,7 +131,9 @@ export class PayoutProcessor {
         completedAt: new Date()
       });
 
-      if (platformSubsidy > 0) {
+      if (payout.payoutType === 'provider_referral_reward') {
+        console.log(`✅ Provider referral reward processed successfully: $${(totalTransferAmount / 100).toFixed(2)} to coach ${payout.coachId}`);
+      } else if (platformSubsidy > 0) {
         console.log(`✅ Payout processed successfully: $${(payout.coachPayout / 100).toFixed(2)} base + $${(platformSubsidy / 100).toFixed(2)} subsidy = $${(totalTransferAmount / 100).toFixed(2)} total to coach ${payout.coachId}`);
       } else {
         console.log(`✅ Payout processed successfully: $${(payout.coachPayout / 100).toFixed(2)} to coach ${payout.coachId}`);
