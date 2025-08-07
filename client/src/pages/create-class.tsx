@@ -77,6 +77,7 @@ const createClassSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().optional(), // Added for API compatibility
   whatToBring: z.string().optional(),
+  toFindUs: z.string().optional(),
   image: z.string().optional(),
   ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
   isRecurring: z.boolean().default(false),
@@ -247,6 +248,7 @@ export default function CreateClassPage() {
       startTime: "09:00",
       endTime: "",
       whatToBring: "",
+      toFindUs: "",
       image: "",
       ageGroup: "Adults",
       isRecurring: false,
@@ -298,6 +300,7 @@ export default function CreateClassPage() {
         startTime: existingClass.startTime || "09:00",
         endTime: existingClass.endTime || "",
         whatToBring: existingClass.whatToBring || "",
+        toFindUs: existingClass.toFindUs || "",
         image: existingClass.image || "",
         ageGroup: existingClass.ageGroup || "Adults",
         isRecurring: existingClass.isRecurring || false,
@@ -367,6 +370,7 @@ export default function CreateClassPage() {
         startTime: startTime,
         endTime: endTime,
         whatToBring: duplicateClass.whatToBring || "",
+        toFindUs: duplicateClass.toFindUs || "",
         image: duplicateClass.image || "",
         ageGroup: duplicateClass.ageGroup || "Adults",
         isRecurring: false, // Reset recurring to false for duplicates
@@ -1297,6 +1301,30 @@ export default function CreateClassPage() {
                           </FormControl>
                           <FormDescription>
                             Help participants prepare by listing what they should bring to your class
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* To Find Us Section */}
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="toFindUs"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>To Find Us</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Provide specific directions and landmarks to help participants find your class location (e.g., meet at the north entrance, look for the blue tent, parking instructions)" 
+                              className="min-h-24" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Help participants easily locate your class with specific directions and meeting points
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

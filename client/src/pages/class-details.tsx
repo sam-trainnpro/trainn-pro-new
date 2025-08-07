@@ -322,6 +322,13 @@ export default function ClassDetailsPage() {
                           <p className="whitespace-pre-line">{classItem.whatToBring}</p>
                         </div>
                       )}
+
+                      {classItem.toFindUs && (
+                        <div className="mb-6">
+                          <h3 className="text-lg font-semibold mb-2">How to Find Us</h3>
+                          <p className="whitespace-pre-line">{classItem.toFindUs}</p>
+                        </div>
+                      )}
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {classItem.isRecurring && classItem.schedules && classItem.schedules.length > 0 ? (

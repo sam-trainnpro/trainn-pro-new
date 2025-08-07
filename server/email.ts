@@ -16,7 +16,7 @@ function generateCalendarInviteUrl(classData: Class, startTime: Date, endTime: D
 
   const title = encodeURIComponent(classData.title);
   const description = encodeURIComponent(
-    `${classData.description || ''}\n\nLocation: ${classData.address}\n\nBooked through Trainn`
+    `${classData.description || ''}\n\nLocation: ${classData.address}${classData.toFindUs ? `\n\nHow to Find Us: ${classData.toFindUs}` : ''}\n\nBooked through Trainn`
   );
   const location = encodeURIComponent(classData.address || '');
   const startDateTime = formatDate(startTime);
@@ -100,6 +100,12 @@ export async function sendBookingConfirmation(
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">What To Bring:</td>
                 <td style="padding: 8px 0; color: #333;">${classData.whatToBring || 'Nothing specific required'}</td>
               </tr>
+              ${classData.toFindUs ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">How To Find Us:</td>
+                <td style="padding: 8px 0; color: #333;">${classData.toFindUs}</td>
+              </tr>
+              ` : ''}
               ${pricingDetails && pricingDetails.discountAmount > 0 ? `
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Total Paid:</td>
