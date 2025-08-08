@@ -40,7 +40,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, finalAmount, appliedCredits = 0, useCredits = false }: { 
+const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, finalAmount, appliedCredits = 0, useCredits = false, onPaymentSuccess }: { 
   classItem: Class; 
   quantity: number; 
   appliedPromoCode?: any;
@@ -48,6 +48,7 @@ const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, f
   finalAmount: number;
   appliedCredits?: number;
   useCredits?: boolean;
+  onPaymentSuccess?: () => void;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -110,6 +111,9 @@ const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, f
             description: "Your booking has been confirmed!",
           });
           setPaymentStatus("success");
+          
+          // Notify parent component of successful payment
+          onPaymentSuccess?.();
           
           // Force refresh bookings data before navigating
           await queryClient.refetchQueries({ queryKey: ['/api/bookings'] });
@@ -224,6 +228,17 @@ export default function CheckoutPage() {
   const [finalAmount, setFinalAmount] = useState(0);
   const [appliedCredits, setAppliedCredits] = useState(0);
   const [useCredits, setUseCredits] = useState(false);
+  const [recentlyCompletedPayment, setRecentlyCompletedPayment] = useState(false);
+  
+  // Reset the recently completed payment flag after a timeout
+  useEffect(() => {
+    if (recentlyCompletedPayment) {
+      const timeout = setTimeout(() => {
+        setRecentlyCompletedPayment(false);
+      }, 3000); // Reset after 3 seconds
+      return () => clearTimeout(timeout);
+    }
+  }, [recentlyCompletedPayment]);
   
   // Free booking mutation for 100% discount promo codes
   const freeBookingMutation = useMutation({
@@ -255,6 +270,8 @@ export default function CheckoutPage() {
       }
       // Force refetch bookings before navigation
       await queryClient.refetchQueries({ queryKey: ["/api/bookings"] });
+      // Set payment completion flag to prevent "Already Booked" flash
+      setRecentlyCompletedPayment(true);
       // Add a slight delay to ensure data is fresh
       setTimeout(() => {
         navigate("/bookings");
@@ -688,8 +705,8 @@ export default function CheckoutPage() {
     );
   }
   
-  // If user has already booked and confirmed this class
-  if (userBooking && userBooking.status === 'confirmed') {
+  // If user has already booked and confirmed this class (but not right after completing payment)
+  if (userBooking && userBooking.status === 'confirmed' && !recentlyCompletedPayment) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -1101,6 +1118,7 @@ export default function CheckoutPage() {
                           finalAmount={finalAmount}
                           appliedCredits={appliedCredits}
                           useCredits={useCredits}
+                          onPaymentSuccess={() => setRecentlyCompletedPayment(true)}
                         />
                       </Elements>
                     </>
