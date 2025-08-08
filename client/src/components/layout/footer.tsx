@@ -3,27 +3,47 @@ import { Instagram, Facebook, Linkedin } from "lucide-react";
 import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { useState } from "react";
 import ReferralModal from "../referral-modal";
+import ProviderReferralModal from "../provider-referral-modal";
 import ReferProviderModal from "../refer-provider-modal";
 import ReferProviderProviderModal from "../refer-provider-provider-modal";
 
 function ReferralLink() {
   const { user } = useSafeAuth();
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isProviderReferralModalOpen, setIsProviderReferralModalOpen] = useState(false);
 
   if (!user) return null;
 
   return (
     <>
       <button 
-        onClick={() => setIsReferralModalOpen(true)}
+        onClick={() => {
+          if (user.role === 'coach' || user.role === 'admin') {
+            setIsProviderReferralModalOpen(true);
+          } else {
+            setIsReferralModalOpen(true);
+          }
+        }}
         className="text-gray-400 hover:text-white transition text-left"
       >
         Refer a Friend
       </button>
-      <ReferralModal
-        isOpen={isReferralModalOpen}
-        onClose={() => setIsReferralModalOpen(false)}
-      />
+      
+      {/* Customer Referral Modal */}
+      {user.role === 'customer' && (
+        <ReferralModal
+          isOpen={isReferralModalOpen}
+          onClose={() => setIsReferralModalOpen(false)}
+        />
+      )}
+      
+      {/* Provider Referral Modal */}
+      {(user.role === 'coach' || user.role === 'admin') && (
+        <ProviderReferralModal
+          isOpen={isProviderReferralModalOpen}
+          onClose={() => setIsProviderReferralModalOpen(false)}
+        />
+      )}
     </>
   );
 }

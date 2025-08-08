@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { useState } from "react";
 import ReferralModal from "../referral-modal";
+import ProviderReferralModal from "../provider-referral-modal";
 import ReferProviderModal from "../refer-provider-modal";
 import ReferProviderProviderModal from "../refer-provider-provider-modal";
 
 export default function HeroSection() {
   const { user } = useSafeAuth();
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isProviderReferralModalOpen, setIsProviderReferralModalOpen] = useState(false);
   const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
   const [isReferProviderProviderModalOpen, setIsReferProviderProviderModalOpen] = useState(false);
   
@@ -72,7 +74,13 @@ export default function HeroSection() {
                     size="lg"
                     variant="outline"
                     className="bg-white text-coral-500 border-coral-500 hover:bg-coral-50 w-full sm:w-auto"
-                    onClick={() => setIsReferralModalOpen(true)}
+                    onClick={() => {
+                      if (user?.role === 'coach' || user?.role === 'admin') {
+                        setIsProviderReferralModalOpen(true);
+                      } else {
+                        setIsReferralModalOpen(true);
+                      }
+                    }}
                   >
                     Refer a Friend
                   </Button>
@@ -117,11 +125,19 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Referral Modal */}
-      {user && (
+      {/* Referral Modal - Only for customers */}
+      {user?.role === 'customer' && (
         <ReferralModal
           isOpen={isReferralModalOpen}
           onClose={() => setIsReferralModalOpen(false)}
+        />
+      )}
+
+      {/* Provider Referral Modal - Only for providers */}
+      {(user?.role === 'coach' || user?.role === 'admin') && (
+        <ProviderReferralModal
+          isOpen={isProviderReferralModalOpen}
+          onClose={() => setIsProviderReferralModalOpen(false)}
         />
       )}
 
