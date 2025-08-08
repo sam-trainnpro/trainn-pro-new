@@ -2034,6 +2034,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Count confirmed bookings for classes taught by this provider
+    // EXCLUDE bookings that used 100% discount promo codes (paymentMethod = 'promo_free')
     const confirmedBookingsCount = await db
       .select({ count: sql`count(*)` })
       .from(bookings)
@@ -2046,7 +2047,9 @@ export class DatabaseStorage implements IStorage {
           sql`${classes.price} > 0`,
           sql`${bookings.stripePaymentIntentId} IS NOT NULL`,
           sql`${bookings.paymentMethod} = 'credit_free'`
-        )
+        ),
+        // EXCLUDE 100% discount promo code bookings (these have paymentMethod = 'promo_free')
+        sql`${bookings.paymentMethod} != 'promo_free'`
       ));
 
     const totalPaidBookings = Number(confirmedBookingsCount[0]?.count || 0);
