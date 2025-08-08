@@ -31,7 +31,7 @@ function ReferProviderLink() {
   const { user } = useSafeAuth();
   const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
 
-  if (!user || user.role !== 'customer') return null;
+  if (!user || user.role !== 'coach') return null;
 
   return (
     <>
@@ -89,6 +89,7 @@ export default function Footer() {
               <li><Link href="/success-stories" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
               <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
               <li><Link href="/coach-community" className="text-gray-400 hover:text-white transition">Provider Community</Link></li>
+              <li><ReferProviderLink /></li>
             </ul>
           </div>
           
