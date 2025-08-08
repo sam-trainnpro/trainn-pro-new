@@ -278,17 +278,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     (req, res, next) => {
       console.log('Google callback hit with query:', req.query);
       console.log('Google callback state:', req.query.state);
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://trainn.pro'
+        : `https://${process.env.REPLIT_DOMAINS}`;
       passport.authenticate('google', { 
-        failureRedirect: '/auth?error=google_auth_failed',
+        failureRedirect: `${baseUrl}/auth?error=google_auth_failed`,
         failureMessage: true 
       })(req, res, next);
     },
     async (req, res) => {
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://trainn.pro'
+        : `https://${process.env.REPLIT_DOMAINS}`;
+        
       try {
         console.log('Google callback success, user:', req.user ? 'found' : 'not found');
         const user = req.user;
         if (!user) {
-          return res.redirect('/auth?error=no_user');
+          return res.redirect(`${baseUrl}/auth?error=no_user`);
         }
 
         // Handle role preference from state
@@ -318,11 +325,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Redirect to home page on successful authentication
-        res.redirect('/');
+        // Redirect to trainn.pro on successful authentication
+        res.redirect(baseUrl);
       } catch (error) {
         console.error('Google OAuth callback error:', error);
-        res.redirect('/auth?error=callback_error');
+        res.redirect(`${baseUrl}/auth?error=callback_error`);
       }
     }
   );
