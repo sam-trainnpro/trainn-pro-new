@@ -73,9 +73,16 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      // If user doesn't exist (was deleted), clear the session gracefully
+      if (!user) {
+        console.log(`User ${id} not found during session deserialization - clearing session`);
+        return done(null, false);
+      }
       done(null, user);
     } catch (error) {
-      done(error);
+      console.error('Session deserialization error:', error);
+      // Clear session on any error to prevent stuck sessions
+      done(null, false);
     }
   });
 
