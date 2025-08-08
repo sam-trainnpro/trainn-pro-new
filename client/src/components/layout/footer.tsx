@@ -27,30 +27,6 @@ function ReferralLink() {
   );
 }
 
-// For customers section - only show for customers
-function CustomerReferProviderLink() {
-  const { user } = useSafeAuth();
-  const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
-
-  if (!user || user.role !== 'customer') return null;
-
-  return (
-    <>
-      <button 
-        onClick={() => setIsReferProviderModalOpen(true)}
-        className="text-gray-400 hover:text-white transition text-left"
-      >
-        Refer a Provider
-      </button>
-      <ReferProviderModal
-        isOpen={isReferProviderModalOpen}
-        onClose={() => setIsReferProviderModalOpen(false)}
-      />
-    </>
-  );
-}
-
-// For providers section - only show for providers
 function ReferProviderLink() {
   const { user } = useSafeAuth();
   const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
@@ -101,7 +77,7 @@ export default function Footer() {
               <li><Link href="/classes" className="text-gray-400 hover:text-white transition">Find Classes</Link></li>
               <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Providers</Link></li>
               <li><ReferralLink /></li>
-              <li><CustomerReferProviderLink /></li>
+              <li><ReferProviderLink /></li>
             </ul>
           </div>
           
