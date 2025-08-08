@@ -1533,6 +1533,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (emailError) {
         console.error("Email sending error:", emailError);
       }
+
+      // Update provider referral booking count for the coach
+      try {
+        await storage.updateProviderReferralBookingCount(classDetails.coachId);
+        console.log(`Updated provider referral booking count for coach ${classDetails.coachId}`);
+      } catch (providerReferralError) {
+        console.error("Error updating provider referral booking count:", providerReferralError);
+        // Don't fail the booking if provider referral update fails
+      }
       
       res.json({ 
         success: true, 
@@ -1704,6 +1713,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (emailError) {
         console.error("Email sending error:", emailError);
+      }
+
+      // Update provider referral booking count for the coach
+      try {
+        await storage.updateProviderReferralBookingCount(classDetails.coachId);
+        console.log(`Updated provider referral booking count for coach ${classDetails.coachId}`);
+      } catch (providerReferralError) {
+        console.error("Error updating provider referral booking count:", providerReferralError);
+        // Don't fail the booking if provider referral update fails
       }
       
       res.json({ 
@@ -2454,7 +2472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
             
             if (!duplicate) {
-              await storage.createBooking({
+              const booking = await storage.createBooking({
                 userId: parseInt(paymentIntent.metadata.userId),
                 classId: parseInt(paymentIntent.metadata.classId),
                 quantity: 1,
@@ -2463,6 +2481,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 paymentDate: new Date(),
                 paymentMethod: "stripe"
               });
+
+              // Update provider referral booking count for the coach
+              try {
+                const classDetails = await storage.getClass(parseInt(paymentIntent.metadata.classId));
+                if (classDetails) {
+                  await storage.updateProviderReferralBookingCount(classDetails.coachId);
+                  console.log(`Updated provider referral booking count for coach ${classDetails.coachId} via webhook`);
+                }
+              } catch (providerReferralError) {
+                console.error("Error updating provider referral booking count in webhook:", providerReferralError);
+                // Don't fail the webhook if provider referral update fails
+              }
             }
           }
           break;
