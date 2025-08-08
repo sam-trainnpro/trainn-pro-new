@@ -27,11 +27,33 @@ function ReferralLink() {
   );
 }
 
-function ReferProviderLink() {
+function ReferProviderLinkCustomers() {
   const { user } = useSafeAuth();
   const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
 
   if (!user || user.role !== 'customer') return null;
+
+  return (
+    <>
+      <button 
+        onClick={() => setIsReferProviderModalOpen(true)}
+        className="text-gray-400 hover:text-white transition text-left"
+      >
+        Refer a Provider
+      </button>
+      <ReferProviderModal
+        isOpen={isReferProviderModalOpen}
+        onClose={() => setIsReferProviderModalOpen(false)}
+      />
+    </>
+  );
+}
+
+function ReferProviderLinkProviders() {
+  const { user } = useSafeAuth();
+  const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
+
+  if (!user || (user.role !== 'coach' && user.role !== 'admin')) return null;
 
   return (
     <>
@@ -77,7 +99,7 @@ export default function Footer() {
               <li><Link href="/classes" className="text-gray-400 hover:text-white transition">Find Classes</Link></li>
               <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Providers</Link></li>
               <li><ReferralLink /></li>
-              <li><ReferProviderLink /></li>
+              <li><ReferProviderLinkCustomers /></li>
             </ul>
           </div>
           
@@ -89,6 +111,7 @@ export default function Footer() {
               <li><Link href="/success-stories" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
               <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
               <li><Link href="/coach-community" className="text-gray-400 hover:text-white transition">Provider Community</Link></li>
+              <li><ReferProviderLinkProviders /></li>
             </ul>
           </div>
           

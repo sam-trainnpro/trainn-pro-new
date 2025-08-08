@@ -35,7 +35,7 @@ export default function Header() {
   
   // Temporary fallback to prevent crashes
   let user = null;
-  let logoutMutation = { mutate: () => {} };
+  let logoutMutation = { mutate: (...args: any[]) => {} };
   
   try {
     const auth = useAuth();
@@ -192,6 +192,12 @@ export default function Header() {
                       <span>Refer a Provider</span>
                     </DropdownMenuItem>
                   )}
+                  {(user.role === 'coach' || user.role === 'admin') && (
+                    <DropdownMenuItem onClick={() => setIsReferProviderModalOpen(true)} className="cursor-pointer">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      <span>Refer a Provider</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Sign Out</span>
@@ -315,6 +321,19 @@ export default function Header() {
                     Refer a Friend
                   </Button>
                   {user.role === 'customer' && (
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setIsReferProviderModalOpen(true);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <UserPlus className="mr-2 h-5 w-5" />
+                      Refer a Provider
+                    </Button>
+                  )}
+                  {(user.role === 'coach' || user.role === 'admin') && (
                     <Button 
                       variant="ghost" 
                       className="w-full justify-start"
