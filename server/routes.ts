@@ -260,17 +260,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google OAuth routes
   app.get('/api/auth/google', (req, res, next) => {
     console.log('Google OAuth route hit with query:', req.query);
+    console.log('Request host:', req.get('host'));
     console.log('Google Client ID exists:', !!process.env.GOOGLE_CLIENT_ID);
     console.log('Google Client Secret exists:', !!process.env.GOOGLE_CLIENT_SECRET);
     
     const { role } = req.query;
-    const state = role ? JSON.stringify({ role }) : undefined;
+    // Store both role and origin domain in state
+    const host = req.get('host');
+    const stateData = {
+      role: role as string | undefined,
+      origin: host?.includes('trainn.pro') ? 'trainn.pro' : 'replit'
+    };
+    const state = JSON.stringify(stateData);
+    
+    // Override the callback URL based on the current domain
+    const callbackURL = host?.includes('trainn.pro')
+      ? 'https://trainn.pro/api/auth/google/callback'
+      : `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`;
+    
+    console.log('Using callback URL:', callbackURL);
     
     passport.authenticate('google', {
       scope: ['profile', 'email'],
       state,
       accessType: 'offline',
-      prompt: 'select_account'
+      prompt: 'select_account',
+      callbackURL // Override the callback URL dynamically
     })(req, res, next);
   });
 
@@ -278,32 +293,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     (req, res, next) => {
       console.log('Google callback hit with query:', req.query);
       console.log('Google callback state:', req.query.state);
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://trainn.pro'
-        : `https://${process.env.REPLIT_DOMAINS}`;
+      console.log('Request host:', req.get('host'));
+      
+      // Determine base URL from state or request
+      let baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
+      if (req.query.state) {
+        try {
+          const stateData = JSON.parse(req.query.state as string);
+          if (stateData.origin === 'trainn.pro') {
+            baseUrl = 'https://trainn.pro';
+          }
+        } catch (e) {
+          // If state parsing fails, use host detection
+          const host = req.get('host');
+          if (host?.includes('trainn.pro')) {
+            baseUrl = 'https://trainn.pro';
+          }
+        }
+      }
+      
       passport.authenticate('google', { 
         failureRedirect: `${baseUrl}/auth?error=google_auth_failed`,
         failureMessage: true 
       })(req, res, next);
     },
     async (req, res) => {
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://trainn.pro'
-        : `https://${process.env.REPLIT_DOMAINS}`;
-        
+      // Parse state to get origin domain
+      let baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
+      let role: string | undefined;
+      
       try {
         console.log('Google callback success, user:', req.user ? 'found' : 'not found');
         const user = req.user;
         if (!user) {
           return res.redirect(`${baseUrl}/auth?error=no_user`);
         }
-
-        // Handle role preference from state
+        
+        // Parse state to get origin and role
         const state = req.query.state;
         if (state && typeof state === 'string') {
           try {
-            const { role } = JSON.parse(state);
-            if (role === 'coach' && user.role === 'customer') {
+            const stateData = JSON.parse(state);
+            if (stateData.origin === 'trainn.pro') {
+              baseUrl = 'https://trainn.pro';
+            }
+            role = stateData.role;
+            
+            // Handle role preference
+            if (role && role === 'coach' && user.role === 'customer') {
               // Update user role to coach if they selected coach during Google sign-in
               await storage.updateUser(user.id, { role: 'coach' });
               
@@ -325,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Redirect to trainn.pro on successful authentication
+        // Redirect to correct domain on successful authentication
         res.redirect(baseUrl);
       } catch (error) {
         console.error('Google OAuth callback error:', error);
