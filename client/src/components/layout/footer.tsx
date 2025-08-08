@@ -4,6 +4,7 @@ import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { useState } from "react";
 import ReferralModal from "../referral-modal";
 import ReferProviderModal from "../refer-provider-modal";
+import ReferProviderProviderModal from "../refer-provider-provider-modal";
 
 function ReferralLink() {
   const { user } = useSafeAuth();
@@ -51,21 +52,21 @@ function ReferProviderLinkCustomers() {
 
 function ReferProviderLinkProviders() {
   const { user } = useSafeAuth();
-  const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
+  const [isReferProviderProviderModalOpen, setIsReferProviderProviderModalOpen] = useState(false);
 
   if (!user || (user.role !== 'coach' && user.role !== 'admin')) return null;
 
   return (
     <>
       <button 
-        onClick={() => setIsReferProviderModalOpen(true)}
+        onClick={() => setIsReferProviderProviderModalOpen(true)}
         className="text-gray-400 hover:text-white transition text-left"
       >
         Refer a Provider
       </button>
-      <ReferProviderModal
-        isOpen={isReferProviderModalOpen}
-        onClose={() => setIsReferProviderModalOpen(false)}
+      <ReferProviderProviderModal
+        isOpen={isReferProviderProviderModalOpen}
+        onClose={() => setIsReferProviderProviderModalOpen(false)}
       />
     </>
   );

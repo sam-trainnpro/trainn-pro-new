@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import ReferralModal from "../referral-modal";
 import ReferProviderModal from "../refer-provider-modal";
+import ReferProviderProviderModal from "../refer-provider-provider-modal";
 
 export default function Header() {
   const [location] = useLocation();
@@ -48,6 +49,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
+  const [isReferProviderProviderModalOpen, setIsReferProviderProviderModalOpen] = useState(false);
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -193,7 +195,7 @@ export default function Header() {
                     </DropdownMenuItem>
                   )}
                   {(user.role === 'coach' || user.role === 'admin') && (
-                    <DropdownMenuItem onClick={() => setIsReferProviderModalOpen(true)} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => setIsReferProviderProviderModalOpen(true)} className="cursor-pointer">
                       <UserPlus className="mr-2 h-4 w-4" />
                       <span>Refer a Provider</span>
                     </DropdownMenuItem>
@@ -338,7 +340,7 @@ export default function Header() {
                       variant="ghost" 
                       className="w-full justify-start"
                       onClick={() => {
-                        setIsReferProviderModalOpen(true);
+                        setIsReferProviderProviderModalOpen(true);
                         setMobileMenuOpen(false);
                       }}
                     >
@@ -390,6 +392,14 @@ export default function Header() {
         <ReferProviderModal
           isOpen={isReferProviderModalOpen}
           onClose={() => setIsReferProviderModalOpen(false)}
+        />
+      )}
+      
+      {/* Refer Provider Provider Modal - Only for providers */}
+      {(user?.role === 'coach' || user?.role === 'admin') && (
+        <ReferProviderProviderModal
+          isOpen={isReferProviderProviderModalOpen}
+          onClose={() => setIsReferProviderProviderModalOpen(false)}
         />
       )}
     </header>
