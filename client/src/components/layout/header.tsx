@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import ReferralModal from "../referral-modal";
+import ProviderReferralModal from "../provider-referral-modal";
 import ReferProviderModal from "../refer-provider-modal";
 import ReferProviderProviderModal from "../refer-provider-provider-modal";
 
@@ -48,6 +49,7 @@ export default function Header() {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
+  const [isProviderReferralModalOpen, setIsProviderReferralModalOpen] = useState(false);
   const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
   const [isReferProviderProviderModalOpen, setIsReferProviderProviderModalOpen] = useState(false);
 
@@ -184,7 +186,13 @@ export default function Header() {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsReferralModalOpen(true)} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => {
+                    if (user.role === 'coach' || user.role === 'admin') {
+                      setIsProviderReferralModalOpen(true);
+                    } else {
+                      setIsReferralModalOpen(true);
+                    }
+                  }} className="cursor-pointer">
                     <Users className="mr-2 h-4 w-4" />
                     <span>Refer a Friend</span>
                   </DropdownMenuItem>
@@ -315,7 +323,11 @@ export default function Header() {
                     variant="ghost" 
                     className="w-full justify-start"
                     onClick={() => {
-                      setIsReferralModalOpen(true);
+                      if (user.role === 'coach' || user.role === 'admin') {
+                        setIsProviderReferralModalOpen(true);
+                      } else {
+                        setIsReferralModalOpen(true);
+                      }
                       setMobileMenuOpen(false);
                     }}
                   >
@@ -379,11 +391,19 @@ export default function Header() {
         </Sheet>
       </div>
       
-      {/* Referral Modal */}
-      {user && (
+      {/* Referral Modal - Only for customers */}
+      {user?.role === 'customer' && (
         <ReferralModal
           isOpen={isReferralModalOpen}
           onClose={() => setIsReferralModalOpen(false)}
+        />
+      )}
+      
+      {/* Provider Referral Modal - Only for providers */}
+      {(user?.role === 'coach' || user?.role === 'admin') && (
+        <ProviderReferralModal
+          isOpen={isProviderReferralModalOpen}
+          onClose={() => setIsProviderReferralModalOpen(false)}
         />
       )}
       
