@@ -2112,21 +2112,43 @@ export class DatabaseStorage implements IStorage {
           console.log(`✅ Scheduled $25 payout for provider ${referral.providerId} (referral ${referral.id})`);
         }
 
-        // Award $25 credit to referrer if not already granted
+        // Award $25 to referrer if not already granted
         if (!referral.referrerRewardGranted) {
-          await this.addUserCredit({
-            userId: referral.referrerId,
-            amount: 2500, // $25 in cents
-            transactionType: 'provider_referral_reward',
-            description: `Provider referral reward - Referred provider reached 3 paid bookings`
-          });
+          // Check if referrer is a provider (coach/admin) or customer
+          const referrer = await this.getUser(referral.referrerId);
+          
+          if (referrer && (referrer.role === 'coach' || referrer.role === 'admin')) {
+            // Provider-to-provider referral: Give payout instead of credit
+            await this.createScheduledPayout({
+              coachId: referral.referrerId,
+              amountCents: 2500, // $25 in cents
+              stripeFee: 0,
+              netAmount: 2500,
+              coachPayout: 2500,
+              platformFee: 0,
+              payoutType: 'provider_referral_reward',
+              providerReferralId: referral.id,
+              scheduledPayoutDate: new Date(), // Pay immediately
+              status: 'scheduled'
+            });
+            
+            console.log(`✅ Scheduled $25 payout for referring provider ${referral.referrerId} (referral ${referral.id})`);
+          } else {
+            // Customer-to-provider referral: Give account credit as before
+            await this.addUserCredit({
+              userId: referral.referrerId,
+              amount: 2500, // $25 in cents
+              transactionType: 'provider_referral_reward',
+              description: `Provider referral reward - Referred provider reached 3 paid bookings`
+            });
+            
+            console.log(`✅ Awarded $25 credit to referring customer ${referral.referrerId} (referral ${referral.id})`);
+          }
 
           await this.updateProviderReferral(referral.id, {
             referrerRewardGranted: true,
             status: 'completed'
           });
-
-          console.log(`✅ Awarded $25 credit to referrer ${referral.referrerId} (referral ${referral.id})`);
         }
 
       } catch (error) {
