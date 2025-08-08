@@ -80,7 +80,7 @@ export default function HeroSection() {
                     size="lg"
                     variant="outline"
                     className="bg-white text-primary border-primary hover:bg-primary hover:text-white w-full sm:w-auto"
-                    onClick={() => user?.role === 'customer' && setIsReferProviderModalOpen(true)}
+                    onClick={() => user?.role === 'coach' && setIsReferProviderModalOpen(true)}
                   >
                     Refer a Provider
                   </Button>
@@ -117,8 +117,8 @@ export default function HeroSection() {
         />
       )}
 
-      {/* Refer Provider Modal - Only for customers */}
-      {user?.role === 'customer' && (
+      {/* Refer Provider Modal - Only for providers */}
+      {user?.role === 'coach' && (
         <ReferProviderModal
           isOpen={isReferProviderModalOpen}
           onClose={() => setIsReferProviderModalOpen(false)}
