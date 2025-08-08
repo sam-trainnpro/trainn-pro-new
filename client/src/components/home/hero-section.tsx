@@ -4,11 +4,13 @@ import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { useState } from "react";
 import ReferralModal from "../referral-modal";
 import ReferProviderModal from "../refer-provider-modal";
+import ReferProviderProviderModal from "../refer-provider-provider-modal";
 
 export default function HeroSection() {
   const { user } = useSafeAuth();
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const [isReferProviderModalOpen, setIsReferProviderModalOpen] = useState(false);
+  const [isReferProviderProviderModalOpen, setIsReferProviderProviderModalOpen] = useState(false);
   
   return (
     <>
@@ -80,7 +82,13 @@ export default function HeroSection() {
                     size="lg"
                     variant="outline"
                     className="bg-white text-primary border-primary hover:bg-primary hover:text-white w-full sm:w-auto"
-                    onClick={() => user?.role === 'customer' && setIsReferProviderModalOpen(true)}
+                    onClick={() => {
+                      if (user?.role === 'customer') {
+                        setIsReferProviderModalOpen(true);
+                      } else if (user?.role === 'coach' || user?.role === 'admin') {
+                        setIsReferProviderProviderModalOpen(true);
+                      }
+                    }}
                   >
                     Refer a Provider
                   </Button>
@@ -122,6 +130,14 @@ export default function HeroSection() {
         <ReferProviderModal
           isOpen={isReferProviderModalOpen}
           onClose={() => setIsReferProviderModalOpen(false)}
+        />
+      )}
+
+      {/* Refer Provider Provider Modal - Only for providers */}
+      {(user?.role === 'coach' || user?.role === 'admin') && (
+        <ReferProviderProviderModal
+          isOpen={isReferProviderProviderModalOpen}
+          onClose={() => setIsReferProviderProviderModalOpen(false)}
         />
       )}
 
