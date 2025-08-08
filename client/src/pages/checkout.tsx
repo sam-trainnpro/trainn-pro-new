@@ -40,7 +40,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Payment form component
-const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, finalAmount, appliedCredits = 0, useCredits = false, onPaymentSuccess }: { 
+const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, finalAmount, appliedCredits = 0, useCredits = false, onPaymentSuccess, setIsBookingSuccess }: { 
   classItem: Class; 
   quantity: number; 
   appliedPromoCode?: any;
@@ -49,6 +49,7 @@ const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, f
   appliedCredits?: number;
   useCredits?: boolean;
   onPaymentSuccess?: () => void;
+  setIsBookingSuccess?: (value: boolean) => void;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -112,16 +113,16 @@ const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, f
           });
           setPaymentStatus("success");
           
-          // Notify parent component of successful payment
+          // IMMEDIATE: Set success state and navigate to prevent any flash
+          setIsBookingSuccess?.(true);
           onPaymentSuccess?.();
+          navigate("/bookings?refresh=true");
           
-          // Force refresh bookings data before navigating
-          await queryClient.refetchQueries({ queryKey: ['/api/bookings'] });
-          
-          // Redirect to bookings page with refresh parameter after successful payment
+          // BACKGROUND: Cleanup queries after navigation
           setTimeout(() => {
-            navigate("/bookings?refresh=true");
-          }, 1500);
+            queryClient.removeQueries({ queryKey: ['/api/bookings'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+          }, 0);
         } else {
           const errorData = await confirmResponse.json();
           console.error("Payment confirmation failed:", errorData);
@@ -228,17 +229,7 @@ export default function CheckoutPage() {
   const [finalAmount, setFinalAmount] = useState(0);
   const [appliedCredits, setAppliedCredits] = useState(0);
   const [useCredits, setUseCredits] = useState(false);
-  const [recentlyCompletedPayment, setRecentlyCompletedPayment] = useState(false);
-  
-  // Reset the recently completed payment flag after a timeout
-  useEffect(() => {
-    if (recentlyCompletedPayment) {
-      const timeout = setTimeout(() => {
-        setRecentlyCompletedPayment(false);
-      }, 3000); // Reset after 3 seconds
-      return () => clearTimeout(timeout);
-    }
-  }, [recentlyCompletedPayment]);
+  const [isBookingSuccess, setIsBookingSuccess] = useState(false);
   
   // Free booking mutation for 100% discount promo codes
   const freeBookingMutation = useMutation({
@@ -252,30 +243,31 @@ export default function CheckoutPage() {
     },
     onSuccess: async (result) => {
       const isCreditsBooking = !result.message.includes('promo code');
-      toast({
-        title: "Booking confirmed!",
-        description: isCreditsBooking 
-          ? "Your free class booking has been confirmed with account credits."
-          : "Your free class booking has been confirmed with promo code.",
-      });
-      // Invalidate and refetch booking data aggressively
-      queryClient.removeQueries({ queryKey: ["/api/bookings"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
-      // Refresh credit balance if credits were used
-      if (isCreditsBooking) {
-        await queryClient.invalidateQueries({ queryKey: ['/api/credits/balance'] });
-        await refetchCredits();
-      }
-      // Force refetch bookings before navigation
-      await queryClient.refetchQueries({ queryKey: ["/api/bookings"] });
-      // Set payment completion flag to prevent "Already Booked" flash
-      setRecentlyCompletedPayment(true);
-      // Add a slight delay to ensure data is fresh
+      
+      // IMMEDIATE: Set success state and navigate to prevent any flash
+      setIsBookingSuccess(true);
+      navigate("/bookings");
+      
+      // BACKGROUND: Show toast and cleanup queries after navigation
       setTimeout(() => {
-        navigate("/bookings");
-      }, 100);
+        toast({
+          title: "Booking confirmed!",
+          description: isCreditsBooking 
+            ? "Your free class booking has been confirmed with account credits."
+            : "Your free class booking has been confirmed with promo code.",
+        });
+        
+        // Background cleanup - invalidate queries for fresh data on next visit
+        queryClient.removeQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
+        
+        if (isCreditsBooking) {
+          queryClient.invalidateQueries({ queryKey: ['/api/credits/balance'] });
+          refetchCredits();
+        }
+      }, 0);
     },
     onError: (error: Error) => {
       const isCreditsError = error.message?.includes('credits') || error.message?.includes('Insufficient');
@@ -705,8 +697,8 @@ export default function CheckoutPage() {
     );
   }
   
-  // If user has already booked and confirmed this class (but not right after completing payment)
-  if (userBooking && userBooking.status === 'confirmed' && !recentlyCompletedPayment) {
+  // If user has already booked and confirmed this class (but not during success flow)
+  if (userBooking && userBooking.status === 'confirmed' && !isBookingSuccess) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
@@ -1118,7 +1110,8 @@ export default function CheckoutPage() {
                           finalAmount={finalAmount}
                           appliedCredits={appliedCredits}
                           useCredits={useCredits}
-                          onPaymentSuccess={() => setRecentlyCompletedPayment(true)}
+                          onPaymentSuccess={() => setIsBookingSuccess(true)}
+                          setIsBookingSuccess={setIsBookingSuccess}
                         />
                       </Elements>
                     </>
