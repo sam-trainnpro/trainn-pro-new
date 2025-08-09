@@ -158,6 +158,9 @@ export interface IStorage {
   processProviderReferralSignup(referralCode: string, providerId: number): Promise<ProviderReferral | undefined>;
   updateProviderReferralBookingCount(providerId: number): Promise<void>;
   processProviderReferralRewards(): Promise<void>;
+  
+  // Provider-to-Customer Referral Stripe Transfer
+  createProviderReferralStripeTransfer(providerId: number, referralId: number, amount: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1214,6 +1217,38 @@ export class DatabaseStorage implements IStorage {
       .orderBy(scheduledPayouts.scheduledPayoutDate);
   }
 
+  // Create Stripe transfer for provider-to-customer referral rewards
+  async createProviderReferralStripeTransfer(providerId: number, referralId: number, amount: number): Promise<void> {
+    console.log(`Creating provider referral Stripe transfer: Provider ${providerId}, Referral ${referralId}, Amount $${amount / 100}`);
+    
+    try {
+      // Create scheduled payout for the provider referral reward
+      const payoutData: InsertScheduledPayout = {
+        bookingId: null, // No booking for referral rewards
+        classId: null, // No class for referral rewards  
+        coachId: providerId,
+        customerId: null, // No customer for provider referral rewards
+        stripePaymentIntentId: null, // No payment intent for referral rewards
+        amountCents: amount,
+        stripeFee: 0, // No stripe fee for transfers from platform
+        netAmount: amount,
+        coachPayout: amount, // Full amount goes to provider
+        platformFee: 0, // Platform pays this as a reward
+        payoutType: 'customer_referral_reward', // New payout type for provider-to-customer referrals
+        providerReferralId: null, // This is for customer-to-customer referrals via provider
+        scheduledPayoutDate: new Date(), // Pay immediately
+        status: 'scheduled'
+      };
+
+      await this.createScheduledPayout(payoutData);
+      console.log(`✅ Created scheduled payout for provider referral reward: $${amount / 100} to provider ${providerId}`);
+      
+    } catch (error) {
+      console.error(`❌ Error creating provider referral Stripe transfer:`, error);
+      throw error;
+    }
+  }
+
   // Promo Code Management Methods
   async createPromoCode(promoCodeData: InsertPromoCode): Promise<PromoCode> {
     const [promoCode] = await db.insert(promoCodes).values(promoCodeData).returning();
@@ -1731,8 +1766,23 @@ export class DatabaseStorage implements IStorage {
 
   async processReferralCompletion(refereeId: number): Promise<void> {
     // Find referral where this user is the referee
-    const userReferrals = await db.select()
+    const userReferrals = await db.select({
+      id: referrals.id,
+      referrerId: referrals.referrerId,
+      refereeId: referrals.refereeId,
+      referralCode: referrals.referralCode,
+      refereeEmail: referrals.refereeEmail,
+      status: referrals.status,
+      completedAt: referrals.completedAt,
+      rewardGranted: referrals.rewardGranted,
+      expiresAt: referrals.expiresAt,
+      createdAt: referrals.createdAt,
+      referrerRole: users.role,
+      referrerStripeConnectId: users.stripeConnectId,
+      referrerStripeConnectOnboarded: users.stripeConnectOnboarded
+    })
       .from(referrals)
+      .innerJoin(users, eq(referrals.referrerId, users.id))
       .where(and(
         eq(referrals.refereeId, refereeId),
         eq(referrals.status, 'signed_up'),
@@ -1747,17 +1797,26 @@ export class DatabaseStorage implements IStorage {
         rewardGranted: true
       });
 
-      // Grant $5 credit to referrer only (referee already got signup credit)
       const creditAmount = 500; // $5 in cents
 
-      // Credit for referrer
-      await this.addUserCredit({
-        userId: referral.referrerId,
-        amount: creditAmount,
-        transactionType: 'referral_reward',
-        description: 'Referral reward - friend completed first class',
-        referralId: referral.id
-      });
+      // Check if referrer is a provider (coach/admin)
+      if ((referral.referrerRole === 'coach' || referral.referrerRole === 'admin') && 
+          referral.referrerStripeConnectId && 
+          referral.referrerStripeConnectOnboarded) {
+        
+        // Create Stripe transfer for provider referrers
+        await this.createProviderReferralStripeTransfer(referral.referrerId, referral.id, creditAmount);
+        
+      } else {
+        // Grant $5 credit to customer referrers (existing behavior)
+        await this.addUserCredit({
+          userId: referral.referrerId,
+          amount: creditAmount,
+          transactionType: 'referral_reward',
+          description: 'Referral reward - friend completed first class',
+          referralId: referral.id
+        });
+      }
     }
   }
 
