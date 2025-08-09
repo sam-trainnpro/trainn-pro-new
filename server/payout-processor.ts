@@ -93,6 +93,21 @@ export class PayoutProcessor {
         console.log(`=== PROVIDER REFERRAL REWARD PAYOUT ===`);
         console.log(`Provider referral reward: $${(totalTransferAmount / 100).toFixed(2)}`);
         
+      } else if (payout.payoutType === 'customer_referral_reward') {
+        // Customer referral rewards for provider-to-customer referrals
+        totalTransferAmount = payout.coachPayout;
+        description = `Customer referral reward - $5`;
+        
+        metadata = {
+          scheduledPayoutId: payout.id.toString(),
+          coachId: payout.coachId.toString(),
+          payoutType: 'customer_referral_reward',
+          amount: totalTransferAmount.toString()
+        };
+        
+        console.log(`=== CUSTOMER REFERRAL REWARD PAYOUT ===`);
+        console.log(`Customer referral reward: $${(totalTransferAmount / 100).toFixed(2)}`);
+        
       } else if (payout.payoutType === 'fully_subsidized_booking') {
         // Fully subsidized bookings - platform covers 100%
         totalTransferAmount = payout.coachPayout;
