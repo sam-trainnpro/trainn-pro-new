@@ -93,9 +93,10 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          // Allow dynamic callback URL override per request
-          // This will be overridden in the routes based on the actual domain
-          callbackURL: `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`,
+          // Default to production domain, can be overridden in routes for development
+          callbackURL: process.env.NODE_ENV === 'production' 
+            ? 'https://trainn.pro/api/auth/google/callback'
+            : `https://${process.env.REPLIT_DOMAINS || 'trainn.pro'}/api/auth/google/callback`,
           scope: ['profile', 'email'],
           proxy: true,
           passReqToCallback: true // Pass the request object to the verify callback
