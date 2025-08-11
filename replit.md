@@ -18,11 +18,12 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend
 - **Runtime**: Node.js with Express.js
-- **Authentication**: Passport.js (local strategy, express-session)
+- **Authentication**: Passport.js (local strategy, Google OAuth, express-session)
 - **Database**: PostgreSQL with Drizzle ORM
 - **Email**: SendGrid
 - **File Uploads**: Multer
 - **Payment Processing**: Stripe server-side SDK
+- **Google OAuth**: Configured to prioritize trainn.pro domain with fallback to Replit for development
 
 ### Database Design
 - **ORM**: Drizzle (PostgreSQL dialect)

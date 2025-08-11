@@ -274,7 +274,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const state = JSON.stringify(stateData);
     
     // Override the callback URL based on the current domain
-    const callbackURL = host?.includes('trainn.pro')
+    // Always prioritize trainn.pro for production
+    const callbackURL = host?.includes('trainn.pro') || !process.env.REPLIT_DOMAINS
       ? 'https://trainn.pro/api/auth/google/callback'
       : `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`;
     
@@ -296,19 +297,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Request host:', req.get('host'));
       
       // Determine base URL from state or request
-      let baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
-      if (req.query.state) {
+      // Default to production domain unless explicitly in Replit environment
+      let baseUrl = 'https://trainn.pro';
+      const host = req.get('host');
+      
+      if (process.env.REPLIT_DOMAINS && host?.includes(process.env.REPLIT_DOMAINS)) {
+        baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
+      } else if (req.query.state) {
         try {
           const stateData = JSON.parse(req.query.state as string);
-          if (stateData.origin === 'trainn.pro') {
-            baseUrl = 'https://trainn.pro';
+          if (stateData.origin === 'replit' && process.env.REPLIT_DOMAINS) {
+            baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
           }
         } catch (e) {
-          // If state parsing fails, use host detection
-          const host = req.get('host');
-          if (host?.includes('trainn.pro')) {
-            baseUrl = 'https://trainn.pro';
-          }
+          console.log('State parsing failed, using default production domain');
         }
       }
       
@@ -319,7 +321,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     async (req, res) => {
       // Parse state to get origin domain
-      let baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
+      // Default to production domain
+      let baseUrl = 'https://trainn.pro';
       let role: string | undefined;
       
       try {
@@ -334,8 +337,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (state && typeof state === 'string') {
           try {
             const stateData = JSON.parse(state);
-            if (stateData.origin === 'trainn.pro') {
-              baseUrl = 'https://trainn.pro';
+            // Only use Replit domain if explicitly specified and available
+            if (stateData.origin === 'replit' && process.env.REPLIT_DOMAINS) {
+              baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
             }
             role = stateData.role;
             
