@@ -92,13 +92,6 @@ const ClassCard = ({ classItem }: { classItem: any }) => {
         <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-medium px-2 py-1 rounded">
           {(category as any)?.name || "Class"}
         </div>
-        {/* Heart Icon */}
-        <button 
-          className="absolute top-3 right-3 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Heart className="text-gray-600 h-5 w-5" />
-        </button>
       </div>
       
       <div className="p-4">
