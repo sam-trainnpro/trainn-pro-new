@@ -10,26 +10,34 @@ import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 
 export default function OutdoorWorkoutsSF() {
-  // Fetch classes with filters for San Francisco outdoor workouts
+  // Fetch classes with filters for outdoor workouts by main adult-focused providers
   const { data: classes, isLoading } = useQuery({
     queryKey: ['/api/classes'],
-    select: (data: any[]) => data.filter(cls => 
-      cls.city === 'San Francisco' && 
-      (
-        // Outdoor categories (Yoga, Cardio, HIIT, Strength & Conditioning, Personal Training)
-        [2, 4, 1, 3, 16].includes(cls.categoryId) ||
-        // Or outdoor locations
-        cls.location.toLowerCase().includes('park') ||
-        cls.location.toLowerCase().includes('beach') ||
-        cls.location.toLowerCase().includes('outdoor') ||
-        cls.location.toLowerCase().includes('dolores') ||
-        cls.location.toLowerCase().includes('golden gate') ||
-        cls.location.toLowerCase().includes('presidio') ||
-        cls.location.toLowerCase().includes('marina') ||
-        cls.location.toLowerCase().includes('embarcadero') ||
-        cls.location.toLowerCase().includes('crissy')
-      )
-    ).slice(0, 20)
+    select: (data: any[]) => {
+      const now = new Date();
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(now.getDate() + 7);
+      
+      return data.filter(cls => {
+        // Filter by main adult-focused workout providers
+        const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
+        if (!targetCoachIds.includes(cls.coachId)) return false;
+        
+        // Filter by San Francisco
+        if (cls.city !== 'San Francisco') return false;
+        
+        // Filter by outdoor classes (using the new outdoor field)
+        if (!cls.outdoors) return false;
+        
+        // Filter by next 7 days
+        if (cls.startTime) {
+          const classDate = new Date(cls.startTime);
+          if (classDate < now || classDate > sevenDaysFromNow) return false;
+        }
+        
+        return true;
+      }).slice(0, 9);
+    }
   });
 
   const formatPrice = (price: number) => {
@@ -164,7 +172,10 @@ export default function OutdoorWorkoutsSF() {
         {/* Classes Section */}
         <section className="py-16 bg-gray-50">
           <div className="max-w-6xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">Available Outdoor Classes</h2>
+            <h2 className="text-3xl font-bold text-center mb-4">Available Outdoor Classes</h2>
+            <p className="text-lg text-gray-600 text-center mb-12">
+              Featuring top-rated coaches • Next 7 days • San Francisco outdoor locations
+            </p>
             
             {isLoading ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
