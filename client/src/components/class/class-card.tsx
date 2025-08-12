@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Class, User, ClassCategory, ClassSchedule, ClassWithSchedules } from "@shared/schema";
 import { MapPin, Clock, Star, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ interface ClassCardProps {
 }
 
 export default function ClassCard({ classItem, schedules }: ClassCardProps) {
+  const [, navigate] = useLocation();
+  
   // Check if this is a recurring class
   const isRecurring = 'isRecurring' in classItem && classItem.isRecurring;
   
@@ -94,9 +96,20 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     return displayText;
   };
   
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if user clicks on interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    navigate(`/classes/${classItem.id}`);
+  };
+
   return (
-    <Link href={`/classes/${classItem.id}`} className="block">
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer">
+    <div 
+      className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer block"
+      onClick={handleCardClick}
+    >
         <div className="h-48 overflow-hidden relative">
           <img 
           src={classItem.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
@@ -247,7 +260,6 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
           )}
           </div>
         </div>
-      </div>
-    </Link>
+    </div>
   );
 }
