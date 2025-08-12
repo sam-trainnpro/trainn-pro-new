@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users, DollarSign } from "lucide-react";
 import { Link } from "wouter";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import MobileNavigation from "@/components/layout/mobile-navigation";
 
 export default function OutdoorWorkoutsSF() {
   // Fetch classes with filters for San Francisco outdoor workouts
@@ -94,6 +97,7 @@ export default function OutdoorWorkoutsSF() {
         </script>
       </Helmet>
 
+      <Header />
       <div className="min-h-screen bg-gray-50">
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-green-600 to-blue-700 text-white py-16">
@@ -260,6 +264,8 @@ export default function OutdoorWorkoutsSF() {
           </div>
         </section>
       </div>
+      <Footer />
+      <MobileNavigation />
     </>
   );
 }
