@@ -96,11 +96,24 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     return displayText;
   };
   
-
+  const handleCardClick = (e: React.MouseEvent) => {
+    console.log("Card clicked!", classItem.id);
+    // Don't navigate if user clicks on interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      console.log("Button clicked, not navigating");
+      return;
+    }
+    console.log("Navigating to:", `/classes/${classItem.id}`);
+    navigate(`/classes/${classItem.id}`);
+  };
 
   return (
-    <Link href={`/classes/${classItem.id}`}>
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer block">
+    <div 
+      className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer block"
+      onClick={handleCardClick}
+      style={{ userSelect: 'none' }}
+    >
         <div className="h-48 overflow-hidden relative">
           <img 
           src={classItem.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
@@ -249,8 +262,8 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
               Book Now
             </Button>
           )}
+          </div>
         </div>
-      </div>
-    </Link>
+    </div>
   );
 }
