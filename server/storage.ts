@@ -68,6 +68,13 @@ export interface IStorage {
   deleteRecurringClassSeries(seriesId: string): Promise<boolean>;
   deleteThisAndFollowingClasses(classId: number): Promise<boolean>;
   
+  // SEO Landing Pages
+  getOutdoorWorkoutClassesSF(): Promise<Array<Class & { coach: User; category: ClassCategory }>>;
+  getKidsDropInSportsClassesSF(): Promise<Array<Class & { coach: User; category: ClassCategory }>>;
+  getOutdoorYogaClassesSF(): Promise<Array<Class & { coach: User; category: ClassCategory }>>;
+  getKidsDropInActivitiesSF(): Promise<Array<Class & { coach: User; category: ClassCategory }>>;
+  getPersonalTrainersClassesSF(): Promise<Array<Class & { coach: User; category: ClassCategory }>>;
+  
   // Class Schedules
   createClassSchedule(scheduleData: InsertClassSchedule): Promise<ClassSchedule>;
   getClassSchedules(classId: number): Promise<ClassSchedule[]>;
@@ -2226,6 +2233,168 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(providerReferrals)
       .where(eq(providerReferrals.providerId, providerId));
+  }
+
+  // SEO Landing Page Methods
+  async getOutdoorWorkoutClassesSF(): Promise<Array<Class & { coach: User; category: ClassCategory }>> {
+    try {
+      // Get classes with coach and category data using existing SQL queries
+      const result = await db
+        .select({
+          // Class fields
+          id: classes.id,
+          title: classes.title,
+          description: classes.description,
+          coachId: classes.coachId,
+          categoryId: classes.categoryId,
+          price: classes.price,
+          capacity: classes.capacity,
+          location: classes.location,
+          latitude: classes.latitude,
+          longitude: classes.longitude,
+          address: classes.address,
+          street: classes.street,
+          city: classes.city,
+          state: classes.state,
+          zipCode: classes.zipCode,
+          image: classes.image,
+          startTime: classes.startTime,
+          endTime: classes.endTime,
+          isRecurring: classes.isRecurring,
+          parentClassId: classes.parentClassId,
+          recurringSeriesId: classes.recurringSeriesId,
+          recurrenceType: classes.recurrenceType,
+          recurrenceInterval: classes.recurrenceInterval,
+          recurrenceDaysOfWeek: classes.recurrenceDaysOfWeek,
+          recurrenceEndType: classes.recurrenceEndType,
+          recurrenceEndDate: classes.recurrenceEndDate,
+          recurrenceEndCount: classes.recurrenceEndCount,
+          whatToBring: classes.whatToBring,
+          toFindUs: classes.toFindUs,
+          ageGroup: classes.ageGroup,
+          createdAt: classes.createdAt,
+          // Coach fields
+          coachEmail: users.email,
+          coachFirstName: users.firstName,
+          coachLastName: users.lastName,
+          coachBusinessName: users.businessName,
+          coachDisplayBusinessName: users.displayBusinessName,
+          coachPhone: users.phone,
+          coachRole: users.role,
+          coachBio: users.bio,
+          coachProfileImage: users.profileImage,
+          coachIsApproved: users.isApproved,
+          coachCreatedAt: users.createdAt,
+          coachStripeCustomerId: users.stripeCustomerId,
+          coachStripeConnectId: users.stripeConnectId,
+          coachStripeConnectOnboarded: users.stripeConnectOnboarded,
+          coachBankAccountVerified: users.bankAccountVerified,
+          coachAreasOfExpertise: users.areasOfExpertise,
+          coachCertifications: users.certifications,
+          coachGoogleId: users.googleId,
+          coachAuthMethod: users.authMethod,
+          coachGoogleProfilePicture: users.googleProfilePicture,
+          coachReferralCode: users.referralCode,
+          coachProviderReferralCode: users.providerReferralCode,
+          coachPassword: users.password,
+          // Category fields
+          categoryName: classCategories.name,
+          categoryImage: classCategories.image
+        })
+        .from(classes)
+        .innerJoin(users, eq(classes.coachId, users.id))
+        .innerJoin(classCategories, eq(classes.categoryId, classCategories.id))
+        .where(
+          and(
+            eq(classes.city, 'San Francisco'),
+            eq(users.isApproved, true),
+            or(
+              // Outdoor categories
+              inArray(classes.categoryId, [2, 3, 4, 1, 16]), // Yoga, Strength & Conditioning, Cardio, HIIT, Personal Training
+              // Or outdoor locations
+              sql`LOWER(${classes.location}) LIKE '%park%'`,
+              sql`LOWER(${classes.location}) LIKE '%beach%'`,
+              sql`LOWER(${classes.location}) LIKE '%outdoor%'`,
+              sql`LOWER(${classes.location}) LIKE '%dolores%'`,
+              sql`LOWER(${classes.location}) LIKE '%golden gate%'`,
+              sql`LOWER(${classes.location}) LIKE '%presidio%'`,
+              sql`LOWER(${classes.location}) LIKE '%marina%'`,
+              sql`LOWER(${classes.location}) LIKE '%embarcadero%'`,
+              sql`LOWER(${classes.location}) LIKE '%crissy%'`
+            )
+          )
+        )
+        .limit(20);
+
+      // Transform to expected format
+      return result.map(row => ({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        coachId: row.coachId,
+        categoryId: row.categoryId,
+        price: row.price,
+        capacity: row.capacity,
+        location: row.location,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        address: row.address,
+        street: row.street,
+        city: row.city,
+        state: row.state,
+        zipCode: row.zipCode,
+        image: row.image,
+        startTime: row.startTime,
+        endTime: row.endTime,
+        isRecurring: row.isRecurring,
+        parentClassId: row.parentClassId,
+        recurringSeriesId: row.recurringSeriesId,
+        recurrenceType: row.recurrenceType,
+        recurrenceInterval: row.recurrenceInterval,
+        recurrenceDaysOfWeek: row.recurrenceDaysOfWeek,
+        recurrenceEndType: row.recurrenceEndType,
+        recurrenceEndDate: row.recurrenceEndDate,
+        recurrenceEndCount: row.recurrenceEndCount,
+        whatToBring: row.whatToBring,
+        toFindUs: row.toFindUs,
+        ageGroup: row.ageGroup,
+        createdAt: row.createdAt,
+        coach: {
+          id: row.coachId,
+          email: row.coachEmail,
+          firstName: row.coachFirstName,
+          lastName: row.coachLastName,
+          businessName: row.coachBusinessName,
+          displayBusinessName: row.coachDisplayBusinessName,
+          phone: row.coachPhone,
+          role: row.coachRole,
+          bio: row.coachBio,
+          profileImage: row.coachProfileImage,
+          isApproved: row.coachIsApproved,
+          createdAt: row.coachCreatedAt,
+          stripeCustomerId: row.coachStripeCustomerId,
+          stripeConnectId: row.coachStripeConnectId,
+          stripeConnectOnboarded: row.coachStripeConnectOnboarded,
+          bankAccountVerified: row.coachBankAccountVerified,
+          areasOfExpertise: row.coachAreasOfExpertise,
+          certifications: row.coachCertifications,
+          googleId: row.coachGoogleId,
+          authMethod: row.coachAuthMethod,
+          googleProfilePicture: row.coachGoogleProfilePicture,
+          referralCode: row.coachReferralCode,
+          providerReferralCode: row.coachProviderReferralCode,
+          password: row.coachPassword
+        },
+        category: {
+          id: row.categoryId,
+          name: row.categoryName,
+          image: row.categoryImage
+        }
+      }));
+    } catch (error) {
+      console.error("Error getting outdoor workout classes for SF:", error);
+      throw error;
+    }
   }
 }
 

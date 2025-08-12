@@ -4276,7 +4276,244 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // Try a different route prefix to avoid Vite conflicts
+  app.get("/seo-pages/test", (req, res) => {
+    res.set('Content-Type', 'text/html');
+    res.send('<html><body><h1>SEO Test Working!</h1></body></html>');
+  });
 
+  // SEO Landing Pages with different prefix
+  app.get("/seo-pages/outdoor-workouts-san-francisco", async (req, res) => {
+    try {
+      const classes = await storage.getOutdoorWorkoutClassesSF();
+      
+      const pageTitle = "Outdoor Workouts in San Francisco | Book Fitness Classes at Parks & Beaches";
+      const pageDescription = "Find outdoor fitness classes in San Francisco's best parks and beaches. Book strength training, yoga, cardio, HIIT, and personal training sessions with certified coaches. Drop-in classes available.";
+      const keywords = "outdoor workout san francisco, fitness classes parks, beach workouts sf, dolores park fitness, golden gate park exercise, outdoor personal training, outdoor yoga san francisco";
+      
+      // Generate structured data for local business
+      const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "Outdoor Fitness Classes in San Francisco",
+        "provider": {
+          "@type": "Organization",
+          "name": "Trainn",
+          "url": "https://trainn.pro"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "San Francisco",
+          "addressRegion": "CA"
+        },
+        "serviceType": "Fitness Training",
+        "description": pageDescription,
+        "offers": classes.slice(0, 5).map(cls => ({
+          "@type": "Offer",
+          "name": cls.title,
+          "description": cls.description,
+          "price": cls.price,
+          "priceCurrency": "USD",
+          "url": `https://trainn.pro/classes/${cls.id}`,
+          "availability": "InStock"
+        }))
+      };
+
+      // Generate FAQ structured data
+      const faqData = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What types of outdoor workouts are available in San Francisco?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We offer outdoor yoga, strength training, HIIT, cardio, and personal training sessions at San Francisco's parks and beaches including Dolores Park, Golden Gate Park, Marina Green, and Baker Beach."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do outdoor classes run in bad weather?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Most outdoor classes continue in light rain, but may be cancelled in heavy rain or dangerous weather. Check with your instructor for weather policies."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much do outdoor fitness classes cost in San Francisco?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Outdoor fitness classes range from $25-$60 per session depending on the instructor and class type. Personal training sessions typically cost $60-$100."
+            }
+          }
+        ]
+      };
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${pageTitle}</title>
+  <meta name="description" content="${pageDescription}">
+  <meta name="keywords" content="${keywords}">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph Tags -->
+  <meta property="og:title" content="${pageTitle}">
+  <meta property="og:description" content="${pageDescription}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://trainn.pro/outdoor-workouts-san-francisco">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&h=630&fit=crop">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://trainn.pro/outdoor-workouts-san-francisco">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">${JSON.stringify(structuredData)}</script>
+  <script type="application/ld+json">${JSON.stringify(faqData)}</script>
+  
+  <!-- Styles -->
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; margin: 0; padding: 0; color: #333; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 20px; text-align: center; }
+    .header h1 { font-size: 2.5rem; margin: 0; font-weight: 700; }
+    .header p { font-size: 1.2rem; margin: 20px 0; opacity: 0.9; }
+    .cta-button { display: inline-block; background: #ff6b6b; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 20px; }
+    .section { margin: 60px 0; }
+    .section h2 { font-size: 2rem; margin-bottom: 30px; color: #333; }
+    .classes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin: 40px 0; }
+    .class-card { border: 1px solid #e1e5e9; border-radius: 12px; overflow: hidden; transition: transform 0.2s; }
+    .class-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .class-image { width: 100%; height: 200px; background: linear-gradient(45deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 600; }
+    .class-content { padding: 20px; }
+    .class-title { font-size: 1.3rem; font-weight: 600; margin: 0 0 10px 0; }
+    .class-coach { color: #666; margin: 5px 0; }
+    .class-location { color: #666; margin: 5px 0; }
+    .class-price { font-size: 1.2rem; font-weight: 600; color: #667eea; margin: 10px 0; }
+    .class-description { color: #666; margin: 10px 0; }
+    .benefits { background: #f8f9fa; padding: 40px 20px; margin: 40px 0; border-radius: 12px; }
+    .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 30px; }
+    .benefit { text-align: center; }
+    .benefit-icon { font-size: 3rem; margin-bottom: 15px; }
+    .locations { margin: 40px 0; }
+    .locations ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .locations li { background: #f8f9fa; padding: 15px; border-radius: 8px; list-style: none; }
+    .faq { margin: 40px 0; }
+    .faq-item { margin: 20px 0; border: 1px solid #e1e5e9; border-radius: 8px; }
+    .faq-question { background: #f8f9fa; padding: 20px; font-weight: 600; cursor: pointer; }
+    .faq-answer { padding: 20px; border-top: 1px solid #e1e5e9; }
+    .nav { background: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .nav a { color: #667eea; text-decoration: none; font-weight: 600; }
+    @media (max-width: 768px) { .header h1 { font-size: 2rem; } .classes-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="https://trainn.pro">← Back to Trainn</a>
+  </nav>
+  
+  <header class="header">
+    <h1>Outdoor Workouts in San Francisco</h1>
+    <p>Train at the city's most beautiful parks and beaches with certified fitness coaches</p>
+    <a href="https://trainn.pro/classes?city=San%20Francisco" class="cta-button">View All Classes</a>
+  </header>
+
+  <div class="container">
+    <section class="section">
+      <h2>Featured Outdoor Fitness Classes</h2>
+      <div class="classes-grid">
+        ${classes.slice(0, 6).map(cls => `
+          <div class="class-card">
+            <div class="class-image">${cls.category.name}</div>
+            <div class="class-content">
+              <h3 class="class-title">${cls.title}</h3>
+              <div class="class-coach">with ${cls.coach.displayBusinessName && cls.coach.businessName ? cls.coach.businessName : `${cls.coach.firstName} ${cls.coach.lastName}`}</div>
+              <div class="class-location">📍 ${cls.location}</div>
+              <div class="class-price">$${cls.price}/class</div>
+              <p class="class-description">${cls.description.substring(0, 120)}...</p>
+              <a href="https://trainn.pro/classes/${cls.id}" class="cta-button" style="font-size: 0.9rem; padding: 10px 20px;">Book Now</a>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="benefits">
+      <h2 style="text-align: center; margin-bottom: 20px;">Why Choose Outdoor Workouts in SF?</h2>
+      <div class="benefits-grid">
+        <div class="benefit">
+          <div class="benefit-icon">🌲</div>
+          <h3>Beautiful Locations</h3>
+          <p>Train in Golden Gate Park, Dolores Park, Marina Green, and other iconic SF locations</p>
+        </div>
+        <div class="benefit">
+          <div class="benefit-icon">💨</div>
+          <h3>Fresh Air & Views</h3>
+          <p>Enjoy San Francisco's famous views while getting fit in the great outdoors</p>
+        </div>
+        <div class="benefit">
+          <div class="benefit-icon">👥</div>
+          <h3>Expert Coaches</h3>
+          <p>All coaches are certified and approved, bringing years of experience to your workout</p>
+        </div>
+        <div class="benefit">
+          <div class="benefit-icon">📱</div>
+          <h3>Easy Booking</h3>
+          <p>Drop-in classes with simple online booking - no long-term commitments required</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="locations">
+      <h2>Popular Outdoor Workout Locations</h2>
+      <ul style="padding: 0;">
+        <li><strong>Dolores Park</strong> - Yoga, HIIT, and strength training with city views</li>
+        <li><strong>Golden Gate Park</strong> - Cardio and circuit training in nature</li>
+        <li><strong>Marina Green</strong> - Waterfront workouts with Golden Gate Bridge views</li>
+        <li><strong>Baker Beach</strong> - Beach yoga and outdoor bootcamps</li>
+        <li><strong>Presidio</strong> - Trail running and outdoor fitness in historic setting</li>
+        <li><strong>Embarcadero</strong> - Waterfront walks and outdoor training sessions</li>
+      </ul>
+    </section>
+
+    <section class="faq">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-item">
+        <div class="faq-question">What should I bring to outdoor fitness classes?</div>
+        <div class="faq-answer">Bring a yoga mat, water bottle, towel, and dress in layers. Most instructors provide additional equipment needed for the workout.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">Do I need to be in shape to join outdoor classes?</div>
+        <div class="faq-answer">Classes welcome all fitness levels. Instructors provide modifications for beginners and advanced participants alike.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question">How do I book an outdoor workout class?</div>
+        <div class="faq-answer">Simply click "Book Now" on any class above, create an account, and secure your spot with easy online payment.</div>
+      </div>
+    </section>
+
+    <section class="section" style="text-align: center; background: #f8f9fa; padding: 40px; border-radius: 12px;">
+      <h2>Ready to Start Your Outdoor Fitness Journey?</h2>
+      <p style="font-size: 1.1rem; margin: 20px 0;">Join thousands of San Francisco residents who choose outdoor workouts for better health and amazing city views.</p>
+      <a href="https://trainn.pro/classes?city=San%20Francisco" class="cta-button" style="font-size: 1.1rem; padding: 15px 30px;">Browse All Classes</a>
+    </section>
+  </div>
+
+  <!-- Analytics would go here -->
+</body>
+</html>`;
+
+      res.set('Content-Type', 'text/html');
+      res.send(html);
+    } catch (error) {
+      console.error("Error generating outdoor workouts landing page:", error);
+      res.status(500).send("Error loading page");
+    }
+  });
 
   const httpServer = createServer(app);
 
