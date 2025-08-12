@@ -23,7 +23,8 @@ export function ProtectedRoute({ path, children }: ProtectedRouteProps) {
         }
 
         if (!user) {
-          return <Redirect to="/auth" />;
+          const redirectTo = `/auth?redirect=${encodeURIComponent(path)}`;
+          return <Redirect to={redirectTo} />;
         }
 
         return <>{children}</>;
