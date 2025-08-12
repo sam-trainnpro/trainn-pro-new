@@ -23,6 +23,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,7 @@ const editClassSchema = z.object({
   longitude: z.number().optional(),
   image: z.string().optional().nullable(),
   ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
+  outdoors: z.boolean().default(false),
   classDate: z.date(),
   startTime: z.string().min(1, "Start time is required"),
   duration: z.coerce.number().int().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
@@ -211,6 +213,7 @@ export default function EditClassPage() {
         longitude: classData.longitude || 0,
         image: classData.image || "",
         ageGroup: (classData.ageGroup as "Adults" | "Kids") || "Adults",
+        outdoors: classData.outdoors || false,
         classDate: classDate,
         startTime: timeString,
         duration: duration > 0 ? duration : 60, // Default to 60 minutes if calculation fails
@@ -287,6 +290,7 @@ export default function EditClassPage() {
         latitude: data.formData.latitude,
         longitude: data.formData.longitude,
         ageGroup: data.formData.ageGroup,
+        outdoors: data.formData.outdoors,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         whatToBring: data.formData.whatToBring,
@@ -548,6 +552,29 @@ export default function EditClassPage() {
                             Choose whether this class is designed for adults or kids
                           </FormDescription>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="outdoors"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Outdoor Class
+                            </FormLabel>
+                            <FormDescription>
+                              Is this class held outdoors (park, beach, etc.)?
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />

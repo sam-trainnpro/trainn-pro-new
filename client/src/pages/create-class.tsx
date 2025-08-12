@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "../../../hooks/use-toast";
 import { RecurrenceModal, RecurrenceRule } from "@/components/recurrence-modal";
 import {
@@ -80,6 +81,7 @@ const createClassSchema = z.object({
   toFindUs: z.string().optional(),
   image: z.string().optional(),
   ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
+  outdoors: z.boolean().default(false),
   isRecurring: z.boolean().default(false),
   // Recurrence fields
   recurrenceType: z.enum(['daily', 'weekly', 'monthly']).optional(),
@@ -251,6 +253,7 @@ export default function CreateClassPage() {
       toFindUs: "",
       image: "",
       ageGroup: "Adults",
+      outdoors: false,
       isRecurring: false,
       recurrenceType: undefined,
       recurrenceInterval: undefined,
@@ -303,6 +306,7 @@ export default function CreateClassPage() {
         toFindUs: existingClass.toFindUs || "",
         image: existingClass.image || "",
         ageGroup: existingClass.ageGroup || "Adults",
+        outdoors: existingClass.outdoors || false,
         isRecurring: existingClass.isRecurring || false,
       });
     }
@@ -373,6 +377,7 @@ export default function CreateClassPage() {
         toFindUs: duplicateClass.toFindUs || "",
         image: duplicateClass.image || "",
         ageGroup: duplicateClass.ageGroup || "Adults",
+        outdoors: duplicateClass.outdoors || false,
         isRecurring: false, // Reset recurring to false for duplicates
       });
 
@@ -697,15 +702,15 @@ export default function CreateClassPage() {
         formattedData.isRecurring = true;
         formattedData.recurrenceType = recurrenceRule.type;
         formattedData.recurrenceInterval = recurrenceRule.interval;
-        formattedData.recurrenceDaysOfWeek = recurrenceRule.daysOfWeek ? JSON.stringify(recurrenceRule.daysOfWeek) : undefined;
+        formattedData.recurrenceDaysOfWeek = recurrenceRule.daysOfWeek ? JSON.stringify(recurrenceRule.daysOfWeek) : "";
         formattedData.recurrenceEndType = recurrenceRule.endType;
-        formattedData.recurrenceEndDate = recurrenceRule.endDate?.toISOString();
+        formattedData.recurrenceEndDate = recurrenceRule.endDate?.toISOString() || "";
         formattedData.recurrenceEndCount = recurrenceRule.endCount;
       }
       
       // If admin is duplicating a class, preserve the original coach's ID
       if (isDuplicating && duplicateClass && user?.role === 'admin') {
-        formattedData.coachId = duplicateClass.coachId;
+        (formattedData as any).coachId = duplicateClass.coachId;
       }
       
       // Submit the processed data
@@ -875,6 +880,29 @@ export default function CreateClassPage() {
                             Choose whether this class is designed for adults or kids
                           </FormDescription>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="outdoors"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Outdoor Class
+                            </FormLabel>
+                            <FormDescription>
+                              Is this class held outdoors (park, beach, etc.)?
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
