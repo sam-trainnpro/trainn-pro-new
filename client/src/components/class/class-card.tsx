@@ -97,11 +97,14 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
   };
   
   const handleCardClick = (e: React.MouseEvent) => {
+    console.log("Card clicked!", classItem.id);
     // Don't navigate if user clicks on interactive elements
     const target = e.target as HTMLElement;
     if (target.closest('button')) {
+      console.log("Button clicked, not navigating");
       return;
     }
+    console.log("Navigating to:", `/classes/${classItem.id}`);
     navigate(`/classes/${classItem.id}`);
   };
 
@@ -109,6 +112,7 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
     <div 
       className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer block"
       onClick={handleCardClick}
+      style={{ userSelect: 'none' }}
     >
         <div className="h-48 overflow-hidden relative">
           <img 
