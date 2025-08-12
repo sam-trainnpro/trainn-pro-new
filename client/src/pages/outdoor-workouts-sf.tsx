@@ -3,11 +3,169 @@ import { Helmet } from "react-helmet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, DollarSign } from "lucide-react";
+import { MapPin, Calendar, Users, DollarSign, Star, Heart, Clock } from "lucide-react";
 import { Link } from "wouter";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
+
+// Enhanced ClassCard component matching the design
+const ClassCard = ({ classItem }: { classItem: any }) => {
+  // Fetch coach data
+  const { data: coach } = useQuery({
+    queryKey: [`/api/coaches/${classItem.coachId}`],
+  });
+
+  // Fetch category data
+  const { data: category } = useQuery({
+    queryKey: [`/api/categories/${classItem.categoryId}`],
+  });
+
+  // Fetch booking count data
+  const { data: bookingCount } = useQuery<{
+    total: number;
+    active: number;
+    totalSpotsBooked: number;
+    capacity: number;
+    spotsLeft: number;
+  }>({
+    queryKey: [`/api/classes/${classItem.id}/bookings/count`],
+  });
+
+  // Get rating statistics for the coach
+  const { data: coachRatingStats } = useQuery({
+    queryKey: ['/api/reviews/coach', classItem.coachId, 'stats'],
+    queryFn: () => fetch(`/api/reviews/coach/${classItem.coachId}/stats`).then(res => res.json()),
+    enabled: !!classItem.coachId,
+  });
+
+  const formatPrice = (price: number) => {
+    if (price === 0) return "Free";
+    return `$${price}`;
+  };
+
+  const formatClassTime = () => {
+    if (!classItem.startTime || !classItem.endTime) {
+      return 'Schedule not available';
+    }
+    
+    const startDate = new Date(classItem.startTime);
+    const endDate = new Date(classItem.endTime);
+    
+    const dayOfWeek = startDate.toLocaleDateString('en-US', { weekday: 'short' });
+    const month = startDate.getMonth() + 1;
+    const day = startDate.getDate();
+    const formattedDate = `${dayOfWeek} ${month}/${day}`;
+    
+    const startTime = startDate.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    const endTime = endDate.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    
+    return `${formattedDate} ${startTime} - ${endTime} PT`;
+  };
+
+  const spotsLeft = bookingCount ? bookingCount.spotsLeft : classItem.capacity;
+  const hasRealReviews = coachRatingStats && coachRatingStats.totalReviews > 0 && coachRatingStats.averageRating > 0;
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer">
+      <div className="h-48 overflow-hidden relative">
+        <img 
+          src={classItem.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
+          alt={classItem.title}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500") {
+              target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+            }
+          }}
+        />
+        {/* Category Badge */}
+        <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-medium px-2 py-1 rounded">
+          {category?.name || "Class"}
+        </div>
+        {/* Heart Icon */}
+        <button 
+          className="absolute top-3 right-3 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Heart className="text-gray-600 h-5 w-5" />
+        </button>
+      </div>
+      
+      <div className="p-4">
+        {/* Title and Price */}
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="text-xl font-bold text-gray-900 line-clamp-1">{classItem.title}</h3>
+          <span className="text-xl font-bold text-gray-900">{formatPrice(classItem.price)}</span>
+        </div>
+        
+        {/* Location */}
+        <div className="flex items-center mb-2 text-gray-600">
+          <MapPin className="w-4 h-4 mr-2" />
+          <span className="text-sm line-clamp-1">{classItem.location}</span>
+        </div>
+        
+        {/* Time */}
+        <div className="flex items-center mb-4 text-gray-600">
+          <Clock className="w-4 h-4 mr-2" />
+          <span className="text-sm">{formatClassTime()}</span>
+        </div>
+        
+        {/* Coach Info */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full overflow-hidden mr-2 bg-gray-200 flex items-center justify-center">
+              {coach?.profileImage ? (
+                <img 
+                  src={coach.profileImage} 
+                  alt={coach.firstName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Users className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+            <span className="text-sm font-medium text-gray-900">
+              {coach ? `${coach.firstName}` : "Coach"}
+            </span>
+          </div>
+          
+          {hasRealReviews && (
+            <div className="flex items-center">
+              <Star className="text-yellow-400 fill-yellow-400 h-4 w-4 mr-1" />
+              <span className="text-sm font-medium">{coachRatingStats.averageRating.toFixed(1)}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Spots Left and Book Button */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600">
+            {spotsLeft}/{classItem.capacity} spots left
+          </span>
+          
+          <Link href={`/classes/${classItem.id}`}>
+            <Button 
+              size="sm"
+              className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium"
+            >
+              Book Now
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function OutdoorWorkoutsSF() {
   // Fetch classes with filters for outdoor workouts by main adult-focused providers
@@ -40,11 +198,6 @@ export default function OutdoorWorkoutsSF() {
     }
   });
 
-  const formatPrice = (price: number) => {
-    if (price === 0) return "Free";
-    return `$${price}`;
-  };
-
   const formatDate = (dateString: string) => {
     if (!dateString) return "Recurring";
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -55,6 +208,7 @@ export default function OutdoorWorkoutsSF() {
       minute: '2-digit'
     });
   };
+
 
   return (
     <>
@@ -192,59 +346,7 @@ export default function OutdoorWorkoutsSF() {
               </div>
             ) : classes && classes.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {classes.map((cls: any) => (
-                  <Link key={cls.id} href={`/class/${cls.id}`} className="block">
-                    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer">
-                      <div className="h-48 overflow-hidden relative">
-                        <img 
-                          src={cls.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
-                          alt={cls.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            if (target.src !== "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500") {
-                              target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
-                            }
-                          }}
-                        />
-                        <div className="absolute top-3 left-3 bg-primary text-white text-sm font-medium px-2 py-1 rounded">
-                          {formatPrice(cls.price)}
-                        </div>
-                      </div>
-                      
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg font-semibold line-clamp-2">{cls.title}</h3>
-                        </div>
-                        
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                          {cls.description}
-                        </p>
-                        
-                        <div className="space-y-2 text-sm text-gray-500 mb-4">
-                          <div className="flex items-center">
-                            <MapPin className="w-4 h-4 mr-2" />
-                            <span className="line-clamp-1">{cls.location}</span>
-                          </div>
-                          
-                          <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            <span>{formatDate(cls.startTime)}</span>
-                          </div>
-                          
-                          <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-2" />
-                            <span>Max {cls.capacity} participants</span>
-                          </div>
-                        </div>
-                        
-                        <Button className="w-full">
-                          View Details & Book
-                        </Button>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                {classes.map((cls: any) => <ClassCard key={cls.id} classItem={cls} />)}
               </div>
             ) : (
               <div className="text-center py-12">
