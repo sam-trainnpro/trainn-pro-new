@@ -71,21 +71,8 @@ export default function LoginForm() {
         const user = await loginMutation.mutateAsync(data);
         console.log("Login successful:", user);
         
-        // Use window.location.href instead of navigate for more reliable navigation
-        // after authentication state changes
-        window.setTimeout(() => {
-          console.log("Navigating after login");
-          // Check for redirect URL in query params
-          const searchParams = new URLSearchParams(window.location.search);
-          const redirectUrl = searchParams.get('redirect');
-          if (redirectUrl) {
-            console.log("Redirecting to:", redirectUrl);
-            window.location.href = decodeURIComponent(redirectUrl);
-          } else {
-            console.log("Navigating to home");
-            window.location.href = "/";
-          }
-        }, 100);
+        // Let AuthPage handle the redirect via its useEffect - this prevents race conditions
+        console.log("Login form completed, letting AuthPage handle redirect");
       } catch (mutationError: any) {
         console.error("Mutation error:", mutationError);
         setError(mutationError.message || "Login failed. Please check your credentials and try again.");
