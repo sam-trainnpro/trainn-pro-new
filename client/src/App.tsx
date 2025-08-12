@@ -47,6 +47,7 @@ import CoachResourcesPage from "@/pages/coach-resources";
 import SuccessStoriesPage from "@/pages/success-stories";
 import BusinessToolsPage from "@/pages/business-tools";
 import CoachCommunityPage from "@/pages/coach-community";
+import OutdoorWorkoutsSF from "@/pages/outdoor-workouts-sf";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -84,6 +85,9 @@ function Router() {
       </Route>
       <Route path="/classes/:id">
         <ClassDetailsPage />
+      </Route>
+      <Route path="/outdoor-workouts-san-francisco">
+        <OutdoorWorkoutsSF />
       </Route>
       <Route path="/coaches">
         <CoachesPage />
