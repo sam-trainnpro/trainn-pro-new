@@ -120,7 +120,7 @@ export default function OutdoorWorkoutsSF() {
                 </Badge>
                 <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
                   <MapPin className="w-4 h-4 mr-1" />
-                  Crissy Field
+                  Baker Beach
                 </Badge>
                 <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
                   <MapPin className="w-4 h-4 mr-1" />
