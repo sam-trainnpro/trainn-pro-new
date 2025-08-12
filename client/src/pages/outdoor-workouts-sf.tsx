@@ -90,7 +90,7 @@ const ClassCard = ({ classItem }: { classItem: any }) => {
         />
         {/* Category Badge */}
         <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-medium px-2 py-1 rounded">
-          {category?.name || "Class"}
+          {(category as any)?.name || "Class"}
         </div>
         {/* Heart Icon */}
         <button 
@@ -124,10 +124,10 @@ const ClassCard = ({ classItem }: { classItem: any }) => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <div className="w-8 h-8 rounded-full overflow-hidden mr-2 bg-gray-200 flex items-center justify-center">
-              {coach?.profileImage ? (
+              {(coach as any)?.profileImage ? (
                 <img 
-                  src={coach.profileImage} 
-                  alt={coach.firstName}
+                  src={(coach as any).profileImage} 
+                  alt={(coach as any).firstName}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -135,7 +135,7 @@ const ClassCard = ({ classItem }: { classItem: any }) => {
               )}
             </div>
             <span className="text-sm font-medium text-gray-900">
-              {coach ? `${coach.firstName}` : "Coach"}
+              {coach ? `${(coach as any).firstName}` : "Coach"}
             </span>
           </div>
           
@@ -176,7 +176,8 @@ export default function OutdoorWorkoutsSF() {
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(now.getDate() + 7);
       
-      return data.filter(cls => {
+      // First filter by basic criteria
+      const eligibleClasses = data.filter(cls => {
         // Filter by main adult-focused workout providers
         const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
         if (!targetCoachIds.includes(cls.coachId)) return false;
@@ -194,7 +195,90 @@ export default function OutdoorWorkoutsSF() {
         }
         
         return true;
-      }).slice(0, 9);
+      });
+
+      // Sort by start time (upcoming classes first)
+      const sortedClasses = eligibleClasses.sort((a, b) => {
+        const dateA = new Date(a.startTime || '9999-12-31');
+        const dateB = new Date(b.startTime || '9999-12-31');
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      // Group classes by coach ID
+      const classesByCoach = new Map();
+      sortedClasses.forEach(cls => {
+        if (!classesByCoach.has(cls.coachId)) {
+          classesByCoach.set(cls.coachId, []);
+        }
+        classesByCoach.get(cls.coachId).push(cls);
+      });
+
+      const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
+      const selectedClasses: any[] = [];
+
+      // First, get at least 1 class from each coach (if available)
+      targetCoachIds.forEach(coachId => {
+        const coachClasses = classesByCoach.get(coachId);
+        if (coachClasses && coachClasses.length > 0) {
+          selectedClasses.push(coachClasses[0]); // Take the earliest upcoming class
+        }
+      });
+
+      // Fill remaining slots (up to 9 total) with additional classes from coaches who have extras
+      // Prioritize classes happening tomorrow or the day after
+      const remainingSlots = 9 - selectedClasses.length;
+      const usedClassIds = new Set(selectedClasses.map((cls: any) => cls.id));
+      
+      for (let i = 0; i < remainingSlots && selectedClasses.length < 9; i++) {
+        let bestClass = null;
+        let bestScore = -1;
+        
+        // Look through all remaining classes to find the best candidates
+        sortedClasses.forEach(cls => {
+          if (usedClassIds.has(cls.id)) return;
+          
+          const classDate = new Date(cls.startTime);
+          const tomorrow = new Date(now);
+          tomorrow.setDate(now.getDate() + 1);
+          const dayAfterTomorrow = new Date(now);
+          dayAfterTomorrow.setDate(now.getDate() + 2);
+          
+          // Score classes: higher score = better priority
+          let score = 0;
+          
+          // Prioritize classes happening tomorrow or day after
+          if (classDate >= tomorrow && classDate < dayAfterTomorrow) {
+            score += 100; // Tomorrow gets highest priority
+          } else if (classDate >= dayAfterTomorrow) {
+            const dayAfterEnd = new Date(dayAfterTomorrow);
+            dayAfterEnd.setDate(dayAfterTomorrow.getDate() + 1);
+            if (classDate < dayAfterEnd) {
+              score += 50; // Day after tomorrow gets medium priority
+            }
+          }
+          
+          // Prefer coaches who have multiple classes (shows they're active)
+          const coachClassCount = classesByCoach.get(cls.coachId)?.length || 0;
+          if (coachClassCount > 1) {
+            score += coachClassCount * 5;
+          }
+          
+          // Prefer earlier times within the same day
+          score -= (classDate.getTime() - now.getTime()) / (1000 * 60 * 60); // Subtract hours from now
+          
+          if (score > bestScore) {
+            bestScore = score;
+            bestClass = cls;
+          }
+        });
+        
+        if (bestClass) {
+          selectedClasses.push(bestClass);
+          usedClassIds.add((bestClass as any).id);
+        }
+      }
+
+      return selectedClasses.slice(0, 9);
     }
   });
 
