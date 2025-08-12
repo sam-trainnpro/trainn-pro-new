@@ -110,6 +110,8 @@ export const classes = pgTable("classes", {
   toFindUs: text("to_find_us"),
   // Age group for the class
   ageGroup: text("age_group").notNull().default("Adults"),
+  // Whether the class is outdoors
+  outdoors: boolean("outdoors").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -143,6 +145,7 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   whatToBring: true,
   toFindUs: true,
   ageGroup: true,
+  outdoors: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;
