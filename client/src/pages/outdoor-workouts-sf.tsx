@@ -447,7 +447,7 @@ export default function OutdoorWorkoutsSF() {
         {/* CTA Section */}
         <section className="py-16 bg-gradient-to-r from-green-600 to-blue-600 text-white">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to Train Outdoors?</h2>
+            <h2 className="text-3xl font-bold mb-4">Ready to Workout Outdoors with Trainn?</h2>
             <p className="text-xl mb-8">Join San Francisco's outdoor fitness community today</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/classes">
