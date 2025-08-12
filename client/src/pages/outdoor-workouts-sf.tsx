@@ -191,56 +191,59 @@ export default function OutdoorWorkoutsSF() {
                 ))}
               </div>
             ) : classes && classes.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {classes.map((cls: any) => (
-                  <Card key={cls.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    {cls.image && (
-                      <div className="h-48 bg-gray-200 relative overflow-hidden">
+                  <Link key={cls.id} href={`/class/${cls.id}`} className="block">
+                    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer">
+                      <div className="h-48 overflow-hidden relative">
                         <img 
-                          src={cls.image} 
+                          src={cls.image || "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
                           alt={cls.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (target.src !== "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500") {
+                              target.src = "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
+                            }
+                          }}
                         />
-                      </div>
-                    )}
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-lg font-semibold line-clamp-2">{cls.title}</h3>
-                        <Badge variant="outline" className="ml-2">
+                        <div className="absolute top-3 left-3 bg-primary text-white text-sm font-medium px-2 py-1 rounded">
                           {formatPrice(cls.price)}
-                        </Badge>
+                        </div>
                       </div>
                       
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {cls.description}
-                      </p>
-                      
-                      <div className="space-y-2 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          <span className="line-clamp-1">{cls.location}</span>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-lg font-semibold line-clamp-2">{cls.title}</h3>
                         </div>
                         
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          <span>{formatDate(cls.startTime)}</span>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                          {cls.description}
+                        </p>
+                        
+                        <div className="space-y-2 text-sm text-gray-500 mb-4">
+                          <div className="flex items-center">
+                            <MapPin className="w-4 h-4 mr-2" />
+                            <span className="line-clamp-1">{cls.location}</span>
+                          </div>
+                          
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            <span>{formatDate(cls.startTime)}</span>
+                          </div>
+                          
+                          <div className="flex items-center">
+                            <Users className="w-4 h-4 mr-2" />
+                            <span>Max {cls.capacity} participants</span>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center">
-                          <Users className="w-4 h-4 mr-2" />
-                          <span>Max {cls.capacity} participants</span>
-                        </div>
+                        <Button className="w-full">
+                          View Details & Book
+                        </Button>
                       </div>
-                      
-                      <div className="mt-4 pt-4 border-t">
-                        <Link href={`/class/${cls.id}`}>
-                          <Button className="w-full">
-                            View Details & Book
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -267,7 +270,7 @@ export default function OutdoorWorkoutsSF() {
                 </Button>
               </Link>
               <Link href="/coaches">
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-green-600">
+                <Button size="lg" variant="outline" className="text-green-600 bg-white border-white hover:bg-gray-100">
                   Find a Coach
                 </Button>
               </Link>

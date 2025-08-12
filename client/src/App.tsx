@@ -86,6 +86,9 @@ function Router() {
       <Route path="/classes/:id">
         <ClassDetailsPage />
       </Route>
+      <Route path="/class/:id">
+        <ClassDetailsPage />
+      </Route>
       <Route path="/outdoor-workouts-san-francisco">
         <OutdoorWorkoutsSF />
       </Route>
