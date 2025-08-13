@@ -38,6 +38,7 @@ export interface SearchFilters {
   classType?: string;
   ageGroup?: string;
   city?: string;
+  outdoors?: string;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -151,6 +152,19 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       longitude: null
     });
   };
+
+  const handleOutdoorsSelect = (value: string) => {
+    const newParams = {
+      ...searchParams,
+      outdoors: value
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude: null,
+      longitude: null
+    });
+  };
   
   // Reset all filters to initial state
   const handleClearFilters = () => {
@@ -170,6 +184,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     if (searchParams.classType) count++;
     if (searchParams.ageGroup) count++;
     if (searchParams.city) count++;
+    if (searchParams.outdoors) count++;
     
     setActiveFiltersCount(count);
   }, [searchParams]);
@@ -327,7 +342,30 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
               </DropdownMenuContent>
             </DropdownMenu>
             
-
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant={searchParams.outdoors ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.outdoors 
+                      ? searchParams.outdoors
+                      : "Outdoors"
+                    }
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleOutdoorsSelect("Yes")}>
+                  Yes
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOutdoorsSelect("No")}>
+                  No
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <Button className="min-w-fit pl-[8px] pr-[8px]" onClick={handleSearch}>
               Search
@@ -443,7 +481,23 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 </Badge>
               )}
               
-
+              {searchParams.outdoors && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Outdoors: {searchParams.outdoors}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, outdoors: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude: null,
+                        longitude: null
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
               
 
             </div>
