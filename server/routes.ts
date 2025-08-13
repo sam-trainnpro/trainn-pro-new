@@ -4030,7 +4030,13 @@ Sitemap: https://trainn.pro/sitemap.xml`);
         '/terms/dmca',
         '/about/communityguidelines',
         '/terms/gifts',
-        '/terms/customer-referrals'
+        '/terms/customer-referrals',
+        '/outdoor-workouts-san-francisco',
+        '/kids-drop-in-sports',
+        '/kids-soccer-classes-san-francisco',
+        '/outdoor-yoga-san-francisco',
+        '/kids-drop-in-activities',
+        '/easy-to-book-personal-trainers'
       ];
       
       // Get all active classes
