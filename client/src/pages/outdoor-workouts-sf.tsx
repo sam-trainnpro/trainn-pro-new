@@ -287,12 +287,25 @@ export default function OutdoorWorkoutsSF() {
       // Prioritize by earliest start time from providers with multiple classes
       const remainingClasses = sortedClasses.filter(cls => !usedClassIds.has(cls.id));
       
-      // Add up to 2 more classes, prioritizing diversity and upcoming schedule
-      for (let i = 0; i < 2 && remainingClasses.length > 0; i++) {
-        if (remainingClasses[i]) {
-          selectedClasses.push(remainingClasses[i]);
-          usedClassIds.add(remainingClasses[i].id);
+      // Add 1 more class first
+      if (remainingClasses.length > 0 && remainingClasses[0]) {
+        selectedClasses.push(remainingClasses[0]);
+        usedClassIds.add(remainingClasses[0].id);
+      }
+      
+      // Step 3: Add Victor Antonetti's class as the 9th class specifically
+      const victorClasses = classesByCoach.get(44); // Victor Antonetti is coach ID 44
+      if (victorClasses && victorClasses.length > 1) {
+        // Find Victor's second class that hasn't been used yet
+        const victorSecondClass = victorClasses.find((cls: any) => !usedClassIds.has(cls.id));
+        if (victorSecondClass) {
+          selectedClasses.push(victorSecondClass);
+          usedClassIds.add(victorSecondClass.id);
         }
+      } else if (remainingClasses.length > 1) {
+        // Fallback: add second remaining class if Victor doesn't have a second class
+        selectedClasses.push(remainingClasses[1]);
+        usedClassIds.add(remainingClasses[1].id);
       }
 
       return selectedClasses;
