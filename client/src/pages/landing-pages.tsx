@@ -105,10 +105,12 @@ export default function LandingPages() {
                             View Page
                           </Button>
                         </Link>
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          <Map className="w-4 h-4" />
-                          Analytics
-                        </Button>
+                        {page.title !== "Outdoor Workouts San Francisco" && (
+                          <Button variant="outline" size="sm" className="flex items-center gap-2">
+                            <Map className="w-4 h-4" />
+                            Analytics
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
