@@ -33,6 +33,7 @@ export default function ClassesPage() {
     classType: typeof searchParams.type === 'string' ? searchParams.type : undefined,
     ageGroup: typeof searchParams.ageGroup === 'string' ? searchParams.ageGroup : undefined,
     city: typeof searchParams.city === 'string' ? searchParams.city : undefined,
+    outdoors: typeof searchParams.outdoors === 'string' ? searchParams.outdoors : undefined,
     date: searchParams.date ? new Date(searchParams.date as string) : undefined,
     latitude: typeof searchParams.lat === 'string' ? Number(searchParams.lat) : null,
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
@@ -112,6 +113,14 @@ export default function ClassesPage() {
       }
     }
 
+    // Outdoors filter - convert Yes/No to boolean for comparison
+    if (filters.outdoors) {
+      const outdoorsBool = filters.outdoors === "Yes";
+      if (classItem.outdoors !== outdoorsBool) {
+        return false;
+      }
+    }
+
     // Date filter - show classes only for the selected date
     if (filters.date) {
       // Class must have a start time to be filtered by date
@@ -174,6 +183,10 @@ export default function ClassesPage() {
     
     if (newFilters.city) {
       queryParams.set('city', newFilters.city);
+    }
+    
+    if (newFilters.outdoors) {
+      queryParams.set('outdoors', newFilters.outdoors);
     }
     
     if (newFilters.date) {
@@ -260,7 +273,7 @@ export default function ClassesPage() {
             </div>
             
             {/* Filters summary */}
-            {(filters.classType || filters.ageGroup || filters.city || filters.date || searchParams.category) && (
+            {(filters.classType || filters.ageGroup || filters.city || filters.outdoors || filters.date || searchParams.category) && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {filters.classType && categories && (
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
@@ -277,6 +290,12 @@ export default function ClassesPage() {
                 {filters.city && (
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                     City: {filters.city}
+                  </div>
+                )}
+                
+                {filters.outdoors && (
+                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+                    Outdoors: {filters.outdoors}
                   </div>
                 )}
                 
