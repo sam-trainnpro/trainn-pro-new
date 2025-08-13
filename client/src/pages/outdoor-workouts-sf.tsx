@@ -425,27 +425,6 @@ export default function OutdoorWorkoutsSF() {
         </section>
 
         {/* Classes Section */}
-        <section className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
-          <div className="max-w-6xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-4">Featured Outdoor Fitness Providers</h2>
-            <p className="text-lg text-gray-600 text-center mb-12">
-              Top-rated trainers and fitness professionals bringing outdoor workouts to San Francisco
-            </p>
-            
-
-
-            <div className="text-center mt-8">
-              <p className="text-gray-600 mb-4">All providers are vetted professionals</p>
-              <Link href="/coaches">
-                <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                  View All Providers
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Classes Section */}
         <section className="py-16 bg-white">
           <div className="max-w-6xl mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-4">Upcoming Outdoor Classes on Trainn</h2>
