@@ -9,6 +9,67 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 
+// Provider Highlights Component with real profile pictures
+const ProviderHighlights = () => {
+  const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
+  
+  // Fetch all coaches data
+  const { data: coaches } = useQuery({
+    queryKey: ['/api/coaches'],
+    select: (data: any[]) => data.filter(coach => targetCoachIds.includes(coach.id))
+  });
+
+  const providerProfiles = [
+    { id: 22, name: "Richard Seto Coaching", specialty: "HYROX & Strength Training", initials: "RS", gradient: "from-blue-500 to-purple-600" },
+    { id: 55, name: "The City is Our Gym", specialty: "Urban Fitness & HIIT", initials: "TC", gradient: "from-green-500 to-teal-600" },
+    { id: 44, name: "Victor Antonetti", specialty: "Personal Training & Fitness", initials: "VA", gradient: "from-red-500 to-orange-600" },
+    { id: 69, name: "Tuff as Neils", specialty: "Personal Training", initials: "TN", gradient: "from-orange-500 to-red-600" },
+    { id: 146, name: "Outdoor Yoga SF", specialty: "Outdoor Yoga & Mindfulness", initials: "OY", gradient: "from-purple-500 to-pink-600" },
+    { id: 167, name: "Workout on the Hill", specialty: "Hill Training & Conditioning", initials: "WH", gradient: "from-cyan-500 to-blue-600" },
+    { id: 54, name: "Movement Coach Lea", specialty: "Functional Movement", initials: "ML", gradient: "from-pink-500 to-rose-600" }
+  ];
+
+  return (
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {providerProfiles.map((profile) => {
+        const coach = coaches?.find(c => c.id === profile.id);
+        
+        // Fetch rating stats for each coach
+        const { data: ratingStats } = useQuery({
+          queryKey: ['/api/reviews/coach', profile.id, 'stats'],
+          queryFn: () => fetch(`/api/reviews/coach/${profile.id}/stats`).then(res => res.json()),
+        });
+
+        const displayRating = ratingStats?.totalReviews > 0 ? ratingStats.averageRating.toFixed(1) : "New";
+        
+        return (
+          <div key={profile.id} className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+            <div className={`w-16 h-16 bg-gradient-to-br ${profile.gradient} rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden`}>
+              {coach?.profileImage ? (
+                <img 
+                  src={coach.profileImage} 
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-white font-bold text-xl">{profile.initials}</span>
+              )}
+            </div>
+            <h3 className="font-semibold text-lg mb-1">
+              {coach?.businessName && coach?.showBusinessName ? coach.businessName : profile.name}
+            </h3>
+            <p className="text-gray-600 text-sm mb-2">{profile.specialty}</p>
+            <div className="flex items-center justify-center text-yellow-500">
+              <Star className="w-4 h-4 fill-current" />
+              <span className="ml-1 text-sm font-medium text-gray-700">{displayRating}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // Enhanced ClassCard component matching the design
 const ClassCard = ({ classItem }: { classItem: any }) => {
   // Fetch coach data
@@ -161,7 +222,7 @@ const ClassCard = ({ classItem }: { classItem: any }) => {
 };
 
 export default function OutdoorWorkoutsSF() {
-  // Fetch classes with filters for outdoor workouts by main adult-focused providers
+  // Fetch classes with enhanced filtering for outdoor workouts by providers
   const { data: classes, isLoading } = useQuery({
     queryKey: ['/api/classes'],
     select: (data: any[]) => {
@@ -169,19 +230,21 @@ export default function OutdoorWorkoutsSF() {
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(now.getDate() + 7);
       
-      // First filter by basic criteria
+      // Target providers with outdoor classes
+      const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
+      
+      // First filter by basic criteria: outdoor classes from target providers in SF
       const eligibleClasses = data.filter(cls => {
-        // Filter by main adult-focused workout providers
-        const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
+        // Must be from target providers
         if (!targetCoachIds.includes(cls.coachId)) return false;
         
-        // Filter by San Francisco
+        // Must be in San Francisco
         if (cls.city !== 'San Francisco') return false;
         
-        // Filter by outdoor classes (using the new outdoor field)
+        // Must be marked as outdoor
         if (!cls.outdoors) return false;
         
-        // Filter by next 7 days
+        // Must be within next 7 days
         if (cls.startTime) {
           const classDate = new Date(cls.startTime);
           if (classDate < now || classDate > sevenDaysFromNow) return false;
@@ -190,7 +253,7 @@ export default function OutdoorWorkoutsSF() {
         return true;
       });
 
-      // Sort by start time (upcoming classes first)
+      // Sort by start time (upcoming first)
       const sortedClasses = eligibleClasses.sort((a, b) => {
         const dateA = new Date(a.startTime || '9999-12-31');
         const dateB = new Date(b.startTime || '9999-12-31');
@@ -206,72 +269,33 @@ export default function OutdoorWorkoutsSF() {
         classesByCoach.get(cls.coachId).push(cls);
       });
 
-      const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
       const selectedClasses: any[] = [];
+      const usedClassIds = new Set();
 
-      // First, get at least 1 class from each coach (if available)
+      // Step 1: Get exactly 1 class from each of the 7 providers (if they have outdoor classes)
       targetCoachIds.forEach(coachId => {
         const coachClasses = classesByCoach.get(coachId);
         if (coachClasses && coachClasses.length > 0) {
-          selectedClasses.push(coachClasses[0]); // Take the earliest upcoming class
+          // Take the earliest upcoming outdoor class from this provider
+          const earliestClass = coachClasses[0];
+          selectedClasses.push(earliestClass);
+          usedClassIds.add(earliestClass.id);
         }
       });
 
-      // Fill remaining slots (up to 9 total) with additional classes from coaches who have extras
-      // Prioritize classes happening tomorrow or the day after
-      const remainingSlots = 9 - selectedClasses.length;
-      const usedClassIds = new Set(selectedClasses.map((cls: any) => cls.id));
+      // Step 2: Add 2 additional classes from the remaining pool
+      // Prioritize by earliest start time from providers with multiple classes
+      const remainingClasses = sortedClasses.filter(cls => !usedClassIds.has(cls.id));
       
-      for (let i = 0; i < remainingSlots && selectedClasses.length < 9; i++) {
-        let bestClass = null;
-        let bestScore = -1;
-        
-        // Look through all remaining classes to find the best candidates
-        sortedClasses.forEach(cls => {
-          if (usedClassIds.has(cls.id)) return;
-          
-          const classDate = new Date(cls.startTime);
-          const tomorrow = new Date(now);
-          tomorrow.setDate(now.getDate() + 1);
-          const dayAfterTomorrow = new Date(now);
-          dayAfterTomorrow.setDate(now.getDate() + 2);
-          
-          // Score classes: higher score = better priority
-          let score = 0;
-          
-          // Prioritize classes happening tomorrow or day after
-          if (classDate >= tomorrow && classDate < dayAfterTomorrow) {
-            score += 100; // Tomorrow gets highest priority
-          } else if (classDate >= dayAfterTomorrow) {
-            const dayAfterEnd = new Date(dayAfterTomorrow);
-            dayAfterEnd.setDate(dayAfterTomorrow.getDate() + 1);
-            if (classDate < dayAfterEnd) {
-              score += 50; // Day after tomorrow gets medium priority
-            }
-          }
-          
-          // Prefer coaches who have multiple classes (shows they're active)
-          const coachClassCount = classesByCoach.get(cls.coachId)?.length || 0;
-          if (coachClassCount > 1) {
-            score += coachClassCount * 5;
-          }
-          
-          // Prefer earlier times within the same day
-          score -= (classDate.getTime() - now.getTime()) / (1000 * 60 * 60); // Subtract hours from now
-          
-          if (score > bestScore) {
-            bestScore = score;
-            bestClass = cls;
-          }
-        });
-        
-        if (bestClass) {
-          selectedClasses.push(bestClass);
-          usedClassIds.add((bestClass as any).id);
+      // Add up to 2 more classes, prioritizing diversity and upcoming schedule
+      for (let i = 0; i < 2 && remainingClasses.length > 0; i++) {
+        if (remainingClasses[i]) {
+          selectedClasses.push(remainingClasses[i]);
+          usedClassIds.add(remainingClasses[i].id);
         }
       }
 
-      return selectedClasses.slice(0, 9);
+      return selectedClasses;
     }
   });
 
@@ -400,7 +424,7 @@ export default function OutdoorWorkoutsSF() {
           </div>
         </section>
 
-        {/* Provider Highlights Section */}
+        {/* Classes Section */}
         <section className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
           <div className="max-w-6xl mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-4">Featured Outdoor Fitness Providers</h2>
@@ -408,98 +432,7 @@ export default function OutdoorWorkoutsSF() {
               Top-rated trainers and fitness professionals bringing outdoor workouts to San Francisco
             </p>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {/* Richard Seto Coaching */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">RS</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-1">Richard Seto Coaching</h3>
-                <p className="text-gray-600 text-sm mb-2">HYROX & Strength Training</p>
-                <div className="flex items-center justify-center text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
-                </div>
-              </div>
 
-              {/* The City is Our Gym */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">TC</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-1">The City is Our Gym</h3>
-                <p className="text-gray-600 text-sm mb-2">Urban Fitness & HIIT</p>
-                <div className="flex items-center justify-center text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
-                </div>
-              </div>
-
-              {/* Tuff as Neils */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">TN</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-1">Tuff as Neils</h3>
-                <p className="text-gray-600 text-sm mb-2">Personal Training</p>
-                <div className="flex items-center justify-center text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
-                </div>
-              </div>
-
-              {/* Outdoor Yoga SF */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">OY</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-1">Outdoor Yoga SF</h3>
-                <p className="text-gray-600 text-sm mb-2">Outdoor Yoga & Mindfulness</p>
-                <div className="flex items-center justify-center text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="ml-1 text-sm font-medium text-gray-700">New</span>
-                </div>
-              </div>
-
-              {/* Workout on the Hill */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
-                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">WH</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-1">Workout on the Hill</h3>
-                <p className="text-gray-600 text-sm mb-2">Hill Training & Conditioning</p>
-                <div className="flex items-center justify-center text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="ml-1 text-sm font-medium text-gray-700">New</span>
-                </div>
-              </div>
-
-              {/* Movement Coach Lea */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
-                <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">ML</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-1">Movement Coach Lea</h3>
-                <p className="text-gray-600 text-sm mb-2">Functional Movement</p>
-                <div className="flex items-center justify-center text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="ml-1 text-sm font-medium text-gray-700">4.8</span>
-                </div>
-              </div>
-
-              {/* Independent Trainers */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">SF</span>
-                </div>
-                <h3 className="font-semibold text-lg mb-1">SF Outdoor Trainers</h3>
-                <p className="text-gray-600 text-sm mb-2">Various Specialties</p>
-                <div className="flex items-center justify-center text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
-                </div>
-              </div>
-            </div>
 
             <div className="text-center mt-8">
               <p className="text-gray-600 mb-4">All providers are vetted professionals</p>
@@ -513,7 +446,7 @@ export default function OutdoorWorkoutsSF() {
         </section>
 
         {/* Classes Section */}
-        <section className="py-16 bg-gray-50">
+        <section className="py-16 bg-white">
           <div className="max-w-6xl mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-4">Available Outdoor Classes</h2>
             <p className="text-lg text-gray-600 text-center mb-12">
@@ -546,6 +479,27 @@ export default function OutdoorWorkoutsSF() {
                 </Link>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Provider Highlights Section */}
+        <section className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-4">Featured Outdoor Fitness Providers</h2>
+            <p className="text-lg text-gray-600 text-center mb-12">
+              Top-rated trainers and fitness professionals bringing outdoor workouts to San Francisco
+            </p>
+            
+            <ProviderHighlights />
+
+            <div className="text-center mt-8">
+              <p className="text-gray-600 mb-4">All providers are vetted professionals</p>
+              <Link href="/coaches">
+                <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
+                  View All Providers
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
 
