@@ -48,6 +48,7 @@ import SuccessStoriesPage from "@/pages/success-stories";
 import BusinessToolsPage from "@/pages/business-tools";
 import CoachCommunityPage from "@/pages/coach-community";
 import OutdoorWorkoutsSF from "@/pages/outdoor-workouts-sf";
+import LandingPagesPage from "@/pages/landing-pages";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -79,6 +80,9 @@ function Router() {
       </Route>
       <Route path="/contact">
         <ContactPage />
+      </Route>
+      <Route path="/landing-pages">
+        <LandingPagesPage />
       </Route>
       <Route path="/classes">
         <ClassesPage />
