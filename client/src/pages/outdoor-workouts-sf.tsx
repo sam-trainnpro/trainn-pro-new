@@ -290,8 +290,8 @@ export default function OutdoorWorkoutsSF() {
   return (
     <>
       <Helmet>
-        <title>Outdoor Workouts in San Francisco | Book Fitness Classes at Parks & Beaches</title>
-        <meta name="description" content="Find outdoor fitness classes in San Francisco's best parks and beaches. Book yoga, HIIT, strength training, and personal training sessions at Dolores Park, Golden Gate Park, Crissy Field, and more." />
+        <title>Outdoor Workouts in San Francisco | Group Fitness Classes in Parks | Trainn</title>
+        <meta name="description" content="Join outdoor workout classes in San Francisco's best parks. From HIIT bootcamps at Dolores Park to strength training at Bayfront Park. Book drop-in sessions starting at $15." />
         <meta name="keywords" content="outdoor workouts San Francisco, park fitness classes, beach workouts SF, outdoor yoga San Francisco, Dolores Park fitness, Golden Gate Park classes, Crissy Field workouts" />
         
         {/* Open Graph */}
@@ -343,7 +343,7 @@ export default function OutdoorWorkoutsSF() {
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center">
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Outdoor Workouts in San Francisco
+                Outdoor Fitness Classes in San Francisco
               </h1>
               <p className="text-xl md:text-2xl mb-8 text-green-100">
                 Train at the city's most beautiful parks and beaches
@@ -396,6 +396,118 @@ export default function OutdoorWorkoutsSF() {
                 <h3 className="text-xl font-semibold mb-2">Flexible Scheduling</h3>
                 <p className="text-gray-600">Drop-in classes and recurring sessions to fit your busy lifestyle</p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Provider Highlights Section */}
+        <section className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-4">Featured Outdoor Fitness Providers</h2>
+            <p className="text-lg text-gray-600 text-center mb-12">
+              Top-rated trainers and fitness professionals bringing outdoor workouts to San Francisco
+            </p>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {/* Richard Seto Coaching */}
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-xl">RS</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-1">Richard Seto Coaching</h3>
+                <p className="text-gray-600 text-sm mb-2">HYROX & Strength Training</p>
+                <div className="flex items-center justify-center text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
+                </div>
+              </div>
+
+              {/* The City is Our Gym */}
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-xl">TC</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-1">The City is Our Gym</h3>
+                <p className="text-gray-600 text-sm mb-2">Urban Fitness & HIIT</p>
+                <div className="flex items-center justify-center text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
+                </div>
+              </div>
+
+              {/* Tuff as Neils */}
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-xl">TN</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-1">Tuff as Neils</h3>
+                <p className="text-gray-600 text-sm mb-2">Personal Training</p>
+                <div className="flex items-center justify-center text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
+                </div>
+              </div>
+
+              {/* Outdoor Yoga SF */}
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-xl">OY</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-1">Outdoor Yoga SF</h3>
+                <p className="text-gray-600 text-sm mb-2">Outdoor Yoga & Mindfulness</p>
+                <div className="flex items-center justify-center text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="ml-1 text-sm font-medium text-gray-700">New</span>
+                </div>
+              </div>
+
+              {/* Workout on the Hill */}
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-xl">WH</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-1">Workout on the Hill</h3>
+                <p className="text-gray-600 text-sm mb-2">Hill Training & Conditioning</p>
+                <div className="flex items-center justify-center text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="ml-1 text-sm font-medium text-gray-700">New</span>
+                </div>
+              </div>
+
+              {/* Movement Coach Lea */}
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+                <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-xl">ML</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-1">Movement Coach Lea</h3>
+                <p className="text-gray-600 text-sm mb-2">Functional Movement</p>
+                <div className="flex items-center justify-center text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="ml-1 text-sm font-medium text-gray-700">4.8</span>
+                </div>
+              </div>
+
+              {/* Independent Trainers */}
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center hover:shadow-md transition">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-xl">SF</span>
+                </div>
+                <h3 className="font-semibold text-lg mb-1">SF Outdoor Trainers</h3>
+                <p className="text-gray-600 text-sm mb-2">Various Specialties</p>
+                <div className="flex items-center justify-center text-yellow-500">
+                  <Star className="w-4 h-4 fill-current" />
+                  <span className="ml-1 text-sm font-medium text-gray-700">5.0</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center mt-8">
+              <p className="text-gray-600 mb-4">All providers are vetted professionals with insurance and certifications</p>
+              <Link href="/coaches">
+                <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
+                  View All Providers
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
