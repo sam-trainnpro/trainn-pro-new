@@ -502,7 +502,7 @@ export default function OutdoorWorkoutsSF() {
             </div>
 
             <div className="text-center mt-8">
-              <p className="text-gray-600 mb-4">All providers are vetted professionals with insurance and certifications</p>
+              <p className="text-gray-600 mb-4">All providers are vetted professionals</p>
               <Link href="/coaches">
                 <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
                   View All Providers
