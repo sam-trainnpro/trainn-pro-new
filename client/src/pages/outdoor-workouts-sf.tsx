@@ -448,7 +448,7 @@ export default function OutdoorWorkoutsSF() {
         {/* Classes Section */}
         <section className="py-16 bg-white">
           <div className="max-w-6xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-4">Available Outdoor Classes</h2>
+            <h2 className="text-3xl font-bold text-center mb-4">Upcoming Outdoor Classes on Trainn</h2>
             <p className="text-lg text-gray-600 text-center mb-12">
               Featuring top-rated coaches • Next 7 days • San Francisco outdoor locations
             </p>
