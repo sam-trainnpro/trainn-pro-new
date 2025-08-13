@@ -228,28 +228,56 @@ export default function OutdoorWorkoutsSF() {
     select: (data: any[]) => {
       const now = new Date();
       const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(now.getDate() + 7);
+      sevenDaysFromNow.setDate(now.getDate() + 8); // Changed to +8 to include the 7th day
       
       // Target providers with outdoor classes
       const targetCoachIds = [22, 55, 44, 69, 146, 167, 54];
       
+      // Debug: log the date range
+      console.log("Filtering classes between:", now.toISOString(), "and", sevenDaysFromNow.toISOString());
+      
       // First filter by basic criteria: outdoor classes from target providers in SF
       const eligibleClasses = data.filter(cls => {
-        // Must be from target providers
-        if (!targetCoachIds.includes(cls.coachId)) return false;
-        
-        // Must be in San Francisco
-        if (cls.city !== 'San Francisco') return false;
-        
-        // Must be marked as outdoor
-        if (!cls.outdoors) return false;
-        
-        // Must be within next 7 days
-        if (cls.startTime) {
-          const classDate = new Date(cls.startTime);
-          if (classDate < now || classDate > sevenDaysFromNow) return false;
+        // Debug logging for Victor's classes
+        if (cls.coachId === 44) {
+          console.log("Victor class found:", {
+            id: cls.id,
+            title: cls.title,
+            coachId: cls.coachId,
+            city: cls.city,
+            outdoors: cls.outdoors,
+            startTime: cls.startTime
+          });
         }
         
+        // Must be from target providers
+        if (!targetCoachIds.includes(cls.coachId)) {
+          if (cls.coachId === 44) console.log("Victor class filtered out: not in target coaches");
+          return false;
+        }
+        
+        // Must be in San Francisco
+        if (cls.city !== 'San Francisco') {
+          if (cls.coachId === 44) console.log("Victor class filtered out: not in San Francisco, city is:", cls.city);
+          return false;
+        }
+        
+        // Must be marked as outdoor
+        if (!cls.outdoors) {
+          if (cls.coachId === 44) console.log("Victor class filtered out: not marked as outdoor, outdoors is:", cls.outdoors);
+          return false;
+        }
+        
+        // Must be within next 7 days (inclusive)
+        if (cls.startTime) {
+          const classDate = new Date(cls.startTime);
+          if (classDate < now || classDate >= sevenDaysFromNow) {
+            if (cls.coachId === 44) console.log("Victor class filtered out: date out of range", classDate.toISOString(), "not between", now.toISOString(), "and", sevenDaysFromNow.toISOString());
+            return false;
+          }
+        }
+        
+        if (cls.coachId === 44) console.log("Victor class passed all filters!");
         return true;
       });
 
