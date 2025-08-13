@@ -26,7 +26,7 @@ const ProviderHighlights = () => {
     { id: 69, name: "Tuff as Neils", specialty: "Personal Training", initials: "TN", gradient: "from-orange-500 to-red-600" },
     { id: 146, name: "Outdoor Yoga SF", specialty: "Outdoor Yoga & Mindfulness", initials: "OY", gradient: "from-purple-500 to-pink-600" },
     { id: 167, name: "Workout on the Hill", specialty: "Hill Training & Conditioning", initials: "WH", gradient: "from-cyan-500 to-blue-600" },
-    { id: 54, name: "Movement Coach Lea", specialty: "Functional Movement", initials: "ML", gradient: "from-pink-500 to-rose-600" }
+    { id: 54, name: "November Project", specialty: "Functional Movement", initials: "NP", gradient: "from-pink-500 to-rose-600" }
   ];
 
   return (
