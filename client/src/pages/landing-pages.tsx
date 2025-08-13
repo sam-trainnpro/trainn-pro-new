@@ -30,9 +30,7 @@ export default function LandingPages() {
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Trainn Landing Pages
             </h1>
-            <p className="text-xl mb-8 opacity-90">
-              Specialized pages designed to capture targeted search traffic and convert visitors into customers
-            </p>
+            
             <div className="flex flex-wrap justify-center gap-4">
               <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
                 SEO Optimized
