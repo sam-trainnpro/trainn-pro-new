@@ -140,39 +140,7 @@ export default function LandingPages() {
               </div>
             </div>
 
-            {/* SEO Benefits Section */}
-            <div className="mt-16 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8">
-              <h3 className="text-2xl font-bold text-center mb-6">SEO Strategy Benefits</h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-6 h-6 text-green-600" />
-                  </div>
-                  <h4 className="font-semibold mb-2">Targeted Traffic</h4>
-                  <p className="text-sm text-gray-600">
-                    Each page targets specific search terms to attract qualified visitors
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Map className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <h4 className="font-semibold mb-2">Local SEO</h4>
-                  <p className="text-sm text-gray-600">
-                    Optimized for San Francisco-specific searches and local intent
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Star className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <h4 className="font-semibold mb-2">Higher Conversion</h4>
-                  <p className="text-sm text-gray-600">
-                    Content tailored to specific user needs increases booking rates
-                  </p>
-                </div>
-              </div>
-            </div>
+            
           </div>
         </section>
       </div>
