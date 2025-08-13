@@ -225,64 +225,27 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
-                  variant={searchParams.city ? "default" : "outline"} 
+                  variant={searchParams.ageGroup ? "default" : "outline"} 
                   className="min-w-fit flex items-center gap-1"
                 >
                   <span>
-                    {searchParams.city 
-                      ? searchParams.city
-                      : "City"
+                    {searchParams.ageGroup 
+                      ? searchParams.ageGroup
+                      : "Age Group"
                     }
                   </span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {isLoadingCities ? (
-                  <DropdownMenuItem disabled>Loading cities...</DropdownMenuItem>
-                ) : cities && cities.length > 0 ? (
-                  cities.map(city => (
-                    <DropdownMenuItem 
-                      key={city} 
-                      onClick={() => handleCitySelect(city)}
-                    >
-                      {city}
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <DropdownMenuItem disabled>No cities available</DropdownMenuItem>
-                )}
+                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Adults")}>
+                  Adults
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Kids")}>
+                  Kids
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant={searchParams.date ? "default" : "outline"} 
-                  className="min-w-fit flex items-center gap-1"
-                >
-                  <span>
-                    {searchParams.date 
-                      ? searchParams.date.toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })
-                      : "Date"
-                    }
-                  </span>
-                  <Calendar className="h-4 w-4 ml-1" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={searchParams.date}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -320,31 +283,6 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
-                  variant={searchParams.ageGroup ? "default" : "outline"} 
-                  className="min-w-fit flex items-center gap-1"
-                >
-                  <span>
-                    {searchParams.ageGroup 
-                      ? searchParams.ageGroup
-                      : "Age Group"
-                    }
-                  </span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Adults")}>
-                  Adults
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Kids")}>
-                  Kids
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
                   variant={searchParams.outdoors ? "default" : "outline"} 
                   className="min-w-fit flex items-center gap-1"
                 >
@@ -364,6 +302,68 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 <DropdownMenuItem onClick={() => handleOutdoorsSelect("No")}>
                   No
                 </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant={searchParams.date ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.date 
+                      ? searchParams.date.toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })
+                      : "Date"
+                    }
+                  </span>
+                  <Calendar className="h-4 w-4 ml-1" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={searchParams.date}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant={searchParams.city ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.city 
+                      ? searchParams.city
+                      : "City"
+                    }
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {isLoadingCities ? (
+                  <DropdownMenuItem disabled>Loading cities...</DropdownMenuItem>
+                ) : cities && cities.length > 0 ? (
+                  cities.map(city => (
+                    <DropdownMenuItem 
+                      key={city} 
+                      onClick={() => handleCitySelect(city)}
+                    >
+                      {city}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>No cities available</DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             

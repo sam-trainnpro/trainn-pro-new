@@ -27,11 +27,21 @@ export default function Home() {
       queryParams.set('type', filters.classType);
     }
     
+    if (filters.ageGroup) {
+      queryParams.set('ageGroup', filters.ageGroup);
+    }
+    
+    if (filters.city) {
+      queryParams.set('city', filters.city);
+    }
+    
+    if (filters.outdoors) {
+      queryParams.set('outdoors', filters.outdoors);
+    }
+    
     if (filters.date) {
       queryParams.set('date', filters.date.toISOString());
     }
-    
-
     
     if (filters.latitude && filters.longitude) {
       queryParams.set('lat', filters.latitude.toString());
