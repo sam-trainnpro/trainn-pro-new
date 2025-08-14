@@ -354,6 +354,20 @@ export default function OutdoorWorkoutsSF() {
             "@context": "https://schema.org",
             "@type": "FAQPage",
             "mainEntity": [{
+              "@type": "Question",
+              "name": "How much are drop-in workout classes in San Francisco for adults?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Adult drop-in workout classes in San Francisco range from $20-40 per session. No long-term commitments required. Typically packages are available that provide a discount"
+              }
+            }, {
+              "@type": "Question",
+              "name": "Where can I find outdoor workouts in San Francisco?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Outdoor fitness classes are held at many of the parks across San Francisco including Dolores Park, Bayfront Park, Baker Beach, Golden Gate Park, Ocean Beach, and Precita Park. Classes include HIIT, bootcamps, strengh and conditioning training, cardio and yoga."
+              }
+            }, {
               "@type": "Question", 
               "name": "What types of outdoor workouts are available in San Francisco?",
               "acceptedAnswer": {
@@ -373,6 +387,27 @@ export default function OutdoorWorkoutsSF() {
               "acceptedAnswer": {
                 "@type": "Answer", 
                 "text": "Bring a yoga mat, water bottle, towel, and wear weather-appropriate athletic clothing. Some classes may require specific equipment which will be listed in the class description."
+              }
+            }, {
+              "@type": "Question",
+              "name": "Are outdoor fitness classes suitable for beginners?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes! Most outdoor fitness classes welcome all fitness levels. Coaches provide modifications for beginners and offer progressions for more advanced participants. Check class descriptions for specific skill level requirements."
+              }
+            }, {
+              "@type": "Question",
+              "name": "How do I book an outdoor workout class?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You can book outdoor classes instantly through our website. Just browse available classes, select your preferred time and location, and complete booking with secure payment. No membership required for drop-in sessions."
+              }
+            }, {
+              "@type": "Question",
+              "name": "What happens if I'm running late to an outdoor class?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Most coaches allow late arrivals within the first 10-15 minutes of class. However, for safety reasons and to avoid disrupting the group, some classes may not permit late entry. Contact your coach directly if you're running behind."
               }
             }]
           })}
