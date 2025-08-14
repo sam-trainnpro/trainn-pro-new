@@ -281,25 +281,21 @@ export default function KidsDropInSportsSF() {
       const selectedClasses: any[] = [];
       const usedClassIds = new Set();
 
-      // Step 1: Get exactly 1 class from each of the 4 providers (if they have kids classes)
-      targetCoachIds.forEach(coachId => {
+      // Target coaches for the landing page: 2 classes each from Pat, Sam, and Ryan
+      const featuredCoachIds = [16, 1, 175]; // Pat Balderramos, Sam Roth, Ryan Zordai
+      
+      // Get exactly 2 classes from each featured coach (if they have kids classes)
+      featuredCoachIds.forEach(coachId => {
         const coachClasses = classesByCoach.get(coachId);
         if (coachClasses && coachClasses.length > 0) {
-          // Take the earliest upcoming kids class from this provider
-          const earliestClass = coachClasses[0];
-          selectedClasses.push(earliestClass);
-          usedClassIds.add(earliestClass.id);
+          // Take up to 2 earliest upcoming kids classes from this provider
+          const classesToAdd = coachClasses.slice(0, 2);
+          classesToAdd.forEach(cls => {
+            selectedClasses.push(cls);
+            usedClassIds.add(cls.id);
+          });
         }
       });
-
-      // Step 2: Add additional classes from the remaining pool to reach 8-9 classes
-      const remainingClasses = sortedClasses.filter(cls => !usedClassIds.has(cls.id));
-      
-      // Add up to 5 more classes to reach target of 8-9 total
-      for (let i = 0; i < Math.min(5, remainingClasses.length); i++) {
-        selectedClasses.push(remainingClasses[i]);
-        usedClassIds.add(remainingClasses[i].id);
-      }
 
       return selectedClasses;
     }
