@@ -20,10 +20,10 @@ const ProviderHighlights = () => {
   });
 
   const providerProfiles = [
-    { id: 16, name: "Pat Balderramos", specialty: "Youth Soccer & Skills Development", initials: "PB", gradient: "from-green-500 to-blue-600" },
-    { id: 1, name: "Sam Roth", specialty: "Youth Basketball & Athletics", initials: "SR", gradient: "from-orange-500 to-red-600" },
-    { id: 175, name: "Ryan Zoradi", specialty: "Multi-Sport Development", initials: "RZ", gradient: "from-purple-500 to-pink-600" },
-    { id: 13, name: "Jiro Palmieri", specialty: "Foundation Sports Skills", initials: "JP", gradient: "from-blue-500 to-cyan-600" }
+    { id: 16, name: "Pat Balderramos", specialty: "Youth Soccer", initials: "PB", gradient: "from-green-500 to-blue-600" },
+    { id: 1, name: "Sam Roth", specialty: "Youth Basketball", initials: "SR", gradient: "from-orange-500 to-red-600" },
+    { id: 175, name: "Ryan Zoradi", specialty: "Youth Soccer", initials: "RZ", gradient: "from-purple-500 to-pink-600" },
+    { id: 13, name: "Jiro Palmieri", specialty: "Youth Basketball", initials: "JP", gradient: "from-blue-500 to-cyan-600" }
   ];
 
   return (
