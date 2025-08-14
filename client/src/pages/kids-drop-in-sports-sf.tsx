@@ -230,8 +230,8 @@ export default function KidsDropInSportsSF() {
     queryKey: ['/api/classes'],
     select: (data: any[]) => {
       const now = new Date();
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(now.getDate() + 8); // Include the 7th day
+      const futureLimit = new Date();
+      futureLimit.setDate(now.getDate() + 30); // Include classes up to 30 days in the future
       
       // Target providers with kids sports classes
       const targetCoachIds = [16, 1, 175, 13];
@@ -253,10 +253,10 @@ export default function KidsDropInSportsSF() {
         // Prefer sports-related categories but don't exclude others
         // This allows for flexibility while prioritizing sports
         
-        // Must be within next 7 days (inclusive)
+        // Must be within next 30 days (inclusive)
         if (cls.startTime) {
           const classDate = new Date(cls.startTime);
-          if (classDate < now || classDate >= sevenDaysFromNow) return false;
+          if (classDate < now || classDate >= futureLimit) return false;
         }
         
         return true;
@@ -290,7 +290,7 @@ export default function KidsDropInSportsSF() {
         if (coachClasses && coachClasses.length > 0) {
           // Take up to 2 earliest upcoming kids classes from this provider
           const classesToAdd = coachClasses.slice(0, 2);
-          classesToAdd.forEach(cls => {
+          classesToAdd.forEach((cls: any) => {
             selectedClasses.push(cls);
             usedClassIds.add(cls.id);
           });
