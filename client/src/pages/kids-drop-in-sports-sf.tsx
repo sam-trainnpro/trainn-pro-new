@@ -292,16 +292,20 @@ export default function KidsDropInSportsSF() {
         }
       });
 
-      // Step 2: Add additional classes from the remaining pool to reach 8-9 classes
+      // Step 2: Add additional classes from the remaining pool to reach exactly 6 classes
       const remainingClasses = sortedClasses.filter(cls => !usedClassIds.has(cls.id));
       
-      // Add up to 5 more classes to reach target of 8-9 total
-      for (let i = 0; i < Math.min(5, remainingClasses.length); i++) {
+      // Calculate how many more classes we need to reach 6 total
+      const targetTotal = 6;
+      const slotsRemaining = targetTotal - selectedClasses.length;
+      
+      // Add remaining classes up to our target of 6 total
+      for (let i = 0; i < Math.min(slotsRemaining, remainingClasses.length); i++) {
         selectedClasses.push(remainingClasses[i]);
         usedClassIds.add(remainingClasses[i].id);
       }
 
-      return selectedClasses;
+      return selectedClasses.slice(0, targetTotal); // Ensure we never exceed 6 classes
     }
   });
 
