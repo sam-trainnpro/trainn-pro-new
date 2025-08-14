@@ -17,6 +17,15 @@ export default function LandingPages() {
       features: ["Real provider profiles", "Location-based filtering", "SEO optimized"],
       status: "Live",
       category: "Fitness"
+    },
+    {
+      title: "Kids Drop-In Sports Classes San Francisco",
+      url: "/kids-drop-in-sports-classes-san-francisco",
+      description: "Drop-in sports classes for kids in San Francisco. Soccer, basketball, and multi-sport programs with expert youth coaches. Ages 3-17 welcome.",
+      targetKeywords: ["kids sports classes san francisco", "drop in sports kids", "youth soccer sf", "kids basketball classes"],
+      features: ["Youth sports specialists", "No commitments required", "FAQ schema", "Age group filtering"],
+      status: "Live",
+      category: "Kids Sports"
     }
   ];
 
@@ -123,9 +132,8 @@ export default function LandingPages() {
               <h3 className="text-2xl font-bold mb-4">Coming Soon</h3>
               <p className="text-gray-600 mb-8">More targeted landing pages are in development</p>
               
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
                 {[
-                  "Kids Drop In Sports Classes",
                   "Outdoor Yoga San Francisco", 
                   "Kids Drop In Activities",
                   "Personal Trainers San Francisco"
