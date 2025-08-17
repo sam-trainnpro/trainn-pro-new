@@ -55,15 +55,15 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>Trainn - fitness and creative classes for adults and kids</title>
-        <meta name="description" content="Book fitness and creative classes for adults and kids in San Francisco Bay Area. Find local coaches for strength training, yoga, soccer, music, art, and more." />
-        <meta property="og:title" content="Trainn - fitness and creative classes for adults and kids" />
-        <meta property="og:description" content="Book fitness and creative classes for adults and kids in San Francisco Bay Area. Find local coaches for strength training, yoga, soccer, music, art, and more." />
+        <title>Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco | Trainn</title>
+        <meta name="description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
+        <meta property="og:title" content="Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco | Trainn" />
+        <meta property="og:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://trainn.pro" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Trainn - fitness and creative classes for adults and kids" />
-        <meta name="twitter:description" content="Book fitness and creative classes for adults and kids in San Francisco Bay Area. Find local coaches for strength training, yoga, soccer, music, art, and more." />
+        <meta name="twitter:title" content="Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco | Trainn" />
+        <meta name="twitter:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
         <link rel="canonical" href="https://trainn.pro" />
       </Helmet>
       
