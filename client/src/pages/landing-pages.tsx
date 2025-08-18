@@ -93,18 +93,7 @@ export default function LandingPages() {
                         </div>
                       </div>
 
-                      {/* Features */}
-                      <div>
-                        <h4 className="font-semibold text-sm text-gray-700 mb-2">Features</h4>
-                        <ul className="text-sm text-gray-600 space-y-1">
-                          {page.features.map((feature, i) => (
-                            <li key={i} className="flex items-center gap-2">
-                              <Star className="w-3 h-3 text-green-500" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+
 
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">
@@ -114,7 +103,7 @@ export default function LandingPages() {
                             View Page
                           </Button>
                         </Link>
-                        {page.title !== "Outdoor Workouts San Francisco" && (
+                        {page.title !== "Outdoor Workouts San Francisco" && page.title !== "Kids Drop-In Sports Classes San Francisco" && (
                           <Button variant="outline" size="sm" className="flex items-center gap-2">
                             <Map className="w-4 h-4" />
                             Analytics
