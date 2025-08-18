@@ -4034,6 +4034,7 @@ Sitemap: https://trainn.pro/sitemap.xml`);
         '/outdoor-workouts-san-francisco',
         '/kids-drop-in-sports',
         '/kids-drop-in-sports-classes-san-francisco',
+        '/kids-after-school-activities-san-francisco',
         '/kids-soccer-classes-san-francisco',
         '/outdoor-yoga-san-francisco',
         '/kids-drop-in-activities',
