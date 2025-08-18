@@ -26,6 +26,15 @@ export default function LandingPages() {
       features: ["Youth sports specialists", "No commitments required", "FAQ schema", "Age group filtering"],
       status: "Live",
       category: "Kids Sports"
+    },
+    {
+      title: "Kids After School & Weekend Activities San Francisco",
+      url: "/kids-after-school-activities-san-francisco",
+      description: "After school and weekend drop-in activities for kids in San Francisco. Sports, creative arts, music and more with flexible scheduling. Ages 3-17 welcome.",
+      targetKeywords: ["kids after school activities san francisco", "weekend activities kids", "drop in activities kids sf", "creative classes kids"],
+      features: ["After school timing", "Weekend options", "Creative & sports mix", "Drop-in flexibility"],
+      status: "Live",
+      category: "Kids Activities"
     }
   ];
 
@@ -103,7 +112,7 @@ export default function LandingPages() {
                             View Page
                           </Button>
                         </Link>
-                        {page.title !== "Outdoor Workouts San Francisco" && page.title !== "Kids Drop-In Sports Classes San Francisco" && (
+                        {page.title !== "Outdoor Workouts San Francisco" && page.title !== "Kids Drop-In Sports Classes San Francisco" && page.title !== "Kids After School & Weekend Activities San Francisco" && (
                           <Button variant="outline" size="sm" className="flex items-center gap-2">
                             <Map className="w-4 h-4" />
                             Analytics
@@ -124,8 +133,8 @@ export default function LandingPages() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
                 {[
                   "Outdoor Yoga San Francisco", 
-                  "Kids Drop In Activities",
-                  "Personal Trainers San Francisco"
+                  "Personal Trainers San Francisco",
+                  "Kids Soccer Classes San Francisco"
                 ].map((title, index) => (
                   <Card key={index} className="opacity-60">
                     <CardContent className="p-4 text-center">
