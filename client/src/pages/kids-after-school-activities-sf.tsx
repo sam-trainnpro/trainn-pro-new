@@ -9,9 +9,9 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 
-// Provider Highlights Component with kids activity providers including Alexei
+// Provider Highlights Component with kids activity providers including Alexei and Jeremy
 const ProviderHighlights = () => {
-  const targetCoachIds = [16, 1, 175, 61]; // Pat, Sam, Ryan, and Alexei Wajchman
+  const targetCoachIds = [16, 1, 175, 61, 147]; // Pat, Sam, Ryan, Alexei, and Jeremy Horwitz
   
   // Fetch all coaches data
   const { data: coaches } = useQuery({
@@ -23,11 +23,12 @@ const ProviderHighlights = () => {
     { id: 16, name: "Pat Balderramos", specialty: "Youth Soccer", initials: "PB", gradient: "from-green-500 to-blue-600" },
     { id: 1, name: "Sam Roth", specialty: "Youth Basketball", initials: "SR", gradient: "from-orange-500 to-red-600" },
     { id: 175, name: "Ryan Zoradi", specialty: "Youth Soccer", initials: "RZ", gradient: "from-purple-500 to-pink-600" },
-    { id: 61, name: "Alexei Wajchman", specialty: "Creative Activities", initials: "AW", gradient: "from-blue-500 to-cyan-600" }
+    { id: 61, name: "Alexei Wajchman", specialty: "Creative Activities", initials: "AW", gradient: "from-blue-500 to-cyan-600" },
+    { id: 147, name: "Jeremy Horwitz", specialty: "Kids Programs", initials: "JH", gradient: "from-indigo-500 to-purple-600" }
   ];
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
       {providerProfiles.map((profile) => {
         const coach = coaches?.find(c => c.id === profile.id);
         
@@ -233,8 +234,8 @@ export default function KidsAfterSchoolActivitiesSF() {
       const futureLimit = new Date();
       futureLimit.setDate(now.getDate() + 30); // Include classes up to 30 days in the future
       
-      // Target providers with kids activities - including Alexei for creative activities
-      const targetCoachIds = [16, 1, 175, 61]; // Pat, Sam, Ryan, Alexei
+      // Target providers with kids activities - including Alexei for creative activities and Jeremy
+      const targetCoachIds = [16, 1, 175, 61, 147]; // Pat, Sam, Ryan, Alexei, Jeremy
       
       // First filter by basic criteria: kids activities from target providers in SF
       const eligibleClasses = data.filter(cls => {
@@ -275,12 +276,27 @@ export default function KidsAfterSchoolActivitiesSF() {
       const selectedClasses: any[] = [];
       const usedClassIds = new Set();
 
-      // Get classes from each featured coach
-      targetCoachIds.forEach(coachId => {
+      // Get classes from each featured coach, prioritizing Jeremy to get 2 of his classes
+      const priorityCoachIds = [147]; // Jeremy gets priority to ensure his classes show
+      const otherCoachIds = [16, 1, 175, 61]; // Other coaches
+      
+      // First, get 2 classes from Jeremy if available
+      priorityCoachIds.forEach(coachId => {
         const coachClasses = classesByCoach.get(coachId);
         if (coachClasses && coachClasses.length > 0) {
-          // Take up to 2 earliest upcoming kids classes from this provider
           const classesToAdd = coachClasses.slice(0, 2);
+          classesToAdd.forEach((cls: any) => {
+            selectedClasses.push(cls);
+            usedClassIds.add(cls.id);
+          });
+        }
+      });
+      
+      // Then get 1 class from each other coach
+      otherCoachIds.forEach(coachId => {
+        const coachClasses = classesByCoach.get(coachId);
+        if (coachClasses && coachClasses.length > 0) {
+          const classesToAdd = coachClasses.slice(0, 1);
           classesToAdd.forEach((cls: any) => {
             selectedClasses.push(cls);
             usedClassIds.add(cls.id);
