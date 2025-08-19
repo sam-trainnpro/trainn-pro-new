@@ -264,11 +264,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Google Client ID exists:', !!process.env.GOOGLE_CLIENT_ID);
     console.log('Google Client Secret exists:', !!process.env.GOOGLE_CLIENT_SECRET);
     
-    const { role } = req.query;
-    // Store both role and origin domain in state
+    const { role, redirect } = req.query;
+    // Store role, redirect URL, and origin domain in state
     const host = req.get('host');
     const stateData = {
       role: role as string | undefined,
+      redirect: redirect as string | undefined,
       origin: host?.includes('trainn.pro') ? 'trainn.pro' : 'replit'
     };
     const state = JSON.stringify(stateData);
@@ -324,6 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Default to production domain
       let baseUrl = 'https://trainn.pro';
       let role: string | undefined;
+      let redirectUrl: string | undefined;
       
       try {
         console.log('Google callback success, user:', req.user ? 'found' : 'not found');
@@ -342,6 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               baseUrl = `https://${process.env.REPLIT_DOMAINS}`;
             }
             role = stateData.role;
+            redirectUrl = stateData.redirect;
             
             // Handle role preference
             if (role && role === 'coach' && user.role === 'customer') {
@@ -366,8 +369,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Redirect to correct domain on successful authentication
-        res.redirect(baseUrl);
+        // Redirect to intended destination or home page on successful authentication
+        const finalRedirectUrl = redirectUrl && redirectUrl !== '/' ? `${baseUrl}${redirectUrl}` : baseUrl;
+        res.redirect(finalRedirectUrl);
       } catch (error) {
         console.error('Google OAuth callback error:', error);
         res.redirect(`${baseUrl}/auth?error=callback_error`);
