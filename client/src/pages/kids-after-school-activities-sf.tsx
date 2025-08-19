@@ -24,7 +24,7 @@ const ProviderHighlights = () => {
     { id: 1, name: "Sam Roth", specialty: "Youth Basketball", initials: "SR", gradient: "from-orange-500 to-red-600" },
     { id: 175, name: "Ryan Zoradi", specialty: "Youth Soccer", initials: "RZ", gradient: "from-purple-500 to-pink-600" },
     { id: 61, name: "Alexei Wajchman", specialty: "Creative Activities", initials: "AW", gradient: "from-blue-500 to-cyan-600" },
-    { id: 147, name: "Jeremy Horwitz", specialty: "Kids Programs", initials: "JH", gradient: "from-indigo-500 to-purple-600" }
+    { id: 147, name: "Jeremy Horwitz", specialty: "STEM", initials: "JH", gradient: "from-indigo-500 to-purple-600" }
   ];
 
   return (
