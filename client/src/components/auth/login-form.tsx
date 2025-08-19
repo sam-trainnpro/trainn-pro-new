@@ -172,7 +172,11 @@ export default function LoginForm() {
               // Get current role preference from URL or default to customer
               const searchParams = new URLSearchParams(window.location.search);
               const role = searchParams.get('role') || 'customer';
-              window.location.href = `/api/auth/google?role=${role}`;
+              
+              // Capture the current intended destination for post-auth redirect
+              const redirectUrl = searchParams.get('redirect') || window.location.pathname;
+              
+              window.location.href = `/api/auth/google?role=${role}&redirect=${encodeURIComponent(redirectUrl)}`;
             }}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
