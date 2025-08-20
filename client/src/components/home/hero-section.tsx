@@ -24,33 +24,36 @@ export default function HeroSection() {
              width: '100vw',
              backgroundColor: 'white'
            }}>
-        {/* Image with overlay wrapper */}
-        <div className="relative inline-block w-full">
-          <img 
-            src="/hero-v6-no-border.png"
-            alt="Fitness and creative classes for adults and kids"
-            className="w-full h-auto block"
-            style={{
-              maxHeight: '600px',
-              objectFit: 'contain',
-              margin: '0 auto'
-            }}
-          />
-          
-          {/* Overlay that matches image exactly */}
-          <div className="absolute inset-0 pointer-events-none"
-               style={{
-                 background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5))'
-               }}>
-            {/* Text content */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="px-4 text-center">
-                <h1 className="text-3xl sm:text-4xl md:text-6xl font-heading font-bold mb-4 text-white">
-                  Find Your Perfect Class
-                </h1>
-                <p className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto">
-                  Connect with top providers in the San Francisco Bay Area for sports, workouts, music, art and other fun classes for adults and kids
-                </p>
+        {/* Image with overlay wrapper - centered with max width */}
+        <div className="flex justify-center w-full">
+          <div className="relative inline-block" style={{ maxWidth: '100%' }}>
+            <img 
+              src="/hero-v6-no-border.png"
+              alt="Fitness and creative classes for adults and kids"
+              className="block"
+              style={{
+                maxHeight: '600px',
+                width: 'auto',
+                height: 'auto',
+                maxWidth: '100%'
+              }}
+            />
+            
+            {/* Overlay that matches image dimensions exactly */}
+            <div className="absolute inset-0 pointer-events-none"
+                 style={{
+                   background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5))'
+                 }}>
+              {/* Text content */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="px-4 text-center">
+                  <h1 className="text-3xl sm:text-4xl md:text-6xl font-heading font-bold mb-4 text-white">
+                    Find Your Perfect Class
+                  </h1>
+                  <p className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto">
+                    Connect with top providers in the San Francisco Bay Area for sports, workouts, music, art and other fun classes for adults and kids
+                  </p>
+                </div>
               </div>
             </div>
           </div>
