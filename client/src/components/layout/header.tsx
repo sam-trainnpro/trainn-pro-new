@@ -99,11 +99,18 @@ export default function Header() {
             /* Logged in state */
             <div className="flex items-center space-x-4">
               {(user.role === 'coach' || user.role === 'admin') && (
-                <Link href="/create-class">
-                  <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
-                    Create Class
-                  </Button>
-                </Link>
+                <>
+                  <Link href="/create-class">
+                    <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+                      Create Class
+                    </Button>
+                  </Link>
+                  <Link href="/create-package">
+                    <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+                      Create Package
+                    </Button>
+                  </Link>
+                </>
               )}
               
               <Link href={user.role === 'coach' ? "/my-calendar" : "/bookings"}>
@@ -162,12 +169,20 @@ export default function Header() {
                     </DropdownMenuItem>
                   )}
                   {user.role === 'coach' && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/promo-codes" className="cursor-pointer w-full">
-                        <Tag className="mr-2 h-4 w-4" />
-                        <span>My Promo Codes</span>
-                      </Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/promo-codes" className="cursor-pointer w-full">
+                          <Tag className="mr-2 h-4 w-4" />
+                          <span>My Promo Codes</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/my-packages" className="cursor-pointer w-full">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          <span>My Packages</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   {user.role === 'admin' && (
                     <>
@@ -265,6 +280,14 @@ export default function Header() {
                         </Button>
                       </Link>
                       {user.role === 'coach' && (
+                        <Link href="/my-packages" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            <BookOpen className="mr-2 h-5 w-5" />
+                            My Packages
+                          </Button>
+                        </Link>
+                      )}
+                      {user.role === 'coach' && (
                         <>
                           <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
                             <Button variant="ghost" className="w-full justify-start">
@@ -297,11 +320,18 @@ export default function Header() {
                     </Button>
                   </Link>
                   {user.role === 'coach' && (
-                    <Link href="/create-class" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full bg-primary text-white">
-                        Create Class
-                      </Button>
-                    </Link>
+                    <>
+                      <Link href="/create-class" onClick={() => setMobileMenuOpen(false)}>
+                        <Button className="w-full bg-primary text-white">
+                          Create Class
+                        </Button>
+                      </Link>
+                      <Link href="/create-package" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white">
+                          Create Package
+                        </Button>
+                      </Link>
+                    </>
                   )}
                   {user.role === 'admin' && (
                     <>
