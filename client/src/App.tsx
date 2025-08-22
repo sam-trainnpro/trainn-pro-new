@@ -34,6 +34,8 @@ import MyCalendarPage from "@/pages/my-calendar";
 import BlogPage from "@/pages/blog";
 import BlogPostPage from "@/pages/blog-post";
 import BlogAdminPage from "@/pages/blog-admin";
+import BlogCreatePage from "@/pages/blog-create";
+import BlogEditPage from "@/pages/blog-edit";
 import DMCAPage from "@/pages/dmca";
 import CommunityGuidelinesPage from "@/pages/community-guidelines";
 import GiftTermsPage from "@/pages/gift-terms";
@@ -165,6 +167,12 @@ function Router() {
       </Route>
       <ProtectedRoute path="/blog/admin">
         <BlogAdminPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/blog/admin/create">
+        <BlogCreatePage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/blog/admin/edit/:id">
+        <BlogEditPage />
       </ProtectedRoute>
       <Route path="/terms/dmca">
         <DMCAPage />
