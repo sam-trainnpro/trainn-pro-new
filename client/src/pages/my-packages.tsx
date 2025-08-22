@@ -38,7 +38,7 @@ export default function MyPackages() {
 
   // Get current user
   const { data: user, isLoading: userLoading } = useQuery({
-    queryKey: ['/api/auth/me']
+    queryKey: ['/api/user']
   });
 
   // Debug logging
