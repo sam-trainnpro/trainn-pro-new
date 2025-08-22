@@ -16,15 +16,8 @@ export default function BlogAdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Temporary fallback to prevent crashes
-  let user = null;
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-  } catch (error) {
-    console.log("AuthProvider not available, using fallback");
-  }
+  // Get authenticated user
+  const { user } = useAuth();
 
   // Redirect if not admin
   if (!user || user.role !== 'admin') {
