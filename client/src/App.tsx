@@ -159,21 +159,21 @@ function Router() {
       <ProtectedRoute path="/promo-codes">
         <CoachPromoCodesPage />
       </ProtectedRoute>
-      <Route path="/blog">
-        <BlogPage />
-      </Route>
-      <Route path="/blog/:slug">
-        <BlogPostPage />
-      </Route>
-      <ProtectedRoute path="/blog/admin">
-        <BlogAdminPage />
+      <ProtectedRoute path="/blog/admin/edit/:id">
+        <BlogEditPage />
       </ProtectedRoute>
       <ProtectedRoute path="/blog/admin/create">
         <BlogCreatePage />
       </ProtectedRoute>
-      <ProtectedRoute path="/blog/admin/edit/:id">
-        <BlogEditPage />
+      <ProtectedRoute path="/blog/admin">
+        <BlogAdminPage />
       </ProtectedRoute>
+      <Route path="/blog/:slug">
+        <BlogPostPage />
+      </Route>
+      <Route path="/blog">
+        <BlogPage />
+      </Route>
       <Route path="/terms/dmca">
         <DMCAPage />
       </Route>
