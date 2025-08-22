@@ -15,7 +15,8 @@ import {
   userCommissionTiers, type UserCommissionTier, type InsertUserCommissionTier,
   referrals, type Referral, type InsertReferral,
   userCredits, type UserCredit, type InsertUserCredit,
-  providerReferrals, type ProviderReferral, type InsertProviderReferral
+  providerReferrals, type ProviderReferral, type InsertProviderReferral,
+  classPackages, type ClassPackage, type InsertClassPackage
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -168,6 +169,13 @@ export interface IStorage {
   
   // Provider-to-Customer Referral Stripe Transfer
   createProviderReferralStripeTransfer(providerId: number, referralId: number, amount: number): Promise<void>;
+  
+  // Class Package methods
+  createPackage(packageData: InsertClassPackage): Promise<ClassPackage>;
+  getPackage(id: number): Promise<ClassPackage | undefined>;
+  getCoachPackages(coachId: number): Promise<ClassPackage[]>;
+  updatePackage(id: number, packageData: Partial<ClassPackage>): Promise<ClassPackage | undefined>;
+  deletePackage(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1254,6 +1262,38 @@ export class DatabaseStorage implements IStorage {
       console.error(`❌ Error creating provider referral Stripe transfer:`, error);
       throw error;
     }
+  }
+
+  // Class Package Management Methods
+  async createPackage(packageData: InsertClassPackage): Promise<ClassPackage> {
+    const [pkg] = await db.insert(classPackages).values(packageData).returning();
+    return pkg;
+  }
+
+  async getPackage(id: number): Promise<ClassPackage | undefined> {
+    const [pkg] = await db.select().from(classPackages).where(eq(classPackages.id, id));
+    return pkg || undefined;
+  }
+
+  async getCoachPackages(coachId: number): Promise<ClassPackage[]> {
+    return await db.select()
+      .from(classPackages)
+      .where(eq(classPackages.coachId, coachId))
+      .orderBy(desc(classPackages.createdAt));
+  }
+
+  async updatePackage(id: number, packageData: Partial<ClassPackage>): Promise<ClassPackage | undefined> {
+    const [updatedPackage] = await db
+      .update(classPackages)
+      .set(packageData)
+      .where(eq(classPackages.id, id))
+      .returning();
+    return updatedPackage || undefined;
+  }
+
+  async deletePackage(id: number): Promise<boolean> {
+    const result = await db.delete(classPackages).where(eq(classPackages.id, id));
+    return result.rowCount > 0;
   }
 
   // Promo Code Management Methods

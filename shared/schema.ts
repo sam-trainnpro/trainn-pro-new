@@ -495,3 +495,46 @@ export const insertProviderReferralSchema = createInsertSchema(providerReferrals
 
 export type InsertProviderReferral = z.infer<typeof insertProviderReferralSchema>;
 export type ProviderReferral = typeof providerReferrals.$inferSelect;
+
+// Class Packages - Provider-created package offerings
+export const classPackages = pgTable("class_packages", {
+  id: serial("id").primaryKey(),
+  coachId: integer("coach_id").notNull(), // FK to users (providers)
+  title: text("title").notNull(), // "5-Class Yoga Package"
+  packageType: text("package_type").notNull(), // "set_pack" or "time_bound"
+  
+  // For set packs
+  classCount1: integer("class_count_1"), // First option (e.g., 5 classes)
+  classCount2: integer("class_count_2"), // Second option (e.g., 10 classes)
+  classCount3: integer("class_count_3"), // Third option (e.g., 20 classes)
+  price1: real("price_1"), // Price for first class count option
+  price2: real("price_2"), // Price for second class count option
+  price3: real("price_3"), // Price for third class count option
+  
+  // Eligible classes for this package
+  eligibleClasses: text("eligible_classes"), // JSON array of class IDs or "all"
+  
+  isActive: boolean("is_active").default(true),
+  status: text("status").notNull().default("enabled"), // "enabled", "disabled"
+  creationDate: timestamp("creation_date").defaultNow(),
+  futureClassCount: integer("future_class_count"), // Count of eligible future classes
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertClassPackageSchema = createInsertSchema(classPackages).pick({
+  coachId: true,
+  title: true,
+  packageType: true,
+  classCount1: true,
+  classCount2: true,
+  classCount3: true,
+  price1: true,
+  price2: true,
+  price3: true,
+  eligibleClasses: true,
+  isActive: true,
+  status: true,
+});
+
+export type InsertClassPackage = z.infer<typeof insertClassPackageSchema>;
+export type ClassPackage = typeof classPackages.$inferSelect;
