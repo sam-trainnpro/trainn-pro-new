@@ -43,6 +43,8 @@ import PrivacyPage from "@/pages/privacy";
 import CookiesPage from "@/pages/cookies";
 import AdminPromoCodesPage from "@/pages/admin-promo-codes";
 import CoachPromoCodesPage from "@/pages/coach-promo-codes";
+import CreatePackagePage from "@/pages/create-package";
+import MyPackagesPage from "@/pages/my-packages";
 import CoachResourcesPage from "@/pages/coach-resources";
 import SuccessStoriesPage from "@/pages/success-stories";
 import BusinessToolsPage from "@/pages/business-tools";
@@ -124,6 +126,12 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/create-class">
         <CreateClassPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/create-package">
+        <CreatePackagePage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/my-packages">
+        <MyPackagesPage />
       </ProtectedRoute>
       <ProtectedRoute path="/my-classes">
         <MyClassesPage />

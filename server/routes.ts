@@ -992,6 +992,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Class Package Routes
+  
+  // Create a new package (coaches only)
+  app.post("/api/packages", requireAuth, async (req, res) => {
+    try {
+      // Check if user is coach
+      if (req.user.role !== "coach") {
+        return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      // Check if coach is approved
+      if (!req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
+      }
+      
+      const packageData = {
+        ...req.body,
+        coachId: req.user.id,
+        isActive: true
+      };
+      
+      const newPackage = await storage.createPackage(packageData);
+      res.status(201).json(newPackage);
+    } catch (error) {
+      console.error("Error creating package:", error);
+      res.status(500).json({ message: "Failed to create package" });
+    }
+  });
+
+  // Get packages for a specific coach
+  app.get("/api/coaches/:id/packages", async (req, res) => {
+    try {
+      const coachId = parseInt(req.params.id);
+      const packages = await storage.getCoachPackages(coachId);
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching coach packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  // Get a specific package
+  app.get("/api/packages/:id", async (req, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+      const pkg = await storage.getPackage(packageId);
+      
+      if (!pkg) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      res.json(pkg);
+    } catch (error) {
+      console.error("Error fetching package:", error);
+      res.status(500).json({ message: "Failed to fetch package" });
+    }
+  });
+
+  // Update a package (coaches can only update their own)
+  app.put("/api/packages/:id", requireAuth, async (req, res) => {
+    try {
+      // Check if user is coach
+      if (req.user.role !== "coach") {
+        return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      const packageId = parseInt(req.params.id);
+      const existingPackage = await storage.getPackage(packageId);
+      
+      if (!existingPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      if (existingPackage.coachId !== req.user.id) {
+        return res.status(403).json({ message: "You can only update your own packages" });
+      }
+      
+      const updatedPackage = await storage.updatePackage(packageId, req.body);
+      res.json(updatedPackage);
+    } catch (error) {
+      console.error("Error updating package:", error);
+      res.status(500).json({ message: "Failed to update package" });
+    }
+  });
+
+  // Delete a package (coaches can only delete their own)
+  app.delete("/api/packages/:id", requireAuth, async (req, res) => {
+    try {
+      // Check if user is coach
+      if (req.user.role !== "coach") {
+        return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      const packageId = parseInt(req.params.id);
+      const existingPackage = await storage.getPackage(packageId);
+      
+      if (!existingPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      if (existingPackage.coachId !== req.user.id) {
+        return res.status(403).json({ message: "You can only delete your own packages" });
+      }
+      
+      const deleted = await storage.deletePackage(packageId);
+      if (deleted) {
+        res.json({ message: "Package deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete package" });
+      }
+    } catch (error) {
+      console.error("Error deleting package:", error);
+      res.status(500).json({ message: "Failed to delete package" });
+    }
+  });
+
   // Check class availability (used before payment)
   app.post("/api/classes/:id/check-availability", requireAuth, async (req, res) => {
     try {
