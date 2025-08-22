@@ -128,7 +128,7 @@ export default function CreatePackage() {
     loadCategories();
   }, []);
 
-  // Load coach's classes - only classes by the logged-in coach
+  // Load coach's classes - only classes by the logged-in coach with future dates
   useEffect(() => {
     async function loadCoachClasses() {
       if (!user?.id) return;
@@ -137,18 +137,72 @@ export default function CreatePackage() {
         const res = await fetch(`/api/classes`);
         if (res.ok) {
           const allClasses = await res.json();
-          // Filter to only classes by this coach and get unique class titles
-          const coachClasses = allClasses.filter((cls: any) => cls.coachId === user.id);
+          const now = new Date();
+          
+          // Filter to only classes by this coach with future dates/occurrences
+          const coachClasses = allClasses.filter((cls: any) => {
+            if (cls.coachId !== user.id) return false;
+            
+            // For recurring classes
+            if (cls.isRecurring) {
+              // If no end date/count specified, assume it continues indefinitely
+              if (!cls.recurrenceEndDate && !cls.recurrenceEndCount) return true;
+              
+              // If has end date, check if it's in the future
+              if (cls.recurrenceEndDate) {
+                return new Date(cls.recurrenceEndDate) > now;
+              }
+              
+              // If has end count, we'll assume it has future occurrences
+              // (Complex calculation would require knowing how many have already occurred)
+              if (cls.recurrenceEndCount && cls.recurrenceEndCount > 0) {
+                return true;
+              }
+            }
+            
+            // For one-time classes, check if start time is in the future
+            if (cls.startTime) {
+              return new Date(cls.startTime) > now;
+            }
+            
+            return false;
+          });
           
           // Group by title to handle recurring classes - count each unique class title once
           const uniqueClasses = coachClasses.reduce((acc: any[], cls: any) => {
             const existing = acc.find(c => c.title.toLowerCase() === cls.title.toLowerCase());
             if (!existing) {
+              // Calculate estimated future occurrences for this class
+              let estimatedFutureOccurrences = 1;
+              
+              if (cls.isRecurring) {
+                if (!cls.recurrenceEndDate && !cls.recurrenceEndCount) {
+                  // Unlimited recurring - treat as having many occurrences
+                  estimatedFutureOccurrences = 100; // Large number to represent unlimited
+                } else if (cls.recurrenceEndCount) {
+                  // Use end count as estimate (could be more precise with start date calculation)
+                  estimatedFutureOccurrences = cls.recurrenceEndCount;
+                } else if (cls.recurrenceEndDate) {
+                  // Estimate based on frequency and end date
+                  const endDate = new Date(cls.recurrenceEndDate);
+                  const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  // Rough estimation based on recurrence type
+                  if (cls.recurrenceType === 'daily') {
+                    estimatedFutureOccurrences = Math.max(1, Math.floor(daysUntilEnd / (cls.recurrenceInterval || 1)));
+                  } else if (cls.recurrenceType === 'weekly') {
+                    estimatedFutureOccurrences = Math.max(1, Math.floor(daysUntilEnd / (7 * (cls.recurrenceInterval || 1))));
+                  } else if (cls.recurrenceType === 'monthly') {
+                    estimatedFutureOccurrences = Math.max(1, Math.floor(daysUntilEnd / (30 * (cls.recurrenceInterval || 1))));
+                  }
+                }
+              }
+              
               acc.push({
                 id: cls.id,
                 title: cls.title,
                 isRecurring: cls.isRecurring,
-                // For recurring classes without end date, they're always available
+                estimatedFutureOccurrences,
                 hasUnlimitedFuture: cls.isRecurring && !cls.recurrenceEndDate && !cls.recurrenceEndCount
               });
             }
@@ -164,7 +218,7 @@ export default function CreatePackage() {
     loadCoachClasses();
   }, [user?.id]);
 
-  // Validate eligible classes count against largest set pack
+  // Validate total future occurrences against largest set pack
   const validateEligibleClasses = () => {
     if (packageType !== 'set_pack') return true;
     
@@ -174,16 +228,28 @@ export default function CreatePackage() {
       classCount3 || 0
     );
     
-    const selectedCount = selectedClasses.length === 1 && selectedClasses[0] === 'all' 
-      ? coachClasses.length 
-      : selectedClasses.length;
+    if (largestSetPack === 0) return true;
     
-    const requiredCount = largestSetPack * 2;
+    const requiredOccurrences = largestSetPack * 2;
     
-    if (selectedCount < requiredCount) {
+    // Calculate total future occurrences from selected classes
+    let totalFutureOccurrences = 0;
+    
+    if (selectedClasses.length === 1 && selectedClasses[0] === 'all') {
+      // If "all" is selected, sum all class occurrences
+      totalFutureOccurrences = coachClasses.reduce((total, cls) => total + cls.estimatedFutureOccurrences, 0);
+    } else {
+      // Sum occurrences from specifically selected classes
+      totalFutureOccurrences = selectedClasses.reduce((total, classId) => {
+        const classData = coachClasses.find(cls => cls.id === classId);
+        return total + (classData?.estimatedFutureOccurrences || 1);
+      }, 0);
+    }
+    
+    if (totalFutureOccurrences < requiredOccurrences) {
       toast({
-        title: "Insufficient Eligible Classes",
-        description: `You need at least ${requiredCount} eligible classes (twice the largest set pack of ${largestSetPack}). Currently selected: ${selectedCount}.`,
+        title: "Insufficient Future Class Occurrences",
+        description: `You need at least ${requiredOccurrences} future class occurrences (twice the largest set pack of ${largestSetPack}). Currently available: ${totalFutureOccurrences} future occurrences.`,
         variant: "destructive"
       });
       return false;
