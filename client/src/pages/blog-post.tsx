@@ -125,10 +125,15 @@ export default function BlogPostPage() {
                 </div>
                 <span>•</span>
                 <span>
-                  {post.publishedAt 
-                    ? format(new Date(post.publishedAt), 'MMMM d, yyyy')
-                    : format(new Date(post.createdAt!), 'MMMM d, yyyy')
-                  }
+                  {(() => {
+                    if (post.publishedAt && !isNaN(new Date(post.publishedAt).getTime())) {
+                      return format(new Date(post.publishedAt), 'MMMM d, yyyy');
+                    }
+                    if (post.createdAt && !isNaN(new Date(post.createdAt).getTime())) {
+                      return format(new Date(post.createdAt), 'MMMM d, yyyy');
+                    }
+                    return format(new Date(), 'MMMM d, yyyy');
+                  })()}
                 </span>
                 {post.status !== 'published' && (
                   <>
