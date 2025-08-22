@@ -37,14 +37,17 @@ export default function MyPackages() {
   const [deletePackageId, setDeletePackageId] = useState<number | null>(null);
 
   // Get current user
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['/api/auth/me']
   });
+
+  // Debug logging
+  console.log('MyPackages - User data:', user);
 
   // Get coach's packages
   const { data: packages, isLoading } = useQuery({
     queryKey: [`/api/coaches/${user?.id}/packages`],
-    enabled: !!user?.id && user?.role === 'coach'
+    enabled: !!user?.id && user?.role === 'coach' && user?.isApproved
   });
 
   const deletePackageMutation = useMutation({
@@ -79,13 +82,59 @@ export default function MyPackages() {
     return discount.toFixed(0);
   };
 
-  if (!user || user.role !== 'coach') {
+  // Show loading state while user data is being fetched
+  if (userLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              You must be an approved coach to view packages.
+              Loading...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if user is logged in
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Please log in to view packages.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if user is a coach
+  if (user.role !== 'coach') {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              You must be a coach to view packages.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if coach is approved
+  if (!user.isApproved) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Your coach account is pending approval.
             </p>
           </CardContent>
         </Card>
