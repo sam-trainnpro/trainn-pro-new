@@ -128,15 +128,34 @@ export default function CreatePackage() {
     loadCategories();
   }, []);
 
-  // Load coach's classes
+  // Load coach's classes - only classes by the logged-in coach
   useEffect(() => {
     async function loadCoachClasses() {
       if (!user?.id) return;
       try {
-        const res = await fetch(`/api/classes?coachId=${user.id}&futureOnly=true`);
+        // Get all classes by this specific coach
+        const res = await fetch(`/api/classes`);
         if (res.ok) {
-          const data = await res.json();
-          setCoachClasses(data);
+          const allClasses = await res.json();
+          // Filter to only classes by this coach and get unique class titles
+          const coachClasses = allClasses.filter((cls: any) => cls.coachId === user.id);
+          
+          // Group by title to handle recurring classes - count each unique class title once
+          const uniqueClasses = coachClasses.reduce((acc: any[], cls: any) => {
+            const existing = acc.find(c => c.title.toLowerCase() === cls.title.toLowerCase());
+            if (!existing) {
+              acc.push({
+                id: cls.id,
+                title: cls.title,
+                isRecurring: cls.isRecurring,
+                // For recurring classes without end date, they're always available
+                hasUnlimitedFuture: cls.isRecurring && !cls.recurrenceEndDate && !cls.recurrenceEndCount
+              });
+            }
+            return acc;
+          }, []);
+          
+          setCoachClasses(uniqueClasses);
         }
       } catch (error) {
         console.error("Error loading coach classes:", error);
@@ -306,28 +325,6 @@ export default function CreatePackage() {
                   )}
                 />
 
-                {/* Description */}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describe your package, what's included, benefits, etc." 
-                          className="min-h-32" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Provide details about your package and what students can expect
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 {/* Category */}
                 <FormField
                   control={form.control}
@@ -354,35 +351,6 @@ export default function CreatePackage() {
                       </Select>
                       <FormDescription>
                         Choose the category that best fits your package
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Package Type */}
-                <FormField
-                  control={form.control}
-                  name="packageType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Package Type <span className="text-destructive">*</span></FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select package type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="set_pack">A SET PACK</SelectItem>
-                          <SelectItem value="time_bound">TIME BOUND</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Choose whether this is a set number of classes or time-based package
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -417,216 +385,252 @@ export default function CreatePackage() {
                     </FormItem>
                   )}
                 />
+              </div>
 
-                {/* Outdoor Package */}
+              <div className="space-y-6">
+                {/* Description */}
                 <FormField
                   control={form.control}
-                  name="outdoors"
+                  name="description"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Outdoor Package
-                        </FormLabel>
-                        <FormDescription>
-                          Are the classes in this package held outdoors?
-                        </FormDescription>
-                      </div>
+                    <FormItem>
+                      <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                        <Textarea 
+                          placeholder="Describe your package, what's included, benefits, etc." 
+                          className="min-h-32" 
+                          {...field} 
                         />
                       </FormControl>
+                      <FormDescription>
+                        Provide details about your package and what students can expect
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Package Type */}
+                <FormField
+                  control={form.control}
+                  name="packageType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Package Type <span className="text-destructive">*</span></FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select package type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="set_pack">A SET PACK</SelectItem>
+                          <SelectItem value="time_bound">TIME BOUND</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose whether this is a set number of classes or time-based package
+                      </FormDescription>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+            </div>
 
+            {/* Conditional Class Count and Price Fields for SET PACK */}
+            {packageType === 'set_pack' && (
               <div className="space-y-6">
-                {/* Conditional Class Count and Price Fields for SET PACK */}
-                {packageType === 'set_pack' && (
-                  <>
-                    {/* Class Count 1 - Mandatory */}
-                    <FormField
-                      control={form.control}
-                      name="classCount1"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Class Count <span className="text-destructive">*</span></FormLabel>
-                          <Select 
-                            onValueChange={(value) => field.onChange(parseInt(value))} 
-                            value={field.value?.toString()}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select class count" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="5">5-class pack</SelectItem>
-                              <SelectItem value="10">10-class pack</SelectItem>
-                              <SelectItem value="20">20-class pack</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            First class count option (mandatory)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Price 1 - Mandatory */}
-                    <FormField
-                      control={form.control}
-                      name="price1"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price <span className="text-destructive">*</span></FormLabel>
+                <h3 className="text-lg font-semibold">Package Options</h3>
+                
+                {/* Class Count 1 and Price 1 - Mandatory */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="classCount1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Count <span className="text-destructive">*</span></FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          value={field.value?.toString()}
+                        >
                           <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
-                              <Input 
-                                type="number" 
-                                min="0" 
-                                step="0.01"
-                                className="pl-7" 
-                                placeholder="e.g. 100.00" 
-                                {...field}
-                              />
-                            </div>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select class count" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormDescription>
-                            Price for the first class count option
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          <SelectContent>
+                            <SelectItem value="5">5-class pack</SelectItem>
+                            <SelectItem value="10">10-class pack</SelectItem>
+                            <SelectItem value="20">20-class pack</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          First class count option (mandatory)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    {/* Class Count 2 - Optional */}
-                    <FormField
-                      control={form.control}
-                      name="classCount2"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Class Count 2</FormLabel>
-                          <Select 
-                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
-                            value={field.value?.toString() || "none"}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Optional second class count" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              <SelectItem value="5">5-class pack</SelectItem>
-                              <SelectItem value="10">10-class pack</SelectItem>
-                              <SelectItem value="20">20-class pack</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Second class count option (optional)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="price1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              step="0.01"
+                              className="pl-7 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                              placeholder="e.g. 100.00" 
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Price for the first class count option
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                    {/* Price 2 - Optional */}
-                    <FormField
-                      control={form.control}
-                      name="price2"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price 2</FormLabel>
+                {/* Class Count 2 and Price 2 - Optional */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="classCount2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Count 2</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                          value={field.value?.toString() || "none"}
+                        >
                           <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
-                              <Input 
-                                type="number" 
-                                min="0" 
-                                step="0.01"
-                                className="pl-7" 
-                                placeholder="Optional second price" 
-                                {...field}
-                                value={field.value || ""}
-                              />
-                            </div>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Optional second class count" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormDescription>
-                            Price for the second class count option
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="5">5-class pack</SelectItem>
+                            <SelectItem value="10">10-class pack</SelectItem>
+                            <SelectItem value="20">20-class pack</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Second class count option (optional)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    {/* Class Count 3 - Optional */}
-                    <FormField
-                      control={form.control}
-                      name="classCount3"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Class Count 3</FormLabel>
-                          <Select 
-                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
-                            value={field.value?.toString() || "none"}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Optional third class count" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              <SelectItem value="5">5-class pack</SelectItem>
-                              <SelectItem value="10">10-class pack</SelectItem>
-                              <SelectItem value="20">20-class pack</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Third class count option (optional)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="price2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price 2</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              step="0.01"
+                              className="pl-7 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                              placeholder="Optional second price" 
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Price for the second class count option
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                    {/* Price 3 - Optional */}
-                    <FormField
-                      control={form.control}
-                      name="price3"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Price 3</FormLabel>
+                {/* Class Count 3 and Price 3 - Optional */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="classCount3"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Count 3</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                          value={field.value?.toString() || "none"}
+                        >
                           <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
-                              <Input 
-                                type="number" 
-                                min="0" 
-                                step="0.01"
-                                className="pl-7" 
-                                placeholder="Optional third price" 
-                                {...field}
-                                value={field.value || ""}
-                              />
-                            </div>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Optional third class count" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormDescription>
-                            Price for the third class count option
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="5">5-class pack</SelectItem>
+                            <SelectItem value="10">10-class pack</SelectItem>
+                            <SelectItem value="20">20-class pack</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Third class count option (optional)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
+                  <FormField
+                    control={form.control}
+                    name="price3"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price 3</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              step="0.01"
+                              className="pl-7 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                              placeholder="Optional third price" 
+                              {...field}
+                              value={field.value || ""}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Price for the third class count option
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 {/* Capacity */}
                 <FormField
                   control={form.control}
@@ -649,7 +653,9 @@ export default function CreatePackage() {
                     </FormItem>
                   )}
                 />
+              </div>
 
+              <div className="space-y-6">
                 {/* Location - Optional */}
                 <FormField
                   control={form.control}
