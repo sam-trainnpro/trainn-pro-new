@@ -30,7 +30,7 @@ export default function CreatePackage() {
 
   // Get current user to ensure they're a coach
   const { data: user, isLoading: userLoading } = useQuery({
-    queryKey: ['/api/auth/me']
+    queryKey: ['/api/user']
   });
 
   // Debug logging
