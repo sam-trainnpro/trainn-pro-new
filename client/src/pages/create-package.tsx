@@ -29,16 +29,17 @@ export default function CreatePackage() {
   });
 
   // Get current user to ensure they're a coach
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['/api/auth/me']
   });
 
+  // Debug logging
+  console.log('CreatePackage - User data:', user);
+  console.log('CreatePackage - User loading:', userLoading);
+
   const createPackageMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return apiRequest('/api/packages', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      return apiRequest('/api/packages', 'POST', data);
     },
     onSuccess: () => {
       toast({
@@ -81,13 +82,59 @@ export default function CreatePackage() {
     return '0';
   };
 
-  if (!user || user.role !== 'coach') {
+  // Show loading state while user data is being fetched
+  if (userLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              You must be an approved coach to create packages.
+              Loading...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if user is logged in
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Please log in to create packages.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if user is a coach
+  if (user.role !== 'coach') {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              You must be a coach to create packages.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if coach is approved
+  if (!user.isApproved) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              Your coach account is pending approval. Please wait for admin approval to create packages.
             </p>
           </CardContent>
         </Card>
