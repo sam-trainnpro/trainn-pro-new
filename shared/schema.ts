@@ -514,17 +514,10 @@ export const classPackages = pgTable("class_packages", {
   // Eligible classes for this package
   eligibleClasses: text("eligible_classes"), // JSON array of class IDs or "all"
   
-  // Location (optional, like Create Class form)
-  location: text("location"),
-  
   // Fields from Create Class form
   description: text("description"),
   categoryId: integer("category_id"),
-  capacity: integer("capacity"),
-  whatToBring: text("what_to_bring"),
-  toFindUs: text("to_find_us"),
   ageGroup: text("age_group").default("Adults"),
-  outdoors: boolean("outdoors").default(false),
   
   isActive: boolean("is_active").default(true),
   status: text("status").notNull().default("enabled"), // "enabled", "disabled"
@@ -544,14 +537,9 @@ export const insertClassPackageSchema = createInsertSchema(classPackages).pick({
   price2: true,
   price3: true,
   eligibleClasses: true,
-  location: true,
   description: true,
   categoryId: true,
-  capacity: true,
-  whatToBring: true,
-  toFindUs: true,
   ageGroup: true,
-  outdoors: true,
   isActive: true,
   status: true,
 });

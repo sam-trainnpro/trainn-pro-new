@@ -49,8 +49,6 @@ const createPackageSchema = z.object({
   price3: z.coerce.number().min(0).optional(),
   // Eligible classes - mandatory selection
   eligibleClasses: z.string().min(1, "Please select eligible classes"),
-  // Optional location (like Create Class form)
-  location: z.string().optional(),
   // Fields from Create Class form
   ageGroup: z.enum(['Adults', 'Kids', 'Both']).default('Adults'),
   outdoors: z.boolean().default(false),
@@ -94,7 +92,6 @@ export default function CreatePackage() {
       price2: undefined,
       price3: undefined,
       eligibleClasses: "",
-      location: "",
       ageGroup: "Adults",
       outdoors: false,
     },
@@ -690,26 +687,6 @@ export default function CreatePackage() {
               </div>
             )}
 
-            {/* Location - Optional */}
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g. Central Park, Various Locations" 
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Optional: Specify location if package classes are location-specific
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             {/* Select Eligible Classes */}
             <div className="space-y-4">
