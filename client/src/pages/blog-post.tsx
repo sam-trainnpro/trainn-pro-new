@@ -166,7 +166,7 @@ export default function BlogPostPage() {
             <div className="prose prose-lg max-w-none">
               <div 
                 className="text-gray-800 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br>') }}
+                dangerouslySetInnerHTML={{ __html: (post.content || '').replace(/\n/g, '<br>') }}
               />
             </div>
           </article>
