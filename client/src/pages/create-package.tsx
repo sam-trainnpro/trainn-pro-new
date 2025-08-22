@@ -52,11 +52,8 @@ const createPackageSchema = z.object({
   // Optional location (like Create Class form)
   location: z.string().optional(),
   // Fields from Create Class form
-  ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
+  ageGroup: z.enum(['Adults', 'Kids', 'Both']).default('Adults'),
   outdoors: z.boolean().default(false),
-  capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
-  whatToBring: z.string().optional(),
-  toFindUs: z.string().optional(),
 }).refine((data) => {
   // Custom validation for set_pack type
   if (data.packageType === 'set_pack') {
@@ -100,9 +97,6 @@ export default function CreatePackage() {
       location: "",
       ageGroup: "Adults",
       outdoors: false,
-      capacity: 10,
-      whatToBring: "",
-      toFindUs: "",
     },
   });
 
@@ -442,10 +436,11 @@ export default function CreatePackage() {
                         <SelectContent>
                           <SelectItem value="Adults">Adults</SelectItem>
                           <SelectItem value="Kids">Kids</SelectItem>
+                          <SelectItem value="Both">Both</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Choose whether this package is designed for adults or kids
+                        Choose whether this package is designed for adults, kids, or both
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -695,55 +690,26 @@ export default function CreatePackage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                {/* Capacity */}
-                <FormField
-                  control={form.control}
-                  name="capacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          placeholder="e.g. 10" 
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Maximum number of participants for package classes
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="space-y-6">
-                {/* Location - Optional */}
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="e.g. Central Park, Various Locations" 
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Optional: Specify location if package classes are location-specific
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
+            {/* Location - Optional */}
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g. Central Park, Various Locations" 
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional: Specify location if package classes are location-specific
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Select Eligible Classes */}
             <div className="space-y-4">
@@ -792,49 +758,6 @@ export default function CreatePackage() {
               </div>
             </div>
 
-            {/* What to Bring */}
-            <FormField
-              control={form.control}
-              name="whatToBring"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>What to Bring</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="e.g. Water bottle, yoga mat, comfortable clothes..." 
-                      className="min-h-24" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Optional: What should students bring to these classes?
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* How to Find Us */}
-            <FormField
-              control={form.control}
-              name="toFindUs"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>How to Find Us</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="e.g. Meet at the main entrance, look for the instructor in blue..." 
-                      className="min-h-24" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Optional: Help students find you at the class location
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             {/* Submit Buttons */}
             <div className="flex justify-end gap-4">
