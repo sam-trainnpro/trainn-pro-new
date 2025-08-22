@@ -513,8 +513,8 @@ export default function CreatePackage() {
                         <FormItem>
                           <FormLabel>Class Count 2</FormLabel>
                           <Select 
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
-                            value={field.value?.toString() || ""}
+                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                            value={field.value?.toString() || "none"}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -522,7 +522,7 @@ export default function CreatePackage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               <SelectItem value="5">5-class pack</SelectItem>
                               <SelectItem value="10">10-class pack</SelectItem>
                               <SelectItem value="20">20-class pack</SelectItem>
@@ -573,8 +573,8 @@ export default function CreatePackage() {
                         <FormItem>
                           <FormLabel>Class Count 3</FormLabel>
                           <Select 
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
-                            value={field.value?.toString() || ""}
+                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                            value={field.value?.toString() || "none"}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -582,7 +582,7 @@ export default function CreatePackage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               <SelectItem value="5">5-class pack</SelectItem>
                               <SelectItem value="10">10-class pack</SelectItem>
                               <SelectItem value="20">20-class pack</SelectItem>
