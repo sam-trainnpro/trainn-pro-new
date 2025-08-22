@@ -1002,8 +1002,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Coach access required" });
       }
       
-      // Check if coach is approved
-      if (!req.user.isApproved) {
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
         return res.status(403).json({ message: "Your coach account is pending approval" });
       }
       
@@ -1058,6 +1058,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Coach access required" });
       }
       
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
+      }
+      
       const packageId = parseInt(req.params.id);
       const existingPackage = await storage.getPackage(packageId);
       
@@ -1083,6 +1088,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is coach
       if (req.user.role !== "coach") {
         return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
       }
       
       const packageId = parseInt(req.params.id);
