@@ -1,149 +1,274 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Package, Calendar, DollarSign, Users } from 'lucide-react';
-import { useToast } from '../../../hooks/use-toast';
-import type { ClassPackage } from '@shared/schema';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useForm } from "react-hook-form";
+import { useAuth } from "../../../hooks/use-auth-simple";
+import { ClassCategory } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "../../../hooks/use-toast";
+import { ArrowLeft, Package } from 'lucide-react';
+import * as z from "zod";
+
+// Form validation schema
+const createPackageSchema = z.object({
+  title: z.string().min(3, "Package title must be at least 3 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  categoryId: z.string().min(1, "Please select a category"),
+  packageType: z.enum(['set_pack', 'time_bound'], {
+    required_error: "Please select a package type"
+  }),
+  // Class counts - classCount1 is mandatory for set_pack, others optional
+  classCount1: z.coerce.number().min(1, "First class count is required"),
+  classCount2: z.coerce.number().min(1).optional(),
+  classCount3: z.coerce.number().min(1).optional(),
+  // Prices - price1 is mandatory for set_pack, others optional  
+  price1: z.coerce.number().min(0, "First price is required"),
+  price2: z.coerce.number().min(0).optional(),
+  price3: z.coerce.number().min(0).optional(),
+  // Eligible classes - mandatory selection
+  eligibleClasses: z.string().min(1, "Please select eligible classes"),
+  // Optional location (like Create Class form)
+  location: z.string().optional(),
+  // Fields from Create Class form
+  ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
+  outdoors: z.boolean().default(false),
+  capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
+  whatToBring: z.string().optional(),
+  toFindUs: z.string().optional(),
+}).refine((data) => {
+  // Custom validation for set_pack type
+  if (data.packageType === 'set_pack') {
+    if (!data.classCount1 || data.classCount1 < 1) {
+      return false;
+    }
+    if (!data.price1 || data.price1 < 0) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Class count and price are required for set pack type",
+  path: ["classCount1"]
+});
 
 export default function CreatePackage() {
+  const { user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    packageName: '',
-    description: '',
-    classCount: '5' as '5' | '10' | '20',
-    originalPriceCents: 0,
-    discountedPriceCents: 0,
-    validityDays: 120, // Default to ~4 months (semester)
-    maxStudents: 15,
-    isActive: true,
-    terms: ''
+  const [submitting, setSubmitting] = useState(false);
+  const [categories, setCategories] = useState<ClassCategory[]>([]);
+  const [coachClasses, setCoachClasses] = useState<any[]>([]);
+  const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+
+  // Form definition
+  const form = useForm<z.infer<typeof createPackageSchema>>({
+    resolver: zodResolver(createPackageSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      categoryId: "",
+      packageType: "set_pack",
+      classCount1: 5,
+      classCount2: undefined,
+      classCount3: undefined,
+      price1: 0,
+      price2: undefined,
+      price3: undefined,
+      eligibleClasses: "",
+      location: "",
+      ageGroup: "Adults",
+      outdoors: false,
+      capacity: 10,
+      whatToBring: "",
+      toFindUs: "",
+    },
   });
 
-  // Get current user to ensure they're a coach
-  const { data: user, isLoading: userLoading } = useQuery({
-    queryKey: ['/api/user']
-  });
+  // Watch packageType to show/hide conditional fields
+  const packageType = form.watch("packageType");
+  const classCount1 = form.watch("classCount1");
+  const classCount2 = form.watch("classCount2");
+  const classCount3 = form.watch("classCount3");
 
-  // Debug logging
-  console.log('CreatePackage - User data:', user);
-  console.log('CreatePackage - User loading:', userLoading);
+  // Load categories on mount
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error("Error loading categories:", error);
+      }
+    }
+    loadCategories();
+  }, []);
 
+  // Load coach's classes
+  useEffect(() => {
+    async function loadCoachClasses() {
+      if (!user?.id) return;
+      try {
+        const res = await fetch(`/api/classes?coachId=${user.id}&futureOnly=true`);
+        if (res.ok) {
+          const data = await res.json();
+          setCoachClasses(data);
+        }
+      } catch (error) {
+        console.error("Error loading coach classes:", error);
+      }
+    }
+    loadCoachClasses();
+  }, [user?.id]);
+
+  // Validate eligible classes count against largest set pack
+  const validateEligibleClasses = () => {
+    if (packageType !== 'set_pack') return true;
+    
+    const largestSetPack = Math.max(
+      classCount1 || 0,
+      classCount2 || 0, 
+      classCount3 || 0
+    );
+    
+    const selectedCount = selectedClasses.length === 1 && selectedClasses[0] === 'all' 
+      ? coachClasses.length 
+      : selectedClasses.length;
+    
+    const requiredCount = largestSetPack * 2;
+    
+    if (selectedCount < requiredCount) {
+      toast({
+        title: "Insufficient Eligible Classes",
+        description: `You need at least ${requiredCount} eligible classes (twice the largest set pack of ${largestSetPack}). Currently selected: ${selectedCount}.`,
+        variant: "destructive"
+      });
+      return false;
+    }
+    return true;
+  };
+
+  // Handle eligible classes selection
+  const handleClassSelection = (classId: string, checked: boolean) => {
+    if (classId === 'all') {
+      if (checked) {
+        setSelectedClasses(['all']);
+        form.setValue('eligibleClasses', 'all');
+      } else {
+        setSelectedClasses([]);
+        form.setValue('eligibleClasses', '');
+      }
+    } else {
+      let newSelection = [...selectedClasses.filter(id => id !== 'all')];
+      if (checked) {
+        newSelection.push(classId);
+      } else {
+        newSelection = newSelection.filter(id => id !== classId);
+      }
+      setSelectedClasses(newSelection);
+      form.setValue('eligibleClasses', JSON.stringify(newSelection));
+    }
+  };
+
+  // Create package mutation
   const createPackageMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      return apiRequest('/api/packages', 'POST', data);
+    mutationFn: async (data: z.infer<typeof createPackageSchema>) => {
+      if (!validateEligibleClasses()) {
+        throw new Error("Validation failed");
+      }
+      
+      const packageData = {
+        ...data,
+        coachId: user?.id,
+        futureClassCount: selectedClasses.includes('all') ? coachClasses.length : selectedClasses.length,
+        status: 'enabled',
+        isActive: true
+      };
+      
+      return apiRequest('/api/packages', 'POST', packageData);
     },
     onSuccess: () => {
       toast({
         title: 'Success',
         description: 'Package created successfully!'
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/coaches'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
       navigate('/my-packages');
     },
     onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create package',
-        variant: 'destructive'
-      });
+      if (error.message !== "Validation failed") {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to create package',
+          variant: 'destructive'
+        });
+      }
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Convert prices to cents
-    const dataToSubmit = {
-      ...formData,
-      originalPriceCents: Math.round(parseFloat(formData.originalPriceCents.toString()) * 100),
-      discountedPriceCents: Math.round(parseFloat(formData.discountedPriceCents.toString()) * 100),
-      classCount: parseInt(formData.classCount)
-    };
-    
-    createPackageMutation.mutate(dataToSubmit);
+  const onSubmit = (data: z.infer<typeof createPackageSchema>) => {
+    setSubmitting(true);
+    createPackageMutation.mutate(data);
+    setSubmitting(false);
   };
 
-  const calculateDiscount = () => {
-    if (formData.originalPriceCents && formData.discountedPriceCents) {
-      const original = parseFloat(formData.originalPriceCents.toString());
-      const discounted = parseFloat(formData.discountedPriceCents.toString());
-      const discount = ((original - discounted) / original) * 100;
-      return discount.toFixed(1);
-    }
-    return '0';
-  };
-
-  // Show loading state while user data is being fetched
-  if (userLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Loading...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Check if user is logged in
+  // Check if user is logged in and is an approved coach
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Please log in to create packages.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to create packages.</p>
+        </div>
       </div>
     );
   }
 
-  // Check if user is a coach
   if (user.role !== 'coach') {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              You must be a coach to create packages.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <p className="text-muted-foreground">You must be a coach to create packages.</p>
+        </div>
       </div>
     );
   }
 
-  // Check if coach is approved
   if (!user.isApproved) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Your coach account is pending approval. Please wait for admin approval to create packages.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <p className="text-muted-foreground">Your coach account is pending approval.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       <Button
         variant="ghost"
         className="mb-6"
@@ -153,188 +278,493 @@ export default function CreatePackage() {
         Back to Dashboard
       </Button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-6 w-6" />
-            Create Class Package
-          </CardTitle>
-          <CardDescription>
-            Create a discounted bundle of classes to attract committed students
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Package Name */}
-            <div className="space-y-2">
-              <Label htmlFor="packageName">Package Name *</Label>
-              <Input
-                id="packageName"
-                placeholder="e.g., Summer Soccer Bundle, 10-Class Yoga Pass"
-                value={formData.packageName}
-                onChange={(e) => setFormData({ ...formData, packageName: e.target.value })}
-                required
-              />
-            </div>
+      <div className="bg-card rounded-lg shadow-sm p-6 border">
+        <div className="flex items-center gap-2 mb-6">
+          <Package className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">Create Package</h1>
+        </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe what's included in this package and any special benefits..."
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                required
-              />
-            </div>
-
-            {/* Class Count */}
-            <div className="space-y-2">
-              <Label htmlFor="classCount">Number of Classes *</Label>
-              <Select
-                value={formData.classCount}
-                onValueChange={(value: '5' | '10' | '20') => 
-                  setFormData({ ...formData, classCount: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5 Classes</SelectItem>
-                  <SelectItem value="10">10 Classes</SelectItem>
-                  <SelectItem value="20">20 Classes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Pricing */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="originalPrice">Original Price (per class) *</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="originalPrice"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className="pl-9"
-                    value={formData.originalPriceCents || ''}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      originalPriceCents: parseFloat(e.target.value) || 0 
-                    })}
-                    required
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Total: ${((formData.originalPriceCents || 0) * parseInt(formData.classCount)).toFixed(2)}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="discountedPrice">Discounted Price (per class) *</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="discountedPrice"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className="pl-9"
-                    value={formData.discountedPriceCents || ''}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      discountedPriceCents: parseFloat(e.target.value) || 0 
-                    })}
-                    required
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Total: ${((formData.discountedPriceCents || 0) * parseInt(formData.classCount)).toFixed(2)}
-                  {formData.originalPriceCents > formData.discountedPriceCents && (
-                    <span className="text-green-600 font-medium ml-2">
-                      ({calculateDiscount()}% off)
-                    </span>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                {/* Package Title */}
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Package Title <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 5-Class Yoga Bundle" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        The name of your package as it will appear to students
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </p>
+                />
+
+                {/* Description */}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe your package, what's included, benefits, etc." 
+                          className="min-h-32" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Provide details about your package and what students can expect
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Category */}
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category <span className="text-destructive">*</span></FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose the category that best fits your package
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Package Type */}
+                <FormField
+                  control={form.control}
+                  name="packageType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Package Type <span className="text-destructive">*</span></FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select package type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="set_pack">A SET PACK</SelectItem>
+                          <SelectItem value="time_bound">TIME BOUND</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose whether this is a set number of classes or time-based package
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Age Group */}
+                <FormField
+                  control={form.control}
+                  name="ageGroup"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age Group <span className="text-destructive">*</span></FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select age group" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Adults">Adults</SelectItem>
+                          <SelectItem value="Kids">Kids</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose whether this package is designed for adults or kids
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Outdoor Package */}
+                <FormField
+                  control={form.control}
+                  name="outdoors"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Outdoor Package
+                        </FormLabel>
+                        <FormDescription>
+                          Are the classes in this package held outdoors?
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
 
-            {/* Validity Period */}
-            <div className="space-y-2">
-              <Label htmlFor="validityDays">Package Validity</Label>
-              <Select
-                value={formData.validityDays.toString()}
-                onValueChange={(value) => 
-                  setFormData({ ...formData, validityDays: parseInt(value) })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="90">3 Months (Quarter)</SelectItem>
-                  <SelectItem value="120">4 Months (Semester)</SelectItem>
-                  <SelectItem value="180">6 Months</SelectItem>
-                  <SelectItem value="365">1 Year</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Students must use all classes within this time period
-              </p>
-            </div>
+              <div className="space-y-6">
+                {/* Conditional Class Count and Price Fields for SET PACK */}
+                {packageType === 'set_pack' && (
+                  <>
+                    {/* Class Count 1 - Mandatory */}
+                    <FormField
+                      control={form.control}
+                      name="classCount1"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class Count <span className="text-destructive">*</span></FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(parseInt(value))} 
+                            value={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select class count" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="5">5-class pack</SelectItem>
+                              <SelectItem value="10">10-class pack</SelectItem>
+                              <SelectItem value="20">20-class pack</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            First class count option (mandatory)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-            {/* Max Students */}
-            <div className="space-y-2">
-              <Label htmlFor="maxStudents">Maximum Students per Class</Label>
-              <div className="relative">
-                <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="maxStudents"
-                  type="number"
-                  min="1"
-                  placeholder="15"
-                  className="pl-9"
-                  value={formData.maxStudents}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    maxStudents: parseInt(e.target.value) || 1 
-                  })}
+                    {/* Price 1 - Mandatory */}
+                    <FormField
+                      control={form.control}
+                      name="price1"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Price <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                className="pl-7" 
+                                placeholder="e.g. 100.00" 
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Price for the first class count option
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Class Count 2 - Optional */}
+                    <FormField
+                      control={form.control}
+                      name="classCount2"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class Count 2</FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                            value={field.value?.toString() || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Optional second class count" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="5">5-class pack</SelectItem>
+                              <SelectItem value="10">10-class pack</SelectItem>
+                              <SelectItem value="20">20-class pack</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Second class count option (optional)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Price 2 - Optional */}
+                    <FormField
+                      control={form.control}
+                      name="price2"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Price 2</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                className="pl-7" 
+                                placeholder="Optional second price" 
+                                {...field}
+                                value={field.value || ""}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Price for the second class count option
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Class Count 3 - Optional */}
+                    <FormField
+                      control={form.control}
+                      name="classCount3"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class Count 3</FormLabel>
+                          <Select 
+                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                            value={field.value?.toString() || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Optional third class count" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="5">5-class pack</SelectItem>
+                              <SelectItem value="10">10-class pack</SelectItem>
+                              <SelectItem value="20">20-class pack</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Third class count option (optional)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Price 3 - Optional */}
+                    <FormField
+                      control={form.control}
+                      name="price3"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Price 3</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                className="pl-7" 
+                                placeholder="Optional third price" 
+                                {...field}
+                                value={field.value || ""}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Price for the third class count option
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* Capacity */}
+                <FormField
+                  control={form.control}
+                  name="capacity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Capacity <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          placeholder="e.g. 10" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Maximum number of participants for package classes
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Location - Optional */}
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. Central Park, Various Locations" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Optional: Specify location if package classes are location-specific
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
             </div>
 
-            {/* Terms & Conditions */}
-            <div className="space-y-2">
-              <Label htmlFor="terms">Terms & Conditions (Optional)</Label>
-              <Textarea
-                id="terms"
-                placeholder="Add any specific terms, refund policy, or usage restrictions..."
-                value={formData.terms}
-                onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
-                rows={3}
-              />
+            {/* Select Eligible Classes */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium leading-none">
+                  Select Eligible Classes <span className="text-destructive">*</span>
+                </label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Choose which classes can be booked with this package
+                </p>
+              </div>
+              
+              <div className="border rounded-lg p-4 space-y-3 max-h-64 overflow-y-auto">
+                {/* Select All Option */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="select-all"
+                    checked={selectedClasses.includes('all')}
+                    onCheckedChange={(checked) => handleClassSelection('all', !!checked)}
+                  />
+                  <label htmlFor="select-all" className="text-sm font-medium">
+                    Select All Classes
+                  </label>
+                </div>
+                
+                {/* Individual Classes */}
+                {coachClasses.map((classItem) => (
+                  <div key={classItem.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`class-${classItem.id}`}
+                      checked={selectedClasses.includes(classItem.id.toString()) || selectedClasses.includes('all')}
+                      onCheckedChange={(checked) => handleClassSelection(classItem.id.toString(), !!checked)}
+                      disabled={selectedClasses.includes('all')}
+                    />
+                    <label htmlFor={`class-${classItem.id}`} className="text-sm">
+                      {classItem.title}
+                    </label>
+                  </div>
+                ))}
+                
+                {coachClasses.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No future classes found. Create some classes first.
+                  </p>
+                )}
+              </div>
             </div>
 
-            {/* Active Status */}
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, isActive: checked })
-                }
-              />
-              <Label htmlFor="isActive">Package is active and available for purchase</Label>
-            </div>
+            {/* What to Bring */}
+            <FormField
+              control={form.control}
+              name="whatToBring"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>What to Bring</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="e.g. Water bottle, yoga mat, comfortable clothes..." 
+                      className="min-h-24" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional: What should students bring to these classes?
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* Submit Button */}
+            {/* How to Find Us */}
+            <FormField
+              control={form.control}
+              name="toFindUs"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>How to Find Us</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="e.g. Meet at the main entrance, look for the instructor in blue..." 
+                      className="min-h-24" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional: Help students find you at the class location
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Submit Buttons */}
             <div className="flex justify-end gap-4">
               <Button
                 type="button"
@@ -345,14 +775,14 @@ export default function CreatePackage() {
               </Button>
               <Button
                 type="submit"
-                disabled={createPackageMutation.isPending}
+                disabled={submitting || createPackageMutation.isPending}
               >
-                {createPackageMutation.isPending ? 'Creating...' : 'Create Package'}
+                {submitting || createPackageMutation.isPending ? 'Creating...' : 'Create Package'}
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </Form>
+      </div>
     </div>
   );
 }
