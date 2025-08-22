@@ -124,7 +124,12 @@ export default function BlogPostPage() {
                   <span>{post.readTime} min read</span>
                 </div>
                 <span>•</span>
-                <span>{format(new Date(post.publishedAt!), 'MMMM d, yyyy')}</span>
+                <span>
+                  {post.publishedAt 
+                    ? format(new Date(post.publishedAt), 'MMMM d, yyyy')
+                    : format(new Date(post.createdAt!), 'MMMM d, yyyy')
+                  }
+                </span>
                 {post.status !== 'published' && (
                   <>
                     <span>•</span>
