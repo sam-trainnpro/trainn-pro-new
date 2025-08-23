@@ -546,3 +546,23 @@ export const insertClassPackageSchema = createInsertSchema(classPackages).pick({
 
 export type InsertClassPackage = z.infer<typeof insertClassPackageSchema>;
 export type ClassPackage = typeof classPackages.$inferSelect;
+
+// Class Instances - Actual scheduled instances of classes
+export const classInstances = pgTable("class_instances", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id").notNull(), // FK to classes table
+  instanceDate: text("instance_date").notNull(), // Date in YYYY-MM-DD format
+  startTime: text("start_time").notNull(), // Time in HH:MM format
+  endTime: text("end_time").notNull(), // Time in HH:MM format
+  status: text("status").notNull().default("scheduled"), // 'scheduled', 'cancelled', 'completed'
+  capacityOverride: integer("capacity_override"), // Override class capacity for this instance
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertClassInstanceSchema = createInsertSchema(classInstances).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertClassInstance = z.infer<typeof insertClassInstanceSchema>;
+export type ClassInstance = typeof classInstances.$inferSelect;
