@@ -119,88 +119,56 @@ export default function CreatePackage() {
     loadCategories();
   }, []);
 
-  // Load coach's classes - only classes by the logged-in coach with future dates
+  // Load coach's classes with actual future instance counts
   useEffect(() => {
     async function loadCoachClasses() {
       if (!user?.id) return;
       try {
-        // Get all classes by this specific coach
-        const res = await fetch(`/api/classes`);
+        // Get coach classes with future instance counts from backend
+        const res = await fetch(`/api/coaches/${user.id}/classes/with-future-counts`);
         if (res.ok) {
-          const allClasses = await res.json();
-          const now = new Date();
-          
-          // Filter to only classes by this coach with future dates/occurrences
-          const coachClasses = allClasses.filter((cls: any) => {
-            if (cls.coachId !== user.id) return false;
+          const classesWithCounts = await res.json();
+          setCoachClasses(classesWithCounts);
+        } else {
+          // Fallback to regular API if new endpoint doesn't exist yet
+          const fallbackRes = await fetch(`/api/classes`);
+          if (fallbackRes.ok) {
+            const allClasses = await fallbackRes.json();
+            const now = new Date();
             
-            // For recurring classes
-            if (cls.isRecurring) {
-              // If no end date/count specified, assume it continues indefinitely
-              if (!cls.recurrenceEndDate && !cls.recurrenceEndCount) return true;
-              
-              // If has end date, check if it's in the future
-              if (cls.recurrenceEndDate) {
-                return new Date(cls.recurrenceEndDate) > now;
+            // Filter to only classes by this coach with future dates
+            const coachClasses = allClasses.filter((cls: any) => {
+              if (cls.coachId !== user.id) return false;
+              if (cls.startTime) {
+                return new Date(cls.startTime) > now;
               }
-              
-              // If has end count, we'll assume it has future occurrences
-              // (Complex calculation would require knowing how many have already occurred)
-              if (cls.recurrenceEndCount && cls.recurrenceEndCount > 0) {
-                return true;
-              }
-            }
+              return true; // Keep classes without start time for now
+            });
             
-            // For one-time classes, check if start time is in the future
-            if (cls.startTime) {
-              return new Date(cls.startTime) > now;
-            }
+            // Group by title/series and count actual future instances
+            const classGroups = new Map();
             
-            return false;
-          });
-          
-          // Group by title to handle recurring classes - count each unique class title once
-          const uniqueClasses = coachClasses.reduce((acc: any[], cls: any) => {
-            const existing = acc.find(c => c.title.toLowerCase() === cls.title.toLowerCase());
-            if (!existing) {
-              // Calculate estimated future occurrences for this class
-              let estimatedFutureOccurrences = 1;
-              
-              if (cls.isRecurring) {
-                if (!cls.recurrenceEndDate && !cls.recurrenceEndCount) {
-                  // Unlimited recurring - treat as having many occurrences
-                  estimatedFutureOccurrences = 100; // Large number to represent unlimited
-                } else if (cls.recurrenceEndCount) {
-                  // Use end count as estimate (could be more precise with start date calculation)
-                  estimatedFutureOccurrences = cls.recurrenceEndCount;
-                } else if (cls.recurrenceEndDate) {
-                  // Estimate based on frequency and end date
-                  const endDate = new Date(cls.recurrenceEndDate);
-                  const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                  
-                  // Rough estimation based on recurrence type
-                  if (cls.recurrenceType === 'daily') {
-                    estimatedFutureOccurrences = Math.max(1, Math.floor(daysUntilEnd / (cls.recurrenceInterval || 1)));
-                  } else if (cls.recurrenceType === 'weekly') {
-                    estimatedFutureOccurrences = Math.max(1, Math.floor(daysUntilEnd / (7 * (cls.recurrenceInterval || 1))));
-                  } else if (cls.recurrenceType === 'monthly') {
-                    estimatedFutureOccurrences = Math.max(1, Math.floor(daysUntilEnd / (30 * (cls.recurrenceInterval || 1))));
-                  }
-                }
+            coachClasses.forEach((cls: any) => {
+              const groupKey = cls.recurringSeriesId || cls.title;
+              if (!classGroups.has(groupKey)) {
+                classGroups.set(groupKey, {
+                  id: cls.id,
+                  title: cls.title,
+                  isRecurring: cls.isRecurring || !!cls.recurringSeriesId,
+                  futureOccurrences: 0
+                });
               }
-              
-              acc.push({
-                id: cls.id,
-                title: cls.title,
-                isRecurring: cls.isRecurring,
-                estimatedFutureOccurrences,
-                hasUnlimitedFuture: cls.isRecurring && !cls.recurrenceEndDate && !cls.recurrenceEndCount
-              });
-            }
-            return acc;
-          }, []);
-          
-          setCoachClasses(uniqueClasses);
+              // Count this as a future occurrence
+              classGroups.get(groupKey).futureOccurrences++;
+            });
+            
+            const uniqueClasses = Array.from(classGroups.values()).map(group => ({
+              ...group,
+              estimatedFutureOccurrences: group.futureOccurrences
+            }));
+            
+            setCoachClasses(uniqueClasses);
+          }
         }
       } catch (error) {
         console.error("Error loading coach classes:", error);
@@ -228,12 +196,12 @@ export default function CreatePackage() {
     
     if (selectedClasses.length === 1 && selectedClasses[0] === 'all') {
       // If "all" is selected, sum all class occurrences
-      totalFutureOccurrences = coachClasses.reduce((total, cls) => total + cls.estimatedFutureOccurrences, 0);
+      totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
     } else {
-      // Sum occurrences from specifically selected classes
+      // Sum occurrences from specifically selected classes - FIX: Convert string ID to number
       totalFutureOccurrences = selectedClasses.reduce((total, classId) => {
-        const classData = coachClasses.find(cls => cls.id === classId);
-        return total + (classData?.estimatedFutureOccurrences || 1);
+        const classData = coachClasses.find(cls => cls.id === parseInt(classId));
+        return total + (classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0);
       }, 0);
     }
     
