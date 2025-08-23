@@ -956,6 +956,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get classes by coach ID with accurate future instance counts (for package validation)
+  app.get("/api/coaches/:id/classes/with-future-counts", async (req, res) => {
+    try {
+      const coachId = parseInt(req.params.id);
+      const classes = await storage.getClassesByCoach(coachId);
+      const now = new Date();
+      
+      // Group classes by recurring series or individual class title
+      const classGroups = new Map();
+      
+      classes.forEach(cls => {
+        // Only include future classes
+        if (cls.startTime && new Date(cls.startTime) <= now) {
+          return; // Skip past classes
+        }
+        
+        // Group by recurring series ID or class title
+        const groupKey = cls.recurringSeriesId || `single_${cls.id}`;
+        
+        if (!classGroups.has(groupKey)) {
+          classGroups.set(groupKey, {
+            id: cls.id,
+            title: cls.title,
+            isRecurring: cls.isRecurring || !!cls.recurringSeriesId,
+            futureOccurrences: 0,
+            groupKey
+          });
+        }
+        
+        // Count this as a future occurrence
+        classGroups.get(groupKey).futureOccurrences++;
+      });
+      
+      // Convert to array and add legacy field for compatibility
+      const classesWithCounts = Array.from(classGroups.values()).map(group => ({
+        ...group,
+        estimatedFutureOccurrences: group.futureOccurrences // For backward compatibility
+      }));
+      
+      res.json(classesWithCounts);
+    } catch (error) {
+      console.error("Error fetching coach classes with future counts:", error);
+      res.status(500).json({ message: "Failed to fetch coach classes with future counts" });
+    }
+  });
+
   // Get approved coaches
   app.get("/api/coaches", async (req, res) => {
     try {
