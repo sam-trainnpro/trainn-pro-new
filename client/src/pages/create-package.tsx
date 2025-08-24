@@ -253,7 +253,7 @@ export default function CreatePackage() {
         isActive: true
       };
       
-      return apiRequest('/api/packages', 'POST', packageData);
+      return apiRequest('POST', '/api/packages', packageData);
     },
     onSuccess: () => {
       toast({
