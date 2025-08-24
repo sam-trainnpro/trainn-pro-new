@@ -245,10 +245,21 @@ export default function CreatePackage() {
         throw new Error("Validation failed");
       }
       
+      // Calculate total future occurrences from selected classes
+      let totalFutureOccurrences = 0;
+      if (selectedClasses.includes('all')) {
+        totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
+      } else {
+        totalFutureOccurrences = selectedClasses.reduce((total, classId) => {
+          const classData = coachClasses.find(cls => cls.id === parseInt(classId));
+          return total + (classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0);
+        }, 0);
+      }
+      
       const packageData = {
         ...data,
         coachId: user?.id,
-        futureClassCount: selectedClasses.includes('all') ? coachClasses.length : selectedClasses.length,
+        futureClassCount: totalFutureOccurrences,
         status: 'enabled',
         isActive: true
       };
