@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, Upload, Calendar, Tag, Image, FileText, Eye } from "lucide-react";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import Header from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -269,21 +270,16 @@ export default function BlogCreatePage() {
                         <FormItem>
                           <FormLabel>Content *</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Write your blog post content here... You can use:
-
-• **Bold text** using double asterisks
-• *Italic text* using single asterisks
-• - Bullet points using dashes
-• Indentation using spaces
-
-For photos, upload a featured image on the right or include image URLs in your content."
-                              className="min-h-[400px] font-mono text-sm"
-                              {...field}
+                            <RichTextEditor
+                              value={field.value || ''}
+                              onChange={field.onChange}
+                              placeholder="Write your blog post content here... Use the toolbar above to format text with bold, italic, bullet points, links, and emojis!"
+                              className="w-full"
+                              minHeight="400px"
                             />
                           </FormControl>
                           <div className="text-sm text-gray-600">
-                            Tip: You can use basic markdown formatting like **bold**, *italic*, and bullet points with -
+                            Use the formatting toolbar to add <strong>bold text</strong>, <em>links</em>, bullet points, and emojis to your content.
                           </div>
                           <FormMessage />
                         </FormItem>
