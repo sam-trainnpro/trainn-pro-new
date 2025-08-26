@@ -164,7 +164,9 @@ export default function CreatePackage() {
             
             const uniqueClasses = Array.from(classGroups.values()).map(group => ({
               ...group,
-              estimatedFutureOccurrences: group.futureOccurrences
+              estimatedFutureOccurrences: group.futureOccurrences,
+              // Add packageIdentifier for backward compatibility with fallback
+              packageIdentifier: group.recurringSeriesId || group.id.toString()
             }));
             
             setCoachClasses(uniqueClasses);
@@ -198,9 +200,9 @@ export default function CreatePackage() {
       // If "all" is selected, sum all class occurrences
       totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
     } else {
-      // Sum occurrences from specifically selected classes - FIX: Convert string ID to number
-      totalFutureOccurrences = selectedClasses.reduce((total, classId) => {
-        const classData = coachClasses.find(cls => cls.id === parseInt(classId));
+      // Sum occurrences from specifically selected classes using packageIdentifier
+      totalFutureOccurrences = selectedClasses.reduce((total, identifier) => {
+        const classData = coachClasses.find(cls => cls.packageIdentifier === identifier);
         return total + (classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0);
       }, 0);
     }
@@ -217,8 +219,8 @@ export default function CreatePackage() {
   };
 
   // Handle eligible classes selection
-  const handleClassSelection = (classId: string, checked: boolean) => {
-    if (classId === 'all') {
+  const handleClassSelection = (identifier: string, checked: boolean) => {
+    if (identifier === 'all') {
       if (checked) {
         setSelectedClasses(['all']);
         form.setValue('eligibleClasses', 'all');
@@ -229,9 +231,9 @@ export default function CreatePackage() {
     } else {
       let newSelection = [...selectedClasses.filter(id => id !== 'all')];
       if (checked) {
-        newSelection.push(classId);
+        newSelection.push(identifier);
       } else {
-        newSelection = newSelection.filter(id => id !== classId);
+        newSelection = newSelection.filter(id => id !== identifier);
       }
       setSelectedClasses(newSelection);
       form.setValue('eligibleClasses', JSON.stringify(newSelection));
@@ -250,8 +252,8 @@ export default function CreatePackage() {
       if (selectedClasses.includes('all')) {
         totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
       } else {
-        totalFutureOccurrences = selectedClasses.reduce((total, classId) => {
-          const classData = coachClasses.find(cls => cls.id === parseInt(classId));
+        totalFutureOccurrences = selectedClasses.reduce((total, identifier) => {
+          const classData = coachClasses.find(cls => cls.packageIdentifier === identifier);
           return total + (classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0);
         }, 0);
       }
@@ -693,15 +695,20 @@ export default function CreatePackage() {
                 
                 {/* Individual Classes */}
                 {coachClasses.map((classItem) => (
-                  <div key={classItem.id} className="flex items-center space-x-2">
+                  <div key={classItem.packageIdentifier || classItem.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`class-${classItem.id}`}
-                      checked={selectedClasses.includes(classItem.id.toString()) || selectedClasses.includes('all')}
-                      onCheckedChange={(checked) => handleClassSelection(classItem.id.toString(), !!checked)}
+                      id={`class-${classItem.packageIdentifier || classItem.id}`}
+                      checked={selectedClasses.includes(classItem.packageIdentifier || classItem.id.toString()) || selectedClasses.includes('all')}
+                      onCheckedChange={(checked) => handleClassSelection(classItem.packageIdentifier || classItem.id.toString(), !!checked)}
                       disabled={selectedClasses.includes('all')}
                     />
-                    <label htmlFor={`class-${classItem.id}`} className="text-sm">
+                    <label htmlFor={`class-${classItem.packageIdentifier || classItem.id}`} className="text-sm">
                       {classItem.title}
+                      {classItem.recurringSeriesId && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          (Recurring Series)
+                        </span>
+                      )}
                     </label>
                   </div>
                 ))}

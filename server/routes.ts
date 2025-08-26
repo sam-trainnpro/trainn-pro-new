@@ -980,6 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: cls.id,
             title: cls.title,
             isRecurring: cls.isRecurring || !!cls.recurringSeriesId,
+            recurringSeriesId: cls.recurringSeriesId, // Include series ID
             futureOccurrences: 0,
             groupKey
           });
@@ -992,7 +993,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert to array and add legacy field for compatibility
       const classesWithCounts = Array.from(classGroups.values()).map(group => ({
         ...group,
-        estimatedFutureOccurrences: group.futureOccurrences // For backward compatibility
+        estimatedFutureOccurrences: group.futureOccurrences, // For backward compatibility
+        // Add identifier for package eligibility (series ID for recurring, class ID for one-time)
+        packageIdentifier: group.recurringSeriesId || group.id.toString()
       }));
       
       res.json(classesWithCounts);
