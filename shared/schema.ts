@@ -547,6 +547,47 @@ export const insertClassPackageSchema = createInsertSchema(classPackages).pick({
 export type InsertClassPackage = z.infer<typeof insertClassPackageSchema>;
 export type ClassPackage = typeof classPackages.$inferSelect;
 
+// Package Purchases/Bookings
+export const packagePurchases = pgTable("package_purchases", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Customer who purchased
+  packageId: integer("package_id").notNull(), // Reference to classPackages
+  classCount: integer("class_count").notNull(), // Number of classes purchased (5, 10, 20)
+  classesUsed: integer("classes_used").notNull().default(0), // How many classes customer has used
+  purchasePrice: real("purchase_price").notNull(), // Price paid for this package
+  purchaseDate: timestamp("purchase_date").defaultNow(),
+  expirationDate: timestamp("expiration_date"), // When package expires
+  status: text("status").notNull().default("active"), // active, expired, cancelled, refunded
+  
+  // Payment tracking
+  stripePaymentId: text("stripe_payment_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  paymentMethod: text("payment_method"), // stripe, paypal
+  amount: integer("amount"), // Amount in cents
+  currency: text("currency").default("usd"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPackagePurchaseSchema = createInsertSchema(packagePurchases).pick({
+  userId: true,
+  packageId: true,
+  classCount: true,
+  classesUsed: true,
+  purchasePrice: true,
+  purchaseDate: true,
+  expirationDate: true,
+  status: true,
+  stripePaymentId: true,
+  stripePaymentIntentId: true,
+  paymentMethod: true,
+  amount: true,
+  currency: true,
+});
+
+export type InsertPackagePurchase = z.infer<typeof insertPackagePurchaseSchema>;
+export type PackagePurchase = typeof packagePurchases.$inferSelect;
+
 // Class Instances - Actual scheduled instances of classes
 export const classInstances = pgTable("class_instances", {
   id: serial("id").primaryKey(),
