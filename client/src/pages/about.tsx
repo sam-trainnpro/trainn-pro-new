@@ -98,7 +98,7 @@ export default function AboutPage() {
                     </p>
 
                     <p class="text-lg text-gray-700 leading-relaxed">
-                      👉 Ready to explore? Check out classes on Trainn today or sign up as a provider to start listing your activities.
+                      👉 Ready to explore? Check out <a href="/classes" style="color: #3b82f6; text-decoration: underline;">classes</a> on Trainn today or <a href="/auth?register=true&role=coach" style="color: #3b82f6; text-decoration: underline;">sign up</a> as a provider to start listing your activities.
                     </p>
                   `
                 }}
