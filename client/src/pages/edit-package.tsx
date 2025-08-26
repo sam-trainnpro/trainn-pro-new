@@ -104,9 +104,9 @@ export default function EditPackage() {
         classCount1: packageData.classCount1 || undefined,
         classCount2: packageData.classCount2 || undefined,
         classCount3: packageData.classCount3 || undefined,
-        price1: packageData.price1 ? packageData.price1 / 100 : undefined,
-        price2: packageData.price2 ? packageData.price2 / 100 : undefined,
-        price3: packageData.price3 ? packageData.price3 / 100 : undefined,
+        price1: packageData.price1 || undefined,
+        price2: packageData.price2 || undefined,
+        price3: packageData.price3 || undefined,
         description: packageData.description || '',
         categoryId: packageData.categoryId || undefined,
         ageGroup: packageData.ageGroup || 'Adults',
@@ -239,10 +239,10 @@ export default function EditPackage() {
       const packageData = {
         ...data,
         futureClassCount: totalFutureOccurrences,
-        // Convert prices to cents
-        price1: data.price1 ? Math.round(data.price1 * 100) : null,
-        price2: data.price2 ? Math.round(data.price2 * 100) : null,
-        price3: data.price3 ? Math.round(data.price3 * 100) : null,
+        // Store prices as regular dollar amounts
+        price1: data.price1 || null,
+        price2: data.price2 || null,
+        price3: data.price3 || null,
       };
       
       return apiRequest('PUT', `/api/packages/${packageId}`, packageData);
@@ -499,11 +499,10 @@ export default function EditPackage() {
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
                                   <Input 
-                                    type="number" 
-                                    min="0" 
-                                    step="0.01"
+                                    type="text" 
+                                    min="0"
                                     className="pl-7"
-                                    placeholder="99.00" 
+                                    placeholder="99" 
                                     {...field}
                                     value={field.value || ""}
                                   />
@@ -560,9 +559,8 @@ export default function EditPackage() {
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
                                   <Input 
-                                    type="number" 
-                                    min="0" 
-                                    step="0.01"
+                                    type="text" 
+                                    min="0"
                                     className="pl-7"
                                     placeholder="Optional second price" 
                                     {...field}
@@ -621,9 +619,8 @@ export default function EditPackage() {
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
                                   <Input 
-                                    type="number" 
-                                    min="0" 
-                                    step="0.01"
+                                    type="text" 
+                                    min="0"
                                     className="pl-7"
                                     placeholder="Optional third price" 
                                     {...field}
