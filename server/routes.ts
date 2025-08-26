@@ -3603,6 +3603,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single blog post by ID (admin only)
+  app.get("/api/blog/:id(\\d+)", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getBlogPost(postId);
+      
+      if (!post) {
+        return res.status(404).json({ message: "Blog post not found" });
+      }
+
+      res.json(post);
+    } catch (error: any) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ message: "Failed to fetch blog post" });
+    }
+  });
+
   // Get single blog post by slug (public for published, admin for all)
   app.get("/api/blog/:slug", async (req, res) => {
     try {

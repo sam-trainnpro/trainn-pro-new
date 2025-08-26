@@ -133,15 +133,16 @@ export default function BlogEditPage() {
     }
   };
 
-  // Upload image to Cloudinary
+  // Upload image to server (which handles Cloudinary)
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'trainn');
+    formData.append('image', file);
     
-    const response = await fetch('https://api.cloudinary.com/v1_1/dbtslhlgp/image/upload', {
+    // Use fetch directly for file uploads since apiRequest doesn't handle FormData
+    const response = await fetch('/api/upload-image', {
       method: 'POST',
       body: formData,
+      credentials: 'include', // Include cookies for authentication
     });
     
     if (!response.ok) {
@@ -149,7 +150,7 @@ export default function BlogEditPage() {
     }
     
     const data = await response.json();
-    return data.secure_url;
+    return data.imageUrl;
   };
 
   // Update blog post mutation
@@ -167,13 +168,10 @@ export default function BlogEditPage() {
         ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
         : [];
 
-      return apiRequest(`/api/blog/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          ...data,
-          featuredImage: featuredImageUrl,
-          tags: tagsArray,
-        }),
+      return apiRequest('PUT', `/api/blog/${id}`, {
+        ...data,
+        featuredImage: featuredImageUrl,
+        tags: tagsArray,
       });
     },
     onSuccess: () => {
