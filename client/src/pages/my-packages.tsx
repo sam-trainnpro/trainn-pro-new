@@ -65,7 +65,7 @@ export default function MyPackages() {
       const response = await apiRequest('GET', '/api/packages/my');
       return response.json();
     },
-    enabled: !!user?.id && user?.role === 'coach'
+    enabled: !!user && user.id && user.role === 'coach'
   });
 
   // Fetch categories
@@ -106,7 +106,7 @@ export default function MyPackages() {
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
-    return `$${price.toFixed(2)}`;
+    return `$${Math.floor(price)}`;
   };
 
   const getCategoryName = (categoryId: number | null) => {

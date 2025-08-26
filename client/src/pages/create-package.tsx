@@ -29,6 +29,9 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "../../../hooks/use-toast";
 import { ArrowLeft, Package } from 'lucide-react';
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import MobileNavigation from "@/components/layout/mobile-navigation";
 import * as z from "zod";
 
 // Form validation schema
@@ -325,17 +328,10 @@ export default function CreatePackage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => navigate('/dashboard')}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Dashboard
-      </Button>
-
-      <div className="bg-card rounded-lg shadow-sm p-6 border">
+    <>
+      <Header />
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="bg-card rounded-lg shadow-sm p-6 border">
         <div className="flex items-center gap-2 mb-6">
           <Package className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Create Package</h1>
@@ -740,7 +736,10 @@ export default function CreatePackage() {
             </div>
           </form>
         </Form>
+        </div>
       </div>
-    </div>
+      <Footer />
+      <MobileNavigation />
+    </>
   );
 }
