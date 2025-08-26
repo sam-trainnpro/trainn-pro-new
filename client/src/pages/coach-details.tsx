@@ -91,6 +91,16 @@ export default function CoachDetailsPage() {
             name="description" 
             content={coach.bio || `Book fitness classes with ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}. View upcoming classes, specialties, and more.`} 
           />
+          <link rel="canonical" href={`https://trainn.pro/coaches/${coach.id}`} />
+          <meta property="og:title" content={`${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`} - Trainn Fitness`} />
+          <meta property="og:description" content={coach.bio || `Book fitness classes with ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}. View upcoming classes, specialties, and more.`} />
+          <meta property="og:type" content="profile" />
+          <meta property="og:url" content={`https://trainn.pro/coaches/${coach.id}`} />
+          <meta property="og:image" content={coach.profileImage || "https://trainn.pro/default-coach-image.jpg"} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`} - Trainn Fitness`} />
+          <meta name="twitter:description" content={coach.bio || `Book fitness classes with ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}. View upcoming classes, specialties, and more.`} />
+          <meta name="twitter:image" content={coach.profileImage || "https://trainn.pro/default-coach-image.jpg"} />
         </Helmet>
       )}
       
