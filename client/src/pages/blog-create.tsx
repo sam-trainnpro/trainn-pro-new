@@ -106,23 +106,19 @@ export default function BlogCreatePage() {
     }
   };
 
-  // Upload image to Cloudinary
+  // Upload image to server (which handles Cloudinary)
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'trainn'); // You may need to configure this
+    formData.append('image', file);
     
-    const response = await fetch('https://api.cloudinary.com/v1_1/dbtslhlgp/image/upload', {
-      method: 'POST',
-      body: formData,
-    });
+    const response = await apiRequest('POST', '/api/upload-image', formData);
     
     if (!response.ok) {
       throw new Error('Failed to upload image');
     }
     
     const data = await response.json();
-    return data.secure_url;
+    return data.imageUrl;
   };
 
   // Create blog post mutation
@@ -140,13 +136,10 @@ export default function BlogCreatePage() {
         ? data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
         : [];
 
-      return apiRequest(`/api/blog`, {
-        method: 'POST',
-        body: JSON.stringify({
-          ...data,
-          featuredImage: featuredImageUrl,
-          tags: tagsArray,
-        }),
+      return apiRequest('POST', '/api/blog', {
+        ...data,
+        featuredImage: featuredImageUrl,
+        tags: tagsArray,
       });
     },
     onSuccess: () => {
