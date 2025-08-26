@@ -36,14 +36,27 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <Card className="mb-12">
             <CardContent className="p-8 md:p-12">
-              <div className="prose prose-lg max-w-none">
-                <p className="text-lg text-gray-700 leading-relaxed mb-6">
-                  Trainn's leadership team is passionate about helping people build new skills, get in shape, and build community. We created Trainn to make it really simple to find and sign up for local outdoor workouts, sports classes, art, music, gym training sessions, and other fun activities for adults and kids.
-                </p>
-                <p className="text-lg text-gray-700 leading-relaxed">
-                  This platform empowers providers to grow their business and meet the needs of their community.
-                </p>
-              </div>
+              <div 
+                className="prose prose-lg max-w-none rich-text-content"
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    <p class="text-lg text-gray-700 leading-relaxed mb-6">
+                      <strong>Trainn's leadership team</strong> is passionate about helping people <em>build new skills</em>, <em>get in shape</em>, and <em>build community</em>. We created Trainn to make it really simple to find and sign up for:
+                    </p>
+                    <ul class="list-disc pl-6 text-lg text-gray-700 mb-6">
+                      <li>Local outdoor workouts 💪</li>
+                      <li>Sports classes ⚽</li>
+                      <li>Art sessions 🎨</li>
+                      <li>Music lessons 🎵</li>
+                      <li>Gym training sessions 🏋️</li>
+                      <li>Other fun activities for adults and kids 🎉</li>
+                    </ul>
+                    <p class="text-lg text-gray-700 leading-relaxed">
+                      This platform <strong>empowers providers</strong> to grow their business and meet the needs of their community. 🚀
+                    </p>
+                  `
+                }}
+              />
             </CardContent>
           </Card>
 
