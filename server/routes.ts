@@ -1044,6 +1044,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Class Package Routes
   
   // Create a new package (coaches only)
+  // Get current coach's packages
+  app.get("/api/packages/my", requireAuth, async (req, res) => {
+    try {
+      const coachId = req.user?.id;
+      if (!coachId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const packages = await storage.getCoachPackages(coachId);
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching coach packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
   app.post("/api/packages", requireAuth, async (req, res) => {
     try {
       // Check if user is coach

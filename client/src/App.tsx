@@ -47,6 +47,7 @@ import AdminPromoCodesPage from "@/pages/admin-promo-codes";
 import CoachPromoCodesPage from "@/pages/coach-promo-codes";
 import CreatePackagePage from "@/pages/create-package";
 import MyPackagesPage from "@/pages/my-packages";
+import EditPackagePage from "@/pages/edit-package";
 import CoachResourcesPage from "@/pages/coach-resources";
 import SuccessStoriesPage from "@/pages/success-stories";
 import BusinessToolsPage from "@/pages/business-tools";
@@ -140,6 +141,9 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/edit-class/:id">
         <EditClassPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/edit-package/:id">
+        <EditPackagePage />
       </ProtectedRoute>
       <ProtectedRoute path="/review">
         <ReviewPage />
