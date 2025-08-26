@@ -106,7 +106,7 @@ export default function MyPackages() {
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
-    return `$${(price / 100).toFixed(2)}`;
+    return `$${price.toFixed(2)}`;
   };
 
   const getCategoryName = (categoryId: number | null) => {
@@ -240,12 +240,7 @@ export default function MyPackages() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <strong>Status:</strong>
-                      <br />
-                      {pkg.status}
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                       <strong>Date Posted:</strong>
                       <br />
