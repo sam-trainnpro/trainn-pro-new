@@ -220,6 +220,14 @@ export default function ClassesPage() {
       <Helmet>
         <title>Browse Fitness Classes - Trainn</title>
         <meta name="description" content="Discover and book outdoor sports, fitness, music and art classes for adults and kids in the San Francisco Bay Area. Filter by class type, location, age group, and date to find the perfect class for your needs." />
+        <link rel="canonical" href="https://trainn.pro/classes" />
+        <meta property="og:title" content="Browse Fitness Classes - Trainn" />
+        <meta property="og:description" content="Discover and book outdoor sports, fitness, music and art classes for adults and kids in the San Francisco Bay Area. Filter by class type, location, age group, and date to find the perfect class for your needs." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://trainn.pro/classes" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Browse Fitness Classes - Trainn" />
+        <meta name="twitter:description" content="Discover and book outdoor sports, fitness, music and art classes for adults and kids in the San Francisco Bay Area." />
       </Helmet>
       
       <Header />
