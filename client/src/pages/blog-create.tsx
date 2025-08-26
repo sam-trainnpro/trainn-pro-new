@@ -111,7 +111,12 @@ export default function BlogCreatePage() {
     const formData = new FormData();
     formData.append('image', file);
     
-    const response = await apiRequest('POST', '/api/upload-image', formData);
+    // Use fetch directly for file uploads since apiRequest doesn't handle FormData
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include', // Include cookies for authentication
+    });
     
     if (!response.ok) {
       throw new Error('Failed to upload image');
