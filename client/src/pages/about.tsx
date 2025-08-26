@@ -41,18 +41,64 @@ export default function AboutPage() {
                 dangerouslySetInnerHTML={{
                   __html: `
                     <p class="text-lg text-gray-700 leading-relaxed mb-6">
-                      <strong>Trainn's leadership team</strong> is passionate about helping people <em>build new skills</em>, <em>get in shape</em>, and <em>build community</em>. We created Trainn to make it really simple to find and sign up for:
+                      Welcome to Trainn — a platform that makes it easy to discover and book kids activities, after-school programs, and adult fitness and creative classes in the San Francisco Bay Area.
+                    </p>
+                    
+                    <p class="text-xl font-semibold text-gray-800 mb-3">
+                      <strong>Why Trainn Exists</strong>
+                    </p>
+                    <p class="text-lg text-gray-700 leading-relaxed mb-4">
+                      As a busy parent of two, I found it surprisingly difficult to:
                     </p>
                     <ul class="list-disc pl-6 text-lg text-gray-700 mb-6">
-                      <li>Local outdoor workouts 💪</li>
-                      <li>Sports classes ⚽</li>
-                      <li>Art sessions 🎨</li>
-                      <li>Music lessons 🎵</li>
-                      <li>Gym training sessions 🏋️</li>
-                      <li>Other fun activities for adults and kids 🎉</li>
+                      <li>Find local outdoor workouts in San Francisco that fit my schedule.</li>
+                      <li>Sign my son up for kids soccer classes without committing to a full league.</li>
                     </ul>
+                    <p class="text-lg text-gray-700 leading-relaxed mb-6">
+                      That frustration led me to build Trainn — a simple, flexible way for families and adults to discover great activities, book instantly, and connect with amazing coaches and teachers.
+                    </p>
+
+                    <p class="text-xl font-semibold text-gray-800 mb-3">
+                      <strong>What Trainn Offers</strong>
+                    </p>
+                    <ul class="list-disc pl-6 text-lg text-gray-700 mb-6">
+                      <li>⚽ <strong>Kids activities & after-school programs:</strong> soccer, basketball, gymnastics, arts & crafts, music, and more.</li>
+                      <li>🧘 <strong>Adult fitness & outdoor classes:</strong> yoga in Dolores Park, bootcamps, surfing, cardio, and strength training.</li>
+                      <li>🎨 <strong>Creative classes & community activities:</strong> workshops, lifestyle classes, and unique local experiences.</li>
+                    </ul>
+                    <p class="text-lg text-gray-700 leading-relaxed mb-6">
+                      Trainn is designed for flexibility — no long-term commitments required. Families can drop into a class to try it out, while still having the option to build consistency with recurring sessions.
+                    </p>
+
+                    <p class="text-xl font-semibold text-gray-800 mb-3">
+                      <strong>For Parents & Adults</strong>
+                    </p>
+                    <p class="text-lg text-gray-700 leading-relaxed mb-4">
+                      Trainn makes it easy to:
+                    </p>
+                    <ul class="list-disc pl-6 text-lg text-gray-700 mb-6">
+                      <li>Browse activities in one place.</li>
+                      <li>Book in just a few clicks.</li>
+                      <li>Give kids opportunities to grow their skills and confidence.</li>
+                      <li>Stay active and connected through fun workouts and classes.</li>
+                    </ul>
+
+                    <p class="text-xl font-semibold text-gray-800 mb-3">
+                      <strong>For Coaches & Providers</strong>
+                    </p>
+                    <p class="text-lg text-gray-700 leading-relaxed mb-6">
+                      Trainn helps you grow your business by reaching more families and students. It's free to list your classes, only takes 10–15 minutes to set up, and you keep 85% of every booking. We handle scheduling, payments, and promotion so you can focus on teaching.
+                    </p>
+
+                    <p class="text-xl font-semibold text-gray-800 mb-3">
+                      <strong>Our Vision</strong>
+                    </p>
+                    <p class="text-lg text-gray-700 leading-relaxed mb-6">
+                      Trainn is starting in San Francisco and will expand to other cities across California and the U.S. Our mission is simple: to make it easier for families to be active, creative, and connected — while helping local providers grow.
+                    </p>
+
                     <p class="text-lg text-gray-700 leading-relaxed">
-                      This platform <strong>empowers providers</strong> to grow their business and meet the needs of their community. 🚀
+                      👉 Ready to explore? Check out classes on Trainn today or sign up as a provider to start listing your activities.
                     </p>
                   `
                 }}
