@@ -47,6 +47,28 @@ const editPackageSchema = createInsertSchema(classPackages).pick({
   title: z.string().min(1, 'Title is required'),
   packageType: z.enum(['set_pack', 'time_bound']),
   ageGroup: z.string().default('Adults'),
+  // Convert string prices to numbers
+  price1: z.union([z.string(), z.number()]).transform((val) => {
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val.replace(/[^0-9.]/g, ''));
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return val || 0;
+  }),
+  price2: z.union([z.string(), z.number()]).transform((val) => {
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val.replace(/[^0-9.]/g, ''));
+      return isNaN(parsed) ? undefined : parsed;
+    }
+    return val;
+  }).optional(),
+  price3: z.union([z.string(), z.number()]).transform((val) => {
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val.replace(/[^0-9.]/g, ''));
+      return isNaN(parsed) ? undefined : parsed;
+    }
+    return val;
+  }).optional(),
 });
 
 export default function EditPackage() {
@@ -176,19 +198,6 @@ export default function EditPackage() {
     
     let totalFutureOccurrences = 0;
     
-    // Debug logging
-    console.log('Validation Debug:', {
-      selectedClasses,
-      coachClasses: coachClasses.map(cls => ({
-        id: cls.id,
-        title: cls.title,
-        packageIdentifier: cls.packageIdentifier,
-        futureOccurrences: cls.futureOccurrences,
-        estimatedFutureOccurrences: cls.estimatedFutureOccurrences
-      })),
-      packageData
-    });
-    
     if (selectedClasses.length === 1 && selectedClasses[0] === 'all') {
       totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
     } else {
@@ -200,12 +209,9 @@ export default function EditPackage() {
           classData = coachClasses.find(cls => cls.id.toString() === identifier);
         }
         const occurrences = classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0;
-        console.log(`Class ${identifier}: found ${classData ? 'YES' : 'NO'}, occurrences: ${occurrences}`);
         return total + occurrences;
       }, 0);
     }
-    
-    console.log(`Total future occurrences: ${totalFutureOccurrences}, Required: ${requiredOccurrences}`);
     
     if (totalFutureOccurrences < requiredOccurrences) {
       toast({
@@ -274,8 +280,10 @@ export default function EditPackage() {
         title: 'Success',
         description: 'Package updated successfully!'
       });
+      // Invalidate all package-related queries to ensure changes show up everywhere
       queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
       queryClient.invalidateQueries({ queryKey: [`/api/packages/${packageId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/packages/my'] });
       navigate('/my-packages');
     },
     onError: (error: any) => {
