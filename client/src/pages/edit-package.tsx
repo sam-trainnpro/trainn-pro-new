@@ -108,7 +108,7 @@ export default function EditPackage() {
         price2: packageData.price2 || undefined,
         price3: packageData.price3 || undefined,
         description: packageData.description || '',
-        categoryId: packageData.categoryId || undefined,
+        categoryId: packageData.categoryId ? packageData.categoryId.toString() : undefined,
         ageGroup: packageData.ageGroup || 'Adults',
         eligibleClasses: packageData.eligibleClasses || '',
       });
