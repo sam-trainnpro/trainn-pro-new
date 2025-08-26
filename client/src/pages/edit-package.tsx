@@ -176,14 +176,36 @@ export default function EditPackage() {
     
     let totalFutureOccurrences = 0;
     
+    // Debug logging
+    console.log('Validation Debug:', {
+      selectedClasses,
+      coachClasses: coachClasses.map(cls => ({
+        id: cls.id,
+        title: cls.title,
+        packageIdentifier: cls.packageIdentifier,
+        futureOccurrences: cls.futureOccurrences,
+        estimatedFutureOccurrences: cls.estimatedFutureOccurrences
+      })),
+      packageData
+    });
+    
     if (selectedClasses.length === 1 && selectedClasses[0] === 'all') {
       totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
     } else {
+      // Try both packageIdentifier and id-based matching
       totalFutureOccurrences = selectedClasses.reduce((total, identifier) => {
-        const classData = coachClasses.find(cls => cls.packageIdentifier === identifier);
-        return total + (classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0);
+        let classData = coachClasses.find(cls => cls.packageIdentifier === identifier);
+        // If not found by packageIdentifier, try by id
+        if (!classData) {
+          classData = coachClasses.find(cls => cls.id.toString() === identifier);
+        }
+        const occurrences = classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0;
+        console.log(`Class ${identifier}: found ${classData ? 'YES' : 'NO'}, occurrences: ${occurrences}`);
+        return total + occurrences;
       }, 0);
     }
+    
+    console.log(`Total future occurrences: ${totalFutureOccurrences}, Required: ${requiredOccurrences}`);
     
     if (totalFutureOccurrences < requiredOccurrences) {
       toast({
