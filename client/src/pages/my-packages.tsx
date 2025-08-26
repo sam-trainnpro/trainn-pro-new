@@ -1,24 +1,11 @@
-import { useState } from 'react';
-import { useLocation } from 'wouter';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  ArrowLeft, 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Calendar, 
-  Users, 
-  DollarSign,
-  CheckCircle,
-  XCircle 
-} from 'lucide-react';
-import { useToast } from '../../../hooks/use-toast';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "../../../hooks/use-toast";
+import { useState } from "react";
+import { Plus, Edit, Trash2, Calendar, Package, CheckCircle, XCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,307 +15,297 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import type { ClassPackage } from '@shared/schema';
+} from "@/components/ui/alert-dialog";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import MobileNavigation from "@/components/layout/mobile-navigation";
+import { useLocation } from "wouter";
+
+interface ClassPackage {
+  id: number;
+  coachId: number;
+  title: string;
+  packageType: 'set_pack' | 'time_bound';
+  classCount1: number | null;
+  classCount2: number | null;
+  classCount3: number | null;
+  price1: number | null;
+  price2: number | null;
+  price3: number | null;
+  eligibleClasses: string | null;
+  description: string | null;
+  categoryId: number | null;
+  ageGroup: string;
+  isActive: boolean;
+  status: string;
+  creationDate: string;
+  futureClassCount: number | null;
+  createdAt: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+}
 
 export default function MyPackages() {
-  const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [deletePackageId, setDeletePackageId] = useState<number | null>(null);
 
   // Get current user
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user } = useQuery({
     queryKey: ['/api/user']
   });
 
-  // Debug logging
-  console.log('MyPackages - User data:', user);
-
-  // Get coach's packages
-  const { data: packages, isLoading } = useQuery({
-    queryKey: [`/api/coaches/${user?.id}/packages`],
-    enabled: !!user?.id && user?.role === 'coach' && user?.isApproved
+  // Fetch coach's packages
+  const { data: packages = [], isLoading } = useQuery({
+    queryKey: ['/api/packages/my'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/packages/my');
+      return response.json();
+    },
+    enabled: !!user?.id && user?.role === 'coach'
   });
 
-  const deletePackageMutation = useMutation({
+  // Fetch categories
+  const { data: categories = [] } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/categories');
+      return response.json();
+    }
+  });
+
+  // Delete package mutation
+  const deleteMutation = useMutation({
     mutationFn: async (packageId: number) => {
-      return apiRequest(`/api/packages/${packageId}`, 'DELETE');
+      const response = await apiRequest('DELETE', `/api/packages/${packageId}`);
+      return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Package deleted successfully'
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/coaches/${user?.id}/packages`] 
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/packages/my'] });
       setDeletePackageId(null);
+      toast({
+        title: "Success",
+        description: "Package deleted successfully",
+      });
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete package',
-        variant: 'destructive'
+        title: "Error",
+        description: error.message || "Failed to delete package",
+        variant: "destructive",
       });
     }
   });
 
-  const formatPrice = (cents: number) => {
-    return `$${(cents / 100).toFixed(2)}`;
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
-  const calculateDiscount = (original: number, discounted: number) => {
-    const discount = ((original - discounted) / original) * 100;
-    return discount.toFixed(0);
+  const formatPrice = (price: number | null) => {
+    if (!price) return 'N/A';
+    return `$${(price / 100).toFixed(2)}`;
   };
 
-  // Show loading state while user data is being fetched
-  if (userLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Loading...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const getCategoryName = (categoryId: number | null) => {
+    if (!categoryId) return 'No Category';
+    const category = categories.find((cat: Category) => cat.id === categoryId);
+    return category?.name || 'Unknown Category';
+  };
 
-  // Check if user is logged in
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Please log in to view packages.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const renderPackageDetails = (pkg: ClassPackage) => {
+    if (pkg.packageType === 'set_pack') {
+      const options = [];
+      if (pkg.classCount1 && pkg.price1) {
+        options.push(`${pkg.classCount1} classes: ${formatPrice(pkg.price1)}`);
+      }
+      if (pkg.classCount2 && pkg.price2) {
+        options.push(`${pkg.classCount2} classes: ${formatPrice(pkg.price2)}`);
+      }
+      if (pkg.classCount3 && pkg.price3) {
+        options.push(`${pkg.classCount3} classes: ${formatPrice(pkg.price3)}`);
+      }
+      return options.join(' | ');
+    } else {
+      return 'Time-bound package';
+    }
+  };
 
-  // Check if user is a coach
-  if (user.role !== 'coach') {
+  if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              You must be a coach to view packages.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Check if coach is approved
-  if (!user.isApproved) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Your coach account is pending approval.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="container mx-auto p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+          </div>
+        </main>
+        <Footer />
+        <MobileNavigation />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/dashboard')}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
-        
-        <Button onClick={() => navigate('/create-package')}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Package
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <main className="container mx-auto p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">My Packages</h1>
+            <p className="text-gray-600 mt-2">Manage your class packages and bundles</p>
+          </div>
+          <Button onClick={() => navigate('/create-package')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Package
+          </Button>
+        </div>
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Package className="h-8 w-8" />
-          My Class Packages
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your class bundles and special offers
-        </p>
-      </div>
+        {/* Status Legend */}
+        <div className="flex gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span>Active</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <XCircle className="w-4 h-4 text-red-500" />
+            <span>Inactive</span>
+          </div>
+        </div>
 
-      {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full mt-2" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-4 w-1/3" />
-                </div>
+        {/* Packages Grid */}
+        <div className="grid gap-4">
+          {packages.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No packages yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create your first class package to offer discounted bundles to students
+                </p>
+                <Button onClick={() => navigate('/create-package')}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Your First Package
+                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      ) : packages?.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No packages yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first class package to offer discounted bundles to students
-            </p>
-            <Button onClick={() => navigate('/create-package')}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Package
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {packages?.map((pkg: ClassPackage) => (
-            <Card key={pkg.id} className="relative">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-xl">{pkg.packageName}</CardTitle>
-                    <CardDescription className="mt-2 line-clamp-2">
-                      {pkg.description}
-                    </CardDescription>
-                  </div>
-                  <Badge 
-                    variant={pkg.isActive ? "default" : "secondary"}
-                    className="ml-2"
-                  >
-                    {pkg.isActive ? (
-                      <>
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Active
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Inactive
-                      </>
-                    )}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {/* Class Count */}
-                  <div className="flex items-center text-sm">
-                    <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="font-medium">{pkg.classCount} Classes</span>
-                  </div>
-
-                  {/* Pricing */}
-                  <div className="flex items-center text-sm">
-                    <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+          ) : (
+            packages.map((pkg: ClassPackage) => (
+              <Card key={pkg.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
                     <div>
-                      <span className="line-through text-muted-foreground">
-                        {formatPrice(pkg.originalPriceCents * pkg.classCount)}
-                      </span>
-                      <span className="font-bold text-green-600 ml-2">
-                        {formatPrice(pkg.discountedPriceCents * pkg.classCount)}
-                      </span>
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        {calculateDiscount(pkg.originalPriceCents, pkg.discountedPriceCents)}% OFF
-                      </Badge>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        {pkg.title}
+                        {pkg.isActive ? (
+                          <Badge variant="default" className="bg-green-600">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Inactive
+                          </Badge>
+                        )}
+                      </CardTitle>
+                      {pkg.description && (
+                        <p className="text-gray-600 mt-1">{pkg.description}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/edit-package/${pkg.id}`)}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDeletePackageId(pkg.id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
-
-                  {/* Per Class Price */}
-                  <div className="text-xs text-muted-foreground">
-                    {formatPrice(pkg.discountedPriceCents)} per class 
-                    <span className="line-through ml-1">
-                      {formatPrice(pkg.originalPriceCents)}
-                    </span>
-                  </div>
-
-                  {/* Validity */}
-                  <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Valid for {pkg.validityDays} days</span>
-                  </div>
-
-                  {/* Max Students */}
-                  {pkg.maxStudents && (
-                    <div className="flex items-center text-sm">
-                      <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>Max {pkg.maxStudents} students per class</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <strong>Status:</strong>
+                      <br />
+                      {pkg.status}
                     </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-4 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => navigate(`/edit-package/${pkg.id}`)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setDeletePackageId(pkg.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
+                    <div>
+                      <strong>Date Posted:</strong>
+                      <br />
+                      {formatDate(pkg.creationDate || pkg.createdAt)}
+                    </div>
+                    <div>
+                      <strong>Category:</strong>
+                      <br />
+                      {getCategoryName(pkg.categoryId)}
+                    </div>
+                    <div>
+                      <strong>Age Group:</strong>
+                      <br />
+                      {pkg.ageGroup || 'Adults'}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="text-sm">
+                      <strong>Package Type:</strong>
+                      <br />
+                      <span className="text-gray-600">
+                        {pkg.packageType === 'set_pack' ? 'Set Pack' : 'Time-bound'} - {renderPackageDetails(pkg)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
-      )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog 
-        open={deletePackageId !== null} 
-        onOpenChange={(open) => !open && setDeletePackageId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Package?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the package.
-              Any students who have already purchased this package will still be able to use their remaining classes.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletePackageId && deletePackageMutation.mutate(deletePackageId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Package
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletePackageId} onOpenChange={() => setDeletePackageId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Package</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this package? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deletePackageId) {
+                    deleteMutation.mutate(deletePackageId);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </main>
+
+      <Footer />
+      <MobileNavigation />
     </div>
   );
 }
