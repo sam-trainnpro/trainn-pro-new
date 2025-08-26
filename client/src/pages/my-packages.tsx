@@ -198,7 +198,29 @@ export default function MyPackages() {
             packages.map((pkg: ClassPackage) => (
               <Card key={pkg.id}>
                 <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
+                  {/* Mobile Layout: Full width title and description */}
+                  <div className="md:hidden">
+                    <CardTitle className="text-lg flex flex-wrap items-center gap-2 mb-3">
+                      <span className="break-words">{pkg.title}</span>
+                      {pkg.isActive ? (
+                        <Badge variant="default" className="bg-green-600 flex-shrink-0">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="flex-shrink-0">
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Inactive
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    {pkg.description && (
+                      <p className="text-gray-600 break-words leading-relaxed">{pkg.description}</p>
+                    )}
+                  </div>
+
+                  {/* Desktop Layout: Side by side with buttons */}
+                  <div className="hidden md:flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg flex items-center gap-2">
                         {pkg.title}
@@ -266,6 +288,29 @@ export default function MyPackages() {
                         {pkg.packageType === 'set_pack' ? 'Set Pack' : 'Time-bound'} - {renderPackageDetails(pkg)}
                       </span>
                     </div>
+                  </div>
+
+                  {/* Mobile Buttons - Only show on mobile */}
+                  <div className="md:hidden mt-4 pt-4 border-t flex gap-2 justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/edit-package/${pkg.id}`)}
+                      className="flex-1"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDeletePackageId(pkg.id)}
+                      disabled={deleteMutation.isPending}
+                      className="flex-1"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
