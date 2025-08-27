@@ -48,6 +48,7 @@ import CoachPromoCodesPage from "@/pages/coach-promo-codes";
 import CreatePackagePage from "@/pages/create-package";
 import MyPackagesPage from "@/pages/my-packages";
 import EditPackagePage from "@/pages/edit-package";
+import PackagesPage from "@/pages/packages";
 import CoachResourcesPage from "@/pages/coach-resources";
 import SuccessStoriesPage from "@/pages/success-stories";
 import BusinessToolsPage from "@/pages/business-tools";
@@ -93,6 +94,9 @@ function Router() {
       </Route>
       <Route path="/classes">
         <ClassesPage />
+      </Route>
+      <Route path="/packages">
+        <PackagesPage />
       </Route>
       <Route path="/classes/:id">
         <ClassDetailsPage />
