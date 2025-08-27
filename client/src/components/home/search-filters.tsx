@@ -238,11 +238,14 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Kids")}>
+                  Kids
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleAgeGroupSelect("Adults")}>
                   Adults
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Kids")}>
-                  Kids
+                <DropdownMenuItem onClick={() => handleAgeGroupSelect("Both")}>
+                  Both
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

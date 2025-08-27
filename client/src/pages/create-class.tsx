@@ -80,7 +80,7 @@ const createClassSchema = z.object({
   whatToBring: z.string().optional(),
   toFindUs: z.string().optional(),
   image: z.string().optional(),
-  ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
+  ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
   outdoors: z.boolean().default(false),
   isRecurring: z.boolean().default(false),
   // Recurrence fields
@@ -872,12 +872,13 @@ export default function CreateClassPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Adults">Adults</SelectItem>
                               <SelectItem value="Kids">Kids</SelectItem>
+                              <SelectItem value="Adults">Adults</SelectItem>
+                              <SelectItem value="Both">Both</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            Choose whether this class is designed for adults or kids
+                            Choose whether this class is designed for kids, adults, or both
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
