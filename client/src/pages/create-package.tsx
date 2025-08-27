@@ -53,7 +53,7 @@ const createPackageSchema = z.object({
   // Eligible classes - mandatory selection
   eligibleClasses: z.string().min(1, "Please select eligible classes"),
   // Fields from Create Class form
-  ageGroup: z.enum(['Adults', 'Kids', 'Both']).default('Adults'),
+  ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
   outdoors: z.boolean().default(false),
 }).refine((data) => {
   // Custom validation for set_pack type
@@ -408,8 +408,8 @@ export default function CreatePackage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Adults">Adults</SelectItem>
                           <SelectItem value="Kids">Kids</SelectItem>
+                          <SelectItem value="Adults">Adults</SelectItem>
                           <SelectItem value="Both">Both</SelectItem>
                         </SelectContent>
                       </Select>

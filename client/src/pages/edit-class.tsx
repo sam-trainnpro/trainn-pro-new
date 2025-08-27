@@ -48,7 +48,7 @@ const editClassSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   image: z.string().optional().nullable(),
-  ageGroup: z.enum(['Adults', 'Kids']).default('Adults'),
+  ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
   outdoors: z.boolean().default(false),
   classDate: z.date(),
   startTime: z.string().min(1, "Start time is required"),
@@ -212,7 +212,7 @@ export default function EditClassPage() {
         latitude: classData.latitude || 0,
         longitude: classData.longitude || 0,
         image: classData.image || "",
-        ageGroup: (classData.ageGroup as "Adults" | "Kids") || "Adults",
+        ageGroup: (classData.ageGroup as "Kids" | "Adults" | "Both") || "Adults",
         outdoors: classData.outdoors || false,
         classDate: classDate,
         startTime: timeString,
@@ -544,12 +544,13 @@ export default function EditClassPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Adults">Adults</SelectItem>
                               <SelectItem value="Kids">Kids</SelectItem>
+                              <SelectItem value="Adults">Adults</SelectItem>
+                              <SelectItem value="Both">Both</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            Choose whether this class is designed for adults or kids
+                            Choose whether this class is designed for kids, adults, or both
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

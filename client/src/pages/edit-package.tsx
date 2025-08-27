@@ -46,7 +46,7 @@ const editPackageSchema = createInsertSchema(classPackages).pick({
 }).extend({
   title: z.string().min(1, 'Title is required'),
   packageType: z.enum(['set_pack', 'time_bound']),
-  ageGroup: z.string().default('Adults'),
+  ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
   // Convert string prices to numbers
   price1: z.union([z.string(), z.number()]).transform((val) => {
     if (typeof val === 'string') {
@@ -448,7 +448,7 @@ export default function EditPackage() {
                             <SelectContent>
                               <SelectItem value="Kids">Kids</SelectItem>
                               <SelectItem value="Adults">Adults</SelectItem>
-                              <SelectItem value="All Ages">All Ages</SelectItem>
+                              <SelectItem value="Both">Both</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
