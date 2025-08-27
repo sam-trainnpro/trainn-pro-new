@@ -115,6 +115,14 @@ export default function HeroSection() {
               </Link>
             </div>
             
+            <div className="sm:order-1">
+              <Link href="/packages">
+                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
+                  Explore Packages
+                </Button>
+              </Link>
+            </div>
+            
             {!user && (
               <div className="sm:order-2">
                 <Link href="/auth?register=true&role=coach">
