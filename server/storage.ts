@@ -174,6 +174,7 @@ export interface IStorage {
   createPackage(packageData: InsertClassPackage): Promise<ClassPackage>;
   getPackage(id: number): Promise<ClassPackage | undefined>;
   getCoachPackages(coachId: number): Promise<ClassPackage[]>;
+  getAllPackages(): Promise<ClassPackage[]>;
   updatePackage(id: number, packageData: Partial<ClassPackage>): Promise<ClassPackage | undefined>;
   deletePackage(id: number): Promise<boolean>;
 }
@@ -1280,6 +1281,28 @@ export class DatabaseStorage implements IStorage {
       .from(classPackages)
       .where(eq(classPackages.coachId, coachId))
       .orderBy(desc(classPackages.createdAt));
+  }
+
+  async getAllPackages(): Promise<ClassPackage[]> {
+    return await db.select()
+      .from(classPackages)
+      .leftJoin(users, eq(classPackages.coachId, users.id))
+      .leftJoin(classCategories, eq(classPackages.categoryId, classCategories.id))
+      .where(and(
+        eq(classPackages.isActive, true),
+        eq(users.isApproved, true),
+        eq(users.role, 'coach')
+      ))
+      .orderBy(desc(classPackages.createdAt))
+      .then(results => 
+        results.map(row => ({
+          ...row.class_packages,
+          coachName: `${row.users?.firstName} ${row.users?.lastName}`,
+          coachBusinessName: row.users?.businessName,
+          displayBusinessName: row.users?.displayBusinessName,
+          categoryName: row.class_categories?.name
+        }))
+      );
   }
 
   async updatePackage(id: number, packageData: Partial<ClassPackage>): Promise<ClassPackage | undefined> {
