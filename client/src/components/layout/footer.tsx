@@ -118,7 +118,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="/auth?register=true" className="text-gray-400 hover:text-white transition">Join Now</Link></li>
               <li><Link href="/classes" className="text-gray-400 hover:text-white transition">Find Classes</Link></li>
-              <li><Link href="/packages" className="text-gray-400 hover:text-white transition">Find All Packages</Link></li>
+              <li><Link href="/packages" className="text-gray-400 hover:text-white transition">Find Packages</Link></li>
               <li><Link href="/coaches" className="text-gray-400 hover:text-white transition">Find Providers</Link></li>
               <li><ReferralLink /></li>
               <li><ReferProviderLinkCustomers /></li>
