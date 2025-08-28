@@ -33,6 +33,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { Input } from "@/components/ui/input";
 
+// Declare fbq for Meta Pixel tracking
+declare global {
+  interface Window {
+    fbq?: (action: string, event: string, params?: any) => void;
+  }
+}
+
 // Initialize Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
   throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLISHABLE_KEY');
@@ -196,6 +203,12 @@ const CheckoutForm = ({ classItem, quantity, appliedPromoCode, discountAmount, f
         type="submit" 
         className="w-full bg-primary text-white"
         disabled={!stripe || isProcessing}
+        onClick={() => {
+          // Track Purchase event in Meta Pixel
+          if (window.fbq) {
+            window.fbq('track', 'Purchase');
+          }
+        }}
       >
         {isProcessing ? (
           <>
@@ -998,6 +1011,11 @@ export default function CheckoutPage() {
                         <Button 
                           className={`w-full text-white ${appliedPromoCode ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                           onClick={() => {
+                            // Track Purchase event in Meta Pixel (even for free bookings)
+                            if (window.fbq) {
+                              window.fbq('track', 'Purchase');
+                            }
+                            
                             if (appliedPromoCode) {
                               freeBookingMutation.mutate({ 
                                 classId: classItem.id, 
