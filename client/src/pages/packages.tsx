@@ -306,7 +306,25 @@ export default function PackagesPage() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => navigate(`/classes?coachId=${pkg.coachId}`)}
+                              onClick={() => {
+                                // Create URL with coach filter and eligible classes filter
+                                let classesUrl = `/classes?coachId=${pkg.coachId}`;
+                                
+                                // Add eligible classes filter if specific classes are defined
+                                if (pkg.eligibleClasses && pkg.eligibleClasses !== 'all') {
+                                  try {
+                                    const eligibleClassIds = JSON.parse(pkg.eligibleClasses);
+                                    if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
+                                      classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
+                                    }
+                                  } catch (e) {
+                                    // If parsing fails, fall back to coach-only filter
+                                    console.warn('Failed to parse eligible classes:', pkg.eligibleClasses);
+                                  }
+                                }
+                                
+                                navigate(classesUrl);
+                              }}
                             >
                               View Classes
                             </Button>

@@ -72,6 +72,21 @@ export default function ClassesPage() {
   
   // Filter classes based on search criteria
   const filteredClasses = classes?.filter(classItem => {
+    // Filter by specific coach (when coming from package "View Classes")
+    const coachIdParam = searchParams.coachId as string;
+    if (coachIdParam && classItem.coachId !== Number(coachIdParam)) {
+      return false;
+    }
+    
+    // Filter by specific class IDs (when coming from package "View Classes")
+    const packageClassesParam = searchParams.packageClasses as string;
+    if (packageClassesParam) {
+      const packageClassIds = packageClassesParam.split(',').map(id => Number(id.trim()));
+      if (!packageClassIds.includes(classItem.id)) {
+        return false;
+      }
+    }
+    
     // First filter: only show classes with dates greater than or equal to today
     if (classItem.startTime) {
       const classDate = new Date(classItem.startTime);
