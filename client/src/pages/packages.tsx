@@ -333,7 +333,22 @@ export default function PackagesPage() {
                             <Button 
                               className="bg-primary text-white hover:bg-primary/90"
                               size="sm"
-                              onClick={() => navigate(`/package/${pkg.id}/purchase`)}
+                              onClick={() => {
+                                // Count available options
+                                const options = [];
+                                if (pkg.classCount1 && pkg.price1) options.push({ count: pkg.classCount1, price: pkg.price1 });
+                                if (pkg.classCount2 && pkg.price2) options.push({ count: pkg.classCount2, price: pkg.price2 });
+                                if (pkg.classCount3 && pkg.price3) options.push({ count: pkg.classCount3, price: pkg.price3 });
+                                
+                                // If only one option, go directly to checkout
+                                if (options.length === 1) {
+                                  const option = options[0];
+                                  navigate(`/package/${pkg.id}/checkout?classCount=${option.count}&price=${option.price}`);
+                                } else {
+                                  // Multiple options, go to selection page
+                                  navigate(`/package/${pkg.id}/purchase`);
+                                }
+                              }}
                             >
                               Buy Package
                             </Button>

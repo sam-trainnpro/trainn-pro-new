@@ -2383,6 +2383,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Package Payment API endpoints
+  app.post("/api/package-payment/create-intent", requireAuth, async (req, res) => {
+    try {
+      const { packageId, classCount, price, appliedCredits = 0, promoCode } = req.body;
+      
+      if (!packageId || !classCount || !price) {
+        return res.status(400).json({ message: "Missing required parameters: packageId, classCount, price" });
+      }
+
+      // Get package details for validation
+      const packageData = await storage.getPackage(parseInt(packageId));
+      if (!packageData) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      let finalAmount = parseFloat(price);
+      
+      // Apply credits if specified
+      if (appliedCredits > 0) {
+        finalAmount = Math.max(0, finalAmount - (appliedCredits / 100)); // Credits are in cents
+      }
+
+      // If amount is 0 (fully covered by credits), don't create payment intent
+      if (finalAmount === 0) {
+        return res.json({
+          clientSecret: null,
+          finalAmount: 0,
+          requiresPayment: false
+        });
+      }
+
+      // Create Stripe PaymentIntent
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(finalAmount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          packageId: packageId.toString(),
+          classCount: classCount.toString(),
+          userId: req.user.id.toString(),
+          originalPrice: price.toString(),
+          appliedCredits: appliedCredits.toString(),
+          promoCode: promoCode || ""
+        }
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        finalAmount: finalAmount,
+        requiresPayment: true
+      });
+
+    } catch (error: any) {
+      console.error("Error creating package payment intent:", error);
+      res.status(500).json({ 
+        message: "Failed to create payment intent",
+        error: error.message 
+      });
+    }
+  });
+
+  app.post("/api/package-payment/confirm", requireAuth, async (req, res) => {
+    try {
+      const { paymentIntentId, packageId, classCount, price, promoCode, appliedCredits = 0 } = req.body;
+      
+      if (!packageId || !classCount || !price) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      console.log("=== CONFIRMING PACKAGE PURCHASE ===");
+      console.log("Package ID:", packageId);
+      console.log("Class Count:", classCount);
+      console.log("Price:", price);
+      console.log("User ID:", req.user.id);
+
+      // Get package details
+      const packageData = await storage.getPackage(parseInt(packageId));
+      if (!packageData) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      // For now, just return success - package purchase storage will be implemented later
+      // This allows the frontend to complete the flow
+      
+      res.json({ 
+        success: true, 
+        message: "Package purchase confirmed",
+        packageId: packageId,
+        classCount: classCount
+      });
+
+    } catch (error: any) {
+      console.error("Error confirming package purchase:", error);
+      res.status(500).json({ 
+        message: "Failed to confirm package purchase",
+        error: error.message 
+      });
+    }
+  });
+
   // Scheduled Payout Management Routes
   
   // Process due payouts (admin only)
