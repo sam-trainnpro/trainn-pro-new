@@ -77,7 +77,7 @@ export default function BookingsPage() {
     queryKey: ['/api/bookings'],
     enabled: !!user,
     staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache results
+    gcTime: 0, // Don't cache results (renamed from cacheTime)
     refetchOnMount: true, // Always refetch when component mounts
     refetchOnWindowFocus: true, // Refetch when window gets focus
   });
@@ -118,21 +118,21 @@ export default function BookingsPage() {
   });
   
   // Filter and sort bookings by status and date/time
-  const upcomingBookings = bookings?.filter(booking => 
+  const upcomingBookings = bookings?.filter((booking: BookingWithClass) => 
     booking.status === 'confirmed' && 
     booking.class && booking.class.startTime && 
     new Date(booking.class.startTime) > new Date()
-  ).sort((a, b) => {
+  ).sort((a: BookingWithClass, b: BookingWithClass) => {
     // Sort by start time (earliest first)
     const dateA = new Date(a.class!.startTime!);
     const dateB = new Date(b.class!.startTime!);
     return dateA.getTime() - dateB.getTime();
   });
   
-  const pastBookings = bookings?.filter(booking => 
+  const pastBookings = bookings?.filter((booking: BookingWithClass) => 
     booking.class && booking.class.startTime && 
     new Date(booking.class.startTime) <= new Date()
-  ).sort((a, b) => {
+  ).sort((a: BookingWithClass, b: BookingWithClass) => {
     // Sort by start time (most recent first)
     const dateA = new Date(a.class!.startTime!);
     const dateB = new Date(b.class!.startTime!);
@@ -229,7 +229,7 @@ export default function BookingsPage() {
                 <Button onClick={() => refetch()}>Retry</Button>
               </CardContent>
             </Card>
-          ) : bookings && bookings.length > 0 ? (
+          ) : bookings && Array.isArray(bookings) && bookings.length > 0 ? (
             <Tabs defaultValue="upcoming">
               <TabsList className="mb-6">
                 <TabsTrigger value="upcoming">
@@ -242,12 +242,13 @@ export default function BookingsPage() {
                 </TabsTrigger>
 
                 <TabsTrigger value="past">Past</TabsTrigger>
+                <TabsTrigger value="packages">Packages</TabsTrigger>
               </TabsList>
               
               <TabsContent value="upcoming">
                 {upcomingBookings && upcomingBookings.length > 0 ? (
                   <div className="space-y-4">
-                    {upcomingBookings.map(booking => (
+                    {upcomingBookings.map((booking: BookingWithClass) => (
                       <Card key={booking.id}>
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-start">
@@ -351,7 +352,7 @@ export default function BookingsPage() {
               <TabsContent value="past">
                 {pastBookings && pastBookings.length > 0 ? (
                   <div className="space-y-4">
-                    {pastBookings.map(booking => (
+                    {pastBookings.map((booking: BookingWithClass) => (
                       <Card key={booking.id}>
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-start">
@@ -441,6 +442,21 @@ export default function BookingsPage() {
                     </CardContent>
                   </Card>
                 )}
+              </TabsContent>
+
+              <TabsContent value="packages">
+                <div className="text-center py-8">
+                  <div className="max-w-md mx-auto">
+                    <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Package Feature Coming Soon</h3>
+                    <p className="text-gray-500 mb-4">
+                      Your purchased class packages will appear here. This feature is currently under development.
+                    </p>
+                    <Button asChild variant="outline">
+                      <Link href="/packages">Browse Available Packages</Link>
+                    </Button>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           ) : (
