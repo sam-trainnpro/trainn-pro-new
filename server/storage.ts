@@ -1272,8 +1272,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPackage(id: number): Promise<ClassPackage | undefined> {
-    const [pkg] = await db.select().from(classPackages).where(eq(classPackages.id, id));
-    return pkg || undefined;
+    const result = await db.select()
+      .from(classPackages)
+      .leftJoin(users, eq(classPackages.coachId, users.id))
+      .leftJoin(classCategories, eq(classPackages.categoryId, classCategories.id))
+      .where(eq(classPackages.id, id))
+      .limit(1);
+    
+    if (result.length === 0) {
+      return undefined;
+    }
+    
+    const row = result[0];
+    return {
+      ...row.class_packages,
+      coachName: `${row.users?.firstName} ${row.users?.lastName}`,
+      coachBusinessName: row.users?.businessName,
+      displayBusinessName: row.users?.displayBusinessName,
+      categoryName: row.class_categories?.name
+    } as ClassPackage;
   }
 
   async getCoachPackages(coachId: number): Promise<ClassPackage[]> {
