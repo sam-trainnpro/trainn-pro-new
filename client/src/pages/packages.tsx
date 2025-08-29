@@ -296,37 +296,46 @@ export default function PackagesPage() {
                             )}
                           </div>
 
-                          <div className="flex gap-2 pt-2">
-                            <Button 
-                              size="sm"
-                              onClick={() => navigate(`/coaches/${pkg.coachId}`)}
-                            >
-                              View Provider
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                // Create URL with coach filter and eligible classes filter
-                                let classesUrl = `/classes?coachId=${pkg.coachId}`;
-                                
-                                // Add eligible classes filter if specific classes are defined
-                                if (pkg.eligibleClasses && pkg.eligibleClasses !== 'all') {
-                                  try {
-                                    const eligibleClassIds = JSON.parse(pkg.eligibleClasses);
-                                    if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
-                                      classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
+                          <div className="flex justify-between items-center pt-2">
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm"
+                                onClick={() => navigate(`/coaches/${pkg.coachId}`)}
+                              >
+                                View Provider
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  // Create URL with coach filter and eligible classes filter
+                                  let classesUrl = `/classes?coachId=${pkg.coachId}`;
+                                  
+                                  // Add eligible classes filter if specific classes are defined
+                                  if (pkg.eligibleClasses && pkg.eligibleClasses !== 'all') {
+                                    try {
+                                      const eligibleClassIds = JSON.parse(pkg.eligibleClasses);
+                                      if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
+                                        classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
+                                      }
+                                    } catch (e) {
+                                      // If parsing fails, fall back to coach-only filter
+                                      console.warn('Failed to parse eligible classes:', pkg.eligibleClasses);
                                     }
-                                  } catch (e) {
-                                    // If parsing fails, fall back to coach-only filter
-                                    console.warn('Failed to parse eligible classes:', pkg.eligibleClasses);
                                   }
-                                }
-                                
-                                navigate(classesUrl);
-                              }}
+                                  
+                                  navigate(classesUrl);
+                                }}
+                              >
+                                View Classes
+                              </Button>
+                            </div>
+                            <Button 
+                              className="bg-primary text-white hover:bg-primary/90"
+                              size="sm"
+                              onClick={() => navigate(`/package/${pkg.id}/purchase`)}
                             >
-                              View Classes
+                              Buy Package
                             </Button>
                           </div>
                         </div>
