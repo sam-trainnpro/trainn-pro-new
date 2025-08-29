@@ -50,6 +50,7 @@ import MyPackagesPage from "@/pages/my-packages";
 import EditPackagePage from "@/pages/edit-package";
 import PackagesPage from "@/pages/packages";
 import PackagePurchasePage from "@/pages/package-purchase";
+import PackageCheckoutPage from "@/pages/package-checkout";
 import CoachResourcesPage from "@/pages/coach-resources";
 import SuccessStoriesPage from "@/pages/success-stories";
 import BusinessToolsPage from "@/pages/business-tools";
@@ -101,6 +102,9 @@ function Router() {
       </Route>
       <ProtectedRoute path="/package/:packageId/purchase">
         <PackagePurchasePage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/package/:packageId/checkout">
+        <PackageCheckoutPage />
       </ProtectedRoute>
       <Route path="/classes/:id">
         <ClassDetailsPage />

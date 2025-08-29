@@ -1,0 +1,455 @@
+import { useState, useEffect } from "react";
+import { useRoute, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { useAuth } from "../../../hooks/use-auth-simple";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "../../../hooks/use-toast";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import MobileNavigation from "@/components/layout/mobile-navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Helmet } from "react-helmet";
+import { Package, User, Calendar, CheckCircle, Gift, CreditCard, Loader2 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+interface ClassPackage {
+  id: number;
+  coachId: number;
+  coachName: string;
+  coachBusinessName?: string;
+  displayBusinessName?: boolean;
+  title: string;
+  packageType: 'set_pack' | 'time_bound';
+  classCount1: number | null;
+  classCount2: number | null;
+  classCount3: number | null;
+  price1: number | null;
+  price2: number | null;
+  price3: number | null;
+  eligibleClasses: string | null;
+  description: string | null;
+  categoryId: number | null;
+  categoryName?: string;
+  ageGroup: string;
+  isActive: boolean;
+  status: string;
+  creationDate: string;
+  futureClassCount: number | null;
+  createdAt: string;
+}
+
+// Package Checkout Form component
+const PackageCheckoutForm = ({ 
+  packageData, 
+  classCount, 
+  price, 
+  appliedPromoCode, 
+  discountAmount, 
+  finalAmount, 
+  appliedCredits = 0, 
+  useCredits = false, 
+  onPaymentSuccess, 
+  setIsBookingSuccess 
+}: { 
+  packageData: ClassPackage; 
+  classCount: number; 
+  price: number; 
+  appliedPromoCode?: any;
+  discountAmount: number;
+  finalAmount: number;
+  appliedCredits?: number;
+  useCredits?: boolean;
+  onPaymentSuccess?: () => void;
+  setIsBookingSuccess?: (value: boolean) => void;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [_, navigate] = useLocation();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setPaymentStatus("processing");
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.origin + "/package/" + packageData.id + "/checkout?payment_status=success",
+      },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      setPaymentStatus("error");
+    } else {
+      // Payment succeeded, now confirm the package purchase
+      console.log("=== PACKAGE PAYMENT SUCCEEDED ===");
+      console.log("Payment Intent:", paymentIntent);
+      console.log("Payment Intent ID:", paymentIntent?.id);
+      console.log("Package ID:", packageData.id);
+      console.log("Class Count:", classCount);
+      
+      try {
+        const confirmResponse = await apiRequest("POST", "/api/package-payment/confirm", {
+          paymentIntentId: paymentIntent?.id,
+          packageId: packageData.id,
+          classCount: classCount,
+          price: price,
+          promoCode: appliedPromoCode?.code || null,
+          appliedCredits: appliedCredits
+        });
+        
+        console.log("Package payment confirmation response:", confirmResponse.status);
+        
+        if (confirmResponse.ok) {
+          // Invalidate relevant cache to refresh data
+          queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/package-purchases'] });
+          
+          setPaymentStatus("success");
+          setIsBookingSuccess?.(true);
+          
+          toast({
+            title: "Package purchased!",
+            description: `You've successfully purchased ${classCount} classes for ${packageData.title}`,
+          });
+          
+          // Navigate to packages or bookings page
+          setTimeout(() => {
+            navigate("/bookings?tab=packages");
+          }, 2000);
+          
+        } else {
+          throw new Error("Failed to confirm package purchase");
+        }
+      } catch (error) {
+        console.error("Package purchase confirmation error:", error);
+        toast({
+          title: "Purchase Error",
+          description: "Package payment succeeded but confirmation failed. Please contact support.",
+          variant: "destructive",
+        });
+        setPaymentStatus("error");
+      }
+    }
+
+    setIsProcessing(false);
+  };
+
+  if (paymentStatus === "success") {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+          <h2 className="text-xl font-bold mb-2">Package Purchased Successfully!</h2>
+          <p className="text-muted-foreground mb-4">
+            You've purchased {classCount} classes for {packageData.title}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Redirecting to your bookings...
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Payment Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PaymentElement />
+        </CardContent>
+      </Card>
+
+      <Button 
+        type="submit" 
+        className="w-full" 
+        size="lg"
+        disabled={!stripe || !elements || isProcessing}
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing Payment...
+          </>
+        ) : (
+          <>
+            Complete Purchase • ${Math.floor(finalAmount)}
+          </>
+        )}
+      </Button>
+    </form>
+  );
+};
+
+export default function PackageCheckoutPage() {
+  const [, navigate] = useLocation();
+  const [_, params] = useRoute<{ packageId: string }>("/package/:packageId/checkout");
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [clientSecret, setClientSecret] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState<any>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(0);
+  const [appliedCredits, setAppliedCredits] = useState(0);
+  const [useCredits, setUseCredits] = useState(false);
+  const [isBookingSuccess, setIsBookingSuccess] = useState(false);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
+
+  const packageId = params?.packageId ? parseInt(params.packageId) : null;
+  
+  // Get URL parameters for selected package option
+  const urlParams = new URLSearchParams(window.location.search);
+  const classCount = parseInt(urlParams.get('classCount') || '0');
+  const price = parseFloat(urlParams.get('price') || '0');
+
+  // Fetch package details
+  const { 
+    data: packageData, 
+    isLoading: isLoadingPackage, 
+    error: packageError 
+  } = useQuery<ClassPackage>({
+    queryKey: [`/api/packages/${packageId}`],
+    enabled: !!packageId,
+  });
+
+  // Initialize payment intent when package data is loaded
+  useEffect(() => {
+    if (packageData && classCount && price && user && !clientSecret) {
+      initializePayment();
+    }
+  }, [packageData, classCount, price, user, clientSecret]);
+
+  const initializePayment = async () => {
+    try {
+      setIsLoading(true);
+      
+      const response = await apiRequest("POST", "/api/package-payment/create-intent", {
+        packageId: packageData!.id,
+        classCount: classCount,
+        price: price,
+        appliedCredits: appliedCredits,
+        promoCode: appliedPromoCode?.code || null
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to initialize payment");
+      }
+
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+      setFinalAmount(data.finalAmount || price);
+      
+    } catch (err: any) {
+      console.error("Payment initialization error:", err);
+      setError(err.message || "Failed to initialize payment");
+      toast({
+        title: "Payment Error",
+        description: err.message || "Failed to initialize payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return `$${Math.floor(price)}`;
+  };
+
+  if (isLoadingPackage || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="container mx-auto p-6">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </main>
+        <Footer />
+        <MobileNavigation />
+      </div>
+    );
+  }
+
+  if (packageError || !packageData || !classCount || !price) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="container mx-auto p-6">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="text-2xl font-bold mb-4">Invalid Package Selection</h1>
+            <p className="text-gray-600 mb-6">
+              Please go back and select a valid package option.
+            </p>
+            <Button onClick={() => navigate(`/package/${packageId}/purchase`)}>
+              Back to Package Selection
+            </Button>
+          </div>
+        </main>
+        <Footer />
+        <MobileNavigation />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="container mx-auto p-6">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="text-2xl font-bold mb-4">Payment Error</h1>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </main>
+        <Footer />
+        <MobileNavigation />
+      </div>
+    );
+  }
+
+  const appearance = {
+    theme: 'stripe' as const,
+    variables: {
+      colorPrimary: '#dc2626',
+    },
+  };
+
+  const options = {
+    clientSecret,
+    appearance,
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>Checkout - {packageData.title} - Trainn</title>
+      </Helmet>
+      
+      <Header />
+      
+      <main className="container mx-auto p-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          
+          {/* Back button */}
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(`/package/${packageId}/purchase`)}
+            className="mb-4"
+          >
+            ← Back to Package Selection
+          </Button>
+
+          {/* Package Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                Order Summary
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold">{packageData.title}</h3>
+                  <p className="text-sm text-gray-600">by {packageData.coachName}</p>
+                  <p className="text-sm text-gray-600">{classCount} classes</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold">{formatPrice(price)}</p>
+                  <p className="text-sm text-gray-600">
+                    {formatPrice(price / classCount)} per class
+                  </p>
+                </div>
+              </div>
+              
+              {packageData.categoryName && (
+                <Badge variant="outline">{packageData.categoryName}</Badge>
+              )}
+              
+              <Separator />
+              
+              <div className="flex justify-between items-center font-semibold">
+                <span>Total</span>
+                <span className="text-lg">{formatPrice(finalAmount || price)}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payment Form */}
+          {clientSecret && (
+            <Elements options={options} stripe={stripePromise}>
+              <PackageCheckoutForm
+                packageData={packageData}
+                classCount={classCount}
+                price={price}
+                appliedPromoCode={appliedPromoCode}
+                discountAmount={discountAmount}
+                finalAmount={finalAmount || price}
+                appliedCredits={appliedCredits}
+                useCredits={useCredits}
+                onPaymentSuccess={() => {}}
+                setIsBookingSuccess={setIsBookingSuccess}
+              />
+            </Elements>
+          )}
+        </div>
+      </main>
+      
+      <Footer />
+      <MobileNavigation />
+    </div>
+  );
+}

@@ -175,7 +175,7 @@ export default function PackagePurchasePage() {
                   </CardTitle>
                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                     <User className="w-4 h-4" />
-                    <span>by {getProviderDisplayName(packageData)}</span>
+                    <span>by {packageData.coachName}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
