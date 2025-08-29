@@ -284,16 +284,9 @@ export default function PackagesPage() {
                             </p>
                           </div>
                           
-                          <div className="flex flex-col sm:flex-row gap-2 text-sm text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>Age group: {pkg.ageGroup}</span>
-                            </div>
-                            {pkg.futureClassCount && (
-                              <div>
-                                <span>{pkg.futureClassCount} upcoming classes</span>
-                              </div>
-                            )}
+                          <div className="flex items-center gap-1 text-sm text-gray-500">
+                            <Calendar className="w-4 h-4" />
+                            <span>Age group: {pkg.ageGroup}</span>
                           </div>
 
                           <div className="flex justify-between items-center pt-2">
