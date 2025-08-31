@@ -16,7 +16,8 @@ import {
   referrals, type Referral, type InsertReferral,
   userCredits, type UserCredit, type InsertUserCredit,
   providerReferrals, type ProviderReferral, type InsertProviderReferral,
-  classPackages, type ClassPackage, type InsertClassPackage
+  classPackages, type ClassPackage, type InsertClassPackage,
+  packagePurchases, type PackagePurchase, type InsertPackagePurchase
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -177,6 +178,12 @@ export interface IStorage {
   getAllPackages(): Promise<ClassPackage[]>;
   updatePackage(id: number, packageData: Partial<ClassPackage>): Promise<ClassPackage | undefined>;
   deletePackage(id: number): Promise<boolean>;
+
+  // Package Purchase methods
+  createPackagePurchase(purchaseData: InsertPackagePurchase): Promise<PackagePurchase>;
+  getPackagePurchase(id: number): Promise<PackagePurchase | undefined>;
+  getUserPackagePurchases(userId: number): Promise<PackagePurchase[]>;
+  updatePackagePurchase(id: number, purchaseData: Partial<PackagePurchase>): Promise<PackagePurchase | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2475,6 +2482,91 @@ export class DatabaseStorage implements IStorage {
       console.error("Error getting outdoor workout classes for SF:", error);
       throw error;
     }
+  }
+
+  // Package Purchase Management Methods
+  async createPackagePurchase(purchaseData: InsertPackagePurchase): Promise<PackagePurchase> {
+    // Calculate financial values (following the scheduled_payouts pattern)
+    const priceFloat = parseFloat(purchaseData.price as string);
+    
+    // Calculate Stripe fee (same as scheduled payouts: 2.9% + $0.30)
+    const stripeFee = Math.round((priceFloat * 0.029 + 0.30) * 100) / 100;
+    
+    // Net amount after stripe fees
+    const netAmount = Math.round((priceFloat - stripeFee) * 100) / 100;
+    
+    // Platform fee is 15% of net amount
+    const platformFee = Math.round((netAmount * 0.15) * 100) / 100;
+    
+    // Total provider payout is 85% of net amount
+    const totalProviderPayout = Math.round((netAmount * 0.85) * 100) / 100;
+    
+    // First provider payout is 25% of total provider payout
+    const firstProviderPayout = Math.round((totalProviderPayout * 0.25) * 100) / 100;
+    
+    // Calculate expiration date based on package type and class count
+    let expirationDate: Date | undefined;
+    if (purchaseData.packageType === 'set_pack') {
+      const today = new Date();
+      const classCount = purchaseData.classCount;
+      
+      if (classCount === 5) {
+        // 5-class pack: 2 months
+        expirationDate = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
+      } else if (classCount === 10) {
+        // 10-class pack: 3 months
+        expirationDate = new Date(today.getFullYear(), today.getMonth() + 3, today.getDate());
+      } else if (classCount === 20) {
+        // 20-class pack: 6 months
+        expirationDate = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate());
+      }
+    } else if (purchaseData.expirationDate) {
+      // For time-bound packages, use manually set expiration date
+      expirationDate = new Date(purchaseData.expirationDate);
+    }
+    
+    // Prepare purchase data with calculated values
+    const completePurchaseData = {
+      ...purchaseData,
+      stripeFee: stripeFee.toFixed(2),
+      netAmount: netAmount.toFixed(2),
+      platformFee: platformFee.toFixed(2),
+      firstProviderPayout: firstProviderPayout.toFixed(2),
+      remainingClasses: purchaseData.classCount,
+      expirationDate: expirationDate,
+    };
+    
+    const [purchase] = await db.insert(packagePurchases).values(completePurchaseData).returning();
+    return purchase;
+  }
+
+  async getPackagePurchase(id: number): Promise<PackagePurchase | undefined> {
+    const result = await db.select()
+      .from(packagePurchases)
+      .where(eq(packagePurchases.id, id));
+    
+    return result[0];
+  }
+
+  async getUserPackagePurchases(userId: number): Promise<PackagePurchase[]> {
+    const result = await db.select()
+      .from(packagePurchases)
+      .where(eq(packagePurchases.userId, userId))
+      .orderBy(desc(packagePurchases.purchaseDate));
+    
+    return result;
+  }
+
+  async updatePackagePurchase(id: number, purchaseData: Partial<PackagePurchase>): Promise<PackagePurchase | undefined> {
+    const [updated] = await db.update(packagePurchases)
+      .set({
+        ...purchaseData,
+        updatedAt: new Date(),
+      })
+      .where(eq(packagePurchases.id, id))
+      .returning();
+    
+    return updated;
   }
 }
 
