@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, real, doublePrecision, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -547,42 +547,36 @@ export const insertClassPackageSchema = createInsertSchema(classPackages).pick({
 export type InsertClassPackage = z.infer<typeof insertClassPackageSchema>;
 export type ClassPackage = typeof classPackages.$inferSelect;
 
-// Package Purchases/Bookings
+// Package Purchases
 export const packagePurchases = pgTable("package_purchases", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(), // Customer who purchased
-  packageId: integer("package_id").notNull(), // Reference to classPackages
-  classCount: integer("class_count").notNull(), // Number of classes purchased (5, 10, 20)
-  classesUsed: integer("classes_used").notNull().default(0), // How many classes customer has used
-  purchasePrice: real("purchase_price").notNull(), // Price paid for this package
+  userId: integer("user_id").notNull(),
+  packageId: integer("package_id").notNull(),
+  packageType: text("package_type").notNull(), // 'time_bound' or 'set_pack'
+  classCount: integer("class_count").notNull(), // Number of classes purchased
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(), // Amount paid in dollars
+  currency: text("currency").notNull().default("usd"),
+  paymentIntentId: text("payment_intent_id"),
+  paymentMethod: text("payment_method"), // stripe, paypal, etc.
   purchaseDate: timestamp("purchase_date").defaultNow(),
-  expirationDate: timestamp("expiration_date"), // When package expires
-  status: text("status").notNull().default("active"), // active, expired, cancelled, refunded
-  
-  // Payment tracking
-  stripePaymentId: text("stripe_payment_id"),
-  stripePaymentIntentId: text("stripe_payment_intent_id"),
-  paymentMethod: text("payment_method"), // stripe, paypal
-  amount: integer("amount"), // Amount in cents
-  currency: text("currency").default("usd"),
-  
+  paymentStatus: text("payment_status").notNull().default("pending"), // 'completed', 'pending', 'refunded'
+  stripeFee: numeric("stripe_fee", { precision: 10, scale: 2 }).notNull().default('0.00'), // Stripe processing fee in dollars
+  netAmount: numeric("net_amount", { precision: 10, scale: 2 }).notNull(), // Amount after Stripe fees in dollars
+  platformFee: numeric("platform_fee", { precision: 10, scale: 2 }).notNull().default('0.00'), // Platform fee (15%) in dollars
+  firstProviderPayout: numeric("first_provider_payout", { precision: 10, scale: 2 }).notNull().default('0.00'), // 25% of total provider payout in dollars
+  firstProviderPayoutStatus: text("first_provider_payout_status").notNull().default("pending"), // 'pending', 'completed', 'failed'
+  payoutDate: timestamp("payout_date"),
+  usedClasses: integer("used_classes").notNull().default(0), // Classes completed by user
+  remainingClasses: integer("remaining_classes").notNull(), // Classes left to use
+  expirationDate: timestamp("expiration_date"), // Calculated or manually set
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertPackagePurchaseSchema = createInsertSchema(packagePurchases).pick({
-  userId: true,
-  packageId: true,
-  classCount: true,
-  classesUsed: true,
-  purchasePrice: true,
-  purchaseDate: true,
-  expirationDate: true,
-  status: true,
-  stripePaymentId: true,
-  stripePaymentIntentId: true,
-  paymentMethod: true,
-  amount: true,
-  currency: true,
+export const insertPackagePurchaseSchema = createInsertSchema(packagePurchases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export type InsertPackagePurchase = z.infer<typeof insertPackagePurchaseSchema>;
