@@ -25,13 +25,17 @@ import {
   CheckCircle, 
   AlertCircle,
   ArrowLeft,
-  Loader2
+  Loader2,
+  DollarSign,
+  Package
 } from "lucide-react";
 import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 // Declare fbq for Meta Pixel tracking
 declare global {
@@ -1225,93 +1229,98 @@ export default function CheckoutPage() {
                         )}
                       </div>
 
-                      {/* Payment Methods Section */}
-                      {(creditBalance > 0 || eligiblePackage) && (
-                        <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                          <h3 className="font-medium mb-4">Payment Options</h3>
-                          
-                          {/* Package Payment Option */}
-                          {eligiblePackage && (
-                            <div className="mb-4">
-                              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input
-                                  type="radio"
-                                  name="paymentMethod"
-                                  checked={usePackage}
-                                  onChange={(e) => {
-                                    setUsePackage(e.target.checked);
-                                    if (e.target.checked) {
-                                      setUseCredits(false);
-                                    }
-                                  }}
-                                  className="w-4 h-4 text-primary"
-                                />
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">Use Package: {eligiblePackage?.packageDetails?.name || 'Unknown Package'}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {eligiblePackage?.remainingClasses || 0} classes remaining • Already paid
-                                  </div>
-                                </div>
-                              </label>
-                            </div>
-                          )}
-                          
-                          {/* Credits Payment Option */}
-                          {creditBalance > 0 && (
-                            <div className="mb-4">
-                              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input
-                                  type="radio"
-                                  name="paymentMethod"
-                                  checked={useCredits && !usePackage}
-                                  onChange={(e) => {
-                                    setUseCredits(e.target.checked);
-                                    if (e.target.checked) {
+                      {/* Account Credits Section */}
+                      {creditBalance > 0 && (
+                        <Card className="mb-6">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <DollarSign className="w-5 h-5 text-green-600" />
+                              Account Credits
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">Available Credits</p>
+                                <p className="text-sm text-gray-600">
+                                  You have ${(creditBalance / 100).toFixed(2)} in account credits
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Label htmlFor="use-credits">Use Credits</Label>
+                                <Switch
+                                  id="use-credits"
+                                  checked={useCredits}
+                                  onCheckedChange={(checked) => {
+                                    setUseCredits(checked);
+                                    if (checked) {
                                       setUsePackage(false);
                                     }
                                   }}
-                                  className="w-4 h-4 text-primary"
                                 />
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">Use Account Credits</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Available: ${(creditBalance / 100).toFixed(2)}
-                                    {useCredits && appliedCredits > 0 && ` • Applying: $${(appliedCredits / 100).toFixed(2)}`}
-                                  </div>
-                                </div>
-                              </label>
-                              {isFirstTimeReferralUser && (
-                                <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs text-green-800">
-                                  Welcome bonus! You've received $5.00 credit for joining via referral.
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          
-                          {/* Regular Payment Option */}
-                          <div className="mb-4">
-                            <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                              <input
-                                type="radio"
-                                name="paymentMethod"
-                                checked={!useCredits && !usePackage}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setUseCredits(false);
-                                    setUsePackage(false);
-                                  }
-                                }}
-                                className="w-4 h-4 text-primary"
-                              />
-                              <div className="flex-1">
-                                <div className="font-medium text-sm">Pay with Card</div>
-                                <div className="text-xs text-muted-foreground">
-                                  Credit or debit card
-                                </div>
                               </div>
-                            </label>
-                          </div>
-                        </div>
+                            </div>
+                            
+                            {useCredits && appliedCredits > 0 && (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                <p className="text-sm text-green-800">
+                                  Using ${(appliedCredits / 100).toFixed(2)} from your account credits
+                                </p>
+                              </div>
+                            )}
+
+                            {isFirstTimeReferralUser && (
+                              <div className="bg-green-100 border border-green-300 rounded-lg p-3">
+                                <p className="text-sm text-green-800">
+                                  Welcome bonus! You've received $5.00 credit for joining via referral.
+                                </p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Package Usage Section */}
+                      {eligiblePackage && (
+                        <Card className="mb-6">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <Package className="w-5 h-5 text-purple-600" />
+                              Package Usage
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">Classes</p>
+                                <p className="text-sm text-gray-600">
+                                  You have {eligiblePackage?.remainingClasses || 0}/5 classes remaining
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Label htmlFor="use-package">Package</Label>
+                                <Switch
+                                  id="use-package"
+                                  checked={usePackage}
+                                  onCheckedChange={(checked) => {
+                                    setUsePackage(checked);
+                                    if (checked) {
+                                      setUseCredits(false);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            
+                            {usePackage && (
+                              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                                <p className="text-sm text-purple-800">
+                                  Using 1 class from your {eligiblePackage?.packageDetails?.name || 'package'}
+                                </p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
                       )}
 
                       <Elements stripe={stripePromise} options={{ clientSecret }}>
