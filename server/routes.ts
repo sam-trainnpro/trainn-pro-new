@@ -12,7 +12,8 @@ import {
   sendBookingCancellationConfirmation,
   sendPromoCodeApprovalRequest,
   sendPromoCodeApprovalEmail,
-  sendPromoCodeRejectionEmail
+  sendPromoCodeRejectionEmail,
+  sendBookingAdminNotification
 } from "./email";
 import { 
   sendClassCancellationNotifications,
@@ -1770,6 +1771,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             classDetails,
             booking
           );
+
+          // Send admin notification
+          try {
+            await sendBookingAdminNotification({
+              booking,
+              classData: classDetails,
+              customer: req.user,
+              coach,
+              bookingType: 'promo_code',
+              paymentAmount: 0
+            });
+          } catch (adminEmailError) {
+            console.error("Admin notification error:", adminEmailError);
+          }
         }
       } catch (emailError) {
         console.error("Email sending error:", emailError);
@@ -1951,6 +1966,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             classDetails,
             booking
           );
+
+          // Send admin notification
+          try {
+            await sendBookingAdminNotification({
+              booking,
+              classData: classDetails,
+              customer: req.user,
+              coach,
+              bookingType: isCreditsOnly ? 'credits' : 'promo_code',
+              paymentAmount: 0
+            });
+          } catch (adminEmailError) {
+            console.error("Admin notification error:", adminEmailError);
+          }
         }
       } catch (emailError) {
         console.error("Email sending error:", emailError);
@@ -2126,6 +2155,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             classDetails,
             booking
           );
+
+          // Send admin notification
+          try {
+            await sendBookingAdminNotification({
+              booking,
+              classData: classDetails,
+              customer: req.user!,
+              coach,
+              bookingType: 'package',
+              paymentAmount: 0
+            });
+          } catch (adminEmailError) {
+            console.error("Admin notification error:", adminEmailError);
+          }
         }
       } catch (emailError) {
         console.error("Email sending error:", emailError);
@@ -2558,6 +2601,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   classDetails,
                   confirmedBooking
                 );
+
+                // Send admin notification
+                try {
+                  await sendBookingAdminNotification({
+                    booking: confirmedBooking,
+                    classData: classDetails,
+                    customer: req.user,
+                    coach,
+                    bookingType: 'paid',
+                    paymentAmount: paymentIntent?.amount || 0
+                  });
+                } catch (adminEmailError) {
+                  console.error("Admin notification error:", adminEmailError);
+                }
               }
             }
           }
@@ -3068,6 +3125,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
               } catch (providerReferralError) {
                 console.error("Error updating provider referral booking count in webhook:", providerReferralError);
                 // Don't fail the webhook if provider referral update fails
+              }
+
+              // Send admin notification for webhook-created booking
+              try {
+                const classDetails = await storage.getClass(parseInt(paymentIntent.metadata.classId));
+                const customer = await storage.getUser(parseInt(paymentIntent.metadata.userId));
+                
+                if (classDetails && customer) {
+                  const coach = await storage.getUser(classDetails.coachId);
+                  
+                  if (coach) {
+                    await sendBookingAdminNotification({
+                      booking,
+                      classData: classDetails,
+                      customer,
+                      coach,
+                      bookingType: 'paid',
+                      paymentAmount: paymentIntent.amount
+                    });
+                  }
+                }
+              } catch (adminEmailError) {
+                console.error("Admin notification error in webhook:", adminEmailError);
+                // Don't fail the webhook if admin notification fails
               }
             }
           }
