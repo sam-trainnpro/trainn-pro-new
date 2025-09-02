@@ -352,6 +352,15 @@ export default function CheckoutPage() {
   
   const classId = parseInt(params.classId);
   
+  // Fetch class details FIRST - other queries depend on this
+  const { 
+    data: classItem, 
+    isLoading: isLoadingClass, 
+    error: classError 
+  } = useQuery<Class>({
+    queryKey: [`/api/classes/${classId}`],
+  });
+  
   // Fetch user credit balance
   const { data: creditData, refetch: refetchCredits } = useQuery({
     queryKey: ['/api/credits/balance'],
@@ -387,33 +396,38 @@ export default function CheckoutPage() {
 
   // Check if class is eligible for any purchased packages
   const eligiblePackage = React.useMemo(() => {
-    if (!userPackages || !classItem) return null;
+    if (!userPackages || !classItem || !Array.isArray(userPackages)) return null;
     
-    return userPackages.find((pkg: any) => {
-      // Only consider packages with remaining classes
-      if (pkg.remainingClasses <= 0) return false;
-      
-      // Check if class is in package's eligible classes
-      if (!pkg.packageDetails?.eligibleClasses) return false;
-      
-      try {
-        const eligibleClassIds = JSON.parse(pkg.packageDetails.eligibleClasses);
-        if (!Array.isArray(eligibleClassIds)) return false;
+    try {
+      return userPackages.find((pkg: any) => {
+        // Only consider packages with remaining classes
+        if (!pkg || pkg.remainingClasses <= 0) return false;
         
-        return eligibleClassIds.some((eligibleId: string) => {
-          // Check if it's a series ID (starts with 'series_')
-          if (eligibleId.startsWith('series_')) {
-            return classItem.recurringSeriesId === eligibleId;
-          } else {
-            // Compare with the class ID directly
-            return classItem.id.toString() === eligibleId;
-          }
-        });
-      } catch (e) {
-        console.warn('Failed to parse eligible classes:', pkg.packageDetails.eligibleClasses);
-        return false;
-      }
-    });
+        // Check if class is in package's eligible classes
+        if (!pkg.packageDetails?.eligibleClasses) return false;
+        
+        try {
+          const eligibleClassIds = JSON.parse(pkg.packageDetails.eligibleClasses);
+          if (!Array.isArray(eligibleClassIds)) return false;
+          
+          return eligibleClassIds.some((eligibleId: string) => {
+            // Check if it's a series ID (starts with 'series_')
+            if (eligibleId.startsWith('series_')) {
+              return classItem.recurringSeriesId === eligibleId;
+            } else {
+              // Compare with the class ID directly
+              return classItem.id.toString() === eligibleId;
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to parse eligible classes:', pkg.packageDetails?.eligibleClasses);
+          return false;
+        }
+      }) || null;
+    } catch (e) {
+      console.warn('Error finding eligible package:', e);
+      return null;
+    }
   }, [userPackages, classItem]);
   
   // Check if user is eligible for automatic referral credit (first-time purchase via referral)
@@ -442,14 +456,7 @@ export default function CheckoutPage() {
     return hasReferral && hasNoCompletedBookings;
   }, [referralStatus, userBookings]);
   
-  // Fetch class details
-  const { 
-    data: classItem, 
-    isLoading: isLoadingClass, 
-    error: classError 
-  } = useQuery<Class>({
-    queryKey: [`/api/classes/${classId}`],
-  });
+  // Class details already fetched above
 
   // Validate promo code function
   const validatePromoCode = async (code: string) => {
@@ -609,48 +616,60 @@ export default function CheckoutPage() {
 
   // Removed separate credit auto-application - now handled in payment intent logic
 
-  // Automatic credit application logic - runs when class loads or credit balance changes
+  // Calculate final amount - runs when class loads or any payment option changes
   useEffect(() => {
-    if (classItem && creditBalance !== undefined) {
-      const baseAmount = classItem.price * quantity * 100; // Amount in cents
-      const discountToApply = appliedPromoCode ? discountAmount : 0;
-      const amountAfterPromo = Math.max(0, baseAmount - discountToApply);
-      
-      // Calculate credits to apply if credits are enabled
-      if (useCredits && creditBalance > 0) {
-        const creditsToApply = Math.min(creditBalance, amountAfterPromo);
-        setAppliedCredits(creditsToApply);
-      } else {
-        setAppliedCredits(0);
-      }
-      
-      // Calculate final amount with credits and package options
-      let calculatedAmount;
-      
-      if (usePackage && eligiblePackage) {
-        // If using package, final amount is 0 (already paid for in package)
-        calculatedAmount = 0;
-      } else {
-        // Normal calculation with credits
-        const creditToApply = useCredits ? appliedCredits : 0;
-        calculatedAmount = Math.max(0, amountAfterPromo - creditToApply);
-      }
-      
-      console.log("💰 Final amount calculation:", {
-        baseAmount: baseAmount / 100,
-        creditToApply: useCredits ? appliedCredits / 100 : 0,
-        discountToApply: discountToApply / 100,
-        calculatedAmount: calculatedAmount / 100,
-        useCredits,
-        usePackage,
-        appliedCredits,
-        hasEligiblePackage: !!eligiblePackage,
-        hasPromoCode: !!appliedPromoCode
-      });
-      
-      setFinalAmount(calculatedAmount);
+    if (!classItem || creditBalance === undefined) return;
+    
+    const baseAmount = classItem.price * quantity * 100; // Amount in cents
+    const discountToApply = appliedPromoCode ? discountAmount : 0;
+    const amountAfterPromo = Math.max(0, baseAmount - discountToApply);
+    
+    // Calculate credits to apply if credits are enabled
+    if (useCredits && creditBalance > 0) {
+      const creditsToApply = Math.min(creditBalance, amountAfterPromo);
+      setAppliedCredits(creditsToApply);
+    } else {
+      setAppliedCredits(0);
     }
-  }, [classItem, quantity, creditBalance, appliedPromoCode, discountAmount, useCredits, appliedCredits, usePackage, eligiblePackage]);
+    
+    // Calculate final amount with credits and package options
+    let calculatedAmount;
+    
+    if (usePackage && eligiblePackage) {
+      // If using package, final amount is 0 (already paid for in package)
+      calculatedAmount = 0;
+    } else {
+      // Normal calculation with credits
+      const creditToApply = useCredits ? appliedCredits : 0;
+      calculatedAmount = Math.max(0, amountAfterPromo - creditToApply);
+    }
+    
+    console.log("💰 Final amount calculation:", {
+      baseAmount: baseAmount / 100,
+      creditToApply: useCredits ? appliedCredits / 100 : 0,
+      discountToApply: discountToApply / 100,
+      calculatedAmount: calculatedAmount / 100,
+      useCredits,
+      usePackage,
+      appliedCredits,
+      hasEligiblePackage: !!eligiblePackage,
+      hasPromoCode: !!appliedPromoCode
+    });
+    
+    setFinalAmount(calculatedAmount);
+  }, [
+    classItem?.id, 
+    classItem?.price,
+    quantity, 
+    creditBalance, 
+    appliedPromoCode?.code, 
+    discountAmount, 
+    useCredits, 
+    appliedCredits, 
+    usePackage, 
+    eligiblePackage?.id,
+    eligiblePackage?.remainingClasses
+  ]);
 
   // Consolidated payment intent creation - ensures proper sequencing
   useEffect(() => {
@@ -1090,7 +1109,7 @@ export default function CheckoutPage() {
                             appliedPromoCode ? 'text-green-800' : 'text-blue-800'
                           }`}>
                             {usePackage && eligiblePackage 
-                              ? `This class is included in your ${eligiblePackage.packageDetails.name} package!`
+                              ? `This class is included in your ${eligiblePackage?.packageDetails?.name || 'package'}!`
                               : appliedPromoCode 
                                 ? 'This class is free with your promo code!' 
                                 : 'This class is free with your account credits!'
@@ -1115,7 +1134,7 @@ export default function CheckoutPage() {
                               window.fbq('track', 'Purchase');
                             }
                             
-                            if (usePackage && eligiblePackage) {
+                            if (usePackage && eligiblePackage?.id) {
                               // Handle package booking
                               packageBookingMutation.mutate({ 
                                 classId: classItem.id, 
@@ -1228,9 +1247,9 @@ export default function CheckoutPage() {
                                   className="w-4 h-4 text-primary"
                                 />
                                 <div className="flex-1">
-                                  <div className="font-medium text-sm">Use Package: {eligiblePackage.packageDetails.name}</div>
+                                  <div className="font-medium text-sm">Use Package: {eligiblePackage?.packageDetails?.name || 'Unknown Package'}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    {eligiblePackage.remainingClasses} classes remaining • Already paid
+                                    {eligiblePackage?.remainingClasses || 0} classes remaining • Already paid
                                   </div>
                                 </div>
                               </label>
