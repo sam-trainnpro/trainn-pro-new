@@ -1253,6 +1253,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
+
+  // Get user's purchased packages
+  app.get("/api/user/packages", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const packages = await storage.getUserPackagePurchases(userId);
+      
+      // Add package details and coach info to each purchase
+      const packagesWithDetails = await Promise.all(
+        packages.map(async (purchase) => {
+          const packageDetails = await storage.getPackage(purchase.packageId);
+          let coachDetails = null;
+          
+          if (packageDetails) {
+            coachDetails = await storage.getUser(packageDetails.coachId);
+          }
+          
+          return { 
+            ...purchase, 
+            packageDetails,
+            coachDetails 
+          };
+        })
+      );
+      
+      res.json(packagesWithDetails);
+    } catch (error) {
+      console.error("Error fetching user packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
   
   // Get booking count for a class
   app.get("/api/classes/:id/bookings/count", async (req, res) => {
