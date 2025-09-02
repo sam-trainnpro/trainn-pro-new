@@ -17,8 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
-import { Package, User, Calendar, CheckCircle, Gift, CreditCard, Loader2 } from "lucide-react";
+import { Package, User, Calendar, CheckCircle, Gift, CreditCard, Loader2, DollarSign } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -228,6 +229,17 @@ export default function PackageCheckoutPage() {
   const [useCredits, setUseCredits] = useState(false);
   const [isBookingSuccess, setIsBookingSuccess] = useState(false);
 
+  // Fetch user credit balance
+  const { data: creditData, refetch: refetchCredits } = useQuery({
+    queryKey: ['/api/credits/balance'],
+    enabled: !!user,
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always fetch fresh data
+  });
+  
+  const creditBalance = (creditData as { balance?: number })?.balance || 0;
+  const creditBalanceInDollars = creditBalance / 100; // Convert from cents to dollars
+
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -257,22 +269,64 @@ export default function PackageCheckoutPage() {
     enabled: !!packageId,
   });
 
+  // Handle credit toggle
+  const handleCreditToggle = (checked: boolean) => {
+    setUseCredits(checked);
+    if (checked && creditBalance > 0) {
+      // Apply credits up to the package price amount
+      const packagePriceInCents = price * 100;
+      const creditsToApply = Math.min(creditBalance, packagePriceInCents);
+      setAppliedCredits(creditsToApply / 100); // Convert back to dollars for display
+    } else {
+      setAppliedCredits(0);
+    }
+  };
+
+  // Update final amount when credits or promo codes change
+  useEffect(() => {
+    if (price) {
+      let amount = price;
+      
+      // Apply promo discount
+      if (appliedPromoCode && discountAmount > 0) {
+        amount -= discountAmount;
+      }
+      
+      // Apply credits
+      if (useCredits && appliedCredits > 0) {
+        amount -= appliedCredits;
+      }
+      
+      // Ensure amount isn't negative
+      amount = Math.max(0, amount);
+      
+      setFinalAmount(amount);
+    }
+  }, [price, appliedPromoCode, discountAmount, useCredits, appliedCredits]);
+
   // Initialize payment intent when package data is loaded
   useEffect(() => {
-    if (packageData && classCount && price && user && !clientSecret) {
+    if (packageData && classCount && price && user && !clientSecret && finalAmount !== undefined) {
       initializePayment();
     }
-  }, [packageData, classCount, price, user, clientSecret]);
+  }, [packageData, classCount, price, user, clientSecret, finalAmount]);
 
   const initializePayment = async () => {
     try {
       setIsLoading(true);
       
+      // Check if this is a free purchase (fully covered by credits)
+      if (finalAmount === 0) {
+        console.log("💰 Free package purchase detected, skipping payment intent");
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await apiRequest("POST", "/api/package-payment/create-intent", {
         packageId: packageData!.id,
         classCount: classCount,
         price: price,
-        appliedCredits: appliedCredits,
+        appliedCredits: appliedCredits * 100, // Convert to cents for API
         promoCode: appliedPromoCode?.code || null
       });
 
@@ -283,7 +337,6 @@ export default function PackageCheckoutPage() {
 
       const data = await response.json();
       setClientSecret(data.clientSecret);
-      setFinalAmount(data.finalAmount || price);
       
     } catch (err: any) {
       console.error("Payment initialization error:", err);
@@ -433,7 +486,7 @@ export default function PackageCheckoutPage() {
                   </div>
                 )}
                 {useCredits && appliedCredits > 0 && (
-                  <div className="flex justify-between text-blue-600">
+                  <div className="flex justify-between text-green-600">
                     <span>Credits Applied</span>
                     <span>-${appliedCredits.toFixed(2)}</span>
                   </div>
@@ -451,8 +504,92 @@ export default function PackageCheckoutPage() {
             </CardContent>
           </Card>
 
+          {/* Credits Section */}
+          {creditBalance > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                  Account Credits
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Available Credits</p>
+                    <p className="text-sm text-gray-600">
+                      You have ${creditBalanceInDollars.toFixed(2)} in account credits
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="use-credits">Use Credits</Label>
+                    <Switch
+                      id="use-credits"
+                      checked={useCredits}
+                      onCheckedChange={handleCreditToggle}
+                    />
+                  </div>
+                </div>
+                
+                {useCredits && appliedCredits > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-800">
+                      💰 Applying ${appliedCredits.toFixed(2)} from your account credits
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Free Package Purchase Button */}
+          {finalAmount === 0 && (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <Gift className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                <h3 className="text-xl font-bold mb-2">Free Package with Credits!</h3>
+                <p className="text-gray-600 mb-6">
+                  Your account credits cover the full cost of this package.
+                </p>
+                <Button 
+                  size="lg" 
+                  className="w-full"
+                  onClick={async () => {
+                    try {
+                      const response = await apiRequest("POST", "/api/package-payment/free-credit", {
+                        packageId: packageData!.id,
+                        classCount: classCount,
+                        price: price,
+                        appliedCredits: appliedCredits * 100 // Convert to cents
+                      });
+                      
+                      if (response.ok) {
+                        toast({
+                          title: "Package purchased!",
+                          description: `You've successfully purchased ${classCount} classes using account credits.`,
+                        });
+                        navigate("/bookings?tab=packages");
+                      } else {
+                        throw new Error("Failed to purchase package with credits");
+                      }
+                    } catch (err: any) {
+                      toast({
+                        title: "Purchase Failed",
+                        description: err.message || "Failed to purchase package with credits",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
+                  <Gift className="mr-2 h-4 w-4" />
+                  Confirm Free Package Purchase
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Payment Form */}
-          {clientSecret && (
+          {clientSecret && finalAmount > 0 && (
             <Elements options={options} stripe={stripePromise}>
               <PackageCheckoutForm
                 packageData={packageData}

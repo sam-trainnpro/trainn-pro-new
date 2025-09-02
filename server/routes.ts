@@ -2486,6 +2486,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Free package purchase with credits
+  app.post("/api/package-payment/free-credit", requireAuth, async (req, res) => {
+    try {
+      const { packageId, classCount, price, appliedCredits } = req.body;
+      const userId = (req.user as any).id;
+      
+      if (!packageId || !classCount || !price || !appliedCredits) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      // Get package details for validation
+      const packageData = await storage.getPackage(parseInt(packageId));
+      if (!packageData) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      // Get user's current credit balance
+      const userCredits = await storage.getUserCredits(userId);
+      const totalCredits = userCredits.reduce((sum, credit) => sum + parseInt(credit.amount), 0);
+      
+      // Check if user has enough credits
+      if (totalCredits < appliedCredits) {
+        return res.status(400).json({ message: "Insufficient credits" });
+      }
+
+      // Create package purchase record
+      const purchaseData = {
+        userId: userId,
+        packageId: parseInt(packageId),
+        packageType: packageData.packageType,
+        classCount: classCount,
+        price: price.toString(),
+        currency: 'usd',
+        paymentMethod: 'credits',
+        paymentStatus: 'completed' as const,
+        purchaseDate: new Date(),
+      };
+
+      const packagePurchase = await storage.createPackagePurchase(purchaseData);
+
+      // Apply credits to this purchase
+      await storage.applyCreditsToBooking(userId, appliedCredits, packagePurchase.id);
+
+      res.json({
+        success: true,
+        message: `Successfully purchased ${classCount} classes using account credits`,
+        packagePurchaseId: packagePurchase.id
+      });
+
+    } catch (error: any) {
+      console.error("Free credit package purchase error:", error);
+      res.status(500).json({ 
+        message: "Failed to process free credit purchase", 
+        error: error.message 
+      });
+    }
+  });
+
   // Scheduled Payout Management Routes
   
   // Process due payouts (admin only)
