@@ -45,7 +45,9 @@ import {
   CalendarDays,
   Loader2,
   Star,
-  BookOpen
+  BookOpen,
+  Package,
+  User
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
@@ -54,6 +56,34 @@ import { Helmet } from "react-helmet";
 
 interface BookingWithClass extends Booking {
   class?: Class;
+}
+
+interface PackagePurchaseWithDetails {
+  id: number;
+  userId: number;
+  packageId: number;
+  packageType: string;
+  classCount: number;
+  price: string;
+  currency: string;
+  paymentMethod: string;
+  purchaseDate: string;
+  paymentStatus: string;
+  usedClasses: number;
+  remainingClasses: number;
+  expirationDate: string;
+  packageDetails?: {
+    id: number;
+    title: string;
+    coachId: number;
+    eligibleClasses: string;
+  };
+  coachDetails?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export default function BookingsPage() {
@@ -86,6 +116,16 @@ export default function BookingsPage() {
   // Fetch user reviews
   const { data: userReviews } = useQuery<any[]>({
     queryKey: [`/api/reviews/customer/${user?.id}`],
+    enabled: !!user,
+  });
+
+  // Fetch user packages
+  const { 
+    data: packages, 
+    isLoading: isLoadingPackages, 
+    error: packagesError 
+  } = useQuery<PackagePurchaseWithDetails[]>({
+    queryKey: ['/api/user/packages'],
     enabled: !!user,
   });
   
@@ -446,18 +486,128 @@ export default function BookingsPage() {
               </TabsContent>
 
               <TabsContent value="packages">
-                <div className="text-center py-8">
-                  <div className="max-w-md mx-auto">
-                    <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Package Feature Coming Soon</h3>
-                    <p className="text-gray-500 mb-4">
-                      Your purchased class packages will appear here. This feature is currently under development.
-                    </p>
-                    <Button asChild variant="outline">
-                      <Link href="/packages">Browse Available Packages</Link>
-                    </Button>
+                {isLoadingPackages ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-32 w-full" />
                   </div>
-                </div>
+                ) : packagesError ? (
+                  <Card>
+                    <CardContent className="py-8 text-center">
+                      <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Packages</h3>
+                      <p className="text-gray-500">Something went wrong. Please try again later.</p>
+                    </CardContent>
+                  </Card>
+                ) : packages && packages.length > 0 ? (
+                  <div className="space-y-4">
+                    {packages.map((packagePurchase) => (
+                      <Card key={packagePurchase.id}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Package className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold text-lg">
+                                  {packagePurchase.packageDetails?.title || 'Class Package'}
+                                </h3>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <p className="text-sm text-gray-600 mb-1">Purchase Date</p>
+                                  <p className="font-medium">
+                                    {format(new Date(packagePurchase.purchaseDate), "MMMM d, yyyy")}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-600 mb-1">Expires</p>
+                                  <p className="font-medium">
+                                    {format(new Date(packagePurchase.expirationDate), "MMMM d, yyyy")}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                  <User className="h-5 w-5 text-gray-600" />
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-600">Provider</p>
+                                  <p className="font-medium">
+                                    {packagePurchase.coachDetails ? 
+                                      `${packagePurchase.coachDetails.firstName} ${packagePurchase.coachDetails.lastName}` : 
+                                      'Coach Name'
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <p className="text-sm text-gray-600">Classes Used</p>
+                                  <p className="font-semibold text-lg">
+                                    {packagePurchase.usedClasses}/{packagePurchase.classCount} classes used
+                                  </p>
+                                </div>
+                                <div className="w-16 h-16 relative">
+                                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      fill="none"
+                                      stroke="#e5e7eb"
+                                      strokeWidth="2"
+                                    />
+                                    <path
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      fill="none"
+                                      stroke="#3b82f6"
+                                      strokeWidth="2"
+                                      strokeDasharray={`${(packagePurchase.usedClasses / packagePurchase.classCount) * 100}, 100`}
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-xs font-medium">
+                                      {Math.round((packagePurchase.usedClasses / packagePurchase.classCount) * 100)}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end">
+                            <Button 
+                              asChild 
+                              variant="outline" 
+                              className="flex items-center gap-2"
+                            >
+                              <Link 
+                                href={`/classes?package=${packagePurchase.packageId}`}
+                              >
+                                View Schedule Details
+                                <ChevronRight className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h2 className="text-xl font-bold mb-2">No Packages Found</h2>
+                      <p className="text-muted-foreground mb-6">
+                        You haven't purchased any class packages yet. Browse available packages to get started!
+                      </p>
+                      <Button asChild className="bg-primary text-white">
+                        <Link href="/packages">Browse Available Packages</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
             </Tabs>
           ) : (
