@@ -251,10 +251,9 @@ export default function PackageCheckoutPage() {
     }
   }, [user, navigate]);
 
-  const packageId = params?.packageId ? parseInt(params.packageId) : null;
-  
   // Get URL parameters for selected package option
   const urlParams = new URLSearchParams(window.location.search);
+  const packageId = urlParams.get('packageId') ? parseInt(urlParams.get('packageId')!) : null;
   const classCount = parseInt(urlParams.get('classCount') || '0');
   const price = parseFloat(urlParams.get('price') || '0');
 
