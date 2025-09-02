@@ -203,7 +203,7 @@ const PackageCheckoutForm = ({
           </>
         ) : (
           <>
-            Complete Purchase • ${Math.floor(finalAmount)}
+            Complete Purchase • ${(finalAmount + (finalAmount * 0.05)).toFixed(2)}
           </>
         )}
       </Button>
@@ -421,9 +421,32 @@ export default function PackageCheckoutPage() {
               
               <Separator />
               
-              <div className="flex justify-between items-center font-semibold">
-                <span>Total</span>
-                <span className="text-lg">{formatPrice(finalAmount || price)}</span>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span>Package price</span>
+                  <span>{formatPrice(finalAmount || price)}</span>
+                </div>
+                {appliedPromoCode && discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({appliedPromoCode.code})</span>
+                    <span>-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
+                {useCredits && appliedCredits > 0 && (
+                  <div className="flex justify-between text-blue-600">
+                    <span>Credits Applied</span>
+                    <span>-{formatPrice(appliedCredits)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Service fee</span>
+                  <span>{formatPrice((finalAmount || price) * 0.05)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span className="text-lg">{formatPrice((finalAmount || price) + ((finalAmount || price) * 0.05))}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
