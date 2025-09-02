@@ -39,8 +39,6 @@ export default function ClassesPage() {
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
   });
 
-  // Check if viewing classes for a specific package
-  const packageId = typeof searchParams.package === 'string' ? parseInt(searchParams.package) : null;
   
   // State to track the current view (list or map)
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -69,11 +67,6 @@ export default function ClassesPage() {
     queryKey: ['/api/categories'],
   });
 
-  // Fetch package details if viewing classes for a specific package
-  const { data: packageDetails } = useQuery({
-    queryKey: ['/api/packages', packageId],
-    enabled: !!packageId,
-  });
 
   // Get today's date with time set to start of day
   const today = new Date();
@@ -87,27 +80,6 @@ export default function ClassesPage() {
       return false;
     }
 
-    // Filter by package eligible classes (when viewing package details)
-    if (packageId && packageDetails) {
-      const eligibleClassIds = packageDetails.eligibleClasses.split(',').map((id: string) => id.trim());
-      
-      // Check if any of the eligible class IDs match either the class ID or series ID
-      const matchesEligibleClasses = eligibleClassIds.some((eligibleClassId: string) => {
-        // Check if it's a series ID (starts with 'series_')
-        if (eligibleClassId.startsWith('series_')) {
-          // Compare with the class's recurring series ID
-          return classItem.recurringSeriesId === eligibleClassId;
-        } else {
-          // Compare with the class ID directly
-          return classItem.id.toString() === eligibleClassId;
-        }
-      });
-      
-      if (!matchesEligibleClasses) {
-        return false;
-      }
-    }
-    
     // Filter by specific class IDs or series IDs (when coming from package "View Classes")
     const packageClassesParam = searchParams.packageClasses as string;
     if (packageClassesParam) {
