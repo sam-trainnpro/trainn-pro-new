@@ -491,12 +491,12 @@ export default function PackageCheckoutPage() {
                 )}
                 <div className="flex justify-between">
                   <span>Processing fee</span>
-                  <span>${((finalAmount || price) * 0.05).toFixed(2)}</span>
+                  <span>${finalAmount === 0 ? '0.00' : ((finalAmount || price) * 0.05).toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span className="text-lg">${((finalAmount || price) + ((finalAmount || price) * 0.05)).toFixed(2)}</span>
+                  <span className="text-lg">${finalAmount === 0 ? '0.00' : ((finalAmount || price) + ((finalAmount || price) * 0.05)).toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
