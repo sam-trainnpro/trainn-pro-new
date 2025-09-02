@@ -424,28 +424,28 @@ export default function PackageCheckoutPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span>Package price</span>
-                  <span>{formatPrice(finalAmount || price)}</span>
+                  <span>${(finalAmount || price).toFixed(2)}</span>
                 </div>
                 {appliedPromoCode && discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount ({appliedPromoCode.code})</span>
-                    <span>-{formatPrice(discountAmount)}</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
                   </div>
                 )}
                 {useCredits && appliedCredits > 0 && (
                   <div className="flex justify-between text-blue-600">
                     <span>Credits Applied</span>
-                    <span>-{formatPrice(appliedCredits)}</span>
+                    <span>-${appliedCredits.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span>Service fee</span>
-                  <span>{formatPrice((finalAmount || price) * 0.05)}</span>
+                  <span>Processing fee</span>
+                  <span>${((finalAmount || price) * 0.05).toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span className="text-lg">{formatPrice((finalAmount || price) + ((finalAmount || price) * 0.05))}</span>
+                  <span className="text-lg">${((finalAmount || price) + ((finalAmount || price) * 0.05)).toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
