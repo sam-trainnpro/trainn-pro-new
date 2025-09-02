@@ -17,7 +17,8 @@ import {
   userCredits, type UserCredit, type InsertUserCredit,
   providerReferrals, type ProviderReferral, type InsertProviderReferral,
   classPackages, type ClassPackage, type InsertClassPackage,
-  packagePurchases, type PackagePurchase, type InsertPackagePurchase
+  packagePurchases, type PackagePurchase, type InsertPackagePurchase,
+  packageBookings, type PackageBooking, type InsertPackageBooking
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -184,6 +185,13 @@ export interface IStorage {
   getPackagePurchase(id: number): Promise<PackagePurchase | undefined>;
   getUserPackagePurchases(userId: number): Promise<PackagePurchase[]>;
   updatePackagePurchase(id: number, purchaseData: Partial<PackagePurchase>): Promise<PackagePurchase | undefined>;
+
+  // Package Booking methods
+  createPackageBooking(bookingData: InsertPackageBooking): Promise<PackageBooking>;
+  getPackageBooking(id: number): Promise<PackageBooking | undefined>;
+  getUserPackageBookings(userId: number): Promise<PackageBooking[]>;
+  getPackageBookingsByPackagePurchase(packagePurchaseId: number): Promise<PackageBooking[]>;
+  updatePackageBooking(id: number, bookingData: Partial<PackageBooking>): Promise<PackageBooking | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2564,6 +2572,54 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(packagePurchases.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  // Package Booking Management Methods
+  async createPackageBooking(bookingData: InsertPackageBooking): Promise<PackageBooking> {
+    const [packageBooking] = await db.insert(packageBookings).values({
+      ...bookingData,
+      updatedAt: new Date(),
+    }).returning();
+    return packageBooking;
+  }
+
+  async getPackageBooking(id: number): Promise<PackageBooking | undefined> {
+    const result = await db.select()
+      .from(packageBookings)
+      .where(eq(packageBookings.id, id));
+    
+    return result[0];
+  }
+
+  async getUserPackageBookings(userId: number): Promise<PackageBooking[]> {
+    const result = await db.select()
+      .from(packageBookings)
+      .leftJoin(packagePurchases, eq(packageBookings.packagePurchaseId, packagePurchases.id))
+      .where(eq(packagePurchases.userId, userId))
+      .orderBy(desc(packageBookings.classDate));
+    
+    return result.map(row => row.package_bookings);
+  }
+
+  async getPackageBookingsByPackagePurchase(packagePurchaseId: number): Promise<PackageBooking[]> {
+    const result = await db.select()
+      .from(packageBookings)
+      .where(eq(packageBookings.packagePurchaseId, packagePurchaseId))
+      .orderBy(desc(packageBookings.classDate));
+    
+    return result;
+  }
+
+  async updatePackageBooking(id: number, bookingData: Partial<PackageBooking>): Promise<PackageBooking | undefined> {
+    const [updated] = await db.update(packageBookings)
+      .set({
+        ...bookingData,
+        updatedAt: new Date(),
+      })
+      .where(eq(packageBookings.id, id))
       .returning();
     
     return updated;

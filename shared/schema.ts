@@ -582,6 +582,28 @@ export const insertPackagePurchaseSchema = createInsertSchema(packagePurchases).
 export type InsertPackagePurchase = z.infer<typeof insertPackagePurchaseSchema>;
 export type PackagePurchase = typeof packagePurchases.$inferSelect;
 
+// Package Bookings - Tracks when package purchases are used for specific bookings
+export const packageBookings = pgTable("package_bookings", {
+  id: serial("id").primaryKey(),
+  packagePurchaseId: integer("package_purchase_id").notNull(),
+  bookingId: integer("booking_id").notNull(),
+  bookingDate: timestamp("booking_date").notNull(), // When the booking was made
+  classDate: timestamp("class_date").notNull(), // When the actual class is
+  status: text("status").notNull().default("confirmed"), // 'confirmed', 'cancelled', 'completed', 'no-show'
+  createdAt: timestamp("created_at").defaultNow(),
+  usedAt: timestamp("used_at"), // When the package class was actually used
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPackageBookingSchema = createInsertSchema(packageBookings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPackageBooking = z.infer<typeof insertPackageBookingSchema>;
+export type PackageBooking = typeof packageBookings.$inferSelect;
+
 // Class Instances - Actual scheduled instances of classes
 export const classInstances = pgTable("class_instances", {
   id: serial("id").primaryKey(),
