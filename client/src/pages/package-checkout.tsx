@@ -93,7 +93,7 @@ const PackageCheckoutForm = ({
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin + "/package/" + packageData.id + "/checkout?payment_status=success",
+        return_url: window.location.origin + "/package-checkout?packageId=" + packageData.id + "&payment_status=success",
       },
       redirect: "if_required",
     });
@@ -214,7 +214,6 @@ const PackageCheckoutForm = ({
 
 export default function PackageCheckoutPage() {
   const [, navigate] = useLocation();
-  const [_, params] = useRoute<{ packageId: string }>("/package/:packageId/checkout");
   const { user } = useAuth();
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState("");

@@ -101,7 +101,7 @@ export default function PackagePurchasePage() {
     if (!selectedOption || !packageData) return;
     
     // Navigate to a new package checkout page with the selected option
-    navigate(`/package/${packageData.id}/checkout?classCount=${selectedOption.classCount}&price=${selectedOption.price}`);
+    navigate(`/package-checkout?packageId=${packageData.id}&classCount=${selectedOption.classCount}&price=${selectedOption.price}`);
   };
 
   if (isLoading) {

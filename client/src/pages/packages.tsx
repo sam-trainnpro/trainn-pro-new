@@ -336,7 +336,7 @@ export default function PackagesPage() {
                                 // If only one option, go directly to checkout
                                 if (options.length === 1) {
                                   const option = options[0];
-                                  navigate(`/package/${pkg.id}/checkout?classCount=${option.count}&price=${option.price}`);
+                                  navigate(`/package-checkout?packageId=${pkg.id}&classCount=${option.count}&price=${option.price}`);
                                 } else {
                                   // Multiple options, go to selection page
                                   navigate(`/package/${pkg.id}/purchase`);
