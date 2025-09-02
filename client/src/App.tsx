@@ -103,7 +103,7 @@ function Router() {
       <ProtectedRoute path="/package/:packageId/purchase">
         <PackagePurchasePage />
       </ProtectedRoute>
-      <ProtectedRoute path="/package/:packageId/checkout">
+      <ProtectedRoute path="/package-checkout">
         <PackageCheckoutPage />
       </ProtectedRoute>
       <Route path="/classes/:id">
