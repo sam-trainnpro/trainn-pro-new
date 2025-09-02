@@ -583,7 +583,26 @@ export default function BookingsPage() {
                               className="flex items-center gap-2"
                             >
                               <Link 
-                                href={`/classes?package=${packagePurchase.packageId}`}
+                                href={(() => {
+                                  // Use same filtering logic as "View Classes" on packages page
+                                  let classesUrl = `/classes?coachId=${packagePurchase.packageDetails?.coachId}`;
+                                  
+                                  // Add eligible classes filter if specific classes are defined
+                                  if (packagePurchase.packageDetails?.eligibleClasses && 
+                                      packagePurchase.packageDetails.eligibleClasses !== 'all') {
+                                    try {
+                                      const eligibleClassIds = JSON.parse(packagePurchase.packageDetails.eligibleClasses);
+                                      if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
+                                        classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
+                                      }
+                                    } catch (e) {
+                                      // If parsing fails, fall back to coach-only filter
+                                      console.warn('Failed to parse eligible classes:', packagePurchase.packageDetails.eligibleClasses);
+                                    }
+                                  }
+                                  
+                                  return classesUrl;
+                                })()}
                               >
                                 View Schedule Details
                                 <ChevronRight className="h-4 w-4" />
