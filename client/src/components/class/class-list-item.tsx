@@ -152,7 +152,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
                   <span className="font-medium">Class Full</span>
                 ) : (
                   <span>
-                    <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
+                    <span className="font-medium">{bookingCount?.spotsLeft || 0}</span> spots left
                   </span>
                 )
               ) : (
@@ -184,7 +184,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
                 <span className="font-medium">Class Full</span>
               ) : (
                 <span>
-                  <span className="font-medium">{bookingCount?.spotsLeft || 0}/{bookingCount?.capacity || classItem.capacity}</span> spots left
+                  <span className="font-medium">{bookingCount?.spotsLeft || 0}</span> spots left
                 </span>
               )
             ) : (
