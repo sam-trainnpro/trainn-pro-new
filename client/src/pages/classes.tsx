@@ -78,11 +78,23 @@ export default function ClassesPage() {
       return false;
     }
     
-    // Filter by specific class IDs (when coming from package "View Classes")
+    // Filter by specific class IDs or series IDs (when coming from package "View Classes")
     const packageClassesParam = searchParams.packageClasses as string;
     if (packageClassesParam) {
-      const packageClassIds = packageClassesParam.split(',').map(id => Number(id.trim()));
-      if (!packageClassIds.includes(classItem.id)) {
+      const packageClassIds = packageClassesParam.split(',').map(id => id.trim());
+      
+      // Check if any of the package class IDs match either the class ID or series ID
+      const matchesPackageClasses = packageClassIds.some(packageClassId => {
+        // Check if it's a series ID (starts with 'series_')
+        if (packageClassId.startsWith('series_')) {
+          return classItem.recurringSeriesId === packageClassId;
+        } else {
+          // It's a regular class ID
+          return classItem.id === Number(packageClassId);
+        }
+      });
+      
+      if (!matchesPackageClasses) {
         return false;
       }
     }
