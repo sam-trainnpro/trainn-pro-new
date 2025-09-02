@@ -1295,3 +1295,154 @@ export async function sendPromoCodeRejectionEmail(coach: User, promoCode: any): 
     return false;
   }
 }
+
+interface BookingAdminNotificationData {
+  booking: Booking;
+  classData: Class;
+  customer: User;
+  coach: User;
+  bookingType: 'paid' | 'promo_code' | 'credits' | 'package';
+  paymentAmount?: number; // Amount paid in cents (0 for free bookings)
+}
+
+export async function sendBookingAdminNotification(
+  data: BookingAdminNotificationData
+): Promise<boolean> {
+  console.log('Sending admin notification for new booking...');
+  console.log('Booking data:', {
+    bookingId: data.booking.id,
+    className: data.classData.title,
+    customerEmail: data.customer.email,
+    bookingType: data.bookingType
+  });
+  
+  try {
+    const { booking, classData, customer, coach, bookingType, paymentAmount = 0 } = data;
+    
+    // Format date and time in Pacific Time
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
+    const classDate = new Date(classData.startTime!);
+    const classEndTime = new Date(classData.endTime!);
+    
+    // Convert to Pacific Time
+    const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
+    const classEndTimePT = toZonedTime(classEndTime, PACIFIC_TIMEZONE);
+    
+    const formattedDate = format(classDatePT, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedTime = `${format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE })} - ${format(classEndTimePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE })} PT`;
+
+    // Format booking type for display
+    const getBookingTypeDisplay = (type: string) => {
+      switch (type) {
+        case 'paid': return 'Paid Booking';
+        case 'promo_code': return 'Promo Code';
+        case 'credits': return 'Account Credits';
+        case 'package': return 'Package Usage';
+        default: return 'Unknown';
+      }
+    };
+
+    // Format coach name (with business name if applicable)
+    const getCoachDisplayName = (coach: User) => {
+      if (coach.displayBusinessName && coach.businessName) {
+        return `${coach.firstName} ${coach.lastName} (${coach.businessName})`;
+      }
+      return `${coach.firstName} ${coach.lastName}`;
+    };
+
+    const subject = `New Booking: ${classData.title} - ${formattedDate}`;
+    
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">New Booking Notification</p>
+          </div>
+          
+          <h2 style="color: #333; margin-bottom: 20px;">📅 New Class Booking</h2>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold; width: 30%;">Booking ID:</td>
+                <td style="padding: 8px 0; color: #333;">#${booking.id}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Class Name:</td>
+                <td style="padding: 8px 0; color: #333;">${classData.title}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Date & Time:</td>
+                <td style="padding: 8px 0; color: #333;">${formattedDate}<br>${formattedTime}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Provider:</td>
+                <td style="padding: 8px 0; color: #333;">${getCoachDisplayName(coach)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Location:</td>
+                <td style="padding: 8px 0; color: #333;">${classData.address || classData.location}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <h3 style="color: #1976d2; margin: 0 0 15px 0;">👤 Customer Information</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 5px 0; color: #666; font-weight: bold; width: 30%;">Name:</td>
+                <td style="padding: 5px 0; color: #333;">${customer.firstName} ${customer.lastName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666; font-weight: bold;">Email:</td>
+                <td style="padding: 5px 0; color: #333;"><a href="mailto:${customer.email}" style="color: #1976d2;">${customer.email}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666; font-weight: bold;">Phone:</td>
+                <td style="padding: 5px 0; color: #333;">${customer.phone || 'Not provided'}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #f1f8e9; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <h3 style="color: #388e3c; margin: 0 0 15px 0;">💳 Payment Information</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 5px 0; color: #666; font-weight: bold; width: 30%;">Booking Type:</td>
+                <td style="padding: 5px 0; color: #333;">${getBookingTypeDisplay(bookingType)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666; font-weight: bold;">Quantity:</td>
+                <td style="padding: 5px 0; color: #333;">${booking.quantity} ${booking.quantity === 1 ? 'spot' : 'spots'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666; font-weight: bold;">Amount Paid:</td>
+                <td style="padding: 5px 0; color: #333;">$${(paymentAmount / 100).toFixed(2)}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              This is an automated notification from the Trainn booking system.
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: 'sam@trainn.pro',
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`✅ Admin notification sent to sam@trainn.pro for booking #${booking.id}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Admin notification email error:', error);
+    return false;
+  }
+}
