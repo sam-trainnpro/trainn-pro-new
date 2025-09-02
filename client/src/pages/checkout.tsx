@@ -242,6 +242,7 @@ export default function CheckoutPage() {
   const [finalAmount, setFinalAmount] = useState(0);
   const [appliedCredits, setAppliedCredits] = useState(0);
   const [useCredits, setUseCredits] = useState(false);
+  const [usePackage, setUsePackage] = useState(false);
   const [isBookingSuccess, setIsBookingSuccess] = useState(false);
   
   // Free booking mutation for 100% discount promo codes
@@ -294,6 +295,45 @@ export default function CheckoutPage() {
     },
   });
   
+  // Package booking mutation for package-based payments
+  const packageBookingMutation = useMutation({
+    mutationFn: async (data: { classId: number; quantity: number; packageId: number }) => {
+      const response = await apiRequest("POST", "/api/bookings/package", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to book with package");
+      }
+      return response.json();
+    },
+    onSuccess: async (result) => {
+      // IMMEDIATE: Set success state and navigate to prevent any flash
+      setIsBookingSuccess(true);
+      navigate("/bookings");
+      
+      // BACKGROUND: Show toast and cleanup queries after navigation
+      setTimeout(() => {
+        toast({
+          title: "Booking confirmed!",
+          description: "Your class booking has been confirmed using your package.",
+        });
+        
+        // Background cleanup - invalidate queries for fresh data on next visit
+        queryClient.removeQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/user/packages'] });
+      }, 0);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Booking failed",
+        description: error.message || "Failed to book class with package",
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Get quantity from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const quantity = parseInt(urlParams.get('quantity') || '1');
@@ -338,6 +378,43 @@ export default function CheckoutPage() {
     queryKey: ['/api/bookings'],
     enabled: !!user,
   });
+
+  // Fetch user's purchased packages to check eligibility for package payment
+  const { data: userPackages } = useQuery({
+    queryKey: ['/api/user/packages'],
+    enabled: !!user && !!classItem,
+  });
+
+  // Check if class is eligible for any purchased packages
+  const eligiblePackage = React.useMemo(() => {
+    if (!userPackages || !classItem) return null;
+    
+    return userPackages.find((pkg: any) => {
+      // Only consider packages with remaining classes
+      if (pkg.remainingClasses <= 0) return false;
+      
+      // Check if class is in package's eligible classes
+      if (!pkg.packageDetails?.eligibleClasses) return false;
+      
+      try {
+        const eligibleClassIds = JSON.parse(pkg.packageDetails.eligibleClasses);
+        if (!Array.isArray(eligibleClassIds)) return false;
+        
+        return eligibleClassIds.some((eligibleId: string) => {
+          // Check if it's a series ID (starts with 'series_')
+          if (eligibleId.startsWith('series_')) {
+            return classItem.recurringSeriesId === eligibleId;
+          } else {
+            // Compare with the class ID directly
+            return classItem.id.toString() === eligibleId;
+          }
+        });
+      } catch (e) {
+        console.warn('Failed to parse eligible classes:', pkg.packageDetails.eligibleClasses);
+        return false;
+      }
+    });
+  }, [userPackages, classItem]);
   
   // Check if user is eligible for automatic referral credit (first-time purchase via referral)
   const isFirstTimeReferralUser = React.useMemo(() => {
@@ -539,37 +616,41 @@ export default function CheckoutPage() {
       const discountToApply = appliedPromoCode ? discountAmount : 0;
       const amountAfterPromo = Math.max(0, baseAmount - discountToApply);
       
-      // AUTOMATICALLY APPLY CREDITS if user has any available
-      if (creditBalance > 0 && !useCredits) {
-        console.log("🎯 AUTOMATICALLY APPLYING CREDITS:", {
-          creditBalance: creditBalance / 100,
-          classPrice: baseAmount / 100,
-          amountAfterPromo: amountAfterPromo / 100
-        });
-        
-        // Apply up to the amount needed or available balance
+      // Calculate credits to apply if credits are enabled
+      if (useCredits && creditBalance > 0) {
         const creditsToApply = Math.min(creditBalance, amountAfterPromo);
-        setUseCredits(true);
         setAppliedCredits(creditsToApply);
+      } else {
+        setAppliedCredits(0);
       }
       
-      // Calculate final amount with credits
-      const creditToApply = useCredits ? appliedCredits : 0;
-      const calculatedAmount = Math.max(0, amountAfterPromo - creditToApply);
+      // Calculate final amount with credits and package options
+      let calculatedAmount;
+      
+      if (usePackage && eligiblePackage) {
+        // If using package, final amount is 0 (already paid for in package)
+        calculatedAmount = 0;
+      } else {
+        // Normal calculation with credits
+        const creditToApply = useCredits ? appliedCredits : 0;
+        calculatedAmount = Math.max(0, amountAfterPromo - creditToApply);
+      }
       
       console.log("💰 Final amount calculation:", {
         baseAmount: baseAmount / 100,
-        creditToApply: creditToApply / 100,
+        creditToApply: useCredits ? appliedCredits / 100 : 0,
         discountToApply: discountToApply / 100,
         calculatedAmount: calculatedAmount / 100,
         useCredits,
+        usePackage,
         appliedCredits,
+        hasEligiblePackage: !!eligiblePackage,
         hasPromoCode: !!appliedPromoCode
       });
       
       setFinalAmount(calculatedAmount);
     }
-  }, [classItem, quantity, creditBalance, appliedPromoCode, discountAmount, useCredits, appliedCredits]);
+  }, [classItem, quantity, creditBalance, appliedPromoCode, discountAmount, useCredits, appliedCredits, usePackage, eligiblePackage]);
 
   // Consolidated payment intent creation - ensures proper sequencing
   useEffect(() => {
@@ -614,12 +695,10 @@ export default function CheckoutPage() {
           return;
         }
         
-        // For referral users: FORCE credit application before payment intent
-        if (isFirstTimeReferralUser && creditBalance >= 500 && !useCredits) {
-          console.log("🎁 FORCING referral credit application before payment intent");
-          setAppliedCredits(500);
-          setUseCredits(true);
-          return; // Wait for next cycle with credits applied
+        // Skip payment intent creation if using package (no payment needed)
+        if (usePackage && eligiblePackage) {
+          console.log("📦 Using package - no payment intent needed");
+          return;
         }
         
         setIsLoading(true);
@@ -998,25 +1077,52 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         
-                        <div className={`p-4 rounded-lg text-center ${appliedPromoCode ? 'bg-green-50' : 'bg-blue-50'}`}>
-                          <CheckCircle className={`h-8 w-8 mx-auto mb-2 ${appliedPromoCode ? 'text-green-600' : 'text-blue-600'}`} />
-                          <h3 className={`font-medium mb-1 ${appliedPromoCode ? 'text-green-800' : 'text-blue-800'}`}>
-                            {appliedPromoCode ? 'This class is free with your promo code!' : 'This class is free with your account credits!'}
+                        <div className={`p-4 rounded-lg text-center ${
+                          usePackage ? 'bg-purple-50' : 
+                          appliedPromoCode ? 'bg-green-50' : 'bg-blue-50'
+                        }`}>
+                          <CheckCircle className={`h-8 w-8 mx-auto mb-2 ${
+                            usePackage ? 'text-purple-600' : 
+                            appliedPromoCode ? 'text-green-600' : 'text-blue-600'
+                          }`} />
+                          <h3 className={`font-medium mb-1 ${
+                            usePackage ? 'text-purple-800' : 
+                            appliedPromoCode ? 'text-green-800' : 'text-blue-800'
+                          }`}>
+                            {usePackage && eligiblePackage 
+                              ? `This class is included in your ${eligiblePackage.packageDetails.name} package!`
+                              : appliedPromoCode 
+                                ? 'This class is free with your promo code!' 
+                                : 'This class is free with your account credits!'
+                            }
                           </h3>
-                          <p className={`text-sm ${appliedPromoCode ? 'text-green-600' : 'text-blue-600'}`}>
+                          <p className={`text-sm ${
+                            usePackage ? 'text-purple-600' : 
+                            appliedPromoCode ? 'text-green-600' : 'text-blue-600'
+                          }`}>
                             Click below to complete your booking - no payment required.
                           </p>
                         </div>
                         
                         <Button 
-                          className={`w-full text-white ${appliedPromoCode ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                          className={`w-full text-white ${
+                            usePackage ? 'bg-purple-600 hover:bg-purple-700' :
+                            appliedPromoCode ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                          }`}
                           onClick={() => {
                             // Track Purchase event in Meta Pixel (even for free bookings)
                             if (window.fbq) {
                               window.fbq('track', 'Purchase');
                             }
                             
-                            if (appliedPromoCode) {
+                            if (usePackage && eligiblePackage) {
+                              // Handle package booking
+                              packageBookingMutation.mutate({ 
+                                classId: classItem.id, 
+                                quantity: quantity,
+                                packageId: eligiblePackage.id
+                              });
+                            } else if (appliedPromoCode) {
                               freeBookingMutation.mutate({ 
                                 classId: classItem.id, 
                                 quantity: quantity,
@@ -1030,15 +1136,20 @@ export default function CheckoutPage() {
                               });
                             }
                           }}
-                          disabled={freeBookingMutation.isPending}
+                          disabled={freeBookingMutation.isPending || packageBookingMutation.isPending}
                         >
-                          {freeBookingMutation.isPending ? (
+                          {(freeBookingMutation.isPending || packageBookingMutation.isPending) ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Booking...
                             </>
                           ) : (
-                            <>Book Free Class {quantity > 1 ? `(${quantity} Spots)` : ''}</>
+                            <>
+                              {usePackage && eligiblePackage 
+                                ? `Book with Package ${quantity > 1 ? `(${quantity} Spots)` : ''}` 
+                                : `Book Free Class ${quantity > 1 ? `(${quantity} Spots)` : ''}`
+                              }
+                            </>
                           )}
                         </Button>
                         
@@ -1095,26 +1206,91 @@ export default function CheckoutPage() {
                         )}
                       </div>
 
-                      {/* Credit Application Section */}
-                      {creditBalance > 0 && (
-                        <div className={`mb-6 p-4 border rounded-lg ${isFirstTimeReferralUser ? 'bg-green-50 border-green-200' : 'bg-blue-50'}`}>
-                          <h3 className="font-medium mb-3">
-                            {isFirstTimeReferralUser ? '🎉 Referral Credit Applied!' : 'Account Credits'}
-                          </h3>
-                          {isFirstTimeReferralUser && (
-                            <div className="mb-3 p-3 bg-green-100 border border-green-300 rounded">
-                              <p className="text-sm text-green-800 font-medium">
-                                Welcome bonus! You've automatically received $5.00 credit for joining via referral.
-                              </p>
+                      {/* Payment Methods Section */}
+                      {(creditBalance > 0 || eligiblePackage) && (
+                        <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                          <h3 className="font-medium mb-4">Payment Options</h3>
+                          
+                          {/* Package Payment Option */}
+                          {eligiblePackage && (
+                            <div className="mb-4">
+                              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                                <input
+                                  type="radio"
+                                  name="paymentMethod"
+                                  checked={usePackage}
+                                  onChange={(e) => {
+                                    setUsePackage(e.target.checked);
+                                    if (e.target.checked) {
+                                      setUseCredits(false);
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-primary"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">Use Package: {eligiblePackage.packageDetails.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {eligiblePackage.remainingClasses} classes remaining • Already paid
+                                  </div>
+                                </div>
+                              </label>
                             </div>
                           )}
-                          <div>
-                            <p className="text-sm text-blue-600">Available: ${(creditBalance / 100).toFixed(2)}</p>
-                            {useCredits && appliedCredits > 0 && (
-                              <p className="text-sm text-blue-800 font-medium">
-                                Applying: ${(appliedCredits / 100).toFixed(2)}
-                              </p>
-                            )}
+                          
+                          {/* Credits Payment Option */}
+                          {creditBalance > 0 && (
+                            <div className="mb-4">
+                              <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                                <input
+                                  type="radio"
+                                  name="paymentMethod"
+                                  checked={useCredits && !usePackage}
+                                  onChange={(e) => {
+                                    setUseCredits(e.target.checked);
+                                    if (e.target.checked) {
+                                      setUsePackage(false);
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-primary"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">Use Account Credits</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Available: ${(creditBalance / 100).toFixed(2)}
+                                    {useCredits && appliedCredits > 0 && ` • Applying: $${(appliedCredits / 100).toFixed(2)}`}
+                                  </div>
+                                </div>
+                              </label>
+                              {isFirstTimeReferralUser && (
+                                <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded text-xs text-green-800">
+                                  Welcome bonus! You've received $5.00 credit for joining via referral.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Regular Payment Option */}
+                          <div className="mb-4">
+                            <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                checked={!useCredits && !usePackage}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setUseCredits(false);
+                                    setUsePackage(false);
+                                  }
+                                }}
+                                className="w-4 h-4 text-primary"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">Pay with Card</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Credit or debit card
+                                </div>
+                              </div>
+                            </label>
                           </div>
                         </div>
                       )}

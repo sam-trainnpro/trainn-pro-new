@@ -1978,6 +1978,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create booking using a purchased package
+  app.post("/api/bookings/package", requireAuth, async (req, res) => {
+    try {
+      const { classId, quantity = 1, packageId } = req.body;
+      
+      if (!classId || !packageId) {
+        return res.status(400).json({ message: "Class ID and Package ID are required" });
+      }
+      
+      // Validate class exists
+      const classDetails = await storage.getClass(parseInt(classId));
+      if (!classDetails) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      // Get user's purchased packages and find the specific one
+      const userPackages = await storage.getUserPackagePurchases(req.user!.id);
+      const userPackage = userPackages.find(pkg => pkg.id === parseInt(packageId));
+      if (!userPackage) {
+        return res.status(404).json({ message: "Package not found or not owned by user" });
+      }
+      
+      // Check if package has remaining classes
+      if (userPackage.remainingClasses < quantity) {
+        return res.status(400).json({ 
+          message: "Not enough classes remaining in package",
+          remainingClasses: userPackage.remainingClasses
+        });
+      }
+      
+      // Verify class is eligible for the package
+      if (!userPackage.packageDetails?.eligibleClasses) {
+        return res.status(400).json({ message: "Package has no eligible classes defined" });
+      }
+      
+      let isEligible = false;
+      try {
+        const eligibleClassIds = JSON.parse(userPackage.packageDetails.eligibleClasses);
+        if (Array.isArray(eligibleClassIds)) {
+          isEligible = eligibleClassIds.some((eligibleId: string) => {
+            // Check if it's a series ID (starts with 'series_')
+            if (eligibleId.startsWith('series_')) {
+              return classDetails.recurringSeriesId === eligibleId;
+            } else {
+              // Compare with the class ID directly
+              return classDetails.id.toString() === eligibleId;
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Failed to parse eligible classes:', userPackage.packageDetails.eligibleClasses);
+        return res.status(500).json({ message: "Invalid package configuration" });
+      }
+      
+      if (!isEligible) {
+        return res.status(400).json({ message: "This class is not eligible for your package" });
+      }
+      
+      // Check capacity
+      const existingBookings = await storage.getClassBookings(parseInt(classId));
+      const confirmedBookings = existingBookings.filter(b => b.status === 'confirmed');
+      const totalBookedSpots = confirmedBookings.reduce((sum, b) => sum + b.quantity, 0);
+      
+      if (totalBookedSpots + quantity > classDetails.capacity) {
+        return res.status(400).json({ 
+          message: "Not enough spots available",
+          availableSpots: classDetails.capacity - totalBookedSpots
+        });
+      }
+      
+      // Check if user already has a booking for this class
+      const userBooking = existingBookings.find(b => b.userId === req.user!.id);
+      if (userBooking) {
+        return res.status(400).json({ message: "You have already booked this class" });
+      }
+      
+      // Create confirmed booking
+      const booking = await storage.createBooking({
+        userId: req.user!.id,
+        classId: parseInt(classId),
+        quantity: quantity,
+        status: 'confirmed',
+        packagePurchaseId: userPackage.id
+      });
+      
+      // Deduct classes from package
+      await storage.updatePackagePurchase(userPackage.id, {
+        remainingClasses: userPackage.remainingClasses - quantity
+      });
+      
+      // Create scheduled payout for coach (always needed when booking is confirmed)
+      const coach = await storage.getUser(classDetails.coachId);
+      if (coach && coach.stripeConnectId) {
+        const originalAmount = classDetails.price * quantity * 100; // Full class price in cents
+        const coachPayout = Math.round(originalAmount * 0.85); // 85% of class price
+        
+        // Calculate payout date: 2 days after class end time
+        const classEndTime = new Date(classDetails.endTime || classDetails.startTime);
+        const payoutDate = new Date(classEndTime);
+        payoutDate.setDate(payoutDate.getDate() + 2);
+        
+        console.log(`🏦 Creating fully subsidized payout for package booking - coach ${classDetails.coachId}`);
+        console.log(`Amount: $${(originalAmount / 100).toFixed(2)}, Coach payout: $${(coachPayout / 100).toFixed(2)}`);
+        
+        await storage.createScheduledPayout({
+          bookingId: booking.id,
+          classId: parseInt(classId),
+          coachId: classDetails.coachId,
+          customerId: req.user!.id,
+          stripePaymentIntentId: null, // No payment intent for package bookings
+          amountCents: originalAmount,
+          stripeFee: 0, // No stripe fee for package bookings
+          netAmount: originalAmount,
+          coachPayout: coachPayout,
+          platformFee: 0,
+          payoutType: 'fully_subsidized_booking',
+          scheduledPayoutDate: payoutDate
+        });
+        
+        console.log(`✅ Scheduled fully subsidized payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
+      }
+      
+      // Send confirmation email
+      try {
+        const coach = await storage.getUser(classDetails.coachId);
+        if (coach) {
+          const pricingDetails = {
+            originalPrice: classDetails.price * quantity,
+            discountAmount: classDetails.price * quantity, // Full amount is "discounted" since package was pre-paid
+            finalAmount: 0, // Free since using package
+            discountSource: `Package: ${userPackage.packageDetails.name}`
+          };
+          
+          await sendBookingConfirmation({
+            booking,
+            classData: classDetails,
+            customer: req.user!,
+            coach,
+            pricingDetails: pricingDetails
+          });
+          
+          // Send notification to coach
+          await sendNewBookingNotificationToCoach(
+            coach,
+            req.user!,
+            classDetails,
+            booking
+          );
+        }
+      } catch (emailError) {
+        console.error("Email sending error:", emailError);
+      }
+
+      // Update provider referral booking count for the coach
+      try {
+        await storage.updateProviderReferralBookingCount(classDetails.coachId);
+        console.log(`Updated provider referral booking count for coach ${classDetails.coachId}`);
+      } catch (providerReferralError) {
+        console.error("Error updating provider referral booking count:", providerReferralError);
+        // Don't fail the booking if provider referral update fails
+      }
+      
+      res.json({ 
+        success: true, 
+        booking,
+        message: `Class booking confirmed using your ${userPackage.packageDetails.name} package for ${quantity} spot(s)`,
+        remainingClasses: userPackage.remainingClasses - quantity
+      });
+    } catch (error: any) {
+      console.error("Error creating package booking:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Confirm payment and create confirmed booking
   app.post("/api/payment/confirm", requireAuth, async (req, res) => {
     try {
