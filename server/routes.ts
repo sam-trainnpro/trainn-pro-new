@@ -2645,11 +2645,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Package not found" });
       }
 
-      let finalAmount = parseFloat(price);
+      let packagePrice = parseFloat(price);
+      
+      // Add 5% processing fee to package price
+      const processingFee = packagePrice * 0.05;
+      let finalAmount = packagePrice + processingFee;
+      
+      console.log(`📦 Package pricing breakdown:`);
+      console.log(`   Package price: $${packagePrice.toFixed(2)}`);
+      console.log(`   Processing fee (5%): $${processingFee.toFixed(2)}`);
+      console.log(`   Total before credits: $${finalAmount.toFixed(2)}`);
       
       // Apply credits if specified
       if (appliedCredits > 0) {
         finalAmount = Math.max(0, finalAmount - (appliedCredits / 100)); // Credits are in cents
+        console.log(`   After credits: $${finalAmount.toFixed(2)}`);
       }
 
       // If amount is 0 (fully covered by credits), don't create payment intent
@@ -2727,9 +2737,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Calculate financial details
-      const totalAmountCents = stripePaymentIntent ? stripePaymentIntent.amount : (price * 100);
+      // Calculate financial details - ensure we use the same pricing logic as payment creation
+      const packagePrice = parseFloat(price);
+      const processingFee = packagePrice * 0.05;
+      const totalAmountDollarsFromPrice = packagePrice + processingFee;
+      
+      // Use the actual charged amount from Stripe if available, otherwise calculate it
+      const totalAmountCents = stripePaymentIntent ? stripePaymentIntent.amount : Math.round(totalAmountDollarsFromPrice * 100);
       const totalAmountDollars = totalAmountCents / 100;
+      
+      console.log(`💰 Payment confirmation breakdown:`);
+      console.log(`   Package price: $${packagePrice.toFixed(2)}`);
+      console.log(`   Processing fee: $${processingFee.toFixed(2)}`);
+      console.log(`   Expected total: $${totalAmountDollarsFromPrice.toFixed(2)}`);
+      console.log(`   Actual charged: $${totalAmountDollars.toFixed(2)}`);
       
       // Calculate Stripe fee (2.9% + 30¢ for US cards)
       const stripeFee = stripePaymentIntent ? Math.round(totalAmountCents * 0.029 + 30) / 100 : 0;
