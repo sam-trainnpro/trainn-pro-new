@@ -1058,7 +1058,7 @@ export default function CheckoutPage() {
                         Return to Class
                       </Button>
                     </div>
-                  ) : finalAmount === 0 && (appliedPromoCode || (useCredits && appliedCredits > 0)) ? (
+                  ) : finalAmount === 0 && (appliedPromoCode || (useCredits && appliedCredits > 0) || (usePackage && eligiblePackage)) ? (
                     <>
                       {/* Promo Code Section for Free Booking */}
                       {appliedPromoCode && (
