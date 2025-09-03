@@ -2028,6 +2028,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userPackage) {
         return res.status(404).json({ message: "Package not found or not owned by user" });
       }
+
+      // Get package details
+      const packageDetails = await storage.getPackage(userPackage.packageId);
+      if (!packageDetails) {
+        return res.status(404).json({ message: "Package details not found" });
+      }
+
+      // Add package details to userPackage object for later use
+      const enrichedUserPackage = { ...userPackage, packageDetails };
       
       // Check if package has remaining classes
       if (userPackage.remainingClasses < quantity) {
@@ -2113,7 +2122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             originalPrice: classDetails.price * quantity,
             discountAmount: classDetails.price * quantity, // Full amount is "discounted" since package was pre-paid
             finalAmount: 0, // Free since using package
-            discountSource: `Package: ${userPackage.packageDetails?.title || 'Package'}`
+            discountSource: `Package: ${enrichedUserPackage.packageDetails.title}`
           };
           
           await sendBookingConfirmation({
@@ -2162,7 +2171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         booking,
-        message: `Class booking confirmed using your ${userPackage.packageDetails?.title || 'package'} for ${quantity} spot(s)`,
+        message: `Class booking confirmed using your ${enrichedUserPackage.packageDetails.title} for ${quantity} spot(s)`,
         remainingClasses: userPackage.remainingClasses - quantity
       });
     } catch (error: any) {
