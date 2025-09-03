@@ -2113,7 +2113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             originalPrice: classDetails.price * quantity,
             discountAmount: classDetails.price * quantity, // Full amount is "discounted" since package was pre-paid
             finalAmount: 0, // Free since using package
-            discountSource: `Package: ${userPackage.packageDetails.name}`
+            discountSource: `Package: ${userPackage.packageDetails?.title || 'Package'}`
           };
           
           await sendBookingConfirmation({
@@ -2162,7 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         booking,
-        message: `Class booking confirmed using your ${userPackage.packageDetails.name} package for ${quantity} spot(s)`,
+        message: `Class booking confirmed using your ${userPackage.packageDetails?.title || 'package'} for ${quantity} spot(s)`,
         remainingClasses: userPackage.remainingClasses - quantity
       });
     } catch (error: any) {
