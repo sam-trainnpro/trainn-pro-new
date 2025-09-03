@@ -2761,7 +2761,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payoutDate: null,
         usedClasses: 0,
         remainingClasses: parseInt(classCount),
-        expirationDate: null // Packages don't expire
+        expirationDate: packageData.packageType === 'set_pack' && parseInt(classCount) === 5 
+          ? new Date(new Date().getFullYear(), new Date().getMonth() + 2, new Date().getDate())
+          : packageData.packageType === 'set_pack' && parseInt(classCount) === 10
+          ? new Date(new Date().getFullYear(), new Date().getMonth() + 3, new Date().getDate())
+          : packageData.packageType === 'set_pack' && parseInt(classCount) === 20
+          ? new Date(new Date().getFullYear(), new Date().getMonth() + 6, new Date().getDate())
+          : null
       });
 
       console.log(`✅ Package purchase saved with ID: ${packagePurchase.id}`);
