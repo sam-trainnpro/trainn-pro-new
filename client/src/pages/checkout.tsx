@@ -408,24 +408,28 @@ export default function CheckoutPage() {
       isArray: Array.isArray(userPackages)
     });
     
-    if (!userPackages || !classItem || !Array.isArray(userPackages)) return null;
+    if (!userPackages || !classItem || !Array.isArray(userPackages)) {
+      console.log('❌ No packages or class item available');
+      return null;
+    }
     
-    // TEMPORARY: Return the first package with remaining classes for testing
-    const testPackage = userPackages.find((pkg: any) => {
+    // Find the first package with remaining classes for testing
+    const availablePackage = userPackages.find((pkg: any) => {
       console.log('🔍 Testing package:', {
         packageId: pkg?.id,
         remainingClasses: pkg?.remainingClasses,
-        packageDetails: pkg?.packageDetails
+        hasRemainingClasses: pkg && pkg.remainingClasses > 0
       });
       return pkg && pkg.remainingClasses > 0;
     });
     
-    if (testPackage) {
-      console.log('✅ TEMP: Using first available package for testing:', testPackage);
-      return testPackage;
+    if (availablePackage) {
+      console.log('✅ Found available package:', availablePackage);
+      return availablePackage;
+    } else {
+      console.log('❌ No packages with remaining classes found');
+      return null;
     }
-    
-    return null;
   }, [userPackages, classItem]);
 
   // Auto-enable package usage when eligible package is available
