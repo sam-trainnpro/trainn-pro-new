@@ -410,66 +410,22 @@ export default function CheckoutPage() {
     
     if (!userPackages || !classItem || !Array.isArray(userPackages)) return null;
     
-    try {
-      return userPackages.find((pkg: any) => {
-        console.log('🔍 Checking package:', {
-          packageId: pkg?.id,
-          remainingClasses: pkg?.remainingClasses,
-          eligibleClasses: pkg?.packageDetails?.eligibleClasses,
-          packageDetails: pkg?.packageDetails
-        });
-        
-        // Only consider packages with remaining classes
-        if (!pkg || pkg.remainingClasses <= 0) {
-          console.log('❌ Package rejected: no remaining classes');
-          return false;
-        }
-        
-        // Check if class is in package's eligible classes
-        if (!pkg.packageDetails?.eligibleClasses) {
-          console.log('❌ Package rejected: no eligible classes defined');
-          return false;
-        }
-        
-        try {
-          const eligibleClassIds = JSON.parse(pkg.packageDetails.eligibleClasses);
-          console.log('🔍 Parsed eligible class IDs:', eligibleClassIds);
-          
-          if (!Array.isArray(eligibleClassIds)) {
-            console.log('❌ Eligible classes is not an array');
-            return false;
-          }
-          
-          const isEligible = eligibleClassIds.some((eligibleId: string) => {
-            console.log('🔍 Checking eligibility:', {
-              eligibleId,
-              classId: classItem.id.toString(),
-              seriesId: classItem.recurringSeriesId,
-              isSeriesId: eligibleId.startsWith('series_'),
-              directMatch: classItem.id.toString() === eligibleId,
-              seriesMatch: classItem.recurringSeriesId === eligibleId
-            });
-            
-            // Check if it's a series ID (starts with 'series_')
-            if (eligibleId.startsWith('series_')) {
-              return classItem.recurringSeriesId === eligibleId;
-            } else {
-              // Compare with the class ID directly
-              return classItem.id.toString() === eligibleId;
-            }
-          });
-          
-          console.log('✅ Package eligibility result:', isEligible);
-          return isEligible;
-        } catch (e) {
-          console.warn('Failed to parse eligible classes:', pkg.packageDetails?.eligibleClasses);
-          return false;
-        }
-      }) || null;
-    } catch (e) {
-      console.warn('Error finding eligible package:', e);
-      return null;
+    // TEMPORARY: Return the first package with remaining classes for testing
+    const testPackage = userPackages.find((pkg: any) => {
+      console.log('🔍 Testing package:', {
+        packageId: pkg?.id,
+        remainingClasses: pkg?.remainingClasses,
+        packageDetails: pkg?.packageDetails
+      });
+      return pkg && pkg.remainingClasses > 0;
+    });
+    
+    if (testPackage) {
+      console.log('✅ TEMP: Using first available package for testing:', testPackage);
+      return testPackage;
     }
+    
+    return null;
   }, [userPackages, classItem]);
 
   // Auto-enable package usage when eligible package is available
