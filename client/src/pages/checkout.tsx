@@ -451,8 +451,15 @@ export default function CheckoutPage() {
 
   // Auto-enable package usage when eligible package is available
   useEffect(() => {
+    console.log('🔥 Auto-enable check:', {
+      hasEligiblePackage: !!eligiblePackage,
+      useCredits,
+      usePackage,
+      shouldEnable: eligiblePackage && !useCredits && !usePackage
+    });
+    
     if (eligiblePackage && !useCredits && !usePackage) {
-      console.log('📦 Auto-enabling package usage for eligible package:', eligiblePackage);
+      console.log('📦 AUTO-ENABLING PACKAGE NOW!', eligiblePackage);
       setUsePackage(true);
     }
   }, [eligiblePackage, useCredits, usePackage]);
