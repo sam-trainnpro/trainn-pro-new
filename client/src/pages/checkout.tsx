@@ -379,6 +379,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     console.log('Credit balance fetched:', creditBalance);
   }, [creditBalance]);
+
+  // Auto-enable package usage when eligible package is available
+  useEffect(() => {
+    if (eligiblePackage && !useCredits && !usePackage) {
+      console.log('📦 Auto-enabling package usage for eligible package:', eligiblePackage);
+      setUsePackage(true);
+    }
+  }, [eligiblePackage, useCredits, usePackage]);
   
   // Fetch user's referral status to check if they should get automatic credit
   const { data: referralStatus } = useQuery({
@@ -1323,19 +1331,22 @@ export default function CheckoutPage() {
                         </Card>
                       )}
 
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
-                        <CheckoutForm 
-                          classItem={classItem} 
-                          quantity={quantity}
-                          appliedPromoCode={appliedPromoCode}
-                          discountAmount={discountAmount}
-                          finalAmount={finalAmount}
-                          appliedCredits={appliedCredits}
-                          useCredits={useCredits}
-                          onPaymentSuccess={() => setIsBookingSuccess(true)}
-                          setIsBookingSuccess={setIsBookingSuccess}
-                        />
-                      </Elements>
+                      {/* Only show payment form if not using package and amount > 0 */}
+                      {!usePackage && finalAmount > 0 && clientSecret && (
+                        <Elements stripe={stripePromise} options={{ clientSecret }}>
+                          <CheckoutForm 
+                            classItem={classItem} 
+                            quantity={quantity}
+                            appliedPromoCode={appliedPromoCode}
+                            discountAmount={discountAmount}
+                            finalAmount={finalAmount}
+                            appliedCredits={appliedCredits}
+                            useCredits={useCredits}
+                            onPaymentSuccess={() => setIsBookingSuccess(true)}
+                            setIsBookingSuccess={setIsBookingSuccess}
+                          />
+                        </Elements>
+                      )}
                     </>
                   ) : !appliedPromoCode ? (
                     <>
