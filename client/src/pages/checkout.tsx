@@ -400,21 +400,56 @@ export default function CheckoutPage() {
 
   // Check if class is eligible for any purchased packages
   const eligiblePackage = React.useMemo(() => {
+    console.log('🔍 Package eligibility check:', {
+      userPackages,
+      classItem: classItem?.id,
+      hasUserPackages: !!userPackages,
+      hasClassItem: !!classItem,
+      isArray: Array.isArray(userPackages)
+    });
+    
     if (!userPackages || !classItem || !Array.isArray(userPackages)) return null;
     
     try {
       return userPackages.find((pkg: any) => {
+        console.log('🔍 Checking package:', {
+          packageId: pkg?.id,
+          remainingClasses: pkg?.remainingClasses,
+          eligibleClasses: pkg?.packageDetails?.eligibleClasses,
+          packageDetails: pkg?.packageDetails
+        });
+        
         // Only consider packages with remaining classes
-        if (!pkg || pkg.remainingClasses <= 0) return false;
+        if (!pkg || pkg.remainingClasses <= 0) {
+          console.log('❌ Package rejected: no remaining classes');
+          return false;
+        }
         
         // Check if class is in package's eligible classes
-        if (!pkg.packageDetails?.eligibleClasses) return false;
+        if (!pkg.packageDetails?.eligibleClasses) {
+          console.log('❌ Package rejected: no eligible classes defined');
+          return false;
+        }
         
         try {
           const eligibleClassIds = JSON.parse(pkg.packageDetails.eligibleClasses);
-          if (!Array.isArray(eligibleClassIds)) return false;
+          console.log('🔍 Parsed eligible class IDs:', eligibleClassIds);
           
-          return eligibleClassIds.some((eligibleId: string) => {
+          if (!Array.isArray(eligibleClassIds)) {
+            console.log('❌ Eligible classes is not an array');
+            return false;
+          }
+          
+          const isEligible = eligibleClassIds.some((eligibleId: string) => {
+            console.log('🔍 Checking eligibility:', {
+              eligibleId,
+              classId: classItem.id.toString(),
+              seriesId: classItem.recurringSeriesId,
+              isSeriesId: eligibleId.startsWith('series_'),
+              directMatch: classItem.id.toString() === eligibleId,
+              seriesMatch: classItem.recurringSeriesId === eligibleId
+            });
+            
             // Check if it's a series ID (starts with 'series_')
             if (eligibleId.startsWith('series_')) {
               return classItem.recurringSeriesId === eligibleId;
@@ -423,6 +458,9 @@ export default function CheckoutPage() {
               return classItem.id.toString() === eligibleId;
             }
           });
+          
+          console.log('✅ Package eligibility result:', isEligible);
+          return isEligible;
         } catch (e) {
           console.warn('Failed to parse eligible classes:', pkg.packageDetails?.eligibleClasses);
           return false;
