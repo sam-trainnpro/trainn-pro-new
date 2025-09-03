@@ -2714,14 +2714,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Package not found" });
       }
 
-      // For now, just return success - package purchase storage will be implemented later
-      // This allows the frontend to complete the flow
+      // Verify payment with Stripe if paymentIntentId exists
+      let stripePaymentIntent = null;
+      if (paymentIntentId) {
+        stripePaymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        
+        if (stripePaymentIntent.status !== 'succeeded') {
+          return res.status(400).json({ 
+            message: "Payment not completed", 
+            status: stripePaymentIntent.status 
+          });
+        }
+      }
+
+      // Calculate financial details
+      const totalAmountCents = stripePaymentIntent ? stripePaymentIntent.amount : (price * 100);
+      const totalAmountDollars = totalAmountCents / 100;
       
+      // Calculate Stripe fee (2.9% + 30¢ for US cards)
+      const stripeFee = stripePaymentIntent ? Math.round(totalAmountCents * 0.029 + 30) / 100 : 0;
+      const netAmount = totalAmountDollars - stripeFee;
+      
+      // Calculate platform fee (15% of gross amount)
+      const platformFee = totalAmountDollars * 0.15;
+      
+      // Calculate provider payout (85% of gross amount) and 25% upfront
+      const totalProviderPayout = totalAmountDollars * 0.85;
+      const firstProviderPayout = totalProviderPayout * 0.25;
+
+      // Create package purchase record
+      const packagePurchase = await storage.createPackagePurchase({
+        userId: req.user.id,
+        packageId: parseInt(packageId),
+        packageType: packageData.packageType,
+        classCount: parseInt(classCount),
+        price: totalAmountDollars.toString(),
+        currency: "usd",
+        paymentIntentId: paymentIntentId || null,
+        paymentMethod: "stripe",
+        paymentStatus: "completed",
+        stripeFee: stripeFee.toString(),
+        netAmount: netAmount.toString(),
+        platformFee: platformFee.toString(),
+        firstProviderPayout: firstProviderPayout.toString(),
+        firstProviderPayoutStatus: "pending",
+        payoutDate: null,
+        usedClasses: 0,
+        remainingClasses: parseInt(classCount),
+        expirationDate: null // Packages don't expire
+      });
+
+      console.log(`✅ Package purchase saved with ID: ${packagePurchase.id}`);
+
+      // Apply account credits if used
+      if (appliedCredits > 0) {
+        try {
+          await storage.addCredit(req.user.id, -appliedCredits, `Package purchase: ${packageData.title}`);
+          console.log(`💳 Applied ${appliedCredits} credits for package purchase`);
+        } catch (error) {
+          console.error("Error applying credits:", error);
+        }
+      }
+
       res.json({ 
         success: true, 
-        message: "Package purchase confirmed",
+        message: "Package purchase confirmed and saved",
         packageId: packageId,
-        classCount: classCount
+        classCount: classCount,
+        purchaseId: packagePurchase.id,
+        remainingClasses: packagePurchase.remainingClasses
       });
 
     } catch (error: any) {
