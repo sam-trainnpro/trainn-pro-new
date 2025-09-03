@@ -380,14 +380,6 @@ export default function CheckoutPage() {
     console.log('Credit balance fetched:', creditBalance);
   }, [creditBalance]);
 
-  // Auto-enable package usage when eligible package is available
-  useEffect(() => {
-    if (eligiblePackage && !useCredits && !usePackage) {
-      console.log('📦 Auto-enabling package usage for eligible package:', eligiblePackage);
-      setUsePackage(true);
-    }
-  }, [eligiblePackage, useCredits, usePackage]);
-  
   // Fetch user's referral status to check if they should get automatic credit
   const { data: referralStatus } = useQuery({
     queryKey: ['/api/referrals/my-status'],
@@ -441,6 +433,14 @@ export default function CheckoutPage() {
       return null;
     }
   }, [userPackages, classItem]);
+
+  // Auto-enable package usage when eligible package is available
+  useEffect(() => {
+    if (eligiblePackage && !useCredits && !usePackage) {
+      console.log('📦 Auto-enabling package usage for eligible package:', eligiblePackage);
+      setUsePackage(true);
+    }
+  }, [eligiblePackage, useCredits, usePackage]);
   
   // Check if user is eligible for automatic referral credit (first-time purchase via referral)
   const isFirstTimeReferralUser = React.useMemo(() => {
