@@ -330,15 +330,25 @@ export default function PackageCheckoutPage() {
       amount = Math.max(0, amount);
       
       setFinalAmount(amount);
+      
+      // Reset client secret when amount changes to force reinitialize
+      if (amount !== finalAmount) {
+        setClientSecret("");
+      }
     }
   }, [price, appliedPromoCode, discountAmount, useCredits, appliedCredits]);
 
-  // Initialize payment intent when package data is loaded
+  // Initialize payment intent when package data is loaded and final amount is calculated
   useEffect(() => {
-    if (packageData && classCount && price && user && !clientSecret && finalAmount !== undefined) {
-      initializePayment();
+    if (packageData && classCount && price && user && !clientSecret) {
+      // Add a small delay to ensure finalAmount calculation is complete
+      const timer = setTimeout(() => {
+        initializePayment();
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
-  }, [packageData, classCount, price, user, clientSecret, finalAmount]);
+  }, [packageData, classCount, price, user, finalAmount]);
 
   const initializePayment = async () => {
     try {
@@ -354,7 +364,7 @@ export default function PackageCheckoutPage() {
       const response = await apiRequest("POST", "/api/package-payment/create-intent", {
         packageId: packageData!.id,
         classCount: classCount,
-        price: price,
+        price: finalAmount > 0 ? finalAmount : price, // Use calculated final amount
         appliedCredits: appliedCredits * 100, // Convert to cents for API
         promoCode: appliedPromoCode?.code || null
       });
