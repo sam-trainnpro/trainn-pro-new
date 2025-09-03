@@ -84,6 +84,22 @@ const PackageCheckoutForm = ({
     e.preventDefault();
 
     if (!stripe || !elements) {
+      toast({
+        title: "Payment Error",
+        description: "Payment system not loaded. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate the form before processing
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      toast({
+        title: "Payment Failed", 
+        description: submitError.message || "Please check your payment information.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -187,7 +203,22 @@ const PackageCheckoutForm = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <PaymentElement />
+          <PaymentElement 
+            options={{
+              layout: {
+                type: 'tabs',
+                defaultCollapsed: false,
+                radios: false,
+                spacedAccordionItems: false
+              },
+              fields: {
+                billingDetails: {
+                  name: 'auto',
+                  email: 'auto'
+                }
+              }
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -414,12 +445,37 @@ export default function PackageCheckoutPage() {
     theme: 'stripe' as const,
     variables: {
       colorPrimary: '#dc2626',
+      colorBackground: '#ffffff',
+      colorText: '#30313d',
+      spacingUnit: '4px',
+      borderRadius: '6px',
+    },
+    rules: {
+      '.Input': {
+        border: '1px solid #e2e8f0',
+        borderRadius: '6px',
+        padding: '12px',
+        fontSize: '14px',
+      },
+      '.Input:focus': {
+        outline: '2px solid #dc2626',
+        outlineOffset: '2px',
+      },
+      '.Error': {
+        color: '#ef4444',
+      }
     },
   };
 
   const options = {
     clientSecret,
     appearance,
+    layout: {
+      type: 'tabs' as const,
+      defaultCollapsed: false,
+      radios: false,
+      spacedAccordionItems: false
+    }
   };
 
   return (
