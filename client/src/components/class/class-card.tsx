@@ -240,7 +240,7 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
               <Skeleton className="h-4 w-16 mx-auto" />
             ) : bookingCount ? (
               <span className="font-medium">
-                {bookingCount.spotsLeft}/{bookingCount.capacity}
+                {bookingCount.spotsLeft}
               </span>
             ) : (
               <span className="font-medium">{classItem.capacity}</span>
