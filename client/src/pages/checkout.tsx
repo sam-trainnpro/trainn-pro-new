@@ -400,34 +400,51 @@ export default function CheckoutPage() {
 
   // Check if class is eligible for any purchased packages
   const eligiblePackage = React.useMemo(() => {
-    console.log('🔍 Package eligibility check:', {
-      userPackages,
-      classItem: classItem?.id,
+    console.log('🔍 DETAILED Package eligibility check:', {
+      userPackages: userPackages,
+      userPackagesLength: userPackages?.length,
+      classItem: classItem,
+      classId: classItem?.id,
       hasUserPackages: !!userPackages,
       hasClassItem: !!classItem,
       isArray: Array.isArray(userPackages)
     });
     
     if (!userPackages || !classItem || !Array.isArray(userPackages)) {
-      console.log('❌ No packages or class item available');
+      console.log('❌ Early return - missing data');
       return null;
     }
     
-    // Find the first package with remaining classes for testing
+    console.log('📦 ALL USER PACKAGES:', userPackages);
+    
+    // Find ANY package with remaining classes for testing
+    userPackages.forEach((pkg: any, index: number) => {
+      console.log(`📦 Package ${index + 1}:`, {
+        id: pkg?.id,
+        packageId: pkg?.packageId,
+        remainingClasses: pkg?.remainingClasses,
+        packageDetails: pkg?.packageDetails,
+        fullPackage: pkg
+      });
+    });
+    
     const availablePackage = userPackages.find((pkg: any) => {
-      console.log('🔍 Testing package:', {
+      const hasRemainingClasses = pkg && pkg.remainingClasses > 0;
+      console.log('🔍 Testing package eligibility:', {
         packageId: pkg?.id,
         remainingClasses: pkg?.remainingClasses,
-        hasRemainingClasses: pkg && pkg.remainingClasses > 0
+        hasRemainingClasses,
+        will_use: hasRemainingClasses
       });
-      return pkg && pkg.remainingClasses > 0;
+      return hasRemainingClasses;
     });
     
     if (availablePackage) {
-      console.log('✅ Found available package:', availablePackage);
+      console.log('✅ FOUND AVAILABLE PACKAGE - SHOULD AUTO-ENABLE:', availablePackage);
       return availablePackage;
     } else {
-      console.log('❌ No packages with remaining classes found');
+      console.log('❌ NO PACKAGES WITH REMAINING CLASSES FOUND');
+      console.log('📊 Package summary:', userPackages.map(p => ({ id: p?.id, remaining: p?.remainingClasses })));
       return null;
     }
   }, [userPackages, classItem]);
