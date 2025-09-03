@@ -276,7 +276,9 @@ export default function CreatePackage() {
         title: 'Success',
         description: 'Package created successfully!'
       });
+      // Invalidate both the general packages query and the coach's specific packages query
       queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/packages/my'] });
       navigate('/my-packages');
     },
     onError: (error: any) => {
