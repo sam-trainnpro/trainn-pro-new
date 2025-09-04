@@ -295,6 +295,7 @@ export const scheduledPayouts = pgTable("scheduled_payouts", {
   id: serial("id").primaryKey(),
   bookingId: integer("booking_id"), // Nullable for referral rewards
   classId: integer("class_id"), // Nullable for referral rewards
+  packagePurchasesId: integer("package_purchases_id"), // Nullable, only for package purchases
   coachId: integer("coach_id").notNull(),
   customerId: integer("customer_id"), // Nullable for referral rewards
   stripePaymentIntentId: text("stripe_payment_intent_id"), // Nullable for referral rewards
@@ -303,7 +304,7 @@ export const scheduledPayouts = pgTable("scheduled_payouts", {
   netAmount: integer("net_amount").notNull(), // Amount after Stripe fees
   coachPayout: integer("coach_payout").notNull(), // Amount to pay coach
   platformFee: integer("platform_fee").notNull().default(0), // Platform fee
-  payoutType: text("payout_type").notNull().default("booking"), // 'booking', 'provider_referral_reward', 'fully_subsidized_booking'
+  payoutType: text("payout_type").notNull().default("booking"), // 'booking', 'provider_referral_reward', 'fully_subsidized_booking', 'package_purchase'
   providerReferralId: integer("provider_referral_id"), // FK for provider referral rewards
   scheduledPayoutDate: timestamp("scheduled_payout_date").notNull(), // When to pay coach
   status: text("status").notNull().default("scheduled"), // scheduled, processing, completed, failed
