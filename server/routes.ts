@@ -2068,12 +2068,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You have already booked this class" });
       }
       
+      // Determine payment method based on package type
+      const paymentMethod = userPackage.packageType === 'set_pack' ? 'package_set_pack' : 'package';
+
       // Create confirmed booking
       const booking = await storage.createBooking({
         userId: req.user!.id,
         classId: parseInt(classId),
         quantity: quantity,
         status: 'confirmed',
+        paymentMethod: paymentMethod,
         packagePurchaseId: userPackage.id
       });
       
@@ -2763,6 +2767,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalProviderPayout = totalAmountDollars * 0.85;
       const firstProviderPayout = totalProviderPayout * 0.25;
 
+      // Calculate provider amounts
+      const totalProviderAmount = netAmount * 0.85; // 85% of net_amount
+      const remainingProviderAmount = totalProviderAmount - firstProviderPayout; // total_provider_amount - first_provider_payout
+      const providerPerClassAmount = remainingProviderAmount / parseInt(classCount); // remaining_provider_amount / class_count
+
       // Create package purchase record
       const packagePurchase = await storage.createPackagePurchase({
         userId: req.user.id,
@@ -2778,6 +2787,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         netAmount: netAmount.toString(),
         platformFee: platformFee.toString(),
         firstProviderPayout: firstProviderPayout.toString(),
+        totalProviderAmount: totalProviderAmount.toString(),
+        remainingProviderAmount: remainingProviderAmount.toString(),
+        providerPerClassAmount: providerPerClassAmount.toString(),
         firstProviderPayoutStatus: "pending",
         payoutDate: null,
         usedClasses: 0,

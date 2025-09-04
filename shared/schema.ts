@@ -566,6 +566,9 @@ export const packagePurchases = pgTable("package_purchases", {
   netAmount: numeric("net_amount", { precision: 10, scale: 2 }).notNull(), // Amount after Stripe fees in dollars
   platformFee: numeric("platform_fee", { precision: 10, scale: 2 }).notNull().default('0.00'), // Platform fee (15%) in dollars
   firstProviderPayout: numeric("first_provider_payout", { precision: 10, scale: 2 }).notNull().default('0.00'), // 25% of total provider payout in dollars
+  totalProviderAmount: numeric("total_provider_amount", { precision: 10, scale: 2 }), // 85% of net_amount
+  remainingProviderAmount: numeric("remaining_provider_amount", { precision: 10, scale: 2 }), // total_provider_amount - first_provider_payout
+  providerPerClassAmount: numeric("provider_per_class_amount", { precision: 10, scale: 2 }), // remaining_provider_amount / class_count
   firstProviderPayoutStatus: text("first_provider_payout_status").notNull().default("pending"), // 'pending', 'completed', 'failed'
   payoutDate: timestamp("payout_date"),
   usedClasses: integer("used_classes").notNull().default(0), // Classes completed by user
