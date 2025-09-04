@@ -2799,6 +2799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const scheduledPayout = await storage.createScheduledPayout({
           packagePurchasesId: packagePurchase.id,
+          classPackageId: parseInt(packageId), // Track which package was purchased
           bookingId: null, // No specific booking for package purchase
           classId: null, // No specific class for package purchase
           coachId: packageData.coachId,

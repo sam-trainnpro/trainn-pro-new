@@ -296,6 +296,7 @@ export const scheduledPayouts = pgTable("scheduled_payouts", {
   bookingId: integer("booking_id"), // Nullable for referral rewards
   classId: integer("class_id"), // Nullable for referral rewards
   packagePurchasesId: integer("package_purchases_id"), // Nullable, only for package purchases
+  classPackageId: integer("class_package_id"), // Nullable, FK to class_packages table
   coachId: integer("coach_id").notNull(),
   customerId: integer("customer_id"), // Nullable for referral rewards
   stripePaymentIntentId: text("stripe_payment_intent_id"), // Nullable for referral rewards
