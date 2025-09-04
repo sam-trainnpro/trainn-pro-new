@@ -16,7 +16,8 @@ import {
   BookOpen,
   Tag,
   Users,
-  UserPlus
+  UserPlus,
+  Package
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -77,6 +78,11 @@ export default function Header() {
           <Link href="/classes" className={`text-foreground hover:text-primary transition font-medium ${location === '/classes' ? 'text-primary' : ''}`}>
             Classes
           </Link>
+          {user?.role === 'customer' && (
+            <Link href="/packages" className={`text-foreground hover:text-primary transition font-medium ${location === '/packages' ? 'text-primary' : ''}`}>
+              Packages
+            </Link>
+          )}
           <Link href="/coaches" className={`text-foreground hover:text-primary transition font-medium ${location === '/coaches' ? 'text-primary' : ''}`}>
             Providers
           </Link>
@@ -254,6 +260,14 @@ export default function Header() {
                   Classes
                 </Button>
               </Link>
+              {user?.role === 'customer' && (
+                <Link href="/packages" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    <Package className="mr-2 h-5 w-5" />
+                    Packages
+                  </Button>
+                </Link>
+              )}
               <Link href="/coaches" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start">
                   <User className="mr-2 h-5 w-5" />
