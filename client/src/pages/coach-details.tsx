@@ -17,13 +17,16 @@ import {
   Clock,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Package,
+  CheckCircle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CoachDetailsPage() {
   const [, navigate] = useLocation();
@@ -70,6 +73,15 @@ export default function CoachDetailsPage() {
     queryKey: [`/api/reviews/coach/${coachId}`],
     enabled: !!coach,
   });
+
+  // Fetch coach's packages
+  const { 
+    data: coachPackages, 
+    isLoading: isLoadingPackages 
+  } = useQuery({
+    queryKey: [`/api/coaches/${coachId}/packages`],
+    enabled: !!coach,
+  });
   
   // Get upcoming and past classes
   const now = new Date();
@@ -81,6 +93,36 @@ export default function CoachDetailsPage() {
   const expertiseCategories = expertiseAreas
     .map(id => categories.find(cat => cat.id === id))
     .filter(Boolean);
+
+  // Package utility functions
+  const formatPrice = (price: number | null) => {
+    if (!price) return '';
+    return `$${price}`;
+  };
+
+  const getPackageOptions = (pkg: any) => {
+    if (pkg.packageType === 'set_pack') {
+      const options: string[] = [];
+      if (pkg.classCount1 && pkg.price1) {
+        options.push(`${pkg.classCount1} classes: ${formatPrice(pkg.price1)}`);
+      }
+      if (pkg.classCount2 && pkg.price2) {
+        options.push(`${pkg.classCount2} classes: ${formatPrice(pkg.price2)}`);
+      }
+      if (pkg.classCount3 && pkg.price3) {
+        options.push(`${pkg.classCount3} classes: ${formatPrice(pkg.price3)}`);
+      }
+      return options.join(' | ');
+    } else {
+      return 'Time-bound package';
+    }
+  };
+
+  const getCoachDisplayName = () => {
+    return coach?.displayBusinessName && coach?.businessName 
+      ? coach.businessName 
+      : `${coach?.firstName} ${coach?.lastName}`;
+  };
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -225,6 +267,7 @@ export default function CoachDetailsPage() {
                   <div className="flex justify-between items-center mb-4">
                     <TabsList>
                       <TabsTrigger value="upcoming">Upcoming Classes</TabsTrigger>
+                      <TabsTrigger value="packages">Packages</TabsTrigger>
                       <TabsTrigger value="past">Past Classes</TabsTrigger>
                     </TabsList>
                     
@@ -252,6 +295,129 @@ export default function CoachDetailsPage() {
                         <h3 className="text-xl font-medium mb-2">No Upcoming Classes</h3>
                         <p className="text-muted-foreground mb-4">
                           Coach {coach.firstName} doesn't have any scheduled classes right now.
+                        </p>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="packages">
+                    {isLoadingPackages ? (
+                      <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                          <Card key={i}>
+                            <CardHeader>
+                              <Skeleton className="h-6 w-3/4" />
+                              <Skeleton className="h-4 w-1/2" />
+                            </CardHeader>
+                            <CardContent>
+                              <Skeleton className="h-4 w-full mb-2" />
+                              <Skeleton className="h-4 w-2/3" />
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : coachPackages && coachPackages.length > 0 ? (
+                      <div className="space-y-4">
+                        {coachPackages.map((pkg: any) => (
+                          <Card key={pkg.id} className="hover:shadow-lg transition-shadow">
+                            <CardHeader className="pb-3">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                                <div className="flex-1">
+                                  <CardTitle className="text-lg flex flex-wrap items-center gap-2 mb-2">
+                                    <span className="break-words">{pkg.title}</span>
+                                    <Badge variant="default" className="bg-green-600 flex-shrink-0">
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Active
+                                    </Badge>
+                                  </CardTitle>
+                                  {pkg.categoryName && (
+                                    <Badge variant="outline" className="mb-2">
+                                      {pkg.categoryName}
+                                    </Badge>
+                                  )}
+                                  {pkg.description && (
+                                    <p className="text-gray-600 break-words leading-relaxed">{pkg.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </CardHeader>
+
+                            <CardContent className="pt-0">
+                              <div className="space-y-3">
+                                <div>
+                                  <h4 className="font-medium mb-2">Package Options</h4>
+                                  <p className="text-sm text-gray-600">
+                                    {getPackageOptions(pkg)}
+                                  </p>
+                                </div>
+                                
+                                <div className="flex items-center gap-1 text-sm text-gray-500">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>Age group: {pkg.ageGroup}</span>
+                                </div>
+
+                                <div className="flex justify-between items-center pt-2">
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={() => {
+                                        // Create URL with coach filter and eligible classes filter
+                                        let classesUrl = `/classes?coachId=${pkg.coachId}`;
+                                        
+                                        // Add eligible classes filter if specific classes are defined
+                                        if (pkg.eligibleClasses && pkg.eligibleClasses !== 'all') {
+                                          try {
+                                            const eligibleClassIds = JSON.parse(pkg.eligibleClasses);
+                                            if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
+                                              classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
+                                            }
+                                          } catch (e) {
+                                            // If parsing fails, fall back to coach-only filter
+                                            console.warn('Failed to parse eligible classes:', pkg.eligibleClasses);
+                                          }
+                                        }
+                                        
+                                        navigate(classesUrl);
+                                      }}
+                                    >
+                                      View Classes
+                                    </Button>
+                                  </div>
+                                  <Button 
+                                    className="bg-primary text-white hover:bg-primary/90"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Count available options
+                                      const options = [];
+                                      if (pkg.classCount1 && pkg.price1) options.push({ count: pkg.classCount1, price: pkg.price1 });
+                                      if (pkg.classCount2 && pkg.price2) options.push({ count: pkg.classCount2, price: pkg.price2 });
+                                      if (pkg.classCount3 && pkg.price3) options.push({ count: pkg.classCount3, price: pkg.price3 });
+                                      
+                                      // If only one option, go directly to checkout
+                                      if (options.length === 1) {
+                                        const option = options[0];
+                                        navigate(`/package-checkout?packageId=${pkg.id}&classCount=${option.count}&price=${option.price}`);
+                                      } else {
+                                        // Multiple options, go to selection page
+                                        navigate(`/package/${pkg.id}/purchase`);
+                                      }
+                                    }}
+                                  >
+                                    Buy Package
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-[#F7F7F7] rounded-xl">
+                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-medium mb-2">No Upcoming Packages</h3>
+                        <p className="text-muted-foreground mb-4">
+                          {getCoachDisplayName()} doesn't have any upcoming packages right now.
                         </p>
                       </div>
                     )}
