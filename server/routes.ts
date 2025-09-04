@@ -2796,28 +2796,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create scheduled payout for package purchase (24 hours after purchase)
       const scheduledPayoutDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24 hours
       
-      const scheduledPayout = await storage.createScheduledPayout({
-        packagePurchasesId: packagePurchase.id,
-        bookingId: null, // No specific booking for package purchase
-        classId: null, // No specific class for package purchase
-        coachId: packageData.coachId,
-        customerId: req.user.id,
-        stripePaymentIntentId: paymentIntentId || null,
-        amountCents: Math.round(totalAmountDollars * 100), // Convert to cents
-        stripeFee: Math.round(stripeFee * 100), // Convert to cents
-        netAmount: Math.round(netAmount * 100), // Convert to cents
-        coachPayout: Math.round(firstProviderPayout * 100), // Convert to cents
-        platformFee: Math.round(platformFee * 100), // Convert to cents
-        payoutType: "package_purchase",
-        providerReferralId: null,
-        scheduledPayoutDate: scheduledPayoutDate,
-        status: "scheduled",
-        stripeTransferId: null,
-        completedAt: null,
-        failureReason: null
-      });
+      try {
+        const scheduledPayout = await storage.createScheduledPayout({
+          packagePurchasesId: packagePurchase.id,
+          bookingId: null, // No specific booking for package purchase
+          classId: null, // No specific class for package purchase
+          coachId: packageData.coachId,
+          customerId: req.user.id,
+          stripePaymentIntentId: paymentIntentId || null,
+          amountCents: Math.round(totalAmountDollars * 100), // Convert to cents
+          stripeFee: Math.round(stripeFee * 100), // Convert to cents
+          netAmount: Math.round(netAmount * 100), // Convert to cents
+          coachPayout: Math.round(firstProviderPayout * 100), // Convert to cents
+          platformFee: Math.round(platformFee * 100), // Convert to cents
+          payoutType: "package_purchase",
+          providerReferralId: null,
+          scheduledPayoutDate: scheduledPayoutDate,
+          status: "scheduled",
+          stripeTransferId: null,
+          completedAt: null,
+          failureReason: null
+        });
 
-      console.log(`💰 Created scheduled payout (ID: ${scheduledPayout.id}) for package purchase - Amount: $${firstProviderPayout.toFixed(2)} to coach ${packageData.coachId}, scheduled for: ${scheduledPayoutDate.toISOString()}`);
+        console.log(`💰 Created scheduled payout (ID: ${scheduledPayout.id}) for package purchase - Amount: $${firstProviderPayout.toFixed(2)} to coach ${packageData.coachId}, scheduled for: ${scheduledPayoutDate.toISOString()}`);
+      } catch (scheduledPayoutError: any) {
+        console.error("❌ Error creating scheduled payout for package purchase:", scheduledPayoutError);
+        // Don't fail the entire request, but log the error
+      }
 
       // Apply account credits if used
       if (appliedCredits > 0) {
