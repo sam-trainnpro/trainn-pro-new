@@ -2760,8 +2760,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stripeFee = stripePaymentIntent ? Math.round(totalAmountCents * 0.029 + 30) / 100 : 0;
       const netAmount = totalAmountDollars - stripeFee;
       
-      // Calculate platform fee (15% of gross amount)
-      const platformFee = totalAmountDollars * 0.15;
+      // Calculate platform fee (15% of net amount after Stripe fees)
+      const platformFee = netAmount * 0.15;
       
       // Calculate provider amounts - all based on net amount for consistency
       const totalProviderAmount = netAmount * 0.85; // 85% of net_amount
