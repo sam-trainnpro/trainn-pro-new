@@ -2113,7 +2113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           netAmount: originalAmount,
           coachPayout: coachPayout,
           platformFee: 0,
-          payoutType: 'fully_subsidized_booking',
+          payoutType: 'package_set_pack_usage',
           scheduledPayoutDate: payoutDate
         });
         
