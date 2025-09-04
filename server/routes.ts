@@ -2763,12 +2763,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate platform fee (15% of gross amount)
       const platformFee = totalAmountDollars * 0.15;
       
-      // Calculate provider payout (85% of gross amount) and 25% upfront
-      const totalProviderPayout = totalAmountDollars * 0.85;
-      const firstProviderPayout = totalProviderPayout * 0.25;
-
-      // Calculate provider amounts
+      // Calculate provider amounts - all based on net amount for consistency
       const totalProviderAmount = netAmount * 0.85; // 85% of net_amount
+      const firstProviderPayout = totalProviderAmount * 0.25; // 25% of total provider amount
       const remainingProviderAmount = totalProviderAmount - firstProviderPayout; // total_provider_amount - first_provider_payout
       const providerPerClassAmount = remainingProviderAmount / parseInt(classCount); // remaining_provider_amount / class_count
 
