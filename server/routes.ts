@@ -2081,8 +2081,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         packagePurchaseId: userPackage.id
       });
       
-      // Deduct classes from package
+      // Update package usage: increment usedClasses and decrement remainingClasses
       await storage.updatePackagePurchase(userPackage.id, {
+        usedClasses: userPackage.usedClasses + quantity,
         remainingClasses: userPackage.remainingClasses - quantity
       });
       
