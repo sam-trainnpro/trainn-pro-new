@@ -1,23 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
-import { User, Class, ClassCategory } from "@shared/schema";
+import { User, Class, ClassCategory, ClassPackage } from "@shared/schema";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 import ClassCard from "@/components/class/class-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Calendar,
-  Mail, 
   Star, 
   ChevronRight,
   UserCircle, 
-  Award,
-  Clock,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,7 +42,7 @@ export default function CoachDetailsPage() {
     isLoading: isLoadingCoach, 
     error: coachError 
   } = useQuery<User>({
-    queryKey: [`/api/coaches/${coachId}`],
+    queryKey: ['/api/coaches', coachId],
   });
   
   // Fetch coach's classes
@@ -50,8 +50,8 @@ export default function CoachDetailsPage() {
     data: coachClasses, 
     isLoading: isLoadingClasses 
   } = useQuery<Class[]>({
-    queryKey: [`/api/coaches/${coachId}/classes`],
-    enabled: !!coach,
+    queryKey: ['/api/coaches', coachId, 'classes'],
+    enabled: !!coachId,
   });
 
   // Get categories for expertise display
@@ -60,21 +60,29 @@ export default function CoachDetailsPage() {
   });
 
   // Get coach rating stats
-  const { data: ratingStats } = useQuery({
+  const { data: ratingStats } = useQuery<{ averageRating: number; totalReviews: number }>({
     queryKey: ['/api/reviews/coach', coachId, 'stats'],
-    enabled: !!coach,
+    enabled: !!coachId,
   });
 
   // Get coach reviews
   const { data: reviewsData } = useQuery({
-    queryKey: [`/api/reviews/coach/${coachId}`],
-    enabled: !!coach,
+    queryKey: ['/api/reviews/coach', coachId],
+    enabled: !!coachId,
   });
+  
+  // Get coach packages (only active ones for public view)
+  const { data: allCoachPackages = [], isLoading: isLoadingPackages } = useQuery<ClassPackage[]>({
+    queryKey: ['/api/coaches', coachId, 'packages'],
+    enabled: !!coachId,
+  });
+  
+  const coachPackages = allCoachPackages.filter(pkg => pkg.isActive);
   
   // Get upcoming and past classes
   const now = new Date();
-  const upcomingClasses = coachClasses?.filter(c => new Date(c.startTime) > now) || [];
-  const pastClasses = coachClasses?.filter(c => new Date(c.startTime) <= now) || [];
+  const upcomingClasses = coachClasses?.filter(c => c.startTime && new Date(c.startTime) > now) || [];
+  const pastClasses = coachClasses?.filter(c => c.startTime && new Date(c.startTime) <= now) || [];
 
   // Get expertise areas
   const expertiseAreas = coach?.areasOfExpertise || [];
@@ -155,7 +163,7 @@ export default function CoachDetailsPage() {
                       {coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}
                     </h1>
                     
-                    {ratingStats?.totalReviews > 0 && (
+                    {ratingStats && ratingStats.totalReviews > 0 && (
                       <div className="flex items-center justify-center md:justify-start mt-1 mb-4">
                         <Star className="text-[#FFCC00] fill-[#FFCC00] h-5 w-5" />
                         <span className="ml-1 font-medium">
@@ -168,12 +176,24 @@ export default function CoachDetailsPage() {
                     )}
                     
                     {coach.bio ? (
-                      <div className="mb-6 max-w-3xl whitespace-pre-line" dangerouslySetInnerHTML={{ 
-                        __html: coach.bio.replace(
-                          /(https?:\/\/[^\s]+)/g, 
-                          '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
-                        )
-                      }} />
+                      <div className="mb-6 max-w-3xl whitespace-pre-line">
+                        {coach.bio.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
+                          if (part.match(/^https?:\/\//)) {
+                            return (
+                              <a 
+                                key={index}
+                                href={part}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline hover:text-primary/80"
+                              >
+                                {part}
+                              </a>
+                            );
+                          }
+                          return part;
+                        })}
+                      </div>
                     ) : (
                       <p className="text-muted-foreground italic mb-6">
                         This coach hasn't added a bio yet.
@@ -191,7 +211,7 @@ export default function CoachDetailsPage() {
                 <h2 className="text-2xl font-heading font-bold mb-4">Areas of Expertise</h2>
                 {expertiseCategories.length > 0 ? (
                   <div className="flex flex-wrap gap-2 mb-6">
-                    {expertiseCategories.map(category => (
+                    {expertiseCategories.map(category => category && (
                       <Badge 
                         key={category.id} 
                         variant="secondary"
@@ -225,6 +245,9 @@ export default function CoachDetailsPage() {
                   <div className="flex justify-between items-center mb-4">
                     <TabsList>
                       <TabsTrigger value="upcoming">Upcoming Classes</TabsTrigger>
+                      {coachPackages.length > 0 && (
+                        <TabsTrigger value="packages">Packages</TabsTrigger>
+                      )}
                       <TabsTrigger value="past">Past Classes</TabsTrigger>
                     </TabsList>
                     
@@ -280,6 +303,24 @@ export default function CoachDetailsPage() {
                       </div>
                     )}
                   </TabsContent>
+                  
+                  {coachPackages.length > 0 && (
+                    <TabsContent value="packages">
+                      {isLoadingPackages ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} className="h-80 w-full rounded-xl" />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {coachPackages.filter(pkg => pkg.isActive).map((pkg) => (
+                            <PackageCard key={pkg.id} pkg={pkg} categories={categories} />
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  )}
                 </Tabs>
               </div>
             </section>
@@ -381,5 +422,111 @@ function ReviewsSection({ reviewsData, coach }: ReviewsSectionProps) {
         </div>
       )}
     </div>
+  );
+}
+
+// Package Card Component
+interface PackageCardProps {
+  pkg: ClassPackage;
+  categories: ClassCategory[];
+}
+
+function PackageCard({ pkg, categories }: PackageCardProps) {
+  const formatPrice = (price: number | null) => {
+    if (!price) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
+  const getCategoryName = (categoryId: number | null) => {
+    if (!categoryId) return 'No Category';
+    const category = categories.find((cat: ClassCategory) => cat.id === categoryId);
+    return category?.name || 'Unknown Category';
+  };
+
+  const renderPackageDetails = (pkg: ClassPackage) => {
+    if (pkg.packageType === 'set_pack') {
+      const options = [];
+      if (pkg.classCount1 && pkg.price1) {
+        options.push(`${pkg.classCount1} classes: ${formatPrice(pkg.price1)}`);
+      }
+      if (pkg.classCount2 && pkg.price2) {
+        options.push(`${pkg.classCount2} classes: ${formatPrice(pkg.price2)}`);
+      }
+      if (pkg.classCount3 && pkg.price3) {
+        options.push(`${pkg.classCount3} classes: ${formatPrice(pkg.price3)}`);
+      }
+      return options.join(' | ');
+    } else {
+      return 'Time-bound package';
+    }
+  };
+
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          {pkg.title}
+          {pkg.isActive ? (
+            <Badge variant="default" className="bg-green-600">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Active
+            </Badge>
+          ) : (
+            <Badge variant="secondary">
+              <XCircle className="w-3 h-3 mr-1" />
+              Inactive
+            </Badge>
+          )}
+        </CardTitle>
+        {pkg.description && (
+          <p className="text-gray-600 text-sm leading-relaxed">{pkg.description}</p>
+        )}
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Category:</span>
+            <span className="font-medium">{getCategoryName(pkg.categoryId)}</span>
+          </div>
+          
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Age Group:</span>
+            <span className="font-medium">{pkg.ageGroup}</span>
+          </div>
+          
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Package Type:</span>
+            <span className="font-medium">
+              {pkg.packageType === 'set_pack' ? 'Set Pack' : 'Time-bound'}
+            </span>
+          </div>
+        </div>
+
+        <div className="border-t pt-4">
+          <h4 className="font-medium text-sm text-gray-600 mb-2">Package Options:</h4>
+          <p className="text-sm font-medium">{renderPackageDetails(pkg)}</p>
+        </div>
+
+        {pkg.eligibleClasses && (
+          <div className="border-t pt-4">
+            <h4 className="font-medium text-sm text-gray-600 mb-2">Eligible Classes:</h4>
+            <p className="text-sm">{pkg.eligibleClasses}</p>
+          </div>
+        )}
+        
+        <div className="pt-2">
+          <Button className="w-full" size="sm" asChild>
+            <Link href={`/package/${pkg.id}/purchase`}>
+              View Package Details
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
