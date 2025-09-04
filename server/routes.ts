@@ -2090,15 +2090,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const coach = await storage.getUser(classDetails.coachId);
       if (coach && coach.stripeConnectId) {
         const originalAmount = classDetails.price * quantity * 100; // Full class price in cents
-        const coachPayout = Math.round(originalAmount * 0.85); // 85% of class price
+        
+        // Use package provider_per_class_amount instead of calculating 85% of class price
+        const coachPayout = Math.round(parseFloat(userPackage.providerPerClassAmount || '0') * quantity * 100); // Provider's per-class amount in cents
         
         // Calculate payout date: 2 days after class end time
         const classEndTime = new Date(classDetails.endTime || classDetails.startTime);
         const payoutDate = new Date(classEndTime);
         payoutDate.setDate(payoutDate.getDate() + 2);
         
-        console.log(`🏦 Creating fully subsidized payout for package booking - coach ${classDetails.coachId}`);
-        console.log(`Amount: $${(originalAmount / 100).toFixed(2)}, Coach payout: $${(coachPayout / 100).toFixed(2)}`);
+        console.log(`🏦 Creating payout for package booking - coach ${classDetails.coachId}`);
+        console.log(`Class price: $${(originalAmount / 100).toFixed(2)}, Package per-class payout: $${(coachPayout / 100).toFixed(2)}`);
         
         await storage.createScheduledPayout({
           bookingId: booking.id,
@@ -2115,7 +2117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           scheduledPayoutDate: payoutDate
         });
         
-        console.log(`✅ Scheduled fully subsidized payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
+        console.log(`✅ Scheduled package payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
       }
       
       // Send confirmation email
