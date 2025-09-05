@@ -2048,14 +2048,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate package eligibility for this class
       console.log('📦 Validating package eligibility for class booking');
+      console.log('📦 Class ID:', classDetails.id, 'Class Coach ID:', classDetails.coachId);
+      console.log('📦 Package ID:', packageDetails.id, 'Package Coach ID:', packageDetails.coachId);
+      console.log('📦 Package Eligible Classes:', packageDetails.eligibleClasses);
       let isEligible = false;
       
       // Check 1: Class must be from the same coach who created the package
       if (classDetails.coachId !== packageDetails.coachId) {
+        console.log('🚫 VALIDATION FAILED: Class coach mismatch!');
+        console.log(`   Class coach: ${classDetails.coachId}, Package coach: ${packageDetails.coachId}`);
         return res.status(400).json({ 
           message: "This package can only be used for classes from the provider who created it"
         });
       }
+      console.log('✅ Coach validation passed');
       
       // Check 2: Class must be within the eligible classes scope
       const eligibleClasses = packageDetails.eligibleClasses;
