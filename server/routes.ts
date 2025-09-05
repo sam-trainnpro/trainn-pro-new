@@ -2024,14 +2024,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user's purchased packages and find the specific one
       const userPackages = await storage.getUserPackagePurchases(req.user!.id);
+      console.log('📦 All user packages:', userPackages.map(p => ({ id: p.id, packageId: p.packageId, remainingClasses: p.remainingClasses })));
+      
       const userPackage = userPackages.find(pkg => pkg.id === parseInt(packageId));
       if (!userPackage) {
+        console.log('❌ User package not found. Looking for packageId:', packageId, 'in packages:', userPackages.map(p => p.id));
         return res.status(404).json({ message: "Package not found or not owned by user" });
       }
 
+      console.log('📦 Found user package:', { id: userPackage.id, packageId: userPackage.packageId, remainingClasses: userPackage.remainingClasses });
+
       // Get package details
       const packageDetails = await storage.getPackage(userPackage.packageId);
+      console.log('📦 Package details lookup for packageId:', userPackage.packageId, 'result:', packageDetails ? 'FOUND' : 'NOT FOUND');
       if (!packageDetails) {
+        console.log('❌ CRITICAL: Package details not found! User package references packageId:', userPackage.packageId, 'which does not exist');
         return res.status(404).json({ message: "Package details not found" });
       }
 
