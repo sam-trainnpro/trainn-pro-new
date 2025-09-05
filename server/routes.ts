@@ -2046,9 +2046,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // TEMPORARY: Skip eligibility check - allow any package with remaining classes
-      console.log('📦 TEMP: Skipping package eligibility check for testing');
-      let isEligible = true; // Always allow for testing
+      // Validate package eligibility for this class
+      console.log('📦 Validating package eligibility for class booking');
+      let isEligible = false;
+      
+      // Check 1: Class must be from the same coach who created the package
+      if (classDetails.coachId !== packageDetails.coachId) {
+        return res.status(400).json({ 
+          message: "This package can only be used for classes from the provider who created it"
+        });
+      }
+      
+      // Check 2: Class must be within the eligible classes scope
+      const eligibleClasses = packageDetails.eligibleClasses;
+      
+      if (eligibleClasses === 'all') {
+        // Package allows all classes from this coach
+        isEligible = true;
+      } else if (eligibleClasses) {
+        try {
+          // Parse the eligible classes JSON array
+          const eligibleClassIds = JSON.parse(eligibleClasses);
+          
+          if (Array.isArray(eligibleClassIds)) {
+            // Check if the class is eligible by ID or packageIdentifier
+            isEligible = eligibleClassIds.includes(classDetails.id.toString()) || 
+                        eligibleClassIds.includes(classDetails.recurringSeriesId || '');
+          }
+        } catch (error) {
+          console.error('Error parsing eligible classes:', error);
+          return res.status(400).json({ 
+            message: "Package configuration error - invalid eligible classes format"
+          });
+        }
+      }
+      
+      if (!isEligible) {
+        return res.status(400).json({ 
+          message: "This class is not eligible for your selected package. Please choose a different class or package."
+        });
+      }
       
       // Check capacity
       const existingBookings = await storage.getClassBookings(parseInt(classId));
@@ -2077,8 +2114,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         classId: parseInt(classId),
         quantity: quantity,
         status: 'confirmed',
-        paymentMethod: paymentMethod,
-        packagePurchaseId: userPackage.id
+        paymentMethod: paymentMethod
+      });
+
+      // Create package booking link
+      await storage.createPackageBooking({
+        packagePurchaseId: userPackage.id,
+        bookingId: booking.id,
+        bookingDate: new Date(),
+        classDate: new Date(classDetails.startTime || new Date()),
+        status: 'confirmed'
       });
       
       // Update package usage: increment usedClasses and decrement remainingClasses
