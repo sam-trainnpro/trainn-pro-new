@@ -1436,6 +1436,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(classItem.price * 100), // Convert to cents
         currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
         // Store the class and user IDs as metadata
         metadata: {
           classId: classItem.id.toString(),
@@ -1665,6 +1668,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           paymentIntentData.metadata.delayedPayout = 'true';
           paymentIntentData.metadata.coachStripeId = coach.stripeConnectId || '';
           paymentIntentData.metadata.coachOnboarded = coach.stripeConnectOnboarded ? 'true' : 'false';
+
+          // Add automatic payment methods to enable Link and Amazon Pay
+          paymentIntentData.automatic_payment_methods = {
+            enabled: true,
+          };
 
           const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
           
@@ -2730,6 +2738,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(finalAmount * 100), // Convert to cents
         currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
         metadata: {
           packageId: packageId.toString(),
           classCount: classCount.toString(),
