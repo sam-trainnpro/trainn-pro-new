@@ -485,7 +485,8 @@ export default function PackageCheckoutPage() {
       defaultCollapsed: false,
       radios: false,
       spacedAccordionItems: false
-    }
+    },
+    paymentMethodOrder: ['card', 'link', 'amazon_pay', 'apple_pay', 'google_pay']
   };
 
   return (
