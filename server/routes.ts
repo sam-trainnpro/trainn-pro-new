@@ -2024,21 +2024,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user's purchased packages and find the specific one
       const userPackages = await storage.getUserPackagePurchases(req.user!.id);
-      console.log('📦 All user packages:', userPackages.map(p => ({ id: p.id, packageId: p.packageId, remainingClasses: p.remainingClasses })));
-      
       const userPackage = userPackages.find(pkg => pkg.id === parseInt(packageId));
       if (!userPackage) {
-        console.log('❌ User package not found. Looking for packageId:', packageId, 'in packages:', userPackages.map(p => p.id));
         return res.status(404).json({ message: "Package not found or not owned by user" });
       }
 
-      console.log('📦 Found user package:', { id: userPackage.id, packageId: userPackage.packageId, remainingClasses: userPackage.remainingClasses });
-
       // Get package details
       const packageDetails = await storage.getPackage(userPackage.packageId);
-      console.log('📦 Package details lookup for packageId:', userPackage.packageId, 'result:', packageDetails ? 'FOUND' : 'NOT FOUND');
       if (!packageDetails) {
-        console.log('❌ CRITICAL: Package details not found! User package references packageId:', userPackage.packageId, 'which does not exist');
         return res.status(404).json({ message: "Package details not found" });
       }
 
@@ -2054,21 +2047,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate package eligibility for this class
-      console.log('📦 Validating package eligibility for class booking');
-      console.log('📦 Class ID:', classDetails.id, 'Class Coach ID:', classDetails.coachId);
-      console.log('📦 Package ID:', packageDetails.id, 'Package Coach ID:', packageDetails.coachId);
-      console.log('📦 Package Eligible Classes:', packageDetails.eligibleClasses);
       let isEligible = false;
       
       // Check 1: Class must be from the same coach who created the package
       if (classDetails.coachId !== packageDetails.coachId) {
-        console.log('🚫 VALIDATION FAILED: Class coach mismatch!');
-        console.log(`   Class coach: ${classDetails.coachId}, Package coach: ${packageDetails.coachId}`);
         return res.status(400).json({ 
           message: "This package can only be used for classes from the provider who created it"
         });
       }
-      console.log('✅ Coach validation passed');
       
       // Check 2: Class must be within the eligible classes scope
       const eligibleClasses = packageDetails.eligibleClasses;
