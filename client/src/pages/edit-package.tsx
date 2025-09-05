@@ -130,7 +130,7 @@ export default function EditPackage() {
         price2: packageData.price2 || undefined,
         price3: packageData.price3 || undefined,
         description: packageData.description || '',
-        categoryId: packageData.categoryId ? packageData.categoryId.toString() : undefined,
+        categoryId: packageData.categoryId || undefined,
         ageGroup: packageData.ageGroup || 'Adults',
         eligibleClasses: packageData.eligibleClasses || '',
       });
@@ -414,7 +414,10 @@ export default function EditPackage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Category</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                          <Select 
+                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                            value={field.value ? field.value.toString() : ""}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select category" />
@@ -497,8 +500,8 @@ export default function EditPackage() {
                             <FormItem>
                               <FormLabel>Class Count 1 <span className="text-destructive">*</span></FormLabel>
                               <Select 
-                                onValueChange={(value) => field.onChange(parseInt(value))} 
-                                value={field.value?.toString()}
+                                onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                                value={field.value ? field.value.toString() : ""}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -557,7 +560,7 @@ export default function EditPackage() {
                               <FormLabel>Class Count 2</FormLabel>
                               <Select 
                                 onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
-                                value={field.value?.toString() || "none"}
+                                value={field.value ? field.value.toString() : "none"}
                               >
                                 <FormControl>
                                   <SelectTrigger>
@@ -617,7 +620,7 @@ export default function EditPackage() {
                               <FormLabel>Class Count 3</FormLabel>
                               <Select 
                                 onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
-                                value={field.value?.toString() || "none"}
+                                value={field.value ? field.value.toString() : "none"}
                               >
                                 <FormControl>
                                   <SelectTrigger>
