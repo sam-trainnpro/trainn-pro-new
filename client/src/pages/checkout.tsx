@@ -429,14 +429,54 @@ export default function CheckoutPage() {
     });
     
     const availablePackage = userPackages.find((pkg: any) => {
+      // Basic requirements
       const hasRemainingClasses = pkg && pkg.remainingClasses > 0;
-      console.log('🔍 Testing package eligibility:', {
-        packageId: pkg?.id,
-        remainingClasses: pkg?.remainingClasses,
-        hasRemainingClasses,
-        will_use: hasRemainingClasses
-      });
-      return hasRemainingClasses;
+      if (!hasRemainingClasses) {
+        console.log(`❌ Package ${pkg?.id}: No remaining classes (${pkg?.remainingClasses})`);
+        return false;
+      }
+
+      // Check 1: Package must be from the same provider as the class
+      const packageDetails = pkg?.packageDetails;
+      if (!packageDetails) {
+        console.log(`❌ Package ${pkg?.id}: No package details available`);
+        return false;
+      }
+
+      if (packageDetails.coachId !== classItem.coachId) {
+        console.log(`❌ Package ${pkg?.id}: Provider mismatch. Package coach: ${packageDetails.coachId}, Class coach: ${classItem.coachId}`);
+        return false;
+      }
+
+      // Check 2: Class must be within the package's eligible scope
+      const eligibleClasses = packageDetails.eligibleClasses;
+      
+      if (eligibleClasses === 'all') {
+        console.log(`✅ Package ${pkg?.id}: Eligible (allows all classes from this provider)`);
+        return true;
+      } else if (eligibleClasses) {
+        try {
+          const eligibleClassIds = JSON.parse(eligibleClasses);
+          if (Array.isArray(eligibleClassIds)) {
+            const isEligible = eligibleClassIds.includes(classItem.id.toString()) || 
+                             eligibleClassIds.includes(classItem.recurringSeriesId || '');
+            
+            if (isEligible) {
+              console.log(`✅ Package ${pkg?.id}: Eligible (class ${classItem.id} is in eligible list)`);
+              return true;
+            } else {
+              console.log(`❌ Package ${pkg?.id}: Class ${classItem.id} not in eligible list:`, eligibleClassIds);
+              return false;
+            }
+          }
+        } catch (error) {
+          console.log(`❌ Package ${pkg?.id}: Invalid eligible classes format:`, eligibleClasses);
+          return false;
+        }
+      }
+
+      console.log(`❌ Package ${pkg?.id}: No valid eligibility scope defined`);
+      return false;
     });
     
     if (availablePackage) {
