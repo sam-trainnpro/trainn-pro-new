@@ -1395,7 +1395,19 @@ export default function CheckoutPage() {
 
                       {/* Only show payment form if not using package and amount > 0 */}
                       {!usePackage && finalAmount > 0 && clientSecret && (
-                        <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <Elements 
+                          stripe={stripePromise} 
+                          options={{ 
+                            clientSecret,
+                            appearance: {
+                              theme: 'stripe',
+                              variables: {
+                                colorPrimary: '#6366f1',
+                              }
+                            },
+                            paymentMethodOrder: ['card', 'link', 'amazon_pay', 'apple_pay', 'google_pay']
+                          }}
+                        >
                           <CheckoutForm 
                             classItem={classItem} 
                             quantity={quantity}
