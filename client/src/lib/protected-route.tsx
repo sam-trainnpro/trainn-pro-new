@@ -23,7 +23,9 @@ export function ProtectedRoute({ path, children }: ProtectedRouteProps) {
         }
 
         if (!user) {
-          const redirectTo = `/auth?redirect=${encodeURIComponent(path)}`;
+          // Use the actual current path instead of the route pattern
+          const currentPath = window.location.pathname + window.location.search;
+          const redirectTo = `/auth?redirect=${encodeURIComponent(currentPath)}`;
           return <Redirect to={redirectTo} />;
         }
 

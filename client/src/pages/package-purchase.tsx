@@ -54,14 +54,7 @@ export default function PackagePurchasePage() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user) {
-      // Redirect to auth page with return URL
-      const returnUrl = encodeURIComponent(window.location.pathname);
-      navigate(`/auth?redirect=${returnUrl}`);
-    }
-  }, [user, navigate]);
+  // Authentication is handled by ProtectedRoute wrapper
 
   const packageId = params?.packageId ? parseInt(params.packageId) : null;
 
