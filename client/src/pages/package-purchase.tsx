@@ -57,7 +57,9 @@ export default function PackagePurchasePage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      // Redirect to auth page with return URL
+      const returnUrl = encodeURIComponent(window.location.pathname);
+      navigate(`/auth?redirect=${returnUrl}`);
     }
   }, [user, navigate]);
 
