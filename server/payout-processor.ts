@@ -144,11 +144,29 @@ export class PayoutProcessor {
         console.log(`=== NON-SUBSIDIZED PROMO CODE ===`);
         console.log(`Non-subsidized promo code - coach gets $0.00`);
         
+      } else if (payout.payoutType === 'platform_subsidy_promo_credit') {
+        // Platform subsidy for credit usage - no additional subsidy needed
+        totalTransferAmount = payout.coachPayout;
+        description = `Platform subsidy for credit usage on booking ${payout.bookingId}`;
+        
+        metadata = {
+          scheduledPayoutId: payout.id.toString(),
+          bookingId: payout.bookingId.toString(),
+          classId: payout.classId.toString(),
+          coachId: payout.coachId.toString(),
+          payoutType: 'platform_subsidy_promo_credit',
+          coachPayout: payout.coachPayout.toString(),
+          totalAmount: totalTransferAmount.toString()
+        };
+        
+        console.log(`=== PLATFORM CREDIT SUBSIDY PAYOUT ===`);
+        console.log(`Credit subsidy payout: $${(totalTransferAmount / 100).toFixed(2)}`);
+        
       } else {
-        // Regular booking payouts - get platform subsidy
-        platformSubsidy = await storage.getPlatformSubsidyForBooking(payout.bookingId);
+        // Regular booking payouts - get platform subsidy (only for promo codes, not credits)
+        platformSubsidy = await storage.getPromoCodeSubsidyForBooking(payout.bookingId);
         totalTransferAmount = payout.coachPayout + platformSubsidy;
-        description = `Payout for class booking ${payout.bookingId}${platformSubsidy > 0 ? ' (includes platform subsidy)' : ''}`;
+        description = `Payout for class booking ${payout.bookingId}${platformSubsidy > 0 ? ' (includes promo code subsidy)' : ''}`;
         
         metadata = {
           scheduledPayoutId: payout.id.toString(),
