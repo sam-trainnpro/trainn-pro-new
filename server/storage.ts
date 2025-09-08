@@ -1684,7 +1684,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  // Get platform subsidy amount for a booking
+  // Get platform subsidy amount for a booking (includes both promo codes and credits)
   async getPlatformSubsidyForBooking(bookingId: number): Promise<number> {
     // Check for promo code subsidies first
     const promoSubsidyResult = await db.select({
@@ -1700,6 +1700,18 @@ export class DatabaseStorage implements IStorage {
 
     // Return total subsidy (promo + credit)
     return promoSubsidy + creditSubsidy;
+  }
+
+  // Get only promo code subsidy amount for a booking (excludes credit subsidies)
+  async getPromoCodeSubsidyForBooking(bookingId: number): Promise<number> {
+    // Check for promo code subsidies only
+    const promoSubsidyResult = await db.select({
+      subsidyAmount: promoCodeUsage.subsidyAmount
+    })
+    .from(promoCodeUsage)
+    .where(eq(promoCodeUsage.bookingId, bookingId));
+
+    return promoSubsidyResult[0]?.subsidyAmount || 0;
   }
 
   // Calculate platform subsidy needed for credit usage

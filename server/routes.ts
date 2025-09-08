@@ -2539,27 +2539,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let payoutAmountCents, payoutStripeFee, payoutNetAmount, finalCoachPayout, finalPlatformFee;
             
             if (actualCreditsToDeduct > 0) {
-              console.log("=== CALCULATING FULL PAYOUT FOR CREDIT USAGE ===");
-              // Use original class price for payout calculation
+              console.log("=== CALCULATING SPLIT PAYOUT FOR CREDIT USAGE ===");
+              
+              // Get original and reduced amounts
               const originalClassPrice = parseFloat(metadata.originalAmount || '0') * 100; // in cents
               const originalWithFee = Math.round(originalClassPrice * 1.05); // Add 5% service fee
               const originalStripeFee = Math.round(originalWithFee * 0.029) + 30; // 2.9% + $0.30
               const originalNetAmount = originalWithFee - originalStripeFee;
-              finalCoachPayout = Math.round(originalNetAmount * 0.85); // 85% to coach
-              finalPlatformFee = originalNetAmount - finalCoachPayout;
+              const fullCoachPayout = Math.round(originalNetAmount * 0.85); // 85% to coach
               
-              // Store original pricing for payout
-              payoutAmountCents = originalWithFee;
-              payoutStripeFee = originalStripeFee;
-              payoutNetAmount = originalNetAmount;
+              // Calculate what customer actually paid (from payment intent)
+              const customerPaidAmount = parseInt(metadata.amount || '0'); // What customer was charged
+              const customerStripeFee = parseInt(metadata.stripeFee || '0');
+              const customerNetAmount = parseInt(metadata.netAmount || '0');
+              const customerPortionCoachPayout = parseInt(metadata.coachPayout || '0');
+              const customerPortionPlatformFee = parseInt(metadata.platformFee || '0');
+              
+              // Calculate platform subsidy amount
+              const platformSubsidyPayout = fullCoachPayout - customerPortionCoachPayout;
               
               console.log("Original class price (cents):", originalClassPrice);
-              console.log("Original with 5% fee (cents):", originalWithFee);
-              console.log("Original Stripe fee (cents):", originalStripeFee);
-              console.log("Original net amount (cents):", originalNetAmount);
-              console.log("FULL coach payout (cents):", finalCoachPayout);
-              console.log("Platform fee (cents):", finalPlatformFee);
-              console.log("Coach gets FULL amount despite customer using credits!");
+              console.log("Customer paid amount (cents):", customerPaidAmount);
+              console.log("Credits used (cents):", actualCreditsToDeduct);
+              console.log("Customer portion coach payout (cents):", customerPortionCoachPayout);
+              console.log("Platform subsidy payout (cents):", platformSubsidyPayout);
+              console.log("Total coach payout (cents):", fullCoachPayout);
+              
+              // Create first payout: Customer-paid portion
+              await storage.createScheduledPayout({
+                bookingId: booking.id,
+                classId: parseInt(classId),
+                coachId: classItem.coachId,
+                customerId: req.user.id,
+                stripePaymentIntentId: paymentIntentId,
+                amountCents: customerPaidAmount,
+                stripeFee: customerStripeFee,
+                netAmount: customerNetAmount,
+                coachPayout: customerPortionCoachPayout,
+                platformFee: customerPortionPlatformFee,
+                scheduledPayoutDate: payoutDate,
+                status: 'scheduled',
+                payoutType: 'booking'
+              });
+              
+              // Create second payout: Platform subsidy for credits
+              if (platformSubsidyPayout > 0) {
+                await storage.createScheduledPayout({
+                  bookingId: booking.id,
+                  classId: parseInt(classId),
+                  coachId: classItem.coachId,
+                  customerId: req.user.id,
+                  stripePaymentIntentId: null, // No payment intent for subsidy
+                  amountCents: originalWithFee, // Keep original amount for reference
+                  stripeFee: 0, // No stripe fee for subsidy
+                  netAmount: platformSubsidyPayout, // Net is the subsidy amount
+                  coachPayout: platformSubsidyPayout,
+                  platformFee: 0, // No platform fee for subsidy
+                  scheduledPayoutDate: payoutDate,
+                  status: 'scheduled',
+                  payoutType: 'platform_subsidy_promo_credit'
+                });
+              }
+              
+              console.log(`✅ Created two scheduled payouts:`);
+              console.log(`   Customer portion: $${(customerPortionCoachPayout/100).toFixed(2)}`);
+              console.log(`   Platform subsidy: $${(platformSubsidyPayout/100).toFixed(2)}`);
+              console.log(`   Total coach payout: $${(fullCoachPayout/100).toFixed(2)}`);
+              
             } else {
               // No credits used, use standard calculation
               payoutAmountCents = parseInt(metadata.amount || '0');
@@ -2567,29 +2613,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               payoutNetAmount = parseInt(metadata.netAmount || '0');
               finalCoachPayout = parseInt(metadata.coachPayout || '0');
               finalPlatformFee = parseInt(metadata.platformFee || '0');
-            }
-            
-            // Create scheduled payout record
-            await storage.createScheduledPayout({
-              bookingId: booking.id,
-              classId: parseInt(classId),
-              coachId: classItem.coachId,
-              customerId: req.user.id,
-              stripePaymentIntentId: paymentIntentId,
-              amountCents: payoutAmountCents,
-              stripeFee: payoutStripeFee,
-              netAmount: payoutNetAmount,
-              coachPayout: finalCoachPayout,
-              platformFee: finalPlatformFee,
-              scheduledPayoutDate: payoutDate,
-              status: 'scheduled'
-            });
-            
-            console.log(`✅ Scheduled payout created for coach ${classItem.coachId}`);
-            console.log(`   Coach payout: $${(finalCoachPayout/100).toFixed(2)}`);
-            console.log(`   Payout date: ${payoutDate.toISOString()}`);
-            if (actualCreditsToDeduct > 0) {
-              console.log(`   🎯 FULL PAYOUT despite $${(actualCreditsToDeduct/100).toFixed(2)} credits used by customer`);
+              
+              // Create single scheduled payout record for non-credit bookings
+              await storage.createScheduledPayout({
+                bookingId: booking.id,
+                classId: parseInt(classId),
+                coachId: classItem.coachId,
+                customerId: req.user.id,
+                stripePaymentIntentId: paymentIntentId,
+                amountCents: payoutAmountCents,
+                stripeFee: payoutStripeFee,
+                netAmount: payoutNetAmount,
+                coachPayout: finalCoachPayout,
+                platformFee: finalPlatformFee,
+                scheduledPayoutDate: payoutDate,
+                status: 'scheduled'
+              });
+              
+              console.log(`✅ Scheduled payout created for coach ${classItem.coachId}`);
+              console.log(`   Coach payout: $${(finalCoachPayout/100).toFixed(2)}`);
             }
           }
         } catch (error) {
