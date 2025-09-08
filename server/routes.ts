@@ -1919,14 +1919,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const coach = await storage.getUser(classDetails.coachId);
       if (coach && coach.stripeConnectId) {
         const amountCents = originalAmount; // Full class price in cents
-        const coachPayout = Math.round(amountCents * 0.85); // 85% of class price
+        let coachPayout;
+        let payoutType;
+        
+        // Check if promo code was used and if platform subsidizes the discount
+        if (promoCodeRecord && !promoCodeRecord.platformSubsidized) {
+          // Promo code with platform_subsidized = false and 100% discount = $0 for coach
+          coachPayout = 0;
+          payoutType = 'promo_non_subsidized';
+          console.log(`🚫 Promo code ${promoCode} is not platform subsidized - coach gets $0`);
+        } else {
+          // Platform subsidizes the discount or credit-only booking
+          coachPayout = Math.round(amountCents * 0.85); // 85% of class price
+          payoutType = 'fully_subsidized_booking';
+          console.log(`🏦 Creating fully subsidized payout for coach ${classDetails.coachId}`);
+        }
         
         // Calculate payout date: 2 days after class end time
         const classEndTime = new Date(classDetails.endTime || classDetails.startTime);
         const payoutDate = new Date(classEndTime);
         payoutDate.setDate(payoutDate.getDate() + 2);
         
-        console.log(`🏦 Creating fully subsidized payout for coach ${classDetails.coachId}`);
         console.log(`Amount: $${(amountCents / 100).toFixed(2)}, Coach payout: $${(coachPayout / 100).toFixed(2)}`);
         
         await storage.createScheduledPayout({
@@ -1940,11 +1953,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           netAmount: amountCents,
           coachPayout: coachPayout,
           platformFee: 0,
-          payoutType: 'fully_subsidized_booking',
+          payoutType: payoutType,
           scheduledPayoutDate: payoutDate
         });
         
-        console.log(`✅ Scheduled fully subsidized payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
+        if (coachPayout > 0) {
+          console.log(`✅ Scheduled payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
+        } else {
+          console.log(`✅ Scheduled $0 payout to coach ${classDetails.coachId} (non-subsidized promo code)`);
+        }
       }
       
       // Send confirmation email
