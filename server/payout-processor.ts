@@ -126,6 +126,24 @@ export class PayoutProcessor {
         console.log(`=== FULLY SUBSIDIZED BOOKING PAYOUT ===`);
         console.log(`Credit-only booking payout: $${(totalTransferAmount / 100).toFixed(2)} (100% platform subsidized)`);
         
+      } else if (payout.payoutType === 'promo_non_subsidized') {
+        // Non-subsidized promo code - coach gets $0
+        totalTransferAmount = 0;
+        description = `Non-subsidized promo code booking ${payout.bookingId} - no payout`;
+        
+        metadata = {
+          scheduledPayoutId: payout.id.toString(),
+          bookingId: payout.bookingId.toString(),
+          classId: payout.classId.toString(),
+          coachId: payout.coachId.toString(),
+          payoutType: 'promo_non_subsidized',
+          coachPayout: '0',
+          totalAmount: '0'
+        };
+        
+        console.log(`=== NON-SUBSIDIZED PROMO CODE ===`);
+        console.log(`Non-subsidized promo code - coach gets $0.00`);
+        
       } else {
         // Regular booking payouts - get platform subsidy
         platformSubsidy = await storage.getPlatformSubsidyForBooking(payout.bookingId);
@@ -148,7 +166,25 @@ export class PayoutProcessor {
         console.log(`Total transfer amount: $${(totalTransferAmount / 100).toFixed(2)}`);
       }
 
-      // Create transfer to coach's connected account
+      // For $0 payouts, skip Stripe transfer and mark as completed
+      if (totalTransferAmount === 0) {
+        // Update payout as completed without Stripe transfer
+        await storage.updateScheduledPayout(payout.id, {
+          status: 'completed',
+          stripeTransferId: null,
+          completedAt: new Date()
+        });
+        
+        console.log(`✅ $0 payout completed (no transfer needed) for coach ${payout.coachId}`);
+        
+        return {
+          payoutId: payout.id,
+          success: true,
+          transferId: 'no_transfer_needed'
+        };
+      }
+
+      // Create transfer to coach's connected account for amounts > $0
       const transfer = await stripe!.transfers.create({
         amount: totalTransferAmount,
         currency: 'usd',
