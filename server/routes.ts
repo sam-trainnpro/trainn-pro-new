@@ -1201,6 +1201,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update package status (active/inactive)
+  app.patch("/api/packages/:id/status", requireAuth, async (req, res) => {
+    try {
+      // Check if user is coach
+      if (req.user.role !== "coach") {
+        return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
+      }
+      
+      const packageId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "isActive must be a boolean value" });
+      }
+      
+      const existingPackage = await storage.getPackage(packageId);
+      
+      if (!existingPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      if (existingPackage.coachId !== req.user.id) {
+        return res.status(403).json({ message: "You can only update your own packages" });
+      }
+      
+      const updatedPackage = await storage.updatePackage(packageId, { isActive });
+      res.json(updatedPackage);
+    } catch (error) {
+      console.error("Error updating package status:", error);
+      res.status(500).json({ message: "Failed to update package status" });
+    }
+  });
+
+  // Check if package has bookings (for delete protection)
+  app.get("/api/packages/:id/bookings/check", requireAuth, async (req, res) => {
+    try {
+      // Check if user is coach
+      if (req.user.role !== "coach") {
+        return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      // Check if coach is approved (only for coach role)
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
+      }
+      
+      const packageId = parseInt(req.params.id);
+      
+      const existingPackage = await storage.getPackage(packageId);
+      
+      if (!existingPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      if (existingPackage.coachId !== req.user.id) {
+        return res.status(403).json({ message: "You can only check your own packages" });
+      }
+      
+      // Check if there are any package purchases or bookings for this package
+      const hasBookings = await storage.checkPackageHasBookings(packageId);
+      res.json({ hasBookings });
+    } catch (error) {
+      console.error("Error checking package bookings:", error);
+      res.status(500).json({ message: "Failed to check package bookings" });
+    }
+  });
+
   // Check class availability (used before payment)
   app.post("/api/classes/:id/check-availability", requireAuth, async (req, res) => {
     try {
