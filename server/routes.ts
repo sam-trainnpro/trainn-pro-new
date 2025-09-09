@@ -1231,7 +1231,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You can only update your own packages" });
       }
       
-      const updatedPackage = await storage.updatePackage(packageId, { isActive });
+      const updatedPackage = await storage.updatePackage(packageId, { 
+        isActive,
+        status: isActive ? 'Active' : 'Inactive'
+      });
       res.json(updatedPackage);
     } catch (error) {
       console.error("Error updating package status:", error);
