@@ -64,6 +64,17 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     },
   });
 
+  // Fetch cities from database
+  const { data: cities, isLoading: isLoadingCities } = useQuery<string[]>({
+    queryKey: ['/api/cities'],
+    queryFn: async () => {
+      const response = await fetch('/api/cities');
+      if (!response.ok) {
+        throw new Error('Failed to fetch cities');
+      }
+      return response.json();
+    },
+  });
   
 
   
@@ -90,6 +101,18 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
   
 
   
+  const handleDateSelect = (date: Date | undefined) => {
+    const newParams = {
+      ...searchParams,
+      date
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude: null,
+      longitude: null
+    });
+  };
   
   const handleClassTypeSelect = (value: string) => {
     const newParams = {
@@ -117,6 +140,31 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     });
   };
 
+  const handleCitySelect = (value: string) => {
+    const newParams = {
+      ...searchParams,
+      city: value
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude: null,
+      longitude: null
+    });
+  };
+
+  const handleOutdoorsSelect = (value: string) => {
+    const newParams = {
+      ...searchParams,
+      outdoors: value
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude: null,
+      longitude: null
+    });
+  };
   
   // Reset all filters to initial state
   const handleClearFilters = () => {
@@ -132,8 +180,11 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
   useEffect(() => {
     let count = 0;
     if (searchParams.query) count++;
+    if (searchParams.date) count++;
     if (searchParams.classType) count++;
     if (searchParams.ageGroup) count++;
+    if (searchParams.city) count++;
+    if (searchParams.outdoors) count++;
     
     setActiveFiltersCount(count);
   }, [searchParams]);
@@ -232,6 +283,93 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
               </DropdownMenuContent>
             </DropdownMenu>
             
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant={searchParams.outdoors ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.outdoors 
+                      ? searchParams.outdoors
+                      : "Outdoors"
+                    }
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleOutdoorsSelect("Yes")}>
+                  Yes
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOutdoorsSelect("No")}>
+                  No
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant={searchParams.date ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.date 
+                      ? searchParams.date.toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })
+                      : "Date"
+                    }
+                  </span>
+                  <Calendar className="h-4 w-4 ml-1" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={searchParams.date}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant={searchParams.city ? "default" : "outline"} 
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.city 
+                      ? searchParams.city
+                      : "City"
+                    }
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {isLoadingCities ? (
+                  <DropdownMenuItem disabled>Loading cities...</DropdownMenuItem>
+                ) : cities && cities.length > 0 ? (
+                  cities.map(city => (
+                    <DropdownMenuItem 
+                      key={city} 
+                      onClick={() => handleCitySelect(city)}
+                    >
+                      {city}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>No cities available</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             <Button className="min-w-fit pl-[8px] pr-[8px]" onClick={handleSearch}>
               Search
             </Button>
@@ -270,6 +408,27 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 </Badge>
               )}
               
+              {searchParams.date && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Date: {searchParams.date.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, date: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude: null,
+                        longitude: null
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
               
               {searchParams.classType && categories && (
                 <Badge variant="secondary" className="flex items-center gap-1">
@@ -307,6 +466,41 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 </Badge>
               )}
               
+              {searchParams.city && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  City: {searchParams.city}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, city: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude: null,
+                        longitude: null
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
+              
+              {searchParams.outdoors && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Outdoors: {searchParams.outdoors}
+                  <X 
+                    className="h-3 w-3 ml-1 cursor-pointer" 
+                    onClick={() => {
+                      const newParams = {...searchParams, outdoors: undefined};
+                      setSearchParams(newParams);
+                      onSearch({
+                        ...newParams,
+                        latitude: null,
+                        longitude: null
+                      });
+                    }}
+                  />
+                </Badge>
+              )}
               
 
             </div>
