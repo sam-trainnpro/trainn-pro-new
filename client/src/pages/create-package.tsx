@@ -725,7 +725,7 @@ export default function CreatePackage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/')}
               >
                 Cancel
               </Button>
