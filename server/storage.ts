@@ -179,6 +179,7 @@ export interface IStorage {
   getAllPackages(): Promise<ClassPackage[]>;
   updatePackage(id: number, packageData: Partial<ClassPackage>): Promise<ClassPackage | undefined>;
   deletePackage(id: number): Promise<boolean>;
+  checkPackageHasBookings(packageId: number): Promise<boolean>;
 
   // Package Purchase methods
   createPackagePurchase(purchaseData: InsertPackagePurchase): Promise<PackagePurchase>;
@@ -1350,6 +1351,32 @@ export class DatabaseStorage implements IStorage {
   async deletePackage(id: number): Promise<boolean> {
     const result = await db.delete(classPackages).where(eq(classPackages.id, id));
     return result.rowCount > 0;
+  }
+
+  async checkPackageHasBookings(packageId: number): Promise<boolean> {
+    try {
+      // Check if there are any package purchases for this package
+      const purchases = await db.select()
+        .from(packagePurchases)
+        .where(eq(packagePurchases.packageId, packageId))
+        .limit(1);
+      
+      if (purchases.length > 0) {
+        return true;
+      }
+      
+      // Check if there are any bookings directly associated with this package
+      const bookings = await db.select()
+        .from(packageBookings)
+        .innerJoin(packagePurchases, eq(packageBookings.packagePurchaseId, packagePurchases.id))
+        .where(eq(packagePurchases.packageId, packageId))
+        .limit(1);
+        
+      return bookings.length > 0;
+    } catch (error) {
+      console.error("Error checking package bookings:", error);
+      return false;
+    }
   }
 
   // Promo Code Management Methods

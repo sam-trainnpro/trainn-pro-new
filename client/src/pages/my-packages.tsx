@@ -3,6 +3,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "../../../hooks/use-toast";
 import { useState } from "react";
 import { Plus, Edit, Trash2, Calendar, Package, CheckCircle, XCircle } from "lucide-react";
@@ -77,9 +78,51 @@ export default function MyPackages() {
     }
   });
 
+  // Update package status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ packageId, isActive }: { packageId: number; isActive: boolean }) => {
+      const response = await apiRequest('PATCH', `/api/packages/${packageId}/status`, {
+        isActive
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packages/my'] });
+      toast({
+        title: "Success",
+        description: "Package status updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update package status",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Check if package has bookings
+  const checkPackageBookings = async (packageId: number) => {
+    try {
+      const response = await apiRequest('GET', `/api/packages/${packageId}/bookings/check`);
+      const data = await response.json();
+      return data.hasBookings;
+    } catch (error) {
+      console.error('Error checking package bookings:', error);
+      return false;
+    }
+  };
+
   // Delete package mutation
   const deleteMutation = useMutation({
     mutationFn: async (packageId: number) => {
+      // First check if package has bookings
+      const hasBookings = await checkPackageBookings(packageId);
+      if (hasBookings) {
+        throw new Error("Cannot delete package with existing bookings. You can deactivate it instead.");
+      }
+      
       const response = await apiRequest('DELETE', `/api/packages/${packageId}`);
       return response.json();
     },
@@ -195,25 +238,37 @@ export default function MyPackages() {
               </CardContent>
             </Card>
           ) : (
-            packages.map((pkg: ClassPackage) => (
+            // Sort packages: active first, then inactive
+            [...packages].sort((a, b) => {
+              if (a.isActive === b.isActive) return 0;
+              return a.isActive ? -1 : 1;
+            }).map((pkg: ClassPackage) => (
               <Card key={pkg.id}>
                 <CardHeader className="pb-3">
                   {/* Mobile Layout: Full width title and description */}
                   <div className="md:hidden">
-                    <CardTitle className="text-lg flex flex-wrap items-center gap-2 mb-3">
+                    <CardTitle className="text-lg mb-3">
                       <span className="break-words">{pkg.title}</span>
-                      {pkg.isActive ? (
-                        <Badge variant="default" className="bg-green-600 flex-shrink-0">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="flex-shrink-0">
-                          <XCircle className="w-3 h-3 mr-1" />
-                          Inactive
-                        </Badge>
-                      )}
                     </CardTitle>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">Status:</span>
+                        <Switch
+                          checked={pkg.isActive}
+                          onCheckedChange={(checked) => 
+                            updateStatusMutation.mutate({ packageId: pkg.id, isActive: checked })
+                          }
+                          disabled={updateStatusMutation.isPending}
+                        />
+                        <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : ""}>
+                          {pkg.isActive ? (
+                            <><CheckCircle className="w-3 h-3 mr-1" />Active</>
+                          ) : (
+                            <><XCircle className="w-3 h-3 mr-1" />Inactive</>
+                          )}
+                        </Badge>
+                      </div>
+                    </div>
                     {pkg.description && (
                       <p className="text-gray-600 break-words leading-relaxed">{pkg.description}</p>
                     )}
@@ -222,20 +277,28 @@ export default function MyPackages() {
                   {/* Desktop Layout: Side by side with buttons */}
                   <div className="hidden md:flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg flex items-center gap-2">
+                      <CardTitle className="text-lg mb-2">
                         {pkg.title}
-                        {pkg.isActive ? (
-                          <Badge variant="default" className="bg-green-600">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            <XCircle className="w-3 h-3 mr-1" />
-                            Inactive
-                          </Badge>
-                        )}
                       </CardTitle>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">Status:</span>
+                          <Switch
+                            checked={pkg.isActive}
+                            onCheckedChange={(checked) => 
+                              updateStatusMutation.mutate({ packageId: pkg.id, isActive: checked })
+                            }
+                            disabled={updateStatusMutation.isPending}
+                          />
+                          <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : ""}>
+                            {pkg.isActive ? (
+                              <><CheckCircle className="w-3 h-3 mr-1" />Active</>
+                            ) : (
+                              <><XCircle className="w-3 h-3 mr-1" />Inactive</>
+                            )}
+                          </Badge>
+                        </div>
+                      </div>
                       {pkg.description && (
                         <p className="text-gray-600 mt-1">{pkg.description}</p>
                       )}
