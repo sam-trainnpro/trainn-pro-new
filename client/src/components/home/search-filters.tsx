@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 interface SearchFiltersProps {
   onSearch: (filters: SearchFilters) => void;
   showOnlyFutureCategories?: boolean;
+  hideFilters?: ('outdoors' | 'date' | 'city')[];
 }
 
 export interface SearchFilters {
@@ -43,7 +44,7 @@ export interface SearchFilters {
   longitude?: number | null;
 }
 
-export default function SearchFilters({ onSearch, showOnlyFutureCategories = false }: SearchFiltersProps) {
+export default function SearchFilters({ onSearch, showOnlyFutureCategories = false, hideFilters = [] }: SearchFiltersProps) {
   const initialFilters: SearchFilters = {
     query: '',
   };
@@ -176,18 +177,18 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     });
   };
   
-  // Count active filters
+  // Count active filters (excluding hidden filters)
   useEffect(() => {
     let count = 0;
     if (searchParams.query) count++;
-    if (searchParams.date) count++;
+    if (searchParams.date && !hideFilters.includes('date')) count++;
     if (searchParams.classType) count++;
     if (searchParams.ageGroup) count++;
-    if (searchParams.city) count++;
-    if (searchParams.outdoors) count++;
+    if (searchParams.city && !hideFilters.includes('city')) count++;
+    if (searchParams.outdoors && !hideFilters.includes('outdoors')) count++;
     
     setActiveFiltersCount(count);
-  }, [searchParams]);
+  }, [searchParams, hideFilters]);
   
   // Apply filters on initial mount and when search parameters change
   // DISABLED: This was causing automatic redirect to /classes on home page load
@@ -283,92 +284,98 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
               </DropdownMenuContent>
             </DropdownMenu>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant={searchParams.outdoors ? "default" : "outline"} 
-                  className="min-w-fit flex items-center gap-1"
-                >
-                  <span>
-                    {searchParams.outdoors 
-                      ? searchParams.outdoors
-                      : "Outdoors"
-                    }
-                  </span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleOutdoorsSelect("Yes")}>
-                  Yes
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleOutdoorsSelect("No")}>
-                  No
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!hideFilters.includes('outdoors') && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant={searchParams.outdoors ? "default" : "outline"} 
+                    className="min-w-fit flex items-center gap-1"
+                  >
+                    <span>
+                      {searchParams.outdoors 
+                        ? searchParams.outdoors
+                        : "Outdoors"
+                      }
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleOutdoorsSelect("Yes")}>
+                    Yes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleOutdoorsSelect("No")}>
+                    No
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant={searchParams.date ? "default" : "outline"} 
-                  className="min-w-fit flex items-center gap-1"
-                >
-                  <span>
-                    {searchParams.date 
-                      ? searchParams.date.toLocaleDateString('en-US', { 
-                          weekday: 'short', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })
-                      : "Date"
-                    }
-                  </span>
-                  <Calendar className="h-4 w-4 ml-1" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={searchParams.date}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            {!hideFilters.includes('date') && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant={searchParams.date ? "default" : "outline"} 
+                    className="min-w-fit flex items-center gap-1"
+                  >
+                    <span>
+                      {searchParams.date 
+                        ? searchParams.date.toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })
+                        : "Date"
+                      }
+                    </span>
+                    <Calendar className="h-4 w-4 ml-1" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={searchParams.date}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant={searchParams.city ? "default" : "outline"} 
-                  className="min-w-fit flex items-center gap-1"
-                >
-                  <span>
-                    {searchParams.city 
-                      ? searchParams.city
-                      : "City"
-                    }
-                  </span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {isLoadingCities ? (
-                  <DropdownMenuItem disabled>Loading cities...</DropdownMenuItem>
-                ) : cities && cities.length > 0 ? (
-                  cities.map(city => (
-                    <DropdownMenuItem 
-                      key={city} 
-                      onClick={() => handleCitySelect(city)}
-                    >
-                      {city}
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <DropdownMenuItem disabled>No cities available</DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!hideFilters.includes('city') && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant={searchParams.city ? "default" : "outline"} 
+                    className="min-w-fit flex items-center gap-1"
+                  >
+                    <span>
+                      {searchParams.city 
+                        ? searchParams.city
+                        : "City"
+                      }
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {isLoadingCities ? (
+                    <DropdownMenuItem disabled>Loading cities...</DropdownMenuItem>
+                  ) : cities && cities.length > 0 ? (
+                    cities.map(city => (
+                      <DropdownMenuItem 
+                        key={city} 
+                        onClick={() => handleCitySelect(city)}
+                      >
+                        {city}
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem disabled>No cities available</DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             
             <Button className="min-w-fit pl-[8px] pr-[8px]" onClick={handleSearch}>
               Search
@@ -408,7 +415,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 </Badge>
               )}
               
-              {searchParams.date && (
+              {searchParams.date && !hideFilters.includes('date') && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Date: {searchParams.date.toLocaleDateString('en-US', { 
                     weekday: 'short', 
@@ -466,7 +473,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 </Badge>
               )}
               
-              {searchParams.city && (
+              {searchParams.city && !hideFilters.includes('city') && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   City: {searchParams.city}
                   <X 
@@ -484,7 +491,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                 </Badge>
               )}
               
-              {searchParams.outdoors && (
+              {searchParams.outdoors && !hideFilters.includes('outdoors') && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Outdoors: {searchParams.outdoors}
                   <X 

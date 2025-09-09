@@ -184,7 +184,11 @@ export default function PackagesPage() {
       <Header />
       
       <main className="flex-grow">
-        <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
+        <SearchFilters 
+          onSearch={handleSearch} 
+          showOnlyFutureCategories={true}
+          hideFilters={['outdoors', 'date', 'city']}
+        />
         
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
