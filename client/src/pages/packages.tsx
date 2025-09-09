@@ -10,6 +10,7 @@ import SearchFilters, { SearchFilters as SearchFiltersType } from "@/components/
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Helmet } from "react-helmet";
 import { Package, CheckCircle, XCircle, Calendar, User } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -21,6 +22,7 @@ interface ClassPackage {
   coachName: string;
   coachBusinessName?: string;
   displayBusinessName?: boolean;
+  coachProfileImage?: string;
   title: string;
   packageType: 'set_pack' | 'time_bound';
   classCount1: number | null;
@@ -263,9 +265,20 @@ export default function PackagesPage() {
                                 Active
                               </Badge>
                             </CardTitle>
-                            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                              <User className="w-4 h-4" />
-                              <span>by {getCoachDisplayName(pkg)}</span>
+                            <div className="flex items-center gap-3 mb-2">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage 
+                                  src={pkg.coachProfileImage || undefined} 
+                                  alt={getCoachDisplayName(pkg)}
+                                />
+                                <AvatarFallback>
+                                  {getCoachDisplayName(pkg).split(' ').map(name => name[0]).join('').toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <User className="w-4 h-4" />
+                                <span>by {getCoachDisplayName(pkg)}</span>
+                              </div>
                             </div>
                             {pkg.categoryName && (
                               <Badge variant="outline" className="mb-2">
