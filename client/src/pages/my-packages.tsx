@@ -260,7 +260,7 @@ export default function MyPackages() {
                           }
                           disabled={updateStatusMutation.isPending}
                         />
-                        <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : ""}>
+                        <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : "bg-red-600 text-white"}>
                           {pkg.isActive ? (
                             <><CheckCircle className="w-3 h-3 mr-1" />Active</>
                           ) : (
@@ -290,7 +290,7 @@ export default function MyPackages() {
                             }
                             disabled={updateStatusMutation.isPending}
                           />
-                          <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : ""}>
+                          <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : "bg-red-600 text-white"}>
                             {pkg.isActive ? (
                               <><CheckCircle className="w-3 h-3 mr-1" />Active</>
                             ) : (
