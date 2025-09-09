@@ -1332,6 +1332,7 @@ export class DatabaseStorage implements IStorage {
           coachName: `${row.users?.firstName} ${row.users?.lastName}`,
           coachBusinessName: row.users?.businessName,
           displayBusinessName: row.users?.displayBusinessName,
+          coachProfileImage: row.users?.profileImage,
           categoryName: row.class_categories?.name
         }))
       );
