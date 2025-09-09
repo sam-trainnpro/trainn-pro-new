@@ -259,6 +259,7 @@ export default function MyPackages() {
                             updateStatusMutation.mutate({ packageId: pkg.id, isActive: checked })
                           }
                           disabled={updateStatusMutation.isPending}
+                          className="data-[state=checked]:bg-blue-600"
                         />
                         <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : "bg-red-600 text-white"}>
                           {pkg.isActive ? (
@@ -289,6 +290,7 @@ export default function MyPackages() {
                               updateStatusMutation.mutate({ packageId: pkg.id, isActive: checked })
                             }
                             disabled={updateStatusMutation.isPending}
+                            className="data-[state=checked]:bg-blue-600"
                           />
                           <Badge variant={pkg.isActive ? "default" : "secondary"} className={pkg.isActive ? "bg-green-600" : "bg-red-600 text-white"}>
                             {pkg.isActive ? (
