@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { format, toZonedTime } from 'date-fns-tz';
 import { 
   sendBookingConfirmation, 
   sendNewBookingNotificationToCoach, 
@@ -824,7 +825,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (updateData.startTime && updateData.startTime !== classItem.startTime) {
         const newDate = new Date(updateData.startTime);
-        changes.push(`Date/time changed to ${newDate.toLocaleDateString()} at ${newDate.toLocaleTimeString()}`);
+        // Format date and time in Pacific Time for consistency with class location
+        const PACIFIC_TIMEZONE = 'America/Los_Angeles';
+        const newDatePT = toZonedTime(newDate, PACIFIC_TIMEZONE);
+        const formattedDate = format(newDatePT, 'M/d/yyyy', { timeZone: PACIFIC_TIMEZONE });
+        const formattedTime = format(newDatePT, 'h:mm:ss a', { timeZone: PACIFIC_TIMEZONE });
+        changes.push(`Date/time changed to ${formattedDate} at ${formattedTime}`);
       }
       if (updateData.location && updateData.location !== classItem.location) {
         changes.push(`Location changed to "${updateData.location}"`);
