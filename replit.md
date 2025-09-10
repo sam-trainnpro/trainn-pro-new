@@ -1,7 +1,7 @@
 # Trainn Fitness Marketplace
 
 ## Overview
-Trainn is a full-stack fitness and creative activity marketplace designed to connect fitness coaches with customers for local outdoor workouts and sports classes. It provides coaches with tools for class creation and management, while offering customers an intuitive booking system integrated with Stripe payments. The platform aims to be a comprehensive solution for discovering, booking, and managing fitness and creative activities.
+Trainn is a full-stack fitness, sports and creative activity marketplace designed to connect providers with customers for local outdoor workouts, sports classes, music, art and more. It provides providers with tools for class creation and management, while offering customers an intuitive booking system integrated with Stripe payments. The platform aims to be a comprehensive solution for discovering, booking, and managing activities.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
