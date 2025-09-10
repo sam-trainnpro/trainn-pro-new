@@ -301,14 +301,16 @@ export default function Header() {
                           </Button>
                         </Link>
                       )}
+                      {(user.role === 'coach' || user.role === 'admin') && (
+                        <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            <User className="mr-2 h-5 w-5" />
+                            Customers
+                          </Button>
+                        </Link>
+                      )}
                       {user.role === 'coach' && (
                         <>
-                          <Link href="/customers" onClick={() => setMobileMenuOpen(false)}>
-                            <Button variant="ghost" className="w-full justify-start">
-                              <User className="mr-2 h-5 w-5" />
-                              Customers
-                            </Button>
-                          </Link>
                           <Link href="/promo-codes" onClick={() => setMobileMenuOpen(false)}>
                             <Button variant="ghost" className="w-full justify-start">
                               <Tag className="mr-2 h-5 w-5" />
