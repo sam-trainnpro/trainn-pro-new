@@ -257,7 +257,10 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
           ) : (
             <Button 
               className="w-full bg-primary text-white hover:bg-primary/90"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/classes/${classItem.id}`);
+              }}
             >
               Book Now
             </Button>
