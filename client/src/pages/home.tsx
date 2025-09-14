@@ -66,7 +66,9 @@ export default function Home() {
         <meta name="twitter:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
         <link rel="canonical" href="https://trainn.pro" />
       </Helmet>
-      
+      <h1 className="sr-only">
+  Fitness, Sports & Arts in San Francisco | Trainn Pro
+</h1>
       <Header />
       
       <main className="flex-grow">
