@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Class, ClassCategory, ClassWithSchedules } from "@shared/schema";
+import { Class, ClassCategory, ClassWithSchedules, ClassCardDTO } from "@shared/schema";
 import { useLocation } from "wouter";
 import queryString from "query-string";
 import Header from "@/components/layout/header";
@@ -46,10 +46,10 @@ export default function ClassesPage() {
   // Build query parameters for server-side filtering
   const buildQueryParams = () => {
     const params = new URLSearchParams();
-    params.set('includeSchedules', 'true');
+    // Remove includeSchedules - use consolidated data endpoint
     
     if (filters.query) params.set('q', filters.query);
-    if (filters.classType) params.set('category', filters.classType);
+    if (filters.classType) params.set('type', filters.classType);
     if (filters.ageGroup) params.set('ageGroup', filters.ageGroup);
     if (filters.city) params.set('city', filters.city);
     if (filters.outdoors) params.set('outdoors', filters.outdoors);
@@ -72,15 +72,16 @@ export default function ClassesPage() {
     return params.toString();
   };
 
-  // Fetch filtered classes with server-side filtering
+  // Fetch filtered classes with consolidated data (eliminates N+1 queries)
   const { 
     data: classes, 
     isLoading: isLoadingClasses, 
     error: classesError 
-  } = useQuery<ClassWithSchedules[]>({
+  } = useQuery<ClassCardDTO[]>({
     queryKey: ['/api/classes', filters, searchParams.category, searchParams.coachId, searchParams.packageClasses],
     queryFn: async () => {
       const queryParams = buildQueryParams();
+      console.log("Fetching consolidated classes with params:", queryParams);
       const response = await fetch(`/api/classes?${queryParams}`);
       if (!response.ok) {
         throw new Error('Failed to fetch classes');
