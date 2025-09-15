@@ -43,15 +43,45 @@ export default function ClassesPage() {
   // State to track the current view (list or map)
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
-  // Fetch all classes with schedules
+  // Build query parameters for server-side filtering
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+    params.set('includeSchedules', 'true');
+    
+    if (filters.query) params.set('q', filters.query);
+    if (filters.classType) params.set('category', filters.classType);
+    if (filters.ageGroup) params.set('ageGroup', filters.ageGroup);
+    if (filters.city) params.set('city', filters.city);
+    if (filters.outdoors) params.set('outdoors', filters.outdoors);
+    if (filters.date) params.set('date', filters.date.toISOString());
+    if (filters.latitude && filters.longitude) {
+      params.set('lat', filters.latitude.toString());
+      params.set('lng', filters.longitude.toString());
+    }
+    
+    // Handle URL-based filters
+    const categoryParam = searchParams.category as string;
+    if (categoryParam) params.set('category', categoryParam);
+    
+    const coachIdParam = searchParams.coachId as string;
+    if (coachIdParam) params.set('coachId', coachIdParam);
+    
+    const packageClassesParam = searchParams.packageClasses as string;
+    if (packageClassesParam) params.set('packageClasses', packageClassesParam);
+    
+    return params.toString();
+  };
+
+  // Fetch filtered classes with server-side filtering
   const { 
     data: classes, 
     isLoading: isLoadingClasses, 
     error: classesError 
   } = useQuery<ClassWithSchedules[]>({
-    queryKey: ['/api/classes'],
-    queryFn: async ({ queryKey }) => {
-      const response = await fetch(`${queryKey[0]}?includeSchedules=true`);
+    queryKey: ['/api/classes', filters, searchParams.category, searchParams.coachId, searchParams.packageClasses],
+    queryFn: async () => {
+      const queryParams = buildQueryParams();
+      const response = await fetch(`/api/classes?${queryParams}`);
       if (!response.ok) {
         throw new Error('Failed to fetch classes');
       }
@@ -68,122 +98,8 @@ export default function ClassesPage() {
   });
 
 
-  // Get today's date with time set to start of day
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  // Filter classes based on search criteria
-  const filteredClasses = classes?.filter(classItem => {
-    // Filter by specific coach (when coming from package "View Classes")
-    const coachIdParam = searchParams.coachId as string;
-    if (coachIdParam && classItem.coachId !== Number(coachIdParam)) {
-      return false;
-    }
-
-    // Filter by specific class IDs or series IDs (when coming from package "View Classes")
-    const packageClassesParam = searchParams.packageClasses as string;
-    if (packageClassesParam) {
-      const packageClassIds = packageClassesParam.split(',').map(id => id.trim());
-      
-      // Check if any of the package class IDs match either the class ID or series ID
-      const matchesPackageClasses = packageClassIds.some(packageClassId => {
-        // Check if it's a series ID (starts with 'series_')
-        if (packageClassId.startsWith('series_')) {
-          return classItem.recurringSeriesId === packageClassId;
-        } else {
-          // It's a regular class ID
-          return classItem.id === Number(packageClassId);
-        }
-      });
-      
-      if (!matchesPackageClasses) {
-        return false;
-      }
-    }
-    
-    // First filter: only show classes with dates greater than or equal to today
-    if (classItem.startTime) {
-      const classDate = new Date(classItem.startTime);
-      if (classDate < today) {
-        return false;
-      }
-    }
-    
-    // Text search
-    if (filters.query && 
-        !classItem.title.toLowerCase().includes(filters.query.toLowerCase()) &&
-        !classItem.description.toLowerCase().includes(filters.query.toLowerCase())) {
-      return false;
-    }
-
-    // Class type filter (by category ID from database)
-    if (filters.classType && classItem.categoryId !== undefined) {
-      const classTypeId = Number(filters.classType);
-      if (!isNaN(classTypeId) && classTypeId !== classItem.categoryId) {
-        return false;
-      }
-    }
-
-    // Category filter from URL
-    const categoryParam = searchParams.category as string;
-    if (categoryParam && Number(categoryParam) !== classItem.categoryId) {
-      return false;
-    }
-
-    // Age group filter
-    if (filters.ageGroup && classItem.ageGroup !== filters.ageGroup) {
-      return false;
-    }
-
-    // City filter - use the new city field for more accurate filtering
-    if (filters.city && classItem.city) {
-      if (!classItem.city.toLowerCase().includes(filters.city.toLowerCase())) {
-        return false;
-      }
-    }
-
-    // Outdoors filter - convert Yes/No to boolean for comparison
-    if (filters.outdoors) {
-      const outdoorsBool = filters.outdoors === "Yes";
-      if (classItem.outdoors !== outdoorsBool) {
-        return false;
-      }
-    }
-
-    // Date filter - show classes only for the selected date
-    if (filters.date) {
-      // Class must have a start time to be filtered by date
-      if (!classItem.startTime) {
-        return false;
-      }
-      
-      // Normalize dates by setting hours to 0 to compare just the day
-      const filterDate = new Date(filters.date);
-      filterDate.setHours(0, 0, 0, 0);
-      
-      const classDate = new Date(classItem.startTime);
-      classDate.setHours(0, 0, 0, 0);
-      
-      // Compare dates with time component removed
-      if (filterDate.getTime() !== classDate.getTime()) {
-        return false;
-      }
-    }
-
-    // Location filter (within X miles)
-    if (filters.latitude && filters.longitude && classItem.latitude && classItem.longitude) {
-      // TODO: Add calculation to filter by distance once we have that data
-      // For now, we'll skip this filter
-    }
-
-    return true;
-  });
-  
-  // Only use date if explicitly specified in filters
-  const currentFilterDate = filters.date;
-  
-  // Sort classes by start time
-  const sortedClasses = filteredClasses?.slice().sort((a, b) => {
+  // Sort classes by start time (server already handles filtering)
+  const sortedClasses = classes?.slice().sort((a, b) => {
     // Classes without start times go to the end
     if (!a.startTime) return 1;
     if (!b.startTime) return -1;

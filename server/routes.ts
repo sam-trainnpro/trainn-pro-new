@@ -458,19 +458,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all classes
+  // Get all classes with optional filtering
   app.get("/api/classes", async (req, res) => {
     try {
       // Check if we want to include schedules
       const includeSchedules = req.query.includeSchedules === 'true';
       
+      // Get all classes first
+      let classes;
       if (includeSchedules) {
-        const classesWithSchedules = await storage.getClassesWithSchedules();
-        res.json(classesWithSchedules);
+        classes = await storage.getClassesWithSchedules();
       } else {
-        const classes = await storage.getClasses();
-        res.json(classes);
+        classes = await storage.getClasses();
       }
+      
+      // Apply server-side filtering
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      let filteredClasses = classes.filter(classItem => {
+        // Filter by coach ID
+        if (req.query.coachId) {
+          const coachId = Number(req.query.coachId);
+          if (!isNaN(coachId) && classItem.coachId !== coachId) {
+            return false;
+          }
+        }
+        
+        // Filter by package classes
+        if (req.query.packageClasses) {
+          const packageClassIds = (req.query.packageClasses as string).split(',').map(id => id.trim());
+          const matchesPackageClasses = packageClassIds.some(packageClassId => {
+            if (packageClassId.startsWith('series_')) {
+              return classItem.recurringSeriesId === packageClassId;
+            } else {
+              return classItem.id === Number(packageClassId);
+            }
+          });
+          if (!matchesPackageClasses) {
+            return false;
+          }
+        }
+        
+        // Filter out past classes (only show future classes)
+        if (classItem.startTime) {
+          const classDate = new Date(classItem.startTime);
+          if (classDate < today) {
+            return false;
+          }
+        }
+        
+        // Text search filter
+        if (req.query.q) {
+          const query = (req.query.q as string).toLowerCase();
+          if (!classItem.title.toLowerCase().includes(query) &&
+              !classItem.description.toLowerCase().includes(query)) {
+            return false;
+          }
+        }
+        
+        // Category filter
+        if (req.query.category) {
+          const categoryId = Number(req.query.category);
+          if (!isNaN(categoryId) && classItem.categoryId !== categoryId) {
+            return false;
+          }
+        }
+        
+        // Age group filter
+        if (req.query.ageGroup) {
+          if (classItem.ageGroup !== req.query.ageGroup) {
+            return false;
+          }
+        }
+        
+        // City filter
+        if (req.query.city) {
+          const cityQuery = (req.query.city as string).toLowerCase();
+          if (!classItem.city || !classItem.city.toLowerCase().includes(cityQuery)) {
+            return false;
+          }
+        }
+        
+        // Outdoors filter
+        if (req.query.outdoors) {
+          const outdoorsBool = req.query.outdoors === "Yes";
+          if (classItem.outdoors !== outdoorsBool) {
+            return false;
+          }
+        }
+        
+        // Date filter
+        if (req.query.date) {
+          if (!classItem.startTime) {
+            return false;
+          }
+          
+          const filterDate = new Date(req.query.date as string);
+          filterDate.setHours(0, 0, 0, 0);
+          
+          const classDate = new Date(classItem.startTime);
+          classDate.setHours(0, 0, 0, 0);
+          
+          if (filterDate.getTime() !== classDate.getTime()) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      res.json(filteredClasses);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch classes" });
     }
