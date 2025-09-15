@@ -638,8 +638,8 @@ export class DatabaseStorage implements IStorage {
         
         whereConditions.push(
           and(
-            sql`${classes.startTime} >= ${filterDate}`,
-            sql`${classes.startTime} < ${nextDay}`
+            sql`${classes.startTime} >= ${filterDate.toISOString()}::timestamp`,
+            sql`${classes.startTime} < ${nextDay.toISOString()}::timestamp`
           )
         );
       }
@@ -721,7 +721,7 @@ export class DatabaseStorage implements IStorage {
             SELECT start_time, end_time
             FROM ${classSchedules} cs
             WHERE cs.class_id = ${classes.id}
-            AND cs.start_time >= NOW()
+            AND (date_trunc('day', NOW()) + cs.start_time::time) >= NOW()
             ORDER BY cs.start_time ASC
             LIMIT 1
           ) next_schedule`,

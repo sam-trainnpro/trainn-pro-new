@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+// Removed useQuery - now using consolidated data from props to eliminate N+1 queries
 import { Link, useLocation } from "wouter";
-import { Class, User, ClassCategory, ClassSchedule, ClassWithSchedules } from "@shared/schema";
+import { Class, User, ClassCategory, ClassSchedule, ClassWithSchedules, ClassCardDTO } from "@shared/schema";
 import { MapPin, Clock, Star, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, formatInTimeZone } from "date-fns-tz";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
 interface ClassCardProps {
-  classItem: Class | ClassWithSchedules;
+  classItem: ClassCardDTO;
   schedules?: ClassSchedule[];
 }
 
@@ -16,38 +16,30 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
   const [, navigate] = useLocation();
   
   // Check if this is a recurring class
-  const isRecurring = 'isRecurring' in classItem && classItem.isRecurring;
+  const isRecurring = classItem.isRecurring;
   
-  // Get class schedules from props or from the class item if it's a ClassWithSchedules
-  const classSchedules = schedules || ('schedules' in classItem ? classItem.schedules : undefined);
+  // Get class schedules from props or from the classItem
+  const classSchedules = schedules || classItem.schedules || [];
   
-  // Get coach data
-  const { data: coach, isLoading: isLoadingCoach } = useQuery<User>({
-    queryKey: [`/api/coaches/${classItem.coachId}`],
-  });
+  // Use consolidated data from props (eliminates N+1 queries!)
+  const coach = classItem.coach;
+  const category = classItem.category;
+  const bookingCount = {
+    total: classItem.totalBookings || 0,
+    active: classItem.activeBookings || 0,
+    totalSpotsBooked: classItem.totalSpotsBooked || 0,
+    capacity: classItem.capacity || 0,
+    spotsLeft: Math.max(0, (classItem.capacity || 0) - (classItem.totalSpotsBooked || 0))
+  };
+  const coachRatingStats = {
+    averageRating: classItem.coachRating || 0,
+    totalReviews: classItem.coachReviewCount || 0
+  };
   
-  // Get category data
-  const { data: category, isLoading: isLoadingCategory } = useQuery<ClassCategory>({
-    queryKey: [`/api/categories/${classItem.categoryId}`],
-  });
-  
-  // Get booking count data
-  const { data: bookingCount, isLoading: isLoadingBookingCount } = useQuery<{
-    total: number;
-    active: number;
-    totalSpotsBooked: number;
-    capacity: number;
-    spotsLeft: number;
-  }>({
-    queryKey: [`/api/classes/${classItem.id}/bookings/count`],
-  });
-
-  // Get rating statistics for the coach
-  const { data: coachRatingStats } = useQuery({
-    queryKey: ['/api/reviews/coach', classItem.coachId, 'stats'],
-    queryFn: () => fetch(`/api/reviews/coach/${classItem.coachId}/stats`).then(res => res.json()),
-    enabled: !!classItem.coachId,
-  });
+  // No loading states needed since all data is provided via props
+  const isLoadingCoach = false;
+  const isLoadingCategory = false;
+  const isLoadingBookingCount = false;
   
   // Get day name from day number
   const getDayName = (dayNum: number): string => {
