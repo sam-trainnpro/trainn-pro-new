@@ -167,6 +167,66 @@ export type ClassWithSchedules = Class & {
   schedules?: ClassSchedule[];
 };
 
+// Class Card DTO - consolidated data for class listings to eliminate N+1 queries
+export interface ClassCardDTO {
+  // Basic class information
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  capacity: number;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  address: string;
+  city: string | null;
+  image: string | null;
+  startTime: Date | null;
+  endTime: Date | null;
+  isRecurring: boolean;
+  recurringSeriesId: string | null;
+  ageGroup: string;
+  outdoors: boolean;
+  createdAt: Date | null;
+  
+  // Coach information (to eliminate /api/coaches/{id} calls)
+  coach: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    businessName: string | null;
+    displayBusinessName: boolean | null;
+    profileImage: string | null;
+    googleProfilePicture: string | null;
+  };
+  
+  // Category information (to eliminate /api/categories/{id} calls)
+  category: {
+    id: number;
+    name: string;
+    image: string | null;
+  };
+  
+  // Next schedule for recurring classes (to eliminate schedule lookups)
+  nextSchedule: {
+    startTime: Date;
+    endTime: Date;
+  } | null;
+  
+  // Booking statistics (to eliminate /api/classes/{id}/bookings/count calls)
+  bookingStats: {
+    totalBookings: number;
+    activeBookings: number;
+    spotsLeft: number;
+  };
+  
+  // Rating statistics (to eliminate /api/reviews/coach/{id}/stats calls)
+  ratingStats: {
+    averageRating: number;
+    totalReviews: number;
+  };
+}
+
 // Bookings
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
