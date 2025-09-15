@@ -4,7 +4,7 @@ import {
   bookings, type Booking, type InsertBooking, 
   reviews, type Review, type InsertReview, 
   classCategories, type ClassCategory, type InsertClassCategory,
-  classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules,
+  classSchedules, type ClassSchedule, type InsertClassSchedule, type ClassWithSchedules, type ClassCardDTO,
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   contactMessages, type ContactMessage, type InsertContactMessage,
   blogPosts, type BlogPost, type InsertBlogPost,
@@ -60,6 +60,17 @@ export interface IStorage {
   getClassWithSchedules(id: number): Promise<ClassWithSchedules | undefined>;
   getClasses(): Promise<Class[]>;
   getClassesWithSchedules(): Promise<ClassWithSchedules[]>;
+  getClassesWithAllData(filters?: {
+    categoryId?: number;
+    ageGroup?: string;
+    city?: string;
+    outdoors?: boolean;
+    coachId?: number;
+    searchQuery?: string;
+    dateFilter?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<ClassCardDTO[]>;
   getUserClasses(userId: number): Promise<Class[]>;
   getClassesByCategory(categoryId: number): Promise<Class[]>;
   getClassesByCoach(coachId: number): Promise<Class[]>;
@@ -567,6 +578,229 @@ export class DatabaseStorage implements IStorage {
     }
     
     return classesWithSchedules;
+  }
+
+  async getClassesWithAllData(filters?: {
+    categoryId?: number;
+    ageGroup?: string;
+    city?: string;
+    outdoors?: boolean;
+    coachId?: number;
+    searchQuery?: string;
+    dateFilter?: Date;
+    limit?: number;
+    offset?: number;
+  }): Promise<ClassCardDTO[]> {
+    try {
+      // Build WHERE conditions based on filters
+      const whereConditions = [
+        // Always filter to future classes only
+        or(
+          sql`${classes.startTime} >= NOW()`,
+          sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
+        )
+      ];
+
+      if (filters?.categoryId) {
+        whereConditions.push(eq(classes.categoryId, filters.categoryId));
+      }
+
+      if (filters?.ageGroup) {
+        whereConditions.push(eq(classes.ageGroup, filters.ageGroup));
+      }
+
+      if (filters?.city) {
+        whereConditions.push(sql`LOWER(${classes.city}) LIKE LOWER(${'%' + filters.city + '%'})`);
+      }
+
+      if (filters?.outdoors !== undefined) {
+        whereConditions.push(eq(classes.outdoors, filters.outdoors));
+      }
+
+      if (filters?.coachId) {
+        whereConditions.push(eq(classes.coachId, filters.coachId));
+      }
+
+      if (filters?.searchQuery) {
+        whereConditions.push(
+          or(
+            sql`LOWER(${classes.title}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
+            sql`LOWER(${classes.description}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`
+          )
+        );
+      }
+
+      if (filters?.dateFilter) {
+        const filterDate = new Date(filters.dateFilter);
+        filterDate.setHours(0, 0, 0, 0);
+        const nextDay = new Date(filterDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        whereConditions.push(
+          and(
+            sql`${classes.startTime} >= ${filterDate}`,
+            sql`${classes.startTime} < ${nextDay}`
+          )
+        );
+      }
+
+      // Single query that joins all necessary tables to eliminate N+1 queries
+      let query = db
+        .select({
+          // Class fields
+          id: classes.id,
+          title: classes.title,
+          description: classes.description,
+          price: classes.price,
+          capacity: classes.capacity,
+          location: classes.location,
+          latitude: classes.latitude,
+          longitude: classes.longitude,
+          address: classes.address,
+          city: classes.city,
+          image: classes.image,
+          startTime: classes.startTime,
+          endTime: classes.endTime,
+          isRecurring: classes.isRecurring,
+          recurringSeriesId: classes.recurringSeriesId,
+          ageGroup: classes.ageGroup,
+          outdoors: classes.outdoors,
+          createdAt: classes.createdAt,
+          // Coach fields
+          coachId: classes.coachId,
+          coachFirstName: users.firstName,
+          coachLastName: users.lastName,
+          coachBusinessName: users.businessName,
+          coachDisplayBusinessName: users.displayBusinessName,
+          coachProfileImage: users.profileImage,
+          coachGoogleProfilePicture: users.googleProfilePicture,
+          // Category fields
+          categoryId: classes.categoryId,
+          categoryName: classCategories.name,
+          categoryImage: classCategories.image,
+          // Booking statistics
+          totalBookings: sql<number>`COALESCE(booking_stats.total_bookings, 0)`,
+          activeBookings: sql<number>`COALESCE(booking_stats.active_bookings, 0)`,
+          // Rating statistics
+          averageRating: sql<number>`COALESCE(rating_stats.average_rating, 0)`,
+          totalReviews: sql<number>`COALESCE(rating_stats.total_reviews, 0)`,
+          // Next schedule for recurring classes
+          nextScheduleStart: sql<Date | null>`next_schedule.start_time`,
+          nextScheduleEnd: sql<Date | null>`next_schedule.end_time`,
+        })
+        .from(classes)
+        .leftJoin(users, eq(classes.coachId, users.id))
+        .leftJoin(classCategories, eq(classes.categoryId, classCategories.id))
+        // Subquery for booking statistics
+        .leftJoin(
+          sql`(
+            SELECT 
+              class_id,
+              COUNT(*) as total_bookings,
+              COUNT(*) FILTER (WHERE status IN ('confirmed', 'pending')) as active_bookings
+            FROM ${bookings}
+            GROUP BY class_id
+          ) booking_stats`,
+          sql`booking_stats.class_id = ${classes.id}`
+        )
+        // Subquery for rating statistics per coach
+        .leftJoin(
+          sql`(
+            SELECT 
+              coach_id,
+              AVG(rating::numeric) as average_rating,
+              COUNT(*) as total_reviews
+            FROM ${reviews}
+            GROUP BY coach_id
+          ) rating_stats`,
+          sql`rating_stats.coach_id = ${classes.coachId}`
+        )
+        // Subquery for next schedule (for recurring classes)
+        .leftJoin(
+          sql`LATERAL (
+            SELECT start_time, end_time
+            FROM ${classSchedules} cs
+            WHERE cs.class_id = ${classes.id}
+            AND cs.start_time >= NOW()
+            ORDER BY cs.start_time ASC
+            LIMIT 1
+          ) next_schedule`,
+          sql`true`
+        )
+        .where(and(...whereConditions))
+        .orderBy(
+          sql`CASE 
+              WHEN ${classes.startTime} IS NOT NULL THEN 0
+              ELSE 1
+             END`,
+          sql`CASE 
+              WHEN ${classes.startTime} IS NOT NULL THEN ${classes.startTime}
+              ELSE ${classes.createdAt}
+             END`
+        );
+
+      // Apply pagination if provided
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+      if (filters?.offset) {
+        query = query.offset(filters.offset);
+      }
+
+      const result = await query;
+
+      // Transform the results into ClassCardDTO format
+      return result.map(row => ({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        price: row.price,
+        capacity: row.capacity,
+        location: row.location,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        address: row.address,
+        city: row.city,
+        image: row.image,
+        startTime: row.startTime,
+        endTime: row.endTime,
+        isRecurring: row.isRecurring || false,
+        recurringSeriesId: row.recurringSeriesId,
+        ageGroup: row.ageGroup,
+        outdoors: row.outdoors,
+        createdAt: row.createdAt,
+        coach: {
+          id: row.coachId,
+          firstName: row.coachFirstName,
+          lastName: row.coachLastName,
+          businessName: row.coachBusinessName,
+          displayBusinessName: row.coachDisplayBusinessName,
+          profileImage: row.coachProfileImage,
+          googleProfilePicture: row.coachGoogleProfilePicture,
+        },
+        category: {
+          id: row.categoryId,
+          name: row.categoryName,
+          image: row.categoryImage,
+        },
+        nextSchedule: row.nextScheduleStart && row.nextScheduleEnd ? {
+          startTime: row.nextScheduleStart,
+          endTime: row.nextScheduleEnd,
+        } : null,
+        bookingStats: {
+          totalBookings: row.totalBookings,
+          activeBookings: row.activeBookings,
+          spotsLeft: Math.max(0, row.capacity - row.activeBookings),
+        },
+        ratingStats: {
+          averageRating: row.averageRating,
+          totalReviews: row.totalReviews,
+        },
+      }));
+    } catch (error) {
+      console.error("Error getting classes with all data:", error);
+      throw error;
+    }
   }
   
   async getUserClasses(userId: number): Promise<Class[]> {

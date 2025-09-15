@@ -458,121 +458,231 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all classes with optional filtering
+  // Get all classes with consolidated data (eliminates N+1 queries)
   app.get("/api/classes", async (req, res) => {
     try {
-      // Check if we want to include schedules
+      // Check if legacy includeSchedules parameter is used (backward compatibility)
       const includeSchedules = req.query.includeSchedules === 'true';
       
-      // Get all classes first
-      let classes;
       if (includeSchedules) {
-        classes = await storage.getClassesWithSchedules();
+        // Fallback to legacy method for backward compatibility
+        const classesWithSchedules = await storage.getClassesWithSchedules();
+        const filteredClasses = applyClassFilters(classesWithSchedules, req.query);
+        res.json(filteredClasses);
       } else {
-        classes = await storage.getClasses();
+        // Use optimized consolidated method with database-level filtering
+        const filters = {
+          categoryId: req.query.category ? Number(req.query.category) : req.query.type ? Number(req.query.type) : undefined,
+          ageGroup: req.query.ageGroup as string,
+          city: req.query.city as string,
+          outdoors: req.query.outdoors === "Yes" ? true : req.query.outdoors === "No" ? false : undefined,
+          coachId: req.query.coachId ? Number(req.query.coachId) : undefined,
+          searchQuery: req.query.q as string,
+          dateFilter: req.query.date ? new Date(req.query.date as string) : undefined,
+          limit: 100, // Default pagination limit
+          offset: 0
+        };
+
+        // Remove undefined values
+        Object.keys(filters).forEach(key => {
+          if (filters[key] === undefined) delete filters[key];
+        });
+
+        console.log("Database filtering with params:", filters);
+        
+        const classes = await storage.getClassesWithAllData(filters);
+        res.json(classes);
       }
-      
-      // Apply server-side filtering
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      let filteredClasses = classes.filter(classItem => {
-        // Filter by coach ID
-        if (req.query.coachId) {
-          const coachId = Number(req.query.coachId);
-          if (!isNaN(coachId) && classItem.coachId !== coachId) {
-            return false;
-          }
-        }
-        
-        // Filter by package classes
-        if (req.query.packageClasses) {
-          const packageClassIds = (req.query.packageClasses as string).split(',').map(id => id.trim());
-          const matchesPackageClasses = packageClassIds.some(packageClassId => {
-            if (packageClassId.startsWith('series_')) {
-              return classItem.recurringSeriesId === packageClassId;
-            } else {
-              return classItem.id === Number(packageClassId);
-            }
-          });
-          if (!matchesPackageClasses) {
-            return false;
-          }
-        }
-        
-        // Filter out past classes (only show future classes)
-        if (classItem.startTime) {
-          const classDate = new Date(classItem.startTime);
-          if (classDate < today) {
-            return false;
-          }
-        }
-        
-        // Text search filter
-        if (req.query.q) {
-          const query = (req.query.q as string).toLowerCase();
-          if (!classItem.title.toLowerCase().includes(query) &&
-              !classItem.description.toLowerCase().includes(query)) {
-            return false;
-          }
-        }
-        
-        // Category filter
-        if (req.query.category) {
-          const categoryId = Number(req.query.category);
-          if (!isNaN(categoryId) && classItem.categoryId !== categoryId) {
-            return false;
-          }
-        }
-        
-        // Age group filter
-        if (req.query.ageGroup) {
-          if (classItem.ageGroup !== req.query.ageGroup) {
-            return false;
-          }
-        }
-        
-        // City filter
-        if (req.query.city) {
-          const cityQuery = (req.query.city as string).toLowerCase();
-          if (!classItem.city || !classItem.city.toLowerCase().includes(cityQuery)) {
-            return false;
-          }
-        }
-        
-        // Outdoors filter
-        if (req.query.outdoors) {
-          const outdoorsBool = req.query.outdoors === "Yes";
-          if (classItem.outdoors !== outdoorsBool) {
-            return false;
-          }
-        }
-        
-        // Date filter
-        if (req.query.date) {
-          if (!classItem.startTime) {
-            return false;
-          }
-          
-          const filterDate = new Date(req.query.date as string);
-          filterDate.setHours(0, 0, 0, 0);
-          
-          const classDate = new Date(classItem.startTime);
-          classDate.setHours(0, 0, 0, 0);
-          
-          if (filterDate.getTime() !== classDate.getTime()) {
-            return false;
-          }
-        }
-        
-        return true;
-      });
-      
-      res.json(filteredClasses);
     } catch (error) {
+      console.error("Error in /api/classes:", error);
       res.status(500).json({ message: "Failed to fetch classes" });
     }
   });
+
+  // Helper function to apply filters to consolidated class data
+  function applyConsolidatedClassFilters(classes: any[], query: any) {
+    return classes.filter(classItem => {
+      // Filter by coach ID
+      if (query.coachId) {
+        const coachId = Number(query.coachId);
+        if (!isNaN(coachId) && classItem.coach.id !== coachId) {
+          return false;
+        }
+      }
+      
+      // Filter by package classes
+      if (query.packageClasses) {
+        const packageClassIds = (query.packageClasses as string).split(',').map(id => id.trim());
+        const matchesPackageClasses = packageClassIds.some(packageClassId => {
+          if (packageClassId.startsWith('series_')) {
+            return classItem.recurringSeriesId === packageClassId;
+          } else {
+            return classItem.id === Number(packageClassId);
+          }
+        });
+        if (!matchesPackageClasses) {
+          return false;
+        }
+      }
+      
+      // Text search filter
+      if (query.q) {
+        const searchQuery = (query.q as string).toLowerCase();
+        if (!classItem.title.toLowerCase().includes(searchQuery) &&
+            !classItem.description.toLowerCase().includes(searchQuery)) {
+          return false;
+        }
+      }
+      
+      // Category filter (using type parameter for backward compatibility)
+      if (query.category || query.type) {
+        const categoryId = Number(query.category || query.type);
+        if (!isNaN(categoryId) && classItem.category.id !== categoryId) {
+          return false;
+        }
+      }
+      
+      // Age group filter
+      if (query.ageGroup) {
+        if (classItem.ageGroup !== query.ageGroup) {
+          return false;
+        }
+      }
+      
+      // City filter
+      if (query.city) {
+        const cityQuery = (query.city as string).toLowerCase();
+        if (!classItem.city || !classItem.city.toLowerCase().includes(cityQuery)) {
+          return false;
+        }
+      }
+      
+      // Outdoors filter
+      if (query.outdoors) {
+        const outdoorsBool = query.outdoors === "Yes";
+        if (classItem.outdoors !== outdoorsBool) {
+          return false;
+        }
+      }
+      
+      // Date filter
+      if (query.date) {
+        if (!classItem.startTime) {
+          return false;
+        }
+        
+        const filterDate = new Date(query.date as string);
+        filterDate.setHours(0, 0, 0, 0);
+        
+        const classDate = new Date(classItem.startTime);
+        classDate.setHours(0, 0, 0, 0);
+        
+        if (filterDate.getTime() !== classDate.getTime()) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }
+
+  // Helper function to apply filters to legacy class data (for backward compatibility)
+  function applyClassFilters(classes: any[], query: any) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return classes.filter(classItem => {
+      // Filter by coach ID
+      if (query.coachId) {
+        const coachId = Number(query.coachId);
+        if (!isNaN(coachId) && classItem.coachId !== coachId) {
+          return false;
+        }
+      }
+      
+      // Filter by package classes
+      if (query.packageClasses) {
+        const packageClassIds = (query.packageClasses as string).split(',').map(id => id.trim());
+        const matchesPackageClasses = packageClassIds.some(packageClassId => {
+          if (packageClassId.startsWith('series_')) {
+            return classItem.recurringSeriesId === packageClassId;
+          } else {
+            return classItem.id === Number(packageClassId);
+          }
+        });
+        if (!matchesPackageClasses) {
+          return false;
+        }
+      }
+      
+      // Filter out past classes (only show future classes)
+      if (classItem.startTime) {
+        const classDate = new Date(classItem.startTime);
+        if (classDate < today) {
+          return false;
+        }
+      }
+      
+      // Text search filter
+      if (query.q) {
+        const searchQuery = (query.q as string).toLowerCase();
+        if (!classItem.title.toLowerCase().includes(searchQuery) &&
+            !classItem.description.toLowerCase().includes(searchQuery)) {
+          return false;
+        }
+      }
+      
+      // Category filter
+      if (query.category) {
+        const categoryId = Number(query.category);
+        if (!isNaN(categoryId) && classItem.categoryId !== categoryId) {
+          return false;
+        }
+      }
+      
+      // Age group filter
+      if (query.ageGroup) {
+        if (classItem.ageGroup !== query.ageGroup) {
+          return false;
+        }
+      }
+      
+      // City filter
+      if (query.city) {
+        const cityQuery = (query.city as string).toLowerCase();
+        if (!classItem.city || !classItem.city.toLowerCase().includes(cityQuery)) {
+          return false;
+        }
+      }
+      
+      // Outdoors filter
+      if (query.outdoors) {
+        const outdoorsBool = query.outdoors === "Yes";
+        if (classItem.outdoors !== outdoorsBool) {
+          return false;
+        }
+      }
+      
+      // Date filter
+      if (query.date) {
+        if (!classItem.startTime) {
+          return false;
+        }
+        
+        const filterDate = new Date(query.date as string);
+        filterDate.setHours(0, 0, 0, 0);
+        
+        const classDate = new Date(classItem.startTime);
+        classDate.setHours(0, 0, 0, 0);
+        
+        if (filterDate.getTime() !== classDate.getTime()) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }
 
 
 
