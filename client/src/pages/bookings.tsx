@@ -34,6 +34,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Calendar, 
   Clock, 
@@ -322,7 +328,7 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className="flex justify-between">
+                        <CardFooter className="flex justify-between items-center gap-3">
                           <Button 
                             asChild 
                             variant="outline" 
@@ -333,7 +339,56 @@ export default function BookingsPage() {
                             </Link>
                           </Button>
                           
-                          <AlertDialog>
+                          <div className="flex gap-3">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="outline"
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                  data-testid="add-to-calendar"
+                                >
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  Add to Calendar
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  data-testid="google-calendar-option"
+                                >
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 mr-3 bg-blue-500 rounded-sm flex items-center justify-center">
+                                      <span className="text-white text-xs font-bold">G</span>
+                                    </div>
+                                    Google Calendar
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  data-testid="outlook-calendar-option"
+                                >
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 mr-3 bg-blue-600 rounded-sm flex items-center justify-center">
+                                      <span className="text-white text-xs">📧</span>
+                                    </div>
+                                    Outlook Calendar
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  data-testid="apple-calendar-option"
+                                >
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 mr-3 bg-gray-800 rounded-sm flex items-center justify-center">
+                                      <span className="text-white text-xs">🍎</span>
+                                    </div>
+                                    Apple Calendar
+                                  </div>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            
+                            <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button 
                                 variant="outline" 
@@ -369,6 +424,7 @@ export default function BookingsPage() {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
+                          </div>
                         </CardFooter>
                       </Card>
                     ))}
