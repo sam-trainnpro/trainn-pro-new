@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { 
   Class, 
   ClassWithSchedules,
+  ClassCardDTO,
   ClassCategory as ClassCategoryType,
   User
 } from "@shared/schema";
@@ -13,28 +14,43 @@ import { formatTime, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ClassListItemProps {
-  classItem: Class | ClassWithSchedules;
+  classItem: Class | ClassWithSchedules | ClassCardDTO;
   showDetails?: boolean;
 }
 
 export default function ClassListItem({ classItem, showDetails = true }: ClassListItemProps) {
-  // Fetch the coach information
+  // Check if classItem is a ClassCardDTO with embedded coach data
+  const isClassCardDTO = 'coach' in classItem;
+  const embeddedCoach = isClassCardDTO ? (classItem as ClassCardDTO).coach : null;
+  
+  // Fetch the coach information only if not already embedded
   const { 
     data: coach,
     isLoading: isLoadingCoach
   } = useQuery<User>({
-    queryKey: [`/api/coaches/${classItem.coachId}`],
-    enabled: !!classItem.coachId,
+    queryKey: [`/api/coaches/${(classItem as Class).coachId}`],
+    enabled: !isClassCardDTO && !!(classItem as Class).coachId,
   });
   
-  // Fetch the category information
+  // Use embedded coach data if available, otherwise use fetched coach data
+  const finalCoach = embeddedCoach || coach;
+  const finalIsLoadingCoach = !isClassCardDTO && isLoadingCoach;
+  
+  // Check for embedded category data
+  const embeddedCategory = isClassCardDTO ? (classItem as ClassCardDTO).category : null;
+  
+  // Fetch the category information only if not already embedded
   const { 
     data: category,
     isLoading: isLoadingCategory
   } = useQuery<ClassCategoryType>({
-    queryKey: [`/api/categories/${classItem.categoryId}`],
-    enabled: !!classItem.categoryId,
+    queryKey: [`/api/categories/${(classItem as Class).categoryId}`],
+    enabled: !isClassCardDTO && !!(classItem as Class).categoryId,
   });
+  
+  // Use embedded category data if available, otherwise use fetched category data
+  const finalCategory = embeddedCategory || category;
+  const finalIsLoadingCategory = !isClassCardDTO && isLoadingCategory;
   
   // Define type for booking count
   interface BookingCountData {
@@ -44,14 +60,26 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
     spotsLeft: number;
   }
   
-  // Fetch the booking count for capacity display
+  // Check for embedded booking stats
+  const embeddedBookingStats = isClassCardDTO ? (classItem as ClassCardDTO).bookingStats : null;
+  
+  // Fetch the booking count for capacity display only if not already embedded
   const {
     data: bookingCount,
     isLoading: isLoadingBookingCount
   } = useQuery<BookingCountData>({
     queryKey: [`/api/classes/${classItem.id}/bookings/count`],
-    enabled: !!classItem.id,
+    enabled: !isClassCardDTO && !!classItem.id,
   });
+  
+  // Use embedded booking stats if available, otherwise use fetched booking count
+  const finalBookingCount = embeddedBookingStats ? {
+    total: embeddedBookingStats.totalBookings,
+    active: embeddedBookingStats.activeBookings,
+    capacity: classItem.capacity,
+    spotsLeft: embeddedBookingStats.spotsLeft
+  } : bookingCount;
+  const finalIsLoadingBookingCount = !isClassCardDTO && isLoadingBookingCount;
   
   // Calculate the class duration in minutes
   const getDuration = (): number => {
@@ -65,15 +93,22 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
   const duration = getDuration();
   const startTime = classItem.startTime ? new Date(classItem.startTime) : null;
   
-  // Fetch coach rating data from Reviews table
+  // Check for embedded rating stats or fetch them
+  const embeddedRatingStats = isClassCardDTO ? (classItem as ClassCardDTO).ratingStats : null;
+  const coachId = isClassCardDTO ? (classItem as ClassCardDTO).coach.id : (classItem as Class).coachId;
+  
+  // Fetch coach rating data from Reviews table only if not already embedded
   const { data: coachRatingStats } = useQuery({
-    queryKey: ['/api/reviews/coach', classItem.coachId, 'stats'],
-    queryFn: () => fetch(`/api/reviews/coach/${classItem.coachId}/stats`).then(res => res.json()),
-    enabled: !!classItem.coachId,
+    queryKey: ['/api/reviews/coach', coachId, 'stats'],
+    queryFn: () => fetch(`/api/reviews/coach/${coachId}/stats`).then(res => res.json()),
+    enabled: !isClassCardDTO && !!coachId,
   });
-
+  
+  // Use embedded rating stats if available, otherwise use fetched rating stats
+  const finalRatingStats = embeddedRatingStats || coachRatingStats;
+  
   // Only show ratings if the coach has real reviews
-  const hasRealCoachReviews = coachRatingStats?.totalReviews > 0;
+  const hasRealCoachReviews = finalRatingStats?.totalReviews > 0;
   
   const formattedStartTime = startTime 
     ? formatTime(startTime)
@@ -100,7 +135,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               {/* Category badge shown on mobile, right-aligned */}
               <div className="md:hidden ml-auto">
                 <Badge variant="outline" className="text-xs">
-                  {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
+                  {finalIsLoadingCategory ? 'Loading...' : finalCategory?.name || 'Fitness'}
                 </Badge>
               </div>
             </div>
@@ -118,17 +153,17 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           <div className="flex items-center justify-between mt-1">
             <div className="flex items-center">
               <div className="text-gray-600 text-sm">
-                {isLoadingCoach ? 'Loading provider...' : coach?.firstName ? (
-                  coach.displayBusinessName && coach.businessName 
-                    ? coach.businessName
-                    : `${coach.firstName} ${coach.lastName}`
+                {finalIsLoadingCoach ? 'Loading provider...' : finalCoach?.firstName ? (
+                  finalCoach.displayBusinessName && finalCoach.businessName 
+                    ? finalCoach.businessName
+                    : `${finalCoach.firstName} ${finalCoach.lastName}`
                 ) : 'Unknown Provider'}
               </div>
-              {hasRealCoachReviews && coachRatingStats && (
+              {hasRealCoachReviews && finalRatingStats && (
                 <div className="ml-2 flex items-center text-sm">
                   <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
-                  <span>{coachRatingStats.averageRating.toFixed(1)}</span>
-                  <span className="text-gray-400 ml-1">({coachRatingStats.totalReviews})</span>
+                  <span>{typeof finalRatingStats.averageRating === 'number' ? finalRatingStats.averageRating.toFixed(1) : finalRatingStats.averageRating}</span>
+                  <span className="text-gray-400 ml-1">({finalRatingStats.totalReviews})</span>
                 </div>
               )}
             </div>
@@ -145,14 +180,14 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
             {/* Spots left indicator shown on mobile only */}
             <div className="md:hidden text-xs px-2 py-0.5 rounded-full bg-gray-100 flex items-center">
               <Users className="h-3 w-3 mr-1 text-gray-500" />
-              {isLoadingBookingCount ? (
+              {finalIsLoadingBookingCount ? (
                 <Skeleton className="h-3 w-12" />
-              ) : bookingCount ? (
-                bookingCount.spotsLeft === 0 ? (
+              ) : finalBookingCount ? (
+                finalBookingCount.spotsLeft === 0 ? (
                   <span className="font-medium">Class Full</span>
                 ) : (
                   <span>
-                    <span className="font-medium">{bookingCount?.spotsLeft || 0}</span> spots left
+                    <span className="font-medium">{finalBookingCount?.spotsLeft || 0}</span> spots left
                   </span>
                 )
               ) : (
@@ -167,7 +202,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           {/* Category badge shown on desktop only */}
           <div className="hidden md:flex gap-1 mb-1">
             <Badge variant="outline">
-              {isLoadingCategory ? 'Loading...' : category?.name || 'Fitness'}
+              {finalIsLoadingCategory ? 'Loading...' : finalCategory?.name || 'Fitness'}
             </Badge>
           </div>
           
@@ -177,14 +212,14 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           {/* Spots left indicator shown on desktop only */}
           <div className="hidden md:flex text-xs mt-1 px-2 py-0.5 rounded-full bg-gray-100 items-center">
             <Users className="h-3 w-3 mr-1 text-gray-500" />
-            {isLoadingBookingCount ? (
+            {finalIsLoadingBookingCount ? (
               <Skeleton className="h-3 w-12" />
-            ) : bookingCount ? (
-              bookingCount.spotsLeft === 0 ? (
+            ) : finalBookingCount ? (
+              finalBookingCount.spotsLeft === 0 ? (
                 <span className="font-medium">Class Full</span>
               ) : (
                 <span>
-                  <span className="font-medium">{bookingCount?.spotsLeft || 0}</span> spots left
+                  <span className="font-medium">{finalBookingCount?.spotsLeft || 0}</span> spots left
                 </span>
               )
             ) : (
