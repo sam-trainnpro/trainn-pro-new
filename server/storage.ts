@@ -697,7 +697,7 @@ export class DatabaseStorage implements IStorage {
             SELECT 
               class_id,
               COUNT(*) as total_bookings,
-              COUNT(*) FILTER (WHERE status IN ('confirmed', 'pending')) as active_bookings
+              COALESCE(SUM(quantity) FILTER (WHERE status IN ('confirmed', 'pending')), 0) as active_bookings
             FROM ${bookings}
             GROUP BY class_id
           ) booking_stats`,
@@ -767,7 +767,7 @@ export class DatabaseStorage implements IStorage {
         isRecurring: row.isRecurring || false,
         recurringSeriesId: row.recurringSeriesId,
         ageGroup: row.ageGroup,
-        outdoors: row.outdoors,
+        outdoors: row.outdoors ?? false,
         createdAt: row.createdAt,
         coach: {
           id: row.coachId,
