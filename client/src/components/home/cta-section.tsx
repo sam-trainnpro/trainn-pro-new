@@ -1,7 +1,11 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../../../../hooks/use-auth-simple";
 
 export default function CTASection() {
+  const { user } = useAuth();
+  const isProvider = user?.role === 'coach' || user?.role === 'admin';
+
   return (
     <section className="py-12 md:py-16 bg-primary">
       <div className="container mx-auto px-4 text-center">
@@ -14,11 +18,19 @@ export default function CTASection() {
               Find Classes Now
             </Button>
           </Link>
-          <Link href="/auth?register=true&role=coach">
-            <Button size="lg" variant="outline" className="bg-transparent border border-white text-white hover:bg-white/10 w-full sm:w-auto">
-              Become a Provider
-            </Button>
-          </Link>
+          {isProvider ? (
+            <Link href="/create-class">
+              <Button size="lg" variant="outline" className="bg-transparent border border-white text-white hover:bg-white/10 w-full sm:w-auto">
+                Create Class
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/auth?register=true&role=coach">
+              <Button size="lg" variant="outline" className="bg-transparent border border-white text-white hover:bg-white/10 w-full sm:w-auto">
+                Become a Provider
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </section>
