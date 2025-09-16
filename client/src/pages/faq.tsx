@@ -36,8 +36,7 @@ export default function FAQPage() {
         "We recommend that participants have their own personal health and accident insurance. Our providers are expected and encouraged to maintain professional liability insurance.",
     },
   ];
-
-  // 🔽 ADD: build FAQPage JSON-LD from your faqs array
+  
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -55,7 +54,6 @@ export default function FAQPage() {
   return (
     <>
       <Helmet>
-        {/* You can keep your current SEO or replace with your sheet’s copy */}
         <title>Trainn Pro FAQ | Classes, Coaches & Booking Questions</title>
         <meta
           name="description"
@@ -69,7 +67,6 @@ export default function FAQPage() {
         />
         <meta property="og:type" content="website" />
 
-        {/* 🔽 ADD: inject JSON-LD */}
         <script type="application/ld+json">
           {JSON.stringify(faqSchema)}
         </script>
