@@ -15,8 +15,8 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Helmet>
-        <title>About Us - Trainn Fitness</title>
-        <meta name="description" content="Learn about Trainn's mission to help people build new skills, get in shape, and build community through local outdoor sports, fitness, music and art classes." />
+        <title>About Trainn Pro |San Francisco’s Fitness & Creative Classes</title>
+        <meta name="description" content="About Trainn, your SF hub for fitness, sports & creative classes for adults & kids. Our mission: build community through fitness, creativity and play." />
       </Helmet>
       
       <Header />

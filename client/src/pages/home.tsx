@@ -55,8 +55,8 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <title>Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco | Trainn</title>
-        <meta name="description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
+        <title>Book Fitness, Sports & Arts for Adults & Kids in San Francisco | Trainn</title>
+        <meta name="description" content="Trainn for top-rated fitness, sports, and art classes for adults and kids' in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
         <meta property="og:title" content="Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco | Trainn" />
         <meta property="og:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
         <meta property="og:type" content="website" />
@@ -66,7 +66,9 @@ export default function Home() {
         <meta name="twitter:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
         <link rel="canonical" href="https://trainn.pro" />
       </Helmet>
-      
+      <h1 className="sr-only">
+  Fitness, Sports & Arts in San Francisco | Trainn
+</h1>
       <Header />
       
       <main className="flex-grow">
