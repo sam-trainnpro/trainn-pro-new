@@ -32,6 +32,12 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || "elevate-fitness-marketplace-secret";
   
+  // Determine if we're in production (HTTPS environment)
+  const isProduction = process.env.NODE_ENV === 'production' || 
+                      process.env.REPLIT_DOMAINS?.includes('trainn.pro') ||
+                      process.env.REPLIT_DEPLOYMENT === '1' ||
+                      !!process.env.REPLIT_DOMAINS; // Any Replit deployment uses HTTPS
+  
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
     resave: false,
@@ -39,13 +45,39 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
-      secure: false, // Allow non-HTTPS in development
+      secure: isProduction, // Use HTTPS in production/Replit
       httpOnly: true,
-      sameSite: 'lax' // Allow cross-origin requests
+      sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-origin HTTPS, 'lax' for development
+      domain: undefined // Let the browser set the domain automatically
     }
   };
 
+  console.log('🍪 Session configuration:', {
+    isProduction,
+    secure: sessionSettings.cookie!.secure,
+    sameSite: sessionSettings.cookie!.sameSite,
+    domain: sessionSettings.cookie!.domain,
+    hasStore: !!sessionSettings.store
+  });
+
   app.set("trust proxy", 1);
+  
+  // Add session debugging middleware
+  app.use((req, res, next) => {
+    const originalSend = res.send;
+    res.send = function(data) {
+      // Log session info for authentication-related requests
+      if (req.path.includes('/api/login') || req.path.includes('/api/user') || req.path.includes('/api/bookings')) {
+        console.log(`🔐 [${req.method} ${req.path}] Session ID: ${req.sessionID || 'none'}, Authenticated: ${req.isAuthenticated?.() || false}, User ID: ${req.user?.id || 'none'}, Status: ${res.statusCode}`);
+        if (req.sessionID && req.session) {
+          console.log(`📋 Session data keys: ${Object.keys(req.session)}`);
+        }
+      }
+      return originalSend.call(this, data);
+    };
+    next();
+  });
+  
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
