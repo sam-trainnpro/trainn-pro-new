@@ -99,6 +99,35 @@ export default function BookingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null);
+
+  const generateGoogleCalendarUrl = (booking: any) => {
+    if (!booking.class) return '';
+    
+    const formatDate = (date: Date) => {
+      return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    };
+
+    const classData = booking.class;
+    const startTime = new Date(classData.startTime);
+    const endTime = new Date(classData.endTime);
+    
+    const title = encodeURIComponent(classData.title);
+    const description = encodeURIComponent(
+      `${classData.description || ''}\n\nLocation: ${classData.address}${classData.toFindUs ? `\n\nHow to Find Us: ${classData.toFindUs}` : ''}\n\nBooked through Trainn`
+    );
+    const location = encodeURIComponent(classData.address || '');
+    const startDateTime = formatDate(startTime);
+    const endDateTime = formatDate(endTime);
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateTime}/${endDateTime}&details=${description}&location=${location}`;
+  };
+
+  const handleAddToGoogleCalendar = (booking: any) => {
+    const calendarUrl = generateGoogleCalendarUrl(booking);
+    if (calendarUrl) {
+      window.open(calendarUrl, '_blank');
+    }
+  };
   
   // Check for refresh parameter and force page reload on payment completion
   useEffect(() => {
@@ -358,6 +387,7 @@ export default function BookingsPage() {
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
                                   data-testid="google-calendar-option"
+                                  onClick={() => handleAddToGoogleCalendar(booking)}
                                 >
                                   <div className="flex items-center">
                                     <FcGoogle className="w-4 h-4 mr-3" />
