@@ -25,15 +25,13 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
   const coach = classItem.coach;
   const category = classItem.category;
   const bookingCount = {
-    total: classItem.totalBookings || 0,
-    active: classItem.activeBookings || 0,
-    totalSpotsBooked: classItem.totalSpotsBooked || 0,
-    capacity: classItem.capacity || 0,
-    spotsLeft: Math.max(0, (classItem.capacity || 0) - (classItem.totalSpotsBooked || 0))
+    total: classItem.bookingStats.totalBookings,
+    active: classItem.bookingStats.activeBookings,
+    spotsLeft: classItem.bookingStats.spotsLeft
   };
   const coachRatingStats = {
-    averageRating: classItem.coachRating || 0,
-    totalReviews: classItem.coachReviewCount || 0
+    averageRating: classItem.ratingStats?.averageRating || 0,
+    totalReviews: classItem.ratingStats?.totalReviews || 0
   };
   
   // No loading states needed since all data is provided via props
@@ -220,7 +218,7 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
             <div className="ml-auto flex items-center">
               <Star className="text-[#FFCC00] fill-[#FFCC00] h-4 w-4" />
               <span className="ml-1">
-                {coachRatingStats.averageRating.toFixed(1)}
+                {Number(coachRatingStats.averageRating || 0).toFixed(1)}
               </span>
             </div>
           )}
