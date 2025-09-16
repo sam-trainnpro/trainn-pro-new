@@ -8,6 +8,8 @@ import { Link } from "wouter";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
+import ClassCard from "@/components/class/class-card";
+import { ClassCardDTO } from "@shared/schema";
 
 // Provider Highlights Component with real profile pictures
 const ProviderHighlights = () => {
@@ -67,168 +69,12 @@ const ProviderHighlights = () => {
   );
 };
 
-// Enhanced ClassCard component matching the design
-const ClassCard = ({ classItem }: { classItem: any }) => {
-  // Fetch coach data
-  const { data: coach } = useQuery({
-    queryKey: [`/api/coaches/${classItem.coachId}`],
-  });
-
-  // Fetch category data
-  const { data: category } = useQuery({
-    queryKey: [`/api/categories/${classItem.categoryId}`],
-  });
-
-  // Fetch booking count data
-  const { data: bookingCount } = useQuery<{
-    total: number;
-    active: number;
-    totalSpotsBooked: number;
-    capacity: number;
-    spotsLeft: number;
-  }>({
-    queryKey: [`/api/classes/${classItem.id}/bookings/count`],
-  });
-
-  // Get rating statistics for the coach
-  const { data: coachRatingStats } = useQuery({
-    queryKey: ['/api/reviews/coach', classItem.coachId, 'stats'],
-    queryFn: () => fetch(`/api/reviews/coach/${classItem.coachId}/stats`).then(res => res.json()),
-    enabled: !!classItem.coachId,
-  });
-
-  const formatPrice = (price: number) => {
-    if (price === 0) return "Free";
-    return `$${price}`;
-  };
-
-  const formatClassTime = () => {
-    if (!classItem.startTime || !classItem.endTime) {
-      return 'Schedule not available';
-    }
-    
-    const startDate = new Date(classItem.startTime);
-    const endDate = new Date(classItem.endTime);
-    
-    const dayOfWeek = startDate.toLocaleDateString('en-US', { weekday: 'short' });
-    const month = startDate.getMonth() + 1;
-    const day = startDate.getDate();
-    const formattedDate = `${dayOfWeek} ${month}/${day}`;
-    
-    const startTime = startDate.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
-    const endTime = endDate.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
-    
-    return `${formattedDate} ${startTime} - ${endTime} PT`;
-  };
-
-  const spotsLeft = bookingCount ? bookingCount.spotsLeft : classItem.capacity;
-  const hasRealReviews = coachRatingStats && coachRatingStats.totalReviews > 0 && coachRatingStats.averageRating > 0;
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer">
-      <div className="h-48 overflow-hidden relative">
-        <img 
-          src={classItem.image || "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500"}
-          alt={classItem.title}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            if (target.src !== "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500") {
-              target.src = "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=500";
-            }
-          }}
-        />
-        {/* Category Badge */}
-        <div className="absolute top-3 left-3 bg-blue-500 text-white text-sm font-medium px-2 py-1 rounded">
-          {(category as any)?.name || "Class"}
-        </div>
-      </div>
-      
-      <div className="p-4">
-        {/* Title and Price */}
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="text-xl font-bold text-gray-900 line-clamp-1">{classItem.title}</h3>
-          <span className="text-xl font-bold text-gray-900">{formatPrice(classItem.price)}</span>
-        </div>
-        
-        {/* Location */}
-        <div className="flex items-center mb-2 text-gray-600">
-          <MapPin className="w-4 h-4 mr-2" />
-          <span className="text-sm line-clamp-1">{classItem.location}</span>
-        </div>
-        
-        {/* Time */}
-        <div className="flex items-center mb-4 text-gray-600">
-          <Clock className="w-4 h-4 mr-2" />
-          <span className="text-sm">{formatClassTime()}</span>
-        </div>
-        
-        {/* Coach Info */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full overflow-hidden mr-2 bg-gray-200 flex items-center justify-center">
-              {(coach as any)?.profileImage ? (
-                <img 
-                  src={(coach as any).profileImage} 
-                  alt={(coach as any).firstName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Users className="w-4 h-4 text-gray-400" />
-              )}
-            </div>
-            <span className="text-sm font-medium text-gray-900">
-              {coach ? 
-                ((coach as any).displayBusinessName && (coach as any).businessName ? 
-                  (coach as any).businessName : 
-                  `${(coach as any).firstName} ${(coach as any).lastName}`
-                ) : 
-                "Coach"
-              }
-            </span>
-          </div>
-          
-          {hasRealReviews && (
-            <div className="flex items-center">
-              <Star className="text-yellow-400 fill-yellow-400 h-4 w-4 mr-1" />
-              <span className="text-sm font-medium">{coachRatingStats.averageRating.toFixed(1)}</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Spots Left and Book Button */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">
-            {spotsLeft}/{classItem.capacity} spots left
-          </span>
-          
-          <Link href={`/classes/${classItem.id}`}>
-            <Button 
-              size="sm"
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium"
-            >
-              Book Now
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function KidsDropInSportsSF() {
   // Fetch classes with enhanced filtering for kids sports classes by target providers
   const { data: classes, isLoading } = useQuery({
     queryKey: ['/api/classes'],
-    select: (data: any[]) => {
+    select: (data: ClassCardDTO[]) => {
       const now = new Date();
       const futureLimit = new Date();
       futureLimit.setDate(now.getDate() + 30); // Include classes up to 30 days in the future
@@ -242,7 +88,7 @@ export default function KidsDropInSportsSF() {
       // First filter by basic criteria: kids sports classes from target providers in SF
       const eligibleClasses = data.filter(cls => {
         // Must be from target providers
-        if (!targetCoachIds.includes(cls.coachId)) return false;
+        if (!targetCoachIds.includes(cls.coach.id)) return false;
         
         // Must be in San Francisco
         if (cls.city !== 'San Francisco') return false;
@@ -272,13 +118,13 @@ export default function KidsDropInSportsSF() {
       // Group classes by coach ID
       const classesByCoach = new Map();
       sortedClasses.forEach(cls => {
-        if (!classesByCoach.has(cls.coachId)) {
-          classesByCoach.set(cls.coachId, []);
+        if (!classesByCoach.has(cls.coach.id)) {
+          classesByCoach.set(cls.coach.id, []);
         }
-        classesByCoach.get(cls.coachId).push(cls);
+        classesByCoach.get(cls.coach.id).push(cls);
       });
 
-      const selectedClasses: any[] = [];
+      const selectedClasses: ClassCardDTO[] = [];
       const usedClassIds = new Set();
 
       // Target coaches for the landing page: 2 classes each from Pat, Sam, and Ryan
