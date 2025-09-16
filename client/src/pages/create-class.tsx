@@ -281,6 +281,13 @@ export default function CreateClassPage() {
     loadCategories();
   }, []);
 
+  // Scroll to top when creating a new class (not editing or duplicating)
+  useEffect(() => {
+    if (!isEditMode && !isDuplicating) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isEditMode, isDuplicating]);
+
   // Populate form when editing existing class
   useEffect(() => {
     if (isEditMode && existingClass && !loadingClass) {
