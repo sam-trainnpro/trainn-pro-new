@@ -228,7 +228,7 @@ export default function ClassDetailsPage() {
     <div className="flex flex-col min-h-screen">
       {classItem && (
         <Helmet>
-          <title>{classItem.title} - Trainn Fitness</title>
+          <title>{classItem.title} - Trainn</title>
           <meta name="description" content={classItem.description} />
           <link rel="canonical" href={`https://trainn.pro/classes/${classItem.id}`} />
           <meta property="og:title" content={`${classItem.title} - Trainn Fitness`} />
