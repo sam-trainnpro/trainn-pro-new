@@ -100,13 +100,13 @@ export default function BookingsPage() {
   const { toast } = useToast();
   const [cancelingBookingId, setCancelingBookingId] = useState<number | null>(null);
 
+  const formatDateForCalendar = (date: Date) => {
+    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+
   const generateGoogleCalendarUrl = (booking: any) => {
     if (!booking.class) return '';
     
-    const formatDate = (date: Date) => {
-      return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-    };
-
     const classData = booking.class;
     const startTime = new Date(classData.startTime);
     const endTime = new Date(classData.endTime);
@@ -116,16 +116,85 @@ export default function BookingsPage() {
       `${classData.description || ''}\n\nLocation: ${classData.address}${classData.toFindUs ? `\n\nHow to Find Us: ${classData.toFindUs}` : ''}\n\nBooked through Trainn`
     );
     const location = encodeURIComponent(classData.address || '');
-    const startDateTime = formatDate(startTime);
-    const endDateTime = formatDate(endTime);
+    const startDateTime = formatDateForCalendar(startTime);
+    const endDateTime = formatDateForCalendar(endTime);
 
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateTime}/${endDateTime}&details=${description}&location=${location}`;
+  };
+
+  const generateOutlookCalendarUrl = (booking: any) => {
+    if (!booking.class) return '';
+    
+    const classData = booking.class;
+    const startTime = new Date(classData.startTime);
+    const endTime = new Date(classData.endTime);
+    
+    const title = encodeURIComponent(classData.title);
+    const description = encodeURIComponent(
+      `${classData.description || ''}\n\nLocation: ${classData.address}${classData.toFindUs ? `\n\nHow to Find Us: ${classData.toFindUs}` : ''}\n\nBooked through Trainn`
+    );
+    const location = encodeURIComponent(classData.address || '');
+    const startDateTime = formatDateForCalendar(startTime);
+    const endDateTime = formatDateForCalendar(endTime);
+
+    return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDateTime}&enddt=${endDateTime}&body=${description}&location=${location}`;
+  };
+
+  const generateAppleCalendarICS = (booking: any) => {
+    if (!booking.class) return '';
+    
+    const classData = booking.class;
+    const startTime = new Date(classData.startTime);
+    const endTime = new Date(classData.endTime);
+    
+    const title = classData.title;
+    const description = `${classData.description || ''}\n\nLocation: ${classData.address}${classData.toFindUs ? `\n\nHow to Find Us: ${classData.toFindUs}` : ''}\n\nBooked through Trainn`;
+    const location = classData.address || '';
+    const startDateTime = formatDateForCalendar(startTime);
+    const endDateTime = formatDateForCalendar(endTime);
+    const uid = `booking-${booking.id}-${Date.now()}@trainn.pro`;
+    
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Trainn//Event//EN',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTART:${startDateTime}`,
+      `DTEND:${endDateTime}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
+      `LOCATION:${location}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+    
+    return `data:text/calendar;charset=utf8,${encodeURIComponent(icsContent)}`;
   };
 
   const handleAddToGoogleCalendar = (booking: any) => {
     const calendarUrl = generateGoogleCalendarUrl(booking);
     if (calendarUrl) {
       window.open(calendarUrl, '_blank');
+    }
+  };
+
+  const handleAddToOutlookCalendar = (booking: any) => {
+    const calendarUrl = generateOutlookCalendarUrl(booking);
+    if (calendarUrl) {
+      window.open(calendarUrl, '_blank');
+    }
+  };
+
+  const handleAddToAppleCalendar = (booking: any) => {
+    const icsUrl = generateAppleCalendarICS(booking);
+    if (icsUrl) {
+      const link = document.createElement('a');
+      link.href = icsUrl;
+      link.download = `${booking.class.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
   
@@ -397,6 +466,7 @@ export default function BookingsPage() {
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
                                   data-testid="outlook-calendar-option"
+                                  onClick={() => handleAddToOutlookCalendar(booking)}
                                 >
                                   <div className="flex items-center">
                                     <Mail className="w-4 h-4 mr-3 text-blue-600" />
@@ -406,6 +476,7 @@ export default function BookingsPage() {
                                 <DropdownMenuItem 
                                   className="cursor-pointer"
                                   data-testid="apple-calendar-option"
+                                  onClick={() => handleAddToAppleCalendar(booking)}
                                 >
                                   <div className="flex items-center">
                                     <div className="w-4 h-4 mr-3 bg-red-500 rounded-sm flex flex-col items-center justify-center text-white text-xs font-semibold leading-none">
