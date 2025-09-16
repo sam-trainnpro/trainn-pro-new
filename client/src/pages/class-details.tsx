@@ -231,13 +231,13 @@ export default function ClassDetailsPage() {
           <title>{classItem.title} - {classItem.date} - Trainn</title>
           <meta name="description" content={classItem.date} - {classItem.description} />
           <link rel="canonical" href={`https://trainn.pro/classes/${classItem.id}`} />
-          <meta property="og:title" content={`${classItem.title} - Trainn Fitness`} />
+          <meta property="og:title" content={`${classItem.title} - Trainn`} />
           <meta property="og:description" content={classItem.description} />
           <meta property="og:type" content="website" />
           <meta property="og:url" content={`https://trainn.pro/classes/${classItem.id}`} />
           <meta property="og:image" content={classItem.image || "https://trainn.pro/default-class-image.jpg"} />
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content={`${classItem.title} - Trainn Fitness`} />
+          <meta name="twitter:title" content={`${classItem.title} - Trainn`} />
           <meta name="twitter:description" content={classItem.description} />
           <meta name="twitter:image" content={classItem.image || "https://trainn.pro/default-class-image.jpg"} />
         </Helmet>
