@@ -331,58 +331,63 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className="flex items-center gap-3">
-                          <Button 
-                            asChild 
-                            variant="outline" 
-                            className="border-primary text-primary hover:bg-primary hover:text-white"
-                          >
-                            <Link href={`/classes/${booking.classId}`}>
-                              View Class Details
-                            </Link>
-                          </Button>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="outline"
-                                className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                                data-testid="add-to-calendar"
-                              >
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Add to Calendar
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem 
-                                className="cursor-pointer"
-                                data-testid="google-calendar-option"
-                              >
-                                <div className="flex items-center">
-                                  <FcGoogle className="w-4 h-4 mr-3" />
-                                  Google Calendar
-                                </div>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="cursor-pointer"
-                                data-testid="outlook-calendar-option"
-                              >
-                                <div className="flex items-center">
-                                  <Mail className="w-4 h-4 mr-3 text-blue-600" />
-                                  Outlook Calendar
-                                </div>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="cursor-pointer"
-                                data-testid="apple-calendar-option"
-                              >
-                                <div className="flex items-center">
-                                  <CalendarDays className="w-4 h-4 mr-3 text-blue-500" />
-                                  Apple Calendar
-                                </div>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <CardFooter className="flex justify-between items-center gap-3">
+                          <div className="flex gap-3">
+                            <Button 
+                              asChild 
+                              variant="outline" 
+                              className="border-primary text-primary hover:bg-primary hover:text-white"
+                            >
+                              <Link href={`/classes/${booking.classId}`}>
+                                View Class Details
+                              </Link>
+                            </Button>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="outline"
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                  data-testid="add-to-calendar"
+                                >
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  Add to Calendar
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  data-testid="google-calendar-option"
+                                >
+                                  <div className="flex items-center">
+                                    <FcGoogle className="w-4 h-4 mr-3" />
+                                    Google Calendar
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  data-testid="outlook-calendar-option"
+                                >
+                                  <div className="flex items-center">
+                                    <Mail className="w-4 h-4 mr-3 text-blue-600" />
+                                    Outlook Calendar
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  data-testid="apple-calendar-option"
+                                >
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 mr-3 bg-red-500 rounded-sm flex flex-col items-center justify-center text-white text-xs font-semibold leading-none">
+                                      <div className="text-[6px] mb-[1px]">SEP</div>
+                                      <div className="text-[8px]">16</div>
+                                    </div>
+                                    Apple Calendar
+                                  </div>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                           
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
