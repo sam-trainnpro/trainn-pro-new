@@ -1,36 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ChevronRight } from "lucide-react";
-import { Class } from "@shared/schema";
+import { ClassCardDTO } from "@shared/schema";
 import ClassCard from "@/components/class/class-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FeaturedClasses() {
-  const { data: classes, isLoading, error } = useQuery<Class[]>({
+  const { data: classes, isLoading, error } = useQuery<ClassCardDTO[]>({
     queryKey: ['/api/classes'],
   });
   
   // Filter for future classes and select specific class types
   const featuredClasses = classes ? (() => {
     const now = new Date();
-    const futureClasses = classes.filter(c => new Date(c.startTime) > now);
+    const futureClasses = classes.filter(c => c.startTime && new Date(c.startTime) > now);
     
     // Group classes by category
     const classesByCategory = futureClasses.reduce((acc, classItem) => {
-      if (!acc[classItem.categoryId]) {
-        acc[classItem.categoryId] = [];
+      if (!acc[classItem.category.id]) {
+        acc[classItem.category.id] = [];
       }
-      acc[classItem.categoryId].push(classItem);
+      acc[classItem.category.id].push(classItem);
       return acc;
-    }, {} as Record<number, Class[]>);
+    }, {} as Record<number, ClassCardDTO[]>);
     
-    const selectedClasses: Class[] = [];
+    const selectedClasses: ClassCardDTO[] = [];
     
     // Priority 1: Strength & Conditioning class with price > $0 (categoryId: 3)
     const strengthClasses = classesByCategory[3]?.filter(c => c.price > 0);
     if (strengthClasses && strengthClasses.length > 0) {
       const sortedStrength = strengthClasses.sort((a, b) => 
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
       );
       selectedClasses.push(sortedStrength[0]);
     }
@@ -39,17 +39,17 @@ export default function FeaturedClasses() {
     const musicClasses = classesByCategory[12];
     if (musicClasses && musicClasses.length > 0) {
       // First try to find music classes not taught by Coach ID 1
-      const nonCoach1Music = musicClasses.filter(c => c.coachId !== 1);
+      const nonCoach1Music = musicClasses.filter(c => c.coach.id !== 1);
       
       if (nonCoach1Music.length > 0) {
         const sortedMusic = nonCoach1Music.sort((a, b) => 
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+          new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
         );
         selectedClasses.push(sortedMusic[0]);
       } else {
         // Fallback to any music class including Coach ID 1
         const sortedMusic = musicClasses.sort((a, b) => 
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+          new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
         );
         selectedClasses.push(sortedMusic[0]);
       }
@@ -61,12 +61,12 @@ export default function FeaturedClasses() {
     
     if (soccerClasses && soccerClasses.length > 0) {
       const sortedSoccer = soccerClasses.sort((a, b) => 
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
       );
       selectedClasses.push(sortedSoccer[0]);
     } else if (basketballClasses && basketballClasses.length > 0) {
       const sortedBasketball = basketballClasses.sort((a, b) => 
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
       );
       selectedClasses.push(sortedBasketball[0]);
     }
@@ -74,9 +74,9 @@ export default function FeaturedClasses() {
     // If no music class available, try to fill with Basketball if Soccer was already selected
     if (selectedClasses.length < 3 && !musicClasses) {
       if (basketballClasses && basketballClasses.length > 0 && 
-          !selectedClasses.some(c => c.categoryId === 5)) {
+          !selectedClasses.some(c => c.category.id === 5)) {
         const sortedBasketball = basketballClasses.sort((a, b) => 
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+          new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
         );
         selectedClasses.push(sortedBasketball[0]);
       }
