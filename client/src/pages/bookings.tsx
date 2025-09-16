@@ -57,6 +57,7 @@ import {
   Mail
 } from "lucide-react";
 import { SiGoogle, SiApple } from "react-icons/si";
+import { FcGoogle } from "react-icons/fc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
@@ -330,7 +331,7 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className="flex justify-between items-center gap-3">
+                        <CardFooter className="flex items-center gap-3">
                           <Button 
                             asChild 
                             variant="outline" 
@@ -341,50 +342,49 @@ export default function BookingsPage() {
                             </Link>
                           </Button>
                           
-                          <div className="flex gap-3">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="outline"
-                                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                                  data-testid="add-to-calendar"
-                                >
-                                  <Calendar className="h-4 w-4 mr-2" />
-                                  Add to Calendar
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  data-testid="google-calendar-option"
-                                >
-                                  <div className="flex items-center">
-                                    <SiGoogle className="w-4 h-4 mr-3 text-blue-500" />
-                                    Google Calendar
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  data-testid="outlook-calendar-option"
-                                >
-                                  <div className="flex items-center">
-                                    <Mail className="w-4 h-4 mr-3 text-blue-600" />
-                                    Outlook Calendar
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  data-testid="apple-calendar-option"
-                                >
-                                  <div className="flex items-center">
-                                    <SiApple className="w-4 h-4 mr-3 text-gray-600" />
-                                    Apple Calendar
-                                  </div>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            
-                            <AlertDialog>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline"
+                                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                data-testid="add-to-calendar"
+                              >
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Add to Calendar
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                data-testid="google-calendar-option"
+                              >
+                                <div className="flex items-center">
+                                  <FcGoogle className="w-4 h-4 mr-3" />
+                                  Google Calendar
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                data-testid="outlook-calendar-option"
+                              >
+                                <div className="flex items-center">
+                                  <Mail className="w-4 h-4 mr-3 text-blue-600" />
+                                  Outlook Calendar
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                data-testid="apple-calendar-option"
+                              >
+                                <div className="flex items-center">
+                                  <CalendarDays className="w-4 h-4 mr-3 text-blue-500" />
+                                  Apple Calendar
+                                </div>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          
+                          <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button 
                                 variant="outline" 
@@ -420,7 +420,6 @@ export default function BookingsPage() {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                          </div>
                         </CardFooter>
                       </Card>
                     ))}
