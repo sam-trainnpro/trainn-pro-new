@@ -162,7 +162,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               {hasRealCoachReviews && finalRatingStats && (
                 <div className="ml-2 flex items-center text-sm">
                   <Star className="h-3.5 w-3.5 text-yellow-500 mr-1" fill="currentColor" />
-                  <span>{typeof finalRatingStats.averageRating === 'number' ? finalRatingStats.averageRating.toFixed(1) : finalRatingStats.averageRating}</span>
+                  <span>{(typeof finalRatingStats.averageRating === 'number' ? finalRatingStats.averageRating : parseFloat(finalRatingStats.averageRating || '0')).toFixed(1)}</span>
                   <span className="text-gray-400 ml-1">({finalRatingStats.totalReviews})</span>
                 </div>
               )}
