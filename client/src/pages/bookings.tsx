@@ -53,8 +53,10 @@ import {
   Star,
   BookOpen,
   Package,
-  User
+  User,
+  Mail
 } from "lucide-react";
+import { SiGoogle, SiApple } from "react-icons/si";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
@@ -357,9 +359,7 @@ export default function BookingsPage() {
                                   data-testid="google-calendar-option"
                                 >
                                   <div className="flex items-center">
-                                    <div className="w-4 h-4 mr-3 bg-blue-500 rounded-sm flex items-center justify-center">
-                                      <span className="text-white text-xs font-bold">G</span>
-                                    </div>
+                                    <SiGoogle className="w-4 h-4 mr-3 text-blue-500" />
                                     Google Calendar
                                   </div>
                                 </DropdownMenuItem>
@@ -368,9 +368,7 @@ export default function BookingsPage() {
                                   data-testid="outlook-calendar-option"
                                 >
                                   <div className="flex items-center">
-                                    <div className="w-4 h-4 mr-3 bg-blue-600 rounded-sm flex items-center justify-center">
-                                      <span className="text-white text-xs">📧</span>
-                                    </div>
+                                    <Mail className="w-4 h-4 mr-3 text-blue-600" />
                                     Outlook Calendar
                                   </div>
                                 </DropdownMenuItem>
@@ -379,9 +377,7 @@ export default function BookingsPage() {
                                   data-testid="apple-calendar-option"
                                 >
                                   <div className="flex items-center">
-                                    <div className="w-4 h-4 mr-3 bg-gray-800 rounded-sm flex items-center justify-center">
-                                      <span className="text-white text-xs">🍎</span>
-                                    </div>
+                                    <SiApple className="w-4 h-4 mr-3 text-gray-600" />
                                     Apple Calendar
                                   </div>
                                 </DropdownMenuItem>
