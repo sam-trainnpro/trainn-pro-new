@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
 interface ClassCardProps {
-  classItem: ClassCardDTO;
+  classItem: ClassCardDTO | Class | ClassWithSchedules;
   schedules?: ClassSchedule[];
 }
 
@@ -21,17 +21,20 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
   // Get class schedules from props or from the classItem
   const classSchedules = schedules || classItem.schedules || [];
   
-  // Use consolidated data from props (eliminates N+1 queries!)
-  const coach = classItem.coach;
-  const category = classItem.category;
+  // Check if we have embedded data (ClassCardDTO) or need to handle simpler class objects
+  const isClassCardDTO = 'coach' in classItem && typeof classItem.coach === 'object';
+  
+  // Use consolidated data from props when available, otherwise provide fallbacks
+  const coach = isClassCardDTO ? (classItem as ClassCardDTO).coach : null;
+  const category = isClassCardDTO ? (classItem as ClassCardDTO).category : null;
   const bookingCount = {
-    total: classItem.bookingStats.totalBookings,
-    active: classItem.bookingStats.activeBookings,
-    spotsLeft: classItem.bookingStats.spotsLeft
+    total: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.totalBookings || 0) : 0,
+    active: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.activeBookings || 0) : 0,
+    spotsLeft: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.spotsLeft || classItem.capacity) : classItem.capacity
   };
   const coachRatingStats = {
-    averageRating: classItem.ratingStats?.averageRating || 0,
-    totalReviews: classItem.ratingStats?.totalReviews || 0
+    averageRating: isClassCardDTO ? ((classItem as ClassCardDTO).ratingStats?.averageRating || 0) : 0,
+    totalReviews: isClassCardDTO ? ((classItem as ClassCardDTO).ratingStats?.totalReviews || 0) : 0
   };
   
   // No loading states needed since all data is provided via props
