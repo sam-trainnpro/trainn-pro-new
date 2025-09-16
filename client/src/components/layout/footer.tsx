@@ -93,6 +93,8 @@ function ReferProviderLinkProviders() {
 }
 
 export default function Footer() {
+  const { user } = useSafeAuth();
+  
   return (
     <footer className="bg-[#333333] text-white pt-12 pb-6">
       <div className="container mx-auto px-4">
@@ -128,7 +130,9 @@ export default function Footer() {
           <div>
             <h4 className="font-medium mb-4">For Providers</h4>
             <ul className="space-y-2">
-              <li><Link href="/auth?register=true&role=coach" className="text-gray-400 hover:text-white transition">Join as a Provider</Link></li>
+              {(!user || (user.role !== 'coach' && user.role !== 'admin')) && (
+                <li><Link href="/auth?register=true&role=coach" className="text-gray-400 hover:text-white transition">Join as a Provider</Link></li>
+              )}
               <li><Link href="/coach-resources" className="text-gray-400 hover:text-white transition">Provider Resources</Link></li>
               <li><Link href="/success-stories" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
               <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
