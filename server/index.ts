@@ -103,6 +103,61 @@ app.use((req, res, next) => {
         
         log('🕐 [DEV] Automated payout processing started (every 10 minutes)');
       }
+
+      // Start automated email reminder processing
+      if (process.env.NODE_ENV === 'production') {
+        // In production, send class reminders once daily at 9 AM PT
+        const scheduleNextReminderCheck = () => {
+          const now = new Date();
+          const nextRun = new Date();
+          nextRun.setHours(17, 0, 0, 0); // 9 AM PT = 5 PM UTC
+          
+          // If it's past 9 AM PT today, schedule for tomorrow
+          if (now >= nextRun) {
+            nextRun.setDate(nextRun.getDate() + 1);
+          }
+          
+          const msUntilNextRun = nextRun.getTime() - now.getTime();
+          
+          setTimeout(async () => {
+            try {
+              const { sendDailyClassReminders } = await import('./email-scheduler');
+              await sendDailyClassReminders();
+              console.log('📧 Daily class reminders completed');
+              
+              // Schedule the next run for 24 hours later
+              setInterval(async () => {
+                try {
+                  await sendDailyClassReminders();
+                  console.log('📧 Daily class reminders completed');
+                } catch (error) {
+                  console.error('Error in daily class reminder process:', error);
+                }
+              }, 24 * 60 * 60 * 1000); // 24 hours
+              
+            } catch (error) {
+              console.error('Error in daily class reminder process:', error);
+            }
+          }, msUntilNextRun);
+          
+          log(`📧 Daily class reminder processing scheduled for ${nextRun.toLocaleString()}`);
+        };
+        
+        scheduleNextReminderCheck();
+      } else {
+        // In development, send reminders every hour for testing
+        setInterval(async () => {
+          try {
+            const { sendDailyClassReminders } = await import('./email-scheduler');
+            await sendDailyClassReminders();
+            console.log('📧 [DEV] Daily class reminders completed');
+          } catch (error) {
+            console.error('Error in daily class reminder process:', error);
+          }
+        }, 60 * 60 * 1000); // 1 hour in milliseconds
+        
+        log('📧 [DEV] Daily class reminder processing started (every hour)');
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
