@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { addDays, format } from 'date-fns';
 
 const app = express();
 app.use(express.json());
@@ -108,55 +110,100 @@ app.use((req, res, next) => {
       if (process.env.NODE_ENV === 'production') {
         // In production, send class reminders once daily at 9 AM PT
         const scheduleNextReminderCheck = () => {
+          const timeZone = 'America/Los_Angeles';
           const now = new Date();
-          const nextRun = new Date();
-          nextRun.setHours(17, 0, 0, 0); // 9 AM PT = 5 PM UTC
           
-          // If it's past 9 AM PT today, schedule for tomorrow
-          if (now >= nextRun) {
-            nextRun.setDate(nextRun.getDate() + 1);
+          // Get today's date string in Pacific timezone
+          const nowInPT = toZonedTime(now, timeZone);
+          const todayPTDateStr = formatInTimeZone(nowInPT, timeZone, 'yyyy-MM-dd');
+          
+          // Create today at 9:00 AM Pacific time using PT wall-time
+          const today9AMPT = new Date(`${todayPTDateStr}T09:00:00`);
+          const today9AMPTUTC = fromZonedTime(today9AMPT, timeZone);
+          
+          // If it's already past 9 AM PT today, schedule for tomorrow
+          let next9AMPTUTC;
+          if (now >= today9AMPTUTC) {
+            const tomorrowInPT = addDays(nowInPT, 1);
+            const tomorrowPTDateStr = formatInTimeZone(tomorrowInPT, timeZone, 'yyyy-MM-dd');
+            const tomorrow9AMPT = new Date(`${tomorrowPTDateStr}T09:00:00`);
+            next9AMPTUTC = fromZonedTime(tomorrow9AMPT, timeZone);
+          } else {
+            next9AMPTUTC = today9AMPTUTC;
           }
+          const msUntilNextRun = next9AMPTUTC.getTime() - now.getTime();
           
-          const msUntilNextRun = nextRun.getTime() - now.getTime();
-          
-          setTimeout(async () => {
+          const executeReminders = async () => {
             try {
-              const { sendDailyClassReminders } = await import('./email-scheduler');
-              await sendDailyClassReminders();
+              const { sendDailyClassRemindersWithDatabaseIdempotency } = await import('./email-scheduler');
+              await sendDailyClassRemindersWithDatabaseIdempotency();
               console.log('📧 Daily class reminders completed');
-              
-              // Schedule the next run for 24 hours later
-              setInterval(async () => {
-                try {
-                  await sendDailyClassReminders();
-                  console.log('📧 Daily class reminders completed');
-                } catch (error) {
-                  console.error('Error in daily class reminder process:', error);
-                }
-              }, 24 * 60 * 60 * 1000); // 24 hours
-              
             } catch (error) {
               console.error('Error in daily class reminder process:', error);
             }
+          };
+          
+          const scheduleNext = () => {
+            // Compute the next 9 AM PT occurrence (tomorrow)
+            const currentTime = new Date();
+            const currentInPT = toZonedTime(currentTime, timeZone);
+            const tomorrowInPT = addDays(currentInPT, 1);
+            const tomorrowPTDateStr = formatInTimeZone(tomorrowInPT, timeZone, 'yyyy-MM-dd');
+            const tomorrow9AMPT = new Date(`${tomorrowPTDateStr}T09:00:00`);
+            const nextTargetUTC = fromZonedTime(tomorrow9AMPT, timeZone);
+            const delay = nextTargetUTC.getTime() - currentTime.getTime();
+            
+            setTimeout(() => {
+              executeReminders().finally(() => {
+                // Schedule the next occurrence
+                scheduleNext();
+              });
+            }, delay);
+            
+            log(`📧 Next daily reminder scheduled for ${format(nextTargetUTC, 'yyyy-MM-dd HH:mm:ss')} UTC (${tomorrowPTDateStr} 09:00:00 PT)`);
+          };
+          
+          // Execute the first run
+          setTimeout(() => {
+            executeReminders().finally(() => {
+              // Schedule subsequent runs
+              scheduleNext();
+            });
           }, msUntilNextRun);
           
-          log(`📧 Daily class reminder processing scheduled for ${nextRun.toLocaleString()}`);
+          const next9AMPTDateStr = formatInTimeZone(next9AMPTUTC, timeZone, 'yyyy-MM-dd HH:mm:ss');
+          log(`📧 First daily reminder scheduled for ${format(next9AMPTUTC, 'yyyy-MM-dd HH:mm:ss')} UTC (${next9AMPTDateStr} PT)`);
         };
         
-        scheduleNextReminderCheck();
+        // First, perform catch-up if needed (if server restarts after 9 AM PT)
+        const performCatchup = async () => {
+          try {
+            const { performStartupCatchupIfNeeded } = await import('./email-scheduler');
+            const catchupPerformed = await performStartupCatchupIfNeeded();
+            if (catchupPerformed) {
+              console.log('🚀 Startup catch-up completed');
+            }
+          } catch (error) {
+            console.error('Error in startup catch-up:', error);
+          }
+        };
+        
+        performCatchup().finally(() => {
+          scheduleNextReminderCheck();
+        });
       } else {
-        // In development, send reminders every hour for testing
+        // In development, send reminders every hour for testing (with idempotency)
         setInterval(async () => {
           try {
-            const { sendDailyClassReminders } = await import('./email-scheduler');
-            await sendDailyClassReminders();
+            const { sendDailyClassRemindersWithIdempotency } = await import('./email-scheduler');
+            await sendDailyClassRemindersWithIdempotency();
             console.log('📧 [DEV] Daily class reminders completed');
           } catch (error) {
             console.error('Error in daily class reminder process:', error);
           }
         }, 60 * 60 * 1000); // 1 hour in milliseconds
         
-        log('📧 [DEV] Daily class reminder processing started (every hour)');
+        log('📧 [DEV] Daily class reminder processing started (every hour with idempotency)');
       }
     });
   } catch (error) {

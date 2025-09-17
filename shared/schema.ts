@@ -688,3 +688,20 @@ export const insertClassInstanceSchema = createInsertSchema(classInstances).omit
 
 export type InsertClassInstance = z.infer<typeof insertClassInstanceSchema>;
 export type ClassInstance = typeof classInstances.$inferSelect;
+
+// Email Reminder Tracking - for production idempotency
+export const emailReminderTracking = pgTable("email_reminder_tracking", {
+  id: serial("id").primaryKey(),
+  processType: text("process_type").notNull().unique(), // 'daily_class_reminders' 
+  lastProcessedDate: text("last_processed_date").notNull(), // YYYY-MM-DD in PT
+  lastProcessedAt: timestamp("last_processed_at").notNull(), // UTC timestamp when process ran
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertEmailReminderTrackingSchema = createInsertSchema(emailReminderTracking).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertEmailReminderTracking = z.infer<typeof insertEmailReminderTrackingSchema>;
+export type EmailReminderTracking = typeof emailReminderTracking.$inferSelect;
