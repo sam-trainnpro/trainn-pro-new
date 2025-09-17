@@ -18,7 +18,8 @@ import {
   providerReferrals, type ProviderReferral, type InsertProviderReferral,
   classPackages, type ClassPackage, type InsertClassPackage,
   packagePurchases, type PackagePurchase, type InsertPackagePurchase,
-  packageBookings, type PackageBooking, type InsertPackageBooking
+  packageBookings, type PackageBooking, type InsertPackageBooking,
+  emailReminderTracking, type EmailReminderTracking, type InsertEmailReminderTracking
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -204,6 +205,10 @@ export interface IStorage {
   getUserPackageBookings(userId: number): Promise<PackageBooking[]>;
   getPackageBookingsByPackagePurchase(packagePurchaseId: number): Promise<PackageBooking[]>;
   updatePackageBooking(id: number, bookingData: Partial<PackageBooking>): Promise<PackageBooking | undefined>;
+
+  // Email Reminder Tracking methods
+  getEmailReminderTracking(processType: string): Promise<EmailReminderTracking | undefined>;
+  upsertEmailReminderTracking(processType: string, lastProcessedDate: string): Promise<EmailReminderTracking>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2897,6 +2902,39 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+
+  // Email Reminder Tracking methods
+  async getEmailReminderTracking(processType: string): Promise<EmailReminderTracking | undefined> {
+    const result = await db.select()
+      .from(emailReminderTracking)
+      .where(eq(emailReminderTracking.processType, processType));
+    return result[0];
+  }
+
+  async upsertEmailReminderTracking(processType: string, lastProcessedDate: string): Promise<EmailReminderTracking> {
+    const existing = await this.getEmailReminderTracking(processType);
+    
+    if (existing) {
+      const [updated] = await db.update(emailReminderTracking)
+        .set({
+          lastProcessedDate,
+          lastProcessedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(emailReminderTracking.processType, processType))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(emailReminderTracking)
+        .values({
+          processType,
+          lastProcessedDate,
+          lastProcessedAt: new Date(),
+        })
+        .returning();
+      return created;
+    }
   }
 }
 
