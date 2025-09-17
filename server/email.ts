@@ -125,6 +125,10 @@ export async function sendBookingConfirmation(
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Coach:</td>
                 <td style="padding: 8px 0; color: #333;">${coach.firstName} ${coach.lastName}</td>
               </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Class Description:</td>
+                <td style="padding: 8px 0; color: #333;">${classData.description || 'No description available'}</td>
+              </tr>
             </table>
           </div>
           
@@ -174,6 +178,7 @@ What To Bring: ${classData.whatToBring || 'Nothing specific required'}
 Total Cost: $${(classData.price * booking.quantity).toFixed(2)}
 Spots Booked: ${booking.quantity}
 Coach: ${coach.firstName} ${coach.lastName}
+Class Description: ${classData.description || 'No description available'}
 ${classData.location ? `Location: ${classData.location}` : ''}
 
 Add to Calendar: ${calendarInviteUrl}
