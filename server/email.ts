@@ -286,6 +286,10 @@ export async function sendClassReminder(
                 <td style="padding: 8px 0; color: #333;">${coach.firstName} ${coach.lastName}</td>
               </tr>
               <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Class Description:</td>
+                <td style="padding: 8px 0; color: #333;">${classData.description || 'No description available'}</td>
+              </tr>
+              <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Location:</td>
                 <td style="padding: 8px 0; color: #333;">${classData.location}</td>
               </tr>
@@ -333,6 +337,7 @@ Just a friendly reminder that you have a class coming up tomorrow!
 Class: ${classData.title}
 Date: ${formattedDate} at ${formattedTime}
 Coach: ${coach.firstName} ${coach.lastName}
+Class Description: ${classData.description || 'No description available'}
 Location: ${classData.location}
 ${classData.whatToBring ? `What to Bring: ${classData.whatToBring}` : ''}
 
