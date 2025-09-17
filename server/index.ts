@@ -66,12 +66,21 @@ app.use((req, res, next) => {
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
     const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
+    const host = "0.0.0.0";
+    
+    server.on('error', (error: Error) => {
+      console.error('Server error:', error);
+      process.exit(1);
+    });
+    
+    server.listen(port, host, () => {
       log(`serving on port ${port}`);
+      
+      // Validate server is properly running
+      if (!server.listening) {
+        console.error('Server is not listening after startup');
+        process.exit(1);
+      }
       
       // Start automated payout processing
       if (process.env.NODE_ENV === 'production') {
@@ -207,7 +216,14 @@ app.use((req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('Failed to initialize server application:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+      console.error('Stack trace:', error.stack);
+    }
     process.exit(1);
   }
-})();
+})().catch(error => {
+  console.error('Unhandled error during server startup:', error);
+  process.exit(1);
+});
