@@ -122,7 +122,7 @@ export async function sendBookingConfirmation(
                 <td style="padding: 8px 0; color: #333;">${booking.quantity}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Provider:</td>
                 <td style="padding: 8px 0; color: #333;">${coach.firstName} ${coach.lastName}</td>
               </tr>
               <tr>
@@ -177,7 +177,7 @@ Date & Time: ${formattedDate} at ${formattedTime}
 What To Bring: ${classData.whatToBring || 'Nothing specific required'}
 Total Cost: $${(classData.price * booking.quantity).toFixed(2)}
 Spots Booked: ${booking.quantity}
-Coach: ${coach.firstName} ${coach.lastName}
+Provider: ${coach.firstName} ${coach.lastName}
 Class Description: ${classData.description || 'No description available'}
 ${classData.location ? `Location: ${classData.location}` : ''}
 
@@ -282,7 +282,7 @@ export async function sendClassReminder(
                 <td style="padding: 8px 0; color: #333;">${formattedDate} at ${formattedTime}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Provider:</td>
                 <td style="padding: 8px 0; color: #333;">${coach.firstName} ${coach.lastName}</td>
               </tr>
               <tr>
@@ -336,7 +336,7 @@ Just a friendly reminder that you have a class coming up tomorrow!
 
 Class: ${classData.title}
 Date: ${formattedDate} at ${formattedTime}
-Coach: ${coach.firstName} ${coach.lastName}
+Provider: ${coach.firstName} ${coach.lastName}
 Class Description: ${classData.description || 'No description available'}
 Location: ${classData.location}
 ${classData.whatToBring ? `What to Bring: ${classData.whatToBring}` : ''}
@@ -415,7 +415,7 @@ export async function sendClassCancellationNotification(
                 <td style="padding: 8px 0; color: #333;">${formattedDate} at ${formattedTime}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Provider:</td>
                 <td style="padding: 8px 0; color: #333;">${coach.firstName} ${coach.lastName}</td>
               </tr>
               ${reason ? `
@@ -486,7 +486,7 @@ export async function sendPromoCodeApprovalRequest(
           <h2 style="color: #f59e0b; margin-bottom: 20px;">⚠️ Promo Code Approval Required</h2>
           
           <p style="color: #333; line-height: 1.6;">
-            Coach <strong>${coach.firstName} ${coach.lastName}</strong> has ${action} a promo code that requires your approval.
+            Provider <strong>${coach.firstName} ${coach.lastName}</strong> has ${action} a promo code that requires your approval.
           </p>
           
           <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f59e0b;">
@@ -505,7 +505,7 @@ export async function sendPromoCodeApprovalRequest(
                 <td style="padding: 8px 0; color: #92400e;">${discountDisplay} ${promoCode.discountType === 'fixed' ? 'fixed amount' : 'percentage off'}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #92400e; font-weight: bold;">Provider:</td>
                 <td style="padding: 8px 0; color: #92400e;">${coach.firstName} ${coach.lastName} (${coach.email})</td>
               </tr>
               <tr>
@@ -561,7 +561,7 @@ export async function sendPromoCodeApprovalRequest(
 
 export async function sendCoachApprovalNotification(coach: User): Promise<boolean> {
   try {
-    const subject = `Welcome to Trainn - Your Coach Account is Approved!`;
+    const subject = `Welcome to Trainn - Your Provider Account is Approved!`;
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -574,7 +574,7 @@ export async function sendCoachApprovalNotification(coach: User): Promise<boolea
           <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Congratulations!</h2>
           
           <p style="color: #333; line-height: 1.6;">Hi ${coach.firstName},</p>
-          <p style="color: #333; line-height: 1.6;">Great news! Your coach account has been approved and you can now start creating and managing fitness, sports, or creative classes on Trainn.</p>
+          <p style="color: #333; line-height: 1.6;">Great news! Your provider account has been approved and you can now start creating and managing fitness, sports, or creative classes on Trainn.</p>
           
           <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #28a745;">
             <h3 style="color: #155724; margin-top: 0;">What you can do now:</h3>
@@ -661,7 +661,7 @@ export async function sendBookingCancellationConfirmation(
                 <td style="padding: 8px 0; color: #333;">${formattedDate} at ${formattedTime}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Provider:</td>
                 <td style="padding: 8px 0; color: #333;">${coach.firstName} ${coach.lastName}</td>
               </tr>
               <tr>
@@ -757,7 +757,7 @@ export async function sendClassScheduleUpdateNotification(
                 <td style="padding: 8px 0; color: #333;">${formattedDate} at ${formattedTime}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Provider:</td>
                 <td style="padding: 8px 0; color: #333;">${coach.firstName} ${coach.lastName}</td>
               </tr>
               <tr>
@@ -821,7 +821,7 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
           
           ${isCoach ? `
           <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0;">
-            <h3 style="color: #1565c0; margin-top: 0;">As a Coach, you can:</h3>
+            <h3 style="color: #1565c0; margin-top: 0;">As a Provider, you can:</h3>
             <ul style="color: #1565c0; margin: 10px 0;">
               <li>Create and manage classes</li>
               <li>Set your own pricing and schedule</li>
@@ -829,7 +829,7 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
               <li>Earn money doing what you love</li>
             </ul>
             <p style="color: #1565c0; margin-bottom: 0; font-size: 14px;">
-              <strong>Note:</strong> Your coach account is pending approval. You'll receive an email once it's approved and you can start creating classes.
+              <strong>Note:</strong> Your provider account is pending approval. You'll receive an email once it's approved and you can start creating classes.
             </p>
           </div>
           ` : `
@@ -838,7 +838,7 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
             <ul style="color: #1565c0; margin: 10px 0;">
               <li>Browse and book classes</li>
               <li>Find classes near you</li>
-              <li>Connect with amazing coaches</li>
+              <li>Connect with amazing providers</li>
               <li>Track your journey</li>
             </ul>
           </div>
@@ -1052,11 +1052,11 @@ The Trainn Team
 export async function sendNewCoachNotificationToAdmin(coach: User): Promise<boolean> {
   try {
     const textContent = `
-New Coach Registration - Trainn
+New Provider Registration - Trainn
 
-A new coach has registered on the Trainn platform and requires approval.
+A new provider has registered on the Trainn platform and requires approval.
 
-Coach Details:
+Provider Details:
 Name: ${coach.firstName} ${coach.lastName}
 Email: ${coach.email}
 Phone: ${coach.phone || 'Not provided'}
@@ -1065,7 +1065,7 @@ Registration Date: ${new Date().toLocaleDateString()}
 Areas of Expertise: ${coach.areasOfExpertise || 'Not specified'}
 Bio: ${coach.bio || 'Not provided'}
 
-Please log in to the admin panel to review and approve this coach profile.
+Please log in to the admin panel to review and approve this provider profile.
 
 Best regards,
 The Trainn Team
@@ -1077,19 +1077,19 @@ The Trainn Team
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>New Coach Registration - Trainn</title>
+      <title>New Provider Registration - Trainn</title>
     </head>
     <body style="font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 300;">New Coach Registration</h1>
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 300;">New Provider Registration</h1>
         <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Admin Notification</p>
       </div>
       
       <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <p style="font-size: 16px; margin-bottom: 25px;">A new coach has registered on the Trainn platform and requires approval.</p>
+        <p style="font-size: 16px; margin-bottom: 25px;">A new provider has registered on the Trainn platform and requires approval.</p>
         
         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #495057; margin-top: 0; font-size: 18px;">Coach Details</h3>
+          <h3 style="color: #495057; margin-top: 0; font-size: 18px;">Provider Details</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; font-weight: 600; color: #6c757d; width: 30%;">Name:</td>
@@ -1125,7 +1125,7 @@ The Trainn Team
         ` : ''}
         
         <div style="text-align: center; margin: 30px 0;">
-          <p style="color: #6c757d; margin-bottom: 20px;">Please log in to the admin panel to review and approve this coach profile.</p>
+          <p style="color: #6c757d; margin-bottom: 20px;">Please log in to the admin panel to review and approve this provider profile.</p>
         </div>
         
         <div style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 30px; text-align: center; color: #6c757d;">
@@ -1139,7 +1139,7 @@ The Trainn Team
     await mailService.send({
       to: 'sam@trainn.pro',
       from: 'support@trainn.pro',
-      subject: 'New Coach Registration - Approval Required',
+      subject: 'New Provider Registration - Approval Required',
       text: textContent,
       html: htmlContent,
     });
@@ -1273,7 +1273,7 @@ export async function sendPromoCodeRejectionEmail(coach: User, promoCode: any): 
             <ul style="color: #1565c0; margin: 10px 0;">
               <li>Create a new promo code with different terms</li>
               <li>Contact our support team to discuss promotional strategies</li>
-              <li>Review our promo code guidelines in your coach dashboard</li>
+              <li>Review our promo code guidelines in your provider dashboard</li>
             </ul>
           </div>
           
