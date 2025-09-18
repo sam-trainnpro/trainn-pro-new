@@ -6,17 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "../../../hooks/use-toast";
 import { useState } from "react";
-import { Plus, Edit, Trash2, Calendar, Package, CheckCircle, XCircle } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Plus, Edit, Calendar, Package, CheckCircle, XCircle } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -52,7 +42,6 @@ interface Category {
 export default function MyPackages() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [deletePackageId, setDeletePackageId] = useState<number | null>(null);
 
   // Get current user
   const { data: user } = useQuery({
@@ -102,46 +91,6 @@ export default function MyPackages() {
     }
   });
 
-  // Check if package has bookings
-  const checkPackageBookings = async (packageId: number) => {
-    try {
-      const response = await apiRequest('GET', `/api/packages/${packageId}/bookings/check`);
-      const data = await response.json();
-      return data.hasBookings;
-    } catch (error) {
-      console.error('Error checking package bookings:', error);
-      return false;
-    }
-  };
-
-  // Delete package mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (packageId: number) => {
-      // First check if package has bookings
-      const hasBookings = await checkPackageBookings(packageId);
-      if (hasBookings) {
-        throw new Error("Cannot delete package with existing bookings. You can deactivate it instead.");
-      }
-      
-      const response = await apiRequest('DELETE', `/api/packages/${packageId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/packages/my'] });
-      setDeletePackageId(null);
-      toast({
-        title: "Success",
-        description: "Package deleted successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete package",
-        variant: "destructive",
-      });
-    }
-  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -310,18 +259,10 @@ export default function MyPackages() {
                         size="sm"
                         variant="outline"
                         onClick={() => navigate(`/edit-package/${pkg.id}`)}
+                        data-testid="button-edit-package"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setDeletePackageId(pkg.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
                       </Button>
                     </div>
                   </div>
@@ -362,19 +303,10 @@ export default function MyPackages() {
                       variant="outline"
                       onClick={() => navigate(`/edit-package/${pkg.id}`)}
                       className="flex-1"
+                      data-testid="button-edit-package"
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setDeletePackageId(pkg.id)}
-                      disabled={deleteMutation.isPending}
-                      className="flex-1"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
                     </Button>
                   </div>
                 </CardContent>
@@ -383,30 +315,6 @@ export default function MyPackages() {
           )}
         </div>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!deletePackageId} onOpenChange={() => setDeletePackageId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Package</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this package? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (deletePackageId) {
-                    deleteMutation.mutate(deletePackageId);
-                  }
-                }}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </main>
 
       <Footer />
