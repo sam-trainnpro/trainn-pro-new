@@ -129,11 +129,11 @@ export default function MyClassesPage() {
   // Mutation to delete a class
   const deleteMutation = useMutation({
     mutationFn: async (classId: number) => {
-      // Just directly send the delete request to the backend
-      // The backend logic already handles deleting entire series
+      // Use the proper deletion endpoint that ensures package restoration
+      // This goes through storage.deleteClass() which preserves data and restores packages
       const response = await apiRequest("DELETE", `/api/classes/${classId}`);
       if (!response.ok) {
-        throw new Error('Failed to delete class');
+        throw new Error('Failed to cancel class');
       }
       
       return classId;
