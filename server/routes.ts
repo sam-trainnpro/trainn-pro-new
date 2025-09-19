@@ -2114,8 +2114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Check if user already has a booking for this class
-      const userBooking = existingBookings.find(b => b.userId === req.user.id);
+      // Check if user already has a confirmed booking for this class
+      const userBooking = existingBookings.find(b => b.userId === req.user.id && b.status === 'confirmed');
       if (userBooking) {
         return res.status(400).json({ message: "You have already booked this class" });
       }
@@ -2249,8 +2249,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Check if user already has a booking for this class
-      const userBooking = existingBookings.find(b => b.userId === req.user.id);
+      // Check if user already has a confirmed booking for this class
+      const userBooking = existingBookings.find(b => b.userId === req.user.id && b.status === 'confirmed');
       if (userBooking) {
         return res.status(400).json({ message: "You have already booked this class" });
       }
@@ -2490,8 +2490,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Check if user already has a booking for this class
-      const userBooking = existingBookings.find(b => b.userId === req.user!.id);
+      // Check if user already has a confirmed booking for this class
+      const userBooking = existingBookings.find(b => b.userId === req.user!.id && b.status === 'confirmed');
       if (userBooking) {
         return res.status(400).json({ message: "You have already booked this class" });
       }
