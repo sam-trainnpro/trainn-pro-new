@@ -949,6 +949,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Failed to send cancellation notifications:', emailError);
         // Continue with deletion even if emails fail
       }
+
+      // Process credit refunds for cancelled classes
+      try {
+        const classesToProcess = classItem.recurringSeriesId && deleteOption === 'following'
+          ? await storage.getClassesBySeriesId(classItem.recurringSeriesId).then(classes =>
+              classes.filter(c => c.startTime && new Date(c.startTime) >= new Date(classItem.startTime!))
+            )
+          : [classItem];
+
+        for (const cls of classesToProcess) {
+          const classBookings = await storage.getClassBookings(cls.id);
+          const confirmedBookings = classBookings.filter(booking => booking.status === 'confirmed');
+          
+          for (const booking of confirmedBookings) {
+            // Check if booking was paid with credits
+            if (booking.paymentMethod === 'credit_free') {
+              try {
+                // Get the actual credits used for this booking from the ledger
+                const creditsUsed = await storage.getCreditsUsedForBooking(booking.id);
+                
+                if (creditsUsed > 0) {
+                  await storage.refundCreditsForBooking(
+                    booking.userId,
+                    creditsUsed, // Refund exact amount that was used
+                    booking.id,
+                    `Class cancelled by provider: ${cls.title}`
+                  );
+                  
+                  console.log(`✅ Refunded ${creditsUsed / 100} credits to user ${booking.userId} for cancelled class booking ${booking.id}`);
+                } else {
+                  console.log(`⚠️ No credits to refund for booking ${booking.id} - no credit usage found in ledger`);
+                }
+              } catch (refundError) {
+                console.error(`Failed to refund credits for booking ${booking.id}:`, refundError);
+                // Continue processing other bookings
+              }
+            }
+          }
+        }
+      } catch (refundError) {
+        console.error('Failed to process credit refunds:', refundError);
+        // Continue with deletion even if refunds fail
+      }
       
       // Handle recurring class deletion
       if (classItem.recurringSeriesId && deleteOption === 'following') {
@@ -1625,22 +1668,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to cancel this booking" });
       }
       
+      // Get class details for timing and refund calculations
+      const classItem = await storage.getClass(booking.classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Associated class not found" });
+      }
+
+      // Process credit refund if applicable (paid with credits + >24 hours before class)
+      if (booking.paymentMethod === 'credit_free' && classItem.startTime) {
+        const classStartTime = new Date(classItem.startTime);
+        const currentTime = new Date();
+        const hoursUntilClass = (classStartTime.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursUntilClass > 24) {
+          try {
+            // Get the actual credits used for this booking from the ledger
+            const creditsUsed = await storage.getCreditsUsedForBooking(booking.id);
+            
+            if (creditsUsed > 0) {
+              await storage.refundCreditsForBooking(
+                booking.userId,
+                creditsUsed, // Refund exact amount that was used
+                booking.id,
+                `Customer cancellation >24h before class: ${classItem.title}`
+              );
+              
+              console.log(`✅ Refunded ${creditsUsed / 100} credits to user ${booking.userId} for booking ${booking.id} cancelled >24h in advance`);
+            } else {
+              console.log(`⚠️ No credits to refund for booking ${booking.id} - no credit usage found in ledger`);
+            }
+          } catch (refundError) {
+            console.error('Failed to process credit refund:', refundError);
+            // Continue with cancellation even if refund fails
+          }
+        } else {
+          console.log(`❌ No credit refund for booking ${booking.id} - cancellation within 24 hours (${hoursUntilClass.toFixed(2)}h before class)`);
+        }
+      }
+      
       const updatedBooking = await storage.updateBooking(bookingId, { status: "cancelled" });
 
       // Send booking cancellation confirmation email
       try {
-        const classItem = await storage.getClass(booking.classId);
-        if (classItem) {
-          const coach = await storage.getUser(classItem.coachId);
-          if (coach) {
-            const refundAmount = (classItem.price * booking.quantity);
-            await sendBookingCancellationConfirmation(
-              req.user,
-              classItem,
-              coach,
-              refundAmount
-            );
-          }
+        const coach = await storage.getUser(classItem.coachId);
+        if (coach) {
+          const refundAmount = (classItem.price * booking.quantity);
+          await sendBookingCancellationConfirmation(
+            req.user,
+            classItem,
+            coach,
+            refundAmount
+          );
         }
       } catch (emailError) {
         console.error('Failed to send booking cancellation email:', emailError);
