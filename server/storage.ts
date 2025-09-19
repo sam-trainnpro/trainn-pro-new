@@ -157,6 +157,9 @@ export interface IStorage {
   getUserCreditHistory(userId: number): Promise<UserCredit[]>;
   getUserCredits(userId: number): Promise<UserCredit[]>;
   applyCreditsToBooking(userId: number, amount: number, bookingId: number): Promise<UserCredit>;
+  refundCreditsForBooking(userId: number, amount: number, bookingId: number, reason: string): Promise<UserCredit>;
+  getCreditsUsedForBooking(bookingId: number): Promise<number>;
+  hasExistingRefundForBooking(bookingId: number): Promise<boolean>;
   
   // Referral processing
   processReferralSignup(referralCode: string, refereeId: number): Promise<Referral | undefined>;
@@ -2119,6 +2122,54 @@ export class DatabaseStorage implements IStorage {
       amount: -amountCents, // Negative amount for deduction
       transactionType: 'booking_payment',
       description,
+      bookingId
+    };
+    
+    return await this.addUserCredit(creditData);
+  }
+
+  async getCreditsUsedForBooking(bookingId: number): Promise<number> {
+    const result = await db.select({
+      totalUsed: sql<number>`SUM(ABS(${userCredits.amount}))`
+    })
+    .from(userCredits)
+    .where(
+      and(
+        eq(userCredits.bookingId, bookingId),
+        sql`${userCredits.amount} < 0` // Only negative amounts (credits used)
+      )
+    );
+
+    return result[0]?.totalUsed || 0;
+  }
+
+  async hasExistingRefundForBooking(bookingId: number): Promise<boolean> {
+    const result = await db.select({ id: userCredits.id })
+      .from(userCredits)
+      .where(
+        and(
+          eq(userCredits.bookingId, bookingId),
+          eq(userCredits.transactionType, 'booking_refund'),
+          sql`${userCredits.amount} > 0` // Only positive amounts (refunds)
+        )
+      )
+      .limit(1);
+
+    return result.length > 0;
+  }
+
+  async refundCreditsForBooking(userId: number, amount: number, bookingId: number, reason: string): Promise<UserCredit> {
+    // Check if refund already exists to prevent double refunds
+    const existingRefund = await this.hasExistingRefundForBooking(bookingId);
+    if (existingRefund) {
+      throw new Error(`Refund already processed for booking ${bookingId}`);
+    }
+
+    const creditData: InsertUserCredit = {
+      userId,
+      amount: amount, // Positive amount for refund
+      transactionType: 'booking_refund', // Valid values include: 'referral_reward', 'referral_usage', 'booking_payment', 'booking_refund', 'admin_adjustment'
+      description: `Refund: ${reason} - $${(amount / 100).toFixed(2)}`,
       bookingId
     };
     
