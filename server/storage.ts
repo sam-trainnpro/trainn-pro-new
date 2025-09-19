@@ -205,6 +205,7 @@ export interface IStorage {
   // Package Booking methods
   createPackageBooking(bookingData: InsertPackageBooking): Promise<PackageBooking>;
   getPackageBooking(id: number): Promise<PackageBooking | undefined>;
+  getPackageBookingByBookingId(bookingId: number): Promise<PackageBooking | undefined>;
   getUserPackageBookings(userId: number): Promise<PackageBooking[]>;
   getPackageBookingsByPackagePurchase(packagePurchaseId: number): Promise<PackageBooking[]>;
   updatePackageBooking(id: number, bookingData: Partial<PackageBooking>): Promise<PackageBooking | undefined>;
@@ -2920,6 +2921,14 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select()
       .from(packageBookings)
       .where(eq(packageBookings.id, id));
+    
+    return result[0];
+  }
+
+  async getPackageBookingByBookingId(bookingId: number): Promise<PackageBooking | undefined> {
+    const result = await db.select()
+      .from(packageBookings)
+      .where(eq(packageBookings.bookingId, bookingId));
     
     return result[0];
   }

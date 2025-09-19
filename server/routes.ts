@@ -986,6 +986,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Continue processing other bookings
               }
             }
+            // Check if booking was made with a package
+            else if (booking.paymentMethod === 'package') {
+              try {
+                // Find the package booking record
+                const packageBooking = await storage.getPackageBookingByBookingId(booking.id);
+                
+                if (packageBooking) {
+                  // Update package booking status to cancelled
+                  await storage.updatePackageBooking(packageBooking.id, { status: 'cancelled' });
+                  
+                  // Get the package purchase to restore class counts
+                  const packagePurchase = await storage.getPackagePurchase(packageBooking.packagePurchaseId);
+                  
+                  if (packagePurchase) {
+                    // Restore the package counts: increment remainingClasses and decrement usedClasses
+                    await storage.updatePackagePurchase(packagePurchase.id, {
+                      usedClasses: packagePurchase.usedClasses - booking.quantity,
+                      remainingClasses: packagePurchase.remainingClasses + booking.quantity
+                    });
+                    
+                    console.log(`✅ Restored ${booking.quantity} class(es) to package ${packagePurchase.id} for cancelled booking ${booking.id} (provider cancellation)`);
+                  } else {
+                    console.error(`⚠️ Package purchase not found for package booking ${packageBooking.id}`);
+                  }
+                } else {
+                  console.error(`⚠️ Package booking not found for booking ${booking.id} with payment method 'package'`);
+                }
+              } catch (packageError) {
+                console.error(`Failed to restore package classes for booking ${booking.id}:`, packageError);
+                // Continue processing other bookings
+              }
+            }
           }
         }
       } catch (refundError) {
@@ -1703,6 +1735,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           console.log(`❌ No credit refund for booking ${booking.id} - cancellation within 24 hours (${hoursUntilClass.toFixed(2)}h before class)`);
+        }
+      }
+
+      // Process package restoration if booking was made with a package
+      if (booking.paymentMethod === 'package') {
+        try {
+          // Find the package booking record
+          const packageBooking = await storage.getPackageBookingByBookingId(booking.id);
+          
+          if (packageBooking) {
+            // Update package booking status to cancelled
+            await storage.updatePackageBooking(packageBooking.id, { status: 'cancelled' });
+            
+            // Get the package purchase to restore class counts
+            const packagePurchase = await storage.getPackagePurchase(packageBooking.packagePurchaseId);
+            
+            if (packagePurchase) {
+              // Restore the package counts: increment remainingClasses and decrement usedClasses
+              await storage.updatePackagePurchase(packagePurchase.id, {
+                usedClasses: packagePurchase.usedClasses - booking.quantity,
+                remainingClasses: packagePurchase.remainingClasses + booking.quantity
+              });
+              
+              console.log(`✅ Restored ${booking.quantity} class(es) to package ${packagePurchase.id} for cancelled booking ${booking.id}`);
+            } else {
+              console.error(`⚠️ Package purchase not found for package booking ${packageBooking.id}`);
+            }
+          } else {
+            console.error(`⚠️ Package booking not found for booking ${booking.id} with payment method 'package'`);
+          }
+        } catch (packageError) {
+          console.error('Failed to restore package classes:', packageError);
+          // Continue with cancellation even if package restoration fails
         }
       }
       
