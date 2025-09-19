@@ -607,9 +607,7 @@ export class DatabaseStorage implements IStorage {
         or(
           sql`${classes.startTime} >= NOW()`,
           sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
-        ),
-        // Exclude cancelled classes from calendar view
-        ne(classes.status, 'cancelled')
+        )
       ];
 
       if (filters?.categoryId) {
@@ -974,8 +972,8 @@ export class DatabaseStorage implements IStorage {
             }
           }
           
-          // Mark booking as cancelled instead of deleting
-          await db.update(bookings).set({ status: 'cancelled' }).where(eq(bookings.id, booking.id));
+          // Actually delete the booking since provider wants hard delete
+          await db.delete(bookings).where(eq(bookings.id, booking.id));
         }
       };
       
@@ -999,17 +997,17 @@ export class DatabaseStorage implements IStorage {
           await cancelSchedulesForClass(childClass.id);
         }
         
-        // Cancel all child classes in the series
-        console.log(`Cancelling child classes for series ${id}`);
-        await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.parentClassId, id));
+        // Delete all child classes in the series
+        console.log(`Deleting child classes for series ${id}`);
+        await db.delete(classes).where(eq(classes.parentClassId, id));
         
         // Cancel bookings and schedules for the parent class
         await cancelBookingsForClass(id);
         await cancelSchedulesForClass(id);
         
-        // Then cancel the parent class itself
-        console.log(`Cancelling parent class ${id}`);
-        await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.id, id));
+        // Then delete the parent class itself
+        console.log(`Deleting parent class ${id}`);
+        await db.delete(classes).where(eq(classes.id, id));
       } 
       // If this is a child class in a series
       else if (classItem.parentClassId) {
@@ -1030,39 +1028,39 @@ export class DatabaseStorage implements IStorage {
               await cancelSchedulesForClass(childClass.id);
             }
             
-            // Cancel all child classes
-            await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.parentClassId, parentClass.id));
+            // Delete all child classes
+            await db.delete(classes).where(eq(classes.parentClassId, parentClass.id));
             
             // Cancel bookings and schedules for parent
             await cancelBookingsForClass(parentClass.id);
             await cancelSchedulesForClass(parentClass.id);
             
-            // Cancel the parent class
-            await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.id, parentClass.id));
+            // Delete the parent class
+            await db.delete(classes).where(eq(classes.id, parentClass.id));
           } else {
             // Just delete this single instance
-            console.log(`Cancelling single instance ${id} from series ${parentClass.id}`);
+            console.log(`Deleting single instance ${id} from series ${parentClass.id}`);
             await cancelBookingsForClass(id);
             await cancelSchedulesForClass(id);
-            await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.id, id));
+            await db.delete(classes).where(eq(classes.id, id));
           }
         } else {
           // Just delete this instance (parent might be gone already)
-          console.log(`Cancelling instance ${id}`);
+          console.log(`Deleting instance ${id}`);
           await cancelBookingsForClass(id);
           await cancelSchedulesForClass(id);
-          await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.id, id));
+          await db.delete(classes).where(eq(classes.id, id));
         }
       } 
       // This is a standalone class
       else {
-        console.log(`Cancelling standalone class ${id}`);
+        console.log(`Deleting standalone class ${id}`);
         await cancelBookingsForClass(id);
         await cancelSchedulesForClass(id);
-        await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.id, id));
+        await db.delete(classes).where(eq(classes.id, id));
       }
       
-      console.log(`✅ [DELETION COMPLETE] Class ${id} successfully soft-deleted (status=cancelled). All related bookings preserved.`);
+      console.log(`✅ [DELETION COMPLETE] Class ${id} successfully deleted. Package credits restored for affected customers.`);
       return true;
     } catch (error) {
       console.error("Error deleting class:", error);
