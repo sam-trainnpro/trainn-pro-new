@@ -250,6 +250,9 @@ export default function BookingsPage() {
       // Refetch bookings after cancellation
       refetch();
       
+      // Invalidate credit balance query to refresh account balance on profile page
+      queryClient.invalidateQueries({ queryKey: ['/api/credits/balance'] });
+      
       // Reset state
       setCancelingBookingId(null);
     },
