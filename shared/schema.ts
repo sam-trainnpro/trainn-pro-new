@@ -113,7 +113,7 @@ export const classes = pgTable("classes", {
   // Whether the class is outdoors
   outdoors: boolean("outdoors").default(false),
   // Status for soft deletes - prevents data loss when classes are cancelled/deleted
-  status: text("status").notNull().default("active"), // 'active', 'cancelled', 'deleted'
+  status: text("status").notNull().default("active"), // 'active', 'cancelled'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
