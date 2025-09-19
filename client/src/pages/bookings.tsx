@@ -253,6 +253,9 @@ export default function BookingsPage() {
       // Invalidate credit balance query to refresh account balance on profile page
       queryClient.invalidateQueries({ queryKey: ['/api/credits/balance'] });
       
+      // Invalidate user packages query to refresh restored package classes
+      queryClient.invalidateQueries({ queryKey: ['/api/user/packages'] });
+      
       // Reset state
       setCancelingBookingId(null);
     },
