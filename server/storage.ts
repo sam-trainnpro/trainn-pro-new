@@ -928,7 +928,7 @@ export class DatabaseStorage implements IStorage {
         return false;
       }
       
-      console.log(`Cancelling class: ${id}, isRecurring: ${classItem.isRecurring}, parentClassId: ${classItem.parentClassId}`);
+      console.log(`🗑️ [DELETION START] Class ID: ${id}, Title: "${classItem.title}", isRecurring: ${classItem.isRecurring}, parentClassId: ${classItem.parentClassId}, Status: ${classItem.status}`);
       
       // Helper function to cancel bookings for a class (soft delete approach)
       const cancelBookingsForClass = async (classId: number) => {
@@ -960,7 +960,7 @@ export class DatabaseStorage implements IStorage {
                     remainingClasses: packagePurchase.remainingClasses + booking.quantity
                   });
                   
-                  console.log(`✅ Restored ${booking.quantity} class(es) to package ${packagePurchase.id} for cancelled booking ${booking.id} (class deletion)`);
+                  console.log(`✅ [PACKAGE RESTORED] ${booking.quantity} class(es) restored to package ${packagePurchase.id} for booking ${booking.id} (provider cancellation). Package now: ${packagePurchase.usedClasses - booking.quantity}/${packagePurchase.usedClasses + packagePurchase.remainingClasses} used`);
                 } else {
                   console.error(`⚠️ Package purchase not found for package booking ${packageBooking.id}`);
                 }
@@ -1059,7 +1059,7 @@ export class DatabaseStorage implements IStorage {
         await db.update(classes).set({ status: 'cancelled' }).where(eq(classes.id, id));
       }
       
-      console.log(`Successfully cancelled class ${id}`);
+      console.log(`✅ [DELETION COMPLETE] Class ${id} successfully soft-deleted (status=cancelled). All related bookings preserved.`);
       return true;
     } catch (error) {
       console.error("Error deleting class:", error);
