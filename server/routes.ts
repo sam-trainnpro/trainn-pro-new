@@ -2206,7 +2206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create scheduled payout for coach (always needed when booking is confirmed)
       const coach = await storage.getUser(classDetails.coachId);
-      if (coach && coach.stripeConnectId) {
+      if (coach) {
         const amountCents = originalAmount; // Full class price in cents
         let coachPayout;
         let payoutType;
