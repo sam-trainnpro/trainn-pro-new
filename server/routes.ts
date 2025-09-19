@@ -2496,8 +2496,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You have already booked this class" });
       }
       
-      // Determine payment method based on package type
-      const paymentMethod = userPackage.packageType === 'set_pack' ? 'package_set_pack' : 'package';
+      // All package bookings use 'package' as payment method
+      const paymentMethod = 'package';
 
       // Create confirmed booking
       const booking = await storage.createBooking({
@@ -2550,7 +2550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           netAmount: originalAmount,
           coachPayout: coachPayout,
           platformFee: 0,
-          payoutType: 'package_set_pack_usage',
+          payoutType: 'package_usage',
           scheduledPayoutDate: payoutDate
         });
         
