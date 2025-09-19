@@ -931,139 +931,129 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`🗑️ [DELETION START] Class ID: ${id}, Title: "${classItem.title}", isRecurring: ${classItem.isRecurring}, parentClassId: ${classItem.parentClassId}, Status: ${classItem.status}`);
       
-      // Helper function to cancel bookings for a class (soft delete approach)
-      const cancelBookingsForClass = async (classId: number) => {
-        console.log(`Cancelling bookings for class ${classId}`);
+      // Check for financial dependencies to determine deletion strategy
+      const hasFinancialDependencies = await this.hasFinancialDependencies(id);
+      
+      if (hasFinancialDependencies) {
+        console.log(`💰 [SOFT DELETE] Class ${id} has financial dependencies - using soft delete with refund processing`);
+        return await this.performSoftDelete(id, classItem);
+      } else {
+        console.log(`🔥 [HARD DELETE] Class ${id} has no financial dependencies - safe for hard delete`);
+        return await this.performHardDelete(id, classItem);
+      }
+      
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      return false;
+    }
+  }
+  
+  // Check if a class has financial dependencies that require soft delete
+  private async hasFinancialDependencies(classId: number): Promise<boolean> {
+    // Check for confirmed bookings
+    const confirmedBookings = await db.select().from(bookings).where(
+      and(eq(bookings.classId, classId), eq(bookings.status, 'confirmed'))
+    ).limit(1);
+    
+    if (confirmedBookings.length > 0) {
+      return true;
+    }
+    
+    // Check for any credits that might be tied to this class (in case of delayed processing)
+    const creditEntries = await db.select().from(userCredits).where(
+      sql`${userCredits.description} LIKE '%class ${classId}%'`
+    ).limit(1);
+    
+    if (creditEntries.length > 0) {
+      return true;
+    }
+    
+    // Check for any scheduled payouts related to this class
+    const scheduledPayouts = await db.select().from(scheduledPayouts).where(
+      and(
+        eq(scheduledPayouts.classId, classId),
+        ne(scheduledPayouts.status, 'cancelled')
+      )
+    ).limit(1);
+    
+    return scheduledPayouts.length > 0;
+  }
+  
+  // Perform soft delete with transactional refund processing
+  private async performSoftDelete(classId: number, classItem: Class): Promise<boolean> {
+    // Use a database transaction to ensure atomicity
+    return await db.transaction(async (tx) => {
+      try {
+        console.log(`💰 [SOFT DELETE TRANSACTION START] Processing class ${classId}`);
         
-        // First, get all active bookings for this class to process package restoration
-        const classBookings = await db.select().from(bookings).where(
+        // Process all confirmed bookings
+        const confirmedBookings = await tx.select().from(bookings).where(
           and(eq(bookings.classId, classId), eq(bookings.status, 'confirmed'))
         );
         
-        // Process package restoration for each booking before cancellation
-        for (const booking of classBookings) {
+        for (const booking of confirmedBookings) {
+          // Process package restoration
           if (booking.paymentMethod === 'package') {
-            try {
-              // Find the package booking record
-              const packageBooking = await this.getPackageBookingByBookingId(booking.id);
+            const packageBooking = await this.getPackageBookingByBookingId(booking.id);
+            
+            if (packageBooking && packageBooking.status === 'confirmed') {
+              // Update package booking status to cancelled
+              await tx.update(packageBookings).set({ status: 'cancelled' }).where(eq(packageBookings.id, packageBooking.id));
               
-              if (packageBooking && packageBooking.status === 'confirmed') {
-                // Update package booking status to cancelled
-                await this.updatePackageBooking(packageBooking.id, { status: 'cancelled' });
+              // Get the package purchase to restore class counts
+              const packagePurchase = await this.getPackagePurchase(packageBooking.packagePurchaseId);
+              
+              if (packagePurchase) {
+                // Restore the package counts: increment remainingClasses and decrement usedClasses
+                await tx.update(packagePurchases).set({
+                  usedClasses: packagePurchase.usedClasses - booking.quantity,
+                  remainingClasses: packagePurchase.remainingClasses + booking.quantity
+                }).where(eq(packagePurchases.id, packagePurchase.id));
                 
-                // Get the package purchase to restore class counts
-                const packagePurchase = await this.getPackagePurchase(packageBooking.packagePurchaseId);
-                
-                if (packagePurchase) {
-                  // Restore the package counts: increment remainingClasses and decrement usedClasses
-                  await this.updatePackagePurchase(packagePurchase.id, {
-                    usedClasses: packagePurchase.usedClasses - booking.quantity,
-                    remainingClasses: packagePurchase.remainingClasses + booking.quantity
-                  });
-                  
-                  console.log(`✅ [PACKAGE RESTORED] ${booking.quantity} class(es) restored to package ${packagePurchase.id} for booking ${booking.id} (provider cancellation). Package now: ${packagePurchase.usedClasses - booking.quantity}/${packagePurchase.usedClasses + packagePurchase.remainingClasses} used`);
-                } else {
-                  console.error(`⚠️ Package purchase not found for package booking ${packageBooking.id}`);
-                }
+                console.log(`✅ [PACKAGE RESTORED] ${booking.quantity} class(es) restored to package ${packagePurchase.id} for booking ${booking.id}`);
               }
-            } catch (packageError) {
-              console.error(`Failed to restore package classes for booking ${booking.id}:`, packageError);
-              // Continue with cancellation even if package restoration fails
             }
           }
           
-          // Actually delete the booking since provider wants hard delete
-          await db.delete(bookings).where(eq(bookings.id, booking.id));
-        }
-      };
-      
-      // Helper function to soft delete class schedules for a class (mark as inactive)
-      const cancelSchedulesForClass = async (classId: number) => {
-        console.log(`Cancelling schedules for class ${classId}`);
-        // For schedules, we can still delete them since they're just configuration
-        // and not user data like bookings. Alternatively, we could add a status to schedules too.
-        await db.delete(classSchedules).where(eq(classSchedules.classId, classId));
-      };
-      
-      // If this is a parent class (recurring series)
-      if (classItem.isRecurring) {
-        // Get all child classes in the series
-        const childClasses = await this.getClassesByParentId(id);
-        console.log(`Found ${childClasses.length} child classes for series ${id}`);
-        
-        // Cancel bookings and schedules for all child classes
-        for (const childClass of childClasses) {
-          await cancelBookingsForClass(childClass.id);
-          await cancelSchedulesForClass(childClass.id);
+          // Mark booking as cancelled instead of deleting (preserve audit trail)
+          await tx.update(bookings).set({ status: 'cancelled' }).where(eq(bookings.id, booking.id));
         }
         
-        // Delete all child classes in the series
-        console.log(`Deleting child classes for series ${id}`);
-        await db.delete(classes).where(eq(classes.parentClassId, id));
+        // Cancel any scheduled payouts for this class
+        await tx.update(scheduledPayouts).set({ status: 'cancelled' })
+          .where(and(
+            eq(scheduledPayouts.classId, classId),
+            ne(scheduledPayouts.status, 'cancelled')
+          ));
         
-        // Cancel bookings and schedules for the parent class
-        await cancelBookingsForClass(id);
-        await cancelSchedulesForClass(id);
+        // Delete schedules (safe to remove as they're just configuration)
+        await tx.delete(classSchedules).where(eq(classSchedules.classId, classId));
         
-        // Then delete the parent class itself
-        console.log(`Deleting parent class ${id}`);
-        await db.delete(classes).where(eq(classes.id, id));
-      } 
-      // If this is a child class in a series
-      else if (classItem.parentClassId) {
-        // Find the parent class
-        const parentClass = await this.getClass(classItem.parentClassId);
+        // Mark class as deleted (soft delete)
+        await tx.update(classes).set({ status: 'deleted' }).where(eq(classes.id, classId));
         
-        if (parentClass?.isRecurring) {
-          // If we're deleting the whole series
-          if (id === parentClass.id) {
-            console.log(`Deleting entire series. Parent: ${parentClass.id}`);
-            
-            // Get all child classes
-            const childClasses = await this.getClassesByParentId(parentClass.id);
-            
-            // Cancel bookings and schedules for all child classes
-            for (const childClass of childClasses) {
-              await cancelBookingsForClass(childClass.id);
-              await cancelSchedulesForClass(childClass.id);
-            }
-            
-            // Delete all child classes
-            await db.delete(classes).where(eq(classes.parentClassId, parentClass.id));
-            
-            // Cancel bookings and schedules for parent
-            await cancelBookingsForClass(parentClass.id);
-            await cancelSchedulesForClass(parentClass.id);
-            
-            // Delete the parent class
-            await db.delete(classes).where(eq(classes.id, parentClass.id));
-          } else {
-            // Just delete this single instance
-            console.log(`Deleting single instance ${id} from series ${parentClass.id}`);
-            await cancelBookingsForClass(id);
-            await cancelSchedulesForClass(id);
-            await db.delete(classes).where(eq(classes.id, id));
-          }
-        } else {
-          // Just delete this instance (parent might be gone already)
-          console.log(`Deleting instance ${id}`);
-          await cancelBookingsForClass(id);
-          await cancelSchedulesForClass(id);
-          await db.delete(classes).where(eq(classes.id, id));
-        }
-      } 
-      // This is a standalone class
-      else {
-        console.log(`Deleting standalone class ${id}`);
-        await cancelBookingsForClass(id);
-        await cancelSchedulesForClass(id);
-        await db.delete(classes).where(eq(classes.id, id));
+        console.log(`✅ [SOFT DELETE COMPLETE] Class ${classId} soft-deleted with financial protection`);
+        return true;
+      } catch (error) {
+        console.error(`Failed to soft delete class ${classId}:`, error);
+        throw error; // This will cause the transaction to rollback
       }
+    });
+  }
+  
+  // Perform hard delete for classes with no financial dependencies
+  private async performHardDelete(classId: number, classItem: Class): Promise<boolean> {
+    try {
+      // Delete schedules first (due to foreign key constraints)
+      await db.delete(classSchedules).where(eq(classSchedules.classId, classId));
       
-      console.log(`✅ [DELETION COMPLETE] Class ${id} successfully deleted. Package credits restored for affected customers.`);
+      // Delete the class itself
+      await db.delete(classes).where(eq(classes.id, classId));
+      
+      console.log(`✅ [HARD DELETE COMPLETE] Class ${classId} permanently deleted`);
       return true;
     } catch (error) {
-      console.error("Error deleting class:", error);
+      console.error(`Failed to hard delete class ${classId}:`, error);
       return false;
     }
   }
