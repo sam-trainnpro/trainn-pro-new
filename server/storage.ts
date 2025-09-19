@@ -607,7 +607,9 @@ export class DatabaseStorage implements IStorage {
         or(
           sql`${classes.startTime} >= NOW()`,
           sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
-        )
+        ),
+        // Exclude deleted classes from public views
+        ne(classes.status, 'deleted')
       ];
 
       if (filters?.categoryId) {
@@ -827,16 +829,22 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getClassesByCategory(categoryId: number): Promise<Class[]> {
-    return await db.select().from(classes).where(eq(classes.categoryId, categoryId));
+    return await db.select().from(classes).where(
+      and(
+        eq(classes.categoryId, categoryId),
+        ne(classes.status, 'deleted')
+      )
+    );
   }
   
   async getClassesByCoach(coachId: number): Promise<Class[]> {
-    // Only return active classes with valid start times (exclude parent recurring templates and cancelled classes)
+    // Only return active classes with valid start times (exclude parent recurring templates, cancelled and deleted classes)
     return await db.select().from(classes)
       .where(and(
         eq(classes.coachId, coachId),
         sql`${classes.startTime} IS NOT NULL`,
-        ne(classes.status, 'cancelled')
+        ne(classes.status, 'cancelled'),
+        ne(classes.status, 'deleted')
       ));
   }
   
