@@ -928,6 +928,44 @@ export class DatabaseStorage implements IStorage {
       // Helper function to delete bookings for a class
       const deleteBookingsForClass = async (classId: number) => {
         console.log(`Deleting bookings for class ${classId}`);
+        
+        // First, get all bookings for this class to process package restoration
+        const classBookings = await db.select().from(bookings).where(eq(bookings.classId, classId));
+        
+        // Process package restoration for each booking before deletion
+        for (const booking of classBookings) {
+          if (booking.paymentMethod === 'package') {
+            try {
+              // Find the package booking record
+              const packageBooking = await this.getPackageBookingByBookingId(booking.id);
+              
+              if (packageBooking && packageBooking.status === 'confirmed') {
+                // Update package booking status to cancelled
+                await this.updatePackageBooking(packageBooking.id, { status: 'cancelled' });
+                
+                // Get the package purchase to restore class counts
+                const packagePurchase = await this.getPackagePurchase(packageBooking.packagePurchaseId);
+                
+                if (packagePurchase) {
+                  // Restore the package counts: increment remainingClasses and decrement usedClasses
+                  await this.updatePackagePurchase(packagePurchase.id, {
+                    usedClasses: packagePurchase.usedClasses - booking.quantity,
+                    remainingClasses: packagePurchase.remainingClasses + booking.quantity
+                  });
+                  
+                  console.log(`✅ Restored ${booking.quantity} class(es) to package ${packagePurchase.id} for deleted booking ${booking.id} (class deletion)`);
+                } else {
+                  console.error(`⚠️ Package purchase not found for package booking ${packageBooking.id}`);
+                }
+              }
+            } catch (packageError) {
+              console.error(`Failed to restore package classes for booking ${booking.id}:`, packageError);
+              // Continue with deletion even if package restoration fails
+            }
+          }
+        }
+        
+        // Now delete the bookings
         await db.delete(bookings).where(eq(bookings.classId, classId));
       };
       
