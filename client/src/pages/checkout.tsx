@@ -1140,6 +1140,20 @@ export default function CheckoutPage() {
                                 (-${(appliedCredits / 100).toFixed(2)})
                               </span>
                             </div>
+                            <div className="flex items-center space-x-2">
+                              <Label htmlFor="toggle-credits" className="text-sm text-blue-700">Use Credits</Label>
+                              <Switch
+                                id="toggle-credits"
+                                checked={useCredits}
+                                onCheckedChange={(checked) => {
+                                  setUseCredits(checked);
+                                  if (checked) {
+                                    setUsePackage(false);
+                                  }
+                                }}
+                                data-testid="toggle-credits"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
