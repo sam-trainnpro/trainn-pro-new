@@ -25,7 +25,7 @@ import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-ut
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, and, or, desc, inArray, sql, lt } from "drizzle-orm";
+import { eq, and, or, desc, inArray, sql, lt, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 const PostgresSessionStore = connectPg(session);
@@ -831,11 +831,12 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getClassesByCoach(coachId: number): Promise<Class[]> {
-    // Only return classes with valid start times (exclude parent recurring templates)
+    // Only return active classes with valid start times (exclude parent recurring templates and cancelled classes)
     return await db.select().from(classes)
       .where(and(
         eq(classes.coachId, coachId),
-        sql`${classes.startTime} IS NOT NULL`
+        sql`${classes.startTime} IS NOT NULL`,
+        ne(classes.status, 'cancelled')
       ));
   }
   
