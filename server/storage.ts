@@ -607,7 +607,9 @@ export class DatabaseStorage implements IStorage {
         or(
           sql`${classes.startTime} >= NOW()`,
           sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
-        )
+        ),
+        // Exclude cancelled classes from calendar view
+        ne(classes.status, 'cancelled')
       ];
 
       if (filters?.categoryId) {
