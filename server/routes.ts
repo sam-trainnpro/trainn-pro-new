@@ -1043,6 +1043,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // CRITICAL: Block status='cancelled' updates - must use DELETE endpoint for proper cancellation
+      if (req.body.status === 'cancelled') {
+        return res.status(400).json({ 
+          message: "Cannot set status to 'cancelled' directly. Use DELETE /api/classes/:id to properly cancel the class and restore package credits." 
+        });
+      }
+      
       // Simplified update with just basic fields that we know work
       const updateData: any = {};
       
