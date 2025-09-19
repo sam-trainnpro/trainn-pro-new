@@ -117,9 +117,9 @@ export default function EditPackage() {
     enabled: !!packageId
   });
 
-  // Load form data when package is fetched
+  // Load form data when both package data and categories are available
   useEffect(() => {
-    if (packageData) {
+    if (packageData && categories.length > 0) {
       form.reset({
         title: packageData.title || '',
         packageType: packageData.packageType || 'set_pack',
@@ -147,7 +147,7 @@ export default function EditPackage() {
         }
       }
     }
-  }, [packageData, form]);
+  }, [packageData, categories, form]);
 
   // Load categories
   useEffect(() => {
