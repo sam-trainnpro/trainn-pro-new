@@ -112,6 +112,8 @@ export const classes = pgTable("classes", {
   ageGroup: text("age_group").notNull().default("Adults"),
   // Whether the class is outdoors
   outdoors: boolean("outdoors").default(false),
+  // Status for soft deletes - prevents data loss when classes are cancelled/deleted
+  status: text("status").notNull().default("active"), // 'active', 'cancelled', 'deleted'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -146,6 +148,7 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   toFindUs: true,
   ageGroup: true,
   outdoors: true,
+  status: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;
