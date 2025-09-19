@@ -923,16 +923,18 @@ export class DatabaseStorage implements IStorage {
         return false;
       }
       
-      console.log(`Deleting class: ${id}, isRecurring: ${classItem.isRecurring}, parentClassId: ${classItem.parentClassId}`);
+      console.log(`Soft deleting class: ${id}, isRecurring: ${classItem.isRecurring}, parentClassId: ${classItem.parentClassId}`);
       
-      // Helper function to delete bookings for a class
-      const deleteBookingsForClass = async (classId: number) => {
-        console.log(`Deleting bookings for class ${classId}`);
+      // Helper function to cancel bookings for a class (soft delete approach)
+      const cancelBookingsForClass = async (classId: number) => {
+        console.log(`Cancelling bookings for class ${classId}`);
         
-        // First, get all bookings for this class to process package restoration
-        const classBookings = await db.select().from(bookings).where(eq(bookings.classId, classId));
+        // First, get all active bookings for this class to process package restoration
+        const classBookings = await db.select().from(bookings).where(
+          and(eq(bookings.classId, classId), eq(bookings.status, 'confirmed'))
+        );
         
-        // Process package restoration for each booking before deletion
+        // Process package restoration for each booking before cancellation
         for (const booking of classBookings) {
           if (booking.paymentMethod === 'package') {
             try {
@@ -953,25 +955,27 @@ export class DatabaseStorage implements IStorage {
                     remainingClasses: packagePurchase.remainingClasses + booking.quantity
                   });
                   
-                  console.log(`✅ Restored ${booking.quantity} class(es) to package ${packagePurchase.id} for deleted booking ${booking.id} (class deletion)`);
+                  console.log(`✅ Restored ${booking.quantity} class(es) to package ${packagePurchase.id} for cancelled booking ${booking.id} (class deletion)`);
                 } else {
                   console.error(`⚠️ Package purchase not found for package booking ${packageBooking.id}`);
                 }
               }
             } catch (packageError) {
               console.error(`Failed to restore package classes for booking ${booking.id}:`, packageError);
-              // Continue with deletion even if package restoration fails
+              // Continue with cancellation even if package restoration fails
             }
           }
+          
+          // Mark booking as cancelled instead of deleting
+          await db.update(bookings).set({ status: 'cancelled' }).where(eq(bookings.id, booking.id));
         }
-        
-        // Now delete the bookings
-        await db.delete(bookings).where(eq(bookings.classId, classId));
       };
       
-      // Helper function to delete class schedules for a class
-      const deleteSchedulesForClass = async (classId: number) => {
-        console.log(`Deleting schedules for class ${classId}`);
+      // Helper function to soft delete class schedules for a class (mark as inactive)
+      const cancelSchedulesForClass = async (classId: number) => {
+        console.log(`Cancelling schedules for class ${classId}`);
+        // For schedules, we can still delete them since they're just configuration
+        // and not user data like bookings. Alternatively, we could add a status to schedules too.
         await db.delete(classSchedules).where(eq(classSchedules.classId, classId));
       };
       
@@ -981,23 +985,23 @@ export class DatabaseStorage implements IStorage {
         const childClasses = await this.getClassesByParentId(id);
         console.log(`Found ${childClasses.length} child classes for series ${id}`);
         
-        // Delete bookings and schedules for all child classes
+        // Cancel bookings and schedules for all child classes
         for (const childClass of childClasses) {
-          await deleteBookingsForClass(childClass.id);
-          await deleteSchedulesForClass(childClass.id);
+          await cancelBookingsForClass(childClass.id);
+          await cancelSchedulesForClass(childClass.id);
         }
         
-        // Delete all child classes in the series
-        console.log(`Deleting child classes for series ${id}`);
-        await db.delete(classes).where(eq(classes.parentClassId, id));
+        // Soft delete all child classes in the series
+        console.log(`Soft deleting child classes for series ${id}`);
+        await db.update(classes).set({ status: 'deleted' }).where(eq(classes.parentClassId, id));
         
-        // Delete bookings and schedules for the parent class
-        await deleteBookingsForClass(id);
-        await deleteSchedulesForClass(id);
+        // Cancel bookings and schedules for the parent class
+        await cancelBookingsForClass(id);
+        await cancelSchedulesForClass(id);
         
-        // Then delete the parent class itself
-        console.log(`Deleting parent class ${id}`);
-        await db.delete(classes).where(eq(classes.id, id));
+        // Then soft delete the parent class itself
+        console.log(`Soft deleting parent class ${id}`);
+        await db.update(classes).set({ status: 'deleted' }).where(eq(classes.id, id));
       } 
       // If this is a child class in a series
       else if (classItem.parentClassId) {
@@ -1012,45 +1016,45 @@ export class DatabaseStorage implements IStorage {
             // Get all child classes
             const childClasses = await this.getClassesByParentId(parentClass.id);
             
-            // Delete bookings and schedules for all child classes
+            // Cancel bookings and schedules for all child classes
             for (const childClass of childClasses) {
-              await deleteBookingsForClass(childClass.id);
-              await deleteSchedulesForClass(childClass.id);
+              await cancelBookingsForClass(childClass.id);
+              await cancelSchedulesForClass(childClass.id);
             }
             
-            // Delete all child classes
-            await db.delete(classes).where(eq(classes.parentClassId, parentClass.id));
+            // Soft delete all child classes
+            await db.update(classes).set({ status: 'deleted' }).where(eq(classes.parentClassId, parentClass.id));
             
-            // Delete bookings and schedules for parent
-            await deleteBookingsForClass(parentClass.id);
-            await deleteSchedulesForClass(parentClass.id);
+            // Cancel bookings and schedules for parent
+            await cancelBookingsForClass(parentClass.id);
+            await cancelSchedulesForClass(parentClass.id);
             
-            // Delete the parent class
-            await db.delete(classes).where(eq(classes.id, parentClass.id));
+            // Soft delete the parent class
+            await db.update(classes).set({ status: 'deleted' }).where(eq(classes.id, parentClass.id));
           } else {
             // Just delete this single instance
-            console.log(`Deleting single instance ${id} from series ${parentClass.id}`);
-            await deleteBookingsForClass(id);
-            await deleteSchedulesForClass(id);
-            await db.delete(classes).where(eq(classes.id, id));
+            console.log(`Soft deleting single instance ${id} from series ${parentClass.id}`);
+            await cancelBookingsForClass(id);
+            await cancelSchedulesForClass(id);
+            await db.update(classes).set({ status: 'deleted' }).where(eq(classes.id, id));
           }
         } else {
           // Just delete this instance (parent might be gone already)
-          console.log(`Deleting instance ${id}`);
-          await deleteBookingsForClass(id);
-          await deleteSchedulesForClass(id);
-          await db.delete(classes).where(eq(classes.id, id));
+          console.log(`Soft deleting instance ${id}`);
+          await cancelBookingsForClass(id);
+          await cancelSchedulesForClass(id);
+          await db.update(classes).set({ status: 'deleted' }).where(eq(classes.id, id));
         }
       } 
       // This is a standalone class
       else {
-        console.log(`Deleting standalone class ${id}`);
-        await deleteBookingsForClass(id);
-        await deleteSchedulesForClass(id);
-        await db.delete(classes).where(eq(classes.id, id));
+        console.log(`Soft deleting standalone class ${id}`);
+        await cancelBookingsForClass(id);
+        await cancelSchedulesForClass(id);
+        await db.update(classes).set({ status: 'deleted' }).where(eq(classes.id, id));
       }
       
-      console.log(`Successfully deleted class ${id}`);
+      console.log(`Successfully soft deleted class ${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting class:", error);
