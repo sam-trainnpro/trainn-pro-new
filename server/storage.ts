@@ -844,6 +844,11 @@ export class DatabaseStorage implements IStorage {
       console.log("Updating class with ID:", id);
       console.log("Class data to update:", classData);
       
+      // CRITICAL: Block direct status='cancelled' updates - must go through deleteClass
+      if (classData.status === 'cancelled') {
+        throw new Error("Cannot set status to 'cancelled' directly. Use deleteClass() method to properly handle booking cancellations and package restoration.");
+      }
+      
       const result = await db.update(classes)
         .set(classData)
         .where(eq(classes.id, id))
