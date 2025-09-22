@@ -158,10 +158,10 @@ export default function ClassDetailModal({
           )}
 
           {/* To Find Us */}
-          {classItem.toFindUs && (
+          {(classItem as any).toFindUs && (
             <div>
               <h4 className="font-medium mb-2">How to Find Us</h4>
-              <p className="text-sm text-gray-600">{classItem.toFindUs}</p>
+              <p className="text-sm text-gray-600">{(classItem as any).toFindUs}</p>
             </div>
           )}
 
