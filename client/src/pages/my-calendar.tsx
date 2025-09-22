@@ -211,7 +211,8 @@ export default function MyCalendarPage() {
       console.log('Deleting class with URL:', url);
         
       const response = await fetch(url, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
 
       if (!response.ok) {
