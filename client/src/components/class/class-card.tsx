@@ -10,9 +10,10 @@ import { Badge } from "@/components/ui/badge";
 interface ClassCardProps {
   classItem: ClassCardDTO | Class | ClassWithSchedules;
   schedules?: ClassSchedule[];
+  coach?: User; // Optional coach data when not embedded in classItem
 }
 
-export default function ClassCard({ classItem, schedules }: ClassCardProps) {
+export default function ClassCard({ classItem, schedules, coach: providedCoach }: ClassCardProps) {
   const [, navigate] = useLocation();
   
   // Check if this is a recurring class
@@ -25,7 +26,7 @@ export default function ClassCard({ classItem, schedules }: ClassCardProps) {
   const isClassCardDTO = 'coach' in classItem && typeof classItem.coach === 'object';
   
   // Use consolidated data from props when available, otherwise provide fallbacks
-  const coach = isClassCardDTO ? (classItem as ClassCardDTO).coach : null;
+  const coach = isClassCardDTO ? (classItem as ClassCardDTO).coach : providedCoach || null;
   const category = isClassCardDTO ? (classItem as ClassCardDTO).category : null;
   const bookingCount = {
     total: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.totalBookings || 0) : 0,
