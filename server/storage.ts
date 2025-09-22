@@ -969,7 +969,7 @@ export class DatabaseStorage implements IStorage {
     
     // Check for any credits that might be tied to this class (in case of delayed processing)
     const creditEntries = await db.select().from(userCredits).where(
-      sql`${userCredits.description} LIKE '%class ${classId}%'`
+      like(userCredits.description, `%class ${classId}%`)
     ).limit(1);
     
     if (creditEntries.length > 0) {
