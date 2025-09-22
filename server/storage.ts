@@ -25,7 +25,7 @@ import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-ut
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, and, or, desc, inArray, sql, lt, ne } from "drizzle-orm";
+import { eq, and, or, desc, inArray, sql, lt, ne, like } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 const PostgresSessionStore = connectPg(session);
