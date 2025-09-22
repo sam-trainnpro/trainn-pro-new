@@ -977,14 +977,14 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Check for any scheduled payouts related to this class
-    const scheduledPayouts = await db.select().from(scheduledPayouts).where(
+    const scheduledPayoutsForClass = await db.select().from(scheduledPayouts).where(
       and(
         eq(scheduledPayouts.classId, classId),
         ne(scheduledPayouts.status, 'cancelled')
       )
     ).limit(1);
     
-    return scheduledPayouts.length > 0;
+    return scheduledPayoutsForClass.length > 0;
   }
   
   // Perform soft delete with transactional refund processing
