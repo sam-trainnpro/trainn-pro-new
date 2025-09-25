@@ -219,6 +219,18 @@ export interface IStorage {
   getActiveBookingsForClass(classId: number): Promise<Booking[]>;
   hasPostClassFeedbackEmailBeenSent(bookingId: number): Promise<boolean>;
   markPostClassFeedbackEmailSent(bookingId: number): Promise<void>;
+  
+  // Weekly newsletter queries
+  getUpcomingKidsClassesForNewsletter(): Promise<Array<Class & { coach: User; bookedCount: number }>>;
+  getUpcomingAdultClassesForNewsletter(): Promise<Array<Class & { coach: User; bookedCount: number }>>;
+  getRecentlyJoinedProviders(days?: number): Promise<User[]>;
+  getRecentReviewsForNewsletter(): Promise<Array<{ 
+    review: Review; 
+    customer: User; 
+    coach: User; 
+    classData: Class;
+  }>>;
+  getAllCustomersForNewsletter(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3095,6 +3107,230 @@ export class DatabaseStorage implements IStorage {
     const processType = `post_class_feedback_${bookingId}`;
     const todayStr = new Date().toISOString().split('T')[0];
     await this.upsertEmailReminderTracking(processType, todayStr);
+  }
+
+  // Weekly newsletter query methods
+  async getUpcomingKidsClassesForNewsletter(): Promise<Array<Class & { coach: User; bookedCount: number }>> {
+    const now = new Date();
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    // Join classes with coaches and get booking counts
+    const result = await db
+      .select({
+        // Class fields
+        id: classes.id,
+        title: classes.title,
+        description: classes.description,
+        startTime: classes.startTime,
+        endTime: classes.endTime,
+        price: classes.price,
+        capacity: classes.capacity,
+        coachId: classes.coachId,
+        categoryId: classes.categoryId,
+        address: classes.address,
+        location: classes.location,
+        whatToBring: classes.whatToBring,
+        toFindUs: classes.toFindUs,
+        ageGroup: classes.ageGroup,
+        image: classes.image,
+        isActive: classes.isActive,
+        createdAt: classes.createdAt,
+        updatedAt: classes.updatedAt,
+        parentClassId: classes.parentClassId,
+        seriesId: classes.seriesId,
+        isRecurring: classes.isRecurring,
+        recurrenceRule: classes.recurrenceRule,
+        // Coach fields
+        coach: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          role: users.role,
+          isApproved: users.isApproved,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          businessName: users.businessName,
+          displayBusinessName: users.displayBusinessName,
+          areasOfExpertise: users.areasOfExpertise
+        },
+        // Booking count
+        bookedCount: sql<number>`CAST(COUNT(${bookings.id}) AS INT)`
+      })
+      .from(classes)
+      .innerJoin(users, eq(classes.coachId, users.id))
+      .leftJoin(bookings, and(
+        eq(bookings.classId, classes.id),
+        eq(bookings.status, 'confirmed')
+      ))
+      .where(and(
+        eq(classes.ageGroup, 'Kids'),
+        eq(classes.isActive, true),
+        eq(users.isApproved, true),
+        gte(classes.startTime, now),
+        lte(classes.startTime, nextWeek)
+      ))
+      .groupBy(
+        classes.id, 
+        users.id,
+        users.firstName,
+        users.lastName,
+        users.email,
+        users.role,
+        users.isApproved,
+        users.createdAt,
+        users.updatedAt,
+        users.businessName,
+        users.displayBusinessName,
+        users.areasOfExpertise
+      )
+      .orderBy(classes.startTime)
+      .limit(10);
+
+    return result.map(row => ({
+      ...row,
+      coach: row.coach as User,
+      bookedCount: row.bookedCount || 0
+    }));
+  }
+
+  async getUpcomingAdultClassesForNewsletter(): Promise<Array<Class & { coach: User; bookedCount: number }>> {
+    const now = new Date();
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    // Join classes with coaches and get booking counts
+    const result = await db
+      .select({
+        // Class fields
+        id: classes.id,
+        title: classes.title,
+        description: classes.description,
+        startTime: classes.startTime,
+        endTime: classes.endTime,
+        price: classes.price,
+        capacity: classes.capacity,
+        coachId: classes.coachId,
+        categoryId: classes.categoryId,
+        address: classes.address,
+        location: classes.location,
+        whatToBring: classes.whatToBring,
+        toFindUs: classes.toFindUs,
+        ageGroup: classes.ageGroup,
+        image: classes.image,
+        isActive: classes.isActive,
+        createdAt: classes.createdAt,
+        updatedAt: classes.updatedAt,
+        parentClassId: classes.parentClassId,
+        seriesId: classes.seriesId,
+        isRecurring: classes.isRecurring,
+        recurrenceRule: classes.recurrenceRule,
+        // Coach fields
+        coach: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          role: users.role,
+          isApproved: users.isApproved,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          businessName: users.businessName,
+          displayBusinessName: users.displayBusinessName,
+          areasOfExpertise: users.areasOfExpertise
+        },
+        // Booking count
+        bookedCount: sql<number>`CAST(COUNT(${bookings.id}) AS INT)`
+      })
+      .from(classes)
+      .innerJoin(users, eq(classes.coachId, users.id))
+      .leftJoin(bookings, and(
+        eq(bookings.classId, classes.id),
+        eq(bookings.status, 'confirmed')
+      ))
+      .where(and(
+        or(eq(classes.ageGroup, 'Adults'), eq(classes.ageGroup, 'All Ages')),
+        eq(classes.isActive, true),
+        eq(users.isApproved, true),
+        gte(classes.startTime, now),
+        lte(classes.startTime, nextWeek)
+      ))
+      .groupBy(
+        classes.id, 
+        users.id,
+        users.firstName,
+        users.lastName,
+        users.email,
+        users.role,
+        users.isApproved,
+        users.createdAt,
+        users.updatedAt,
+        users.businessName,
+        users.displayBusinessName,
+        users.areasOfExpertise
+      )
+      .orderBy(classes.startTime)
+      .limit(15);
+
+    return result.map(row => ({
+      ...row,
+      coach: row.coach as User,
+      bookedCount: row.bookedCount || 0
+    }));
+  }
+
+  async getRecentlyJoinedProviders(days: number = 30): Promise<User[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    return await db.select()
+      .from(users)
+      .where(and(
+        eq(users.role, 'coach'),
+        eq(users.isApproved, true),
+        gte(users.createdAt, cutoffDate)
+      ))
+      .orderBy(desc(users.createdAt))
+      .limit(5);
+  }
+
+  async getRecentReviewsForNewsletter(): Promise<Array<{ 
+    review: Review; 
+    customer: User; 
+    coach: User; 
+    classData: Class;
+  }>> {
+    const customerAlias = alias(users, 'customer');
+    const coachAlias = alias(users, 'coach');
+    
+    const result = await db
+      .select({
+        review: reviews,
+        customer: customerAlias,
+        coach: coachAlias,
+        classData: classes
+      })
+      .from(reviews)
+      .innerJoin(customerAlias, eq(reviews.userId, customerAlias.id))
+      .innerJoin(classes, eq(reviews.classId, classes.id))
+      .innerJoin(coachAlias, eq(classes.coachId, coachAlias.id))
+      .where(and(
+        gte(reviews.rating, 4), // Only show 4-5 star reviews
+        ne(reviews.comment, '') // Only show reviews with comments
+      ))
+      .orderBy(desc(reviews.createdAt))
+      .limit(10);
+
+    return result;
+  }
+
+  async getAllCustomersForNewsletter(): Promise<User[]> {
+    return await db.select()
+      .from(users)
+      .where(and(
+        eq(users.role, 'customer'),
+        eq(users.isApproved, true)
+      ))
+      .orderBy(desc(users.createdAt));
   }
 }
 
