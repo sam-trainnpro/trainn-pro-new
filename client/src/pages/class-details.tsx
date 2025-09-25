@@ -46,6 +46,7 @@ import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { Helmet } from "react-helmet";
+import ClassShareModal from "@/components/class-share-modal";
 
 export default function ClassDetailsPage() {
   const [, navigate] = useLocation();
@@ -54,6 +55,7 @@ export default function ClassDetailsPage() {
   const { toast } = useToast();
   const [bookingStatus, setBookingStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [quantity, setQuantity] = useState(1);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Free booking mutation for $0 classes
   const freeBookingMutation = useMutation({
@@ -283,7 +285,12 @@ export default function ClassDetailsPage() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" size="icon">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setIsShareModalOpen(true)}
+                      data-testid="button-share-class"
+                    >
                       <Share2 className="h-4 w-4" />
                     </Button>
                     <Button variant="outline" size="icon">
@@ -698,6 +705,17 @@ export default function ClassDetailsPage() {
           ) : null}
         </div>
       </main>
+      
+      {classItem && (
+        <ClassShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          classTitle={classItem.title}
+          classId={classItem.id}
+          coachName={coach?.businessName && coach?.displayBusinessName ? coach.businessName : (coach ? `${coach.firstName} ${coach.lastName}` : undefined)}
+          price={classItem.price}
+        />
+      )}
       
       <Footer />
       <MobileNavigation />
