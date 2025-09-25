@@ -137,6 +137,9 @@ export default function Footer() {
               <li><Link href="/success-stories" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
               <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
               <li><Link href="/coach-community" className="text-gray-400 hover:text-white transition">Provider Community</Link></li>
+              {(user?.role === 'coach' || user?.role === 'admin') && (
+                <li><Link href="/provider-faq" className="text-gray-400 hover:text-white transition">Provider FAQ</Link></li>
+              )}
               <li><ReferProviderLinkProviders /></li>
             </ul>
           </div>
