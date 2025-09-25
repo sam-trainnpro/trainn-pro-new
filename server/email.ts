@@ -1639,12 +1639,20 @@ export async function sendWeeklyNewsletterEmail(
 
     // Format provider spotlight cards
     const formatProviderCard = (provider: User) => {
+      // Use profile image if available, otherwise use initials
+      const profileImageUrl = provider.profileImage || provider.googleProfilePicture;
+      const imageElement = profileImageUrl ? 
+        `<img src="${profileImageUrl.startsWith('http') ? profileImageUrl : 'https://trainn.pro' + profileImageUrl}" 
+             alt="${provider.firstName} ${provider.lastName}" 
+             style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e5e5; display: block; margin: 0 auto 10px auto;" />` :
+        `<div style="width: 60px; height: 60px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px auto;">
+           ${provider.firstName.charAt(0)}${provider.lastName.charAt(0)}
+         </div>`;
+      
       return `
         <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin: 12px 0; background: white; text-align: center;">
           <div style="margin-bottom: 15px;">
-            <div style="width: 60px; height: 60px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px auto;">
-              ${provider.firstName.charAt(0)}${provider.lastName.charAt(0)}
-            </div>
+            ${imageElement}
             <h3 style="color: #333; font-size: 18px; margin: 0;">
               ${provider.displayBusinessName && provider.businessName ? provider.businessName : `${provider.firstName} ${provider.lastName}`}
             </h3>
@@ -1842,7 +1850,7 @@ export async function sendWeeklyNewsletterEmail(
       html: htmlContent,
       trackingSettings: {
         clickTracking: {
-          enable: true
+          enable: false
         }
       }
     });
