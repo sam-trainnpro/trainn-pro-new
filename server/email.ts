@@ -1467,12 +1467,6 @@ interface PostClassFeedbackData {
 export async function sendPostClassFeedbackEmail(
   data: PostClassFeedbackData
 ): Promise<boolean> {
-  console.log('Starting post-class feedback email process...');
-  console.log('Email data:', {
-    customerEmail: data.customer.email,
-    className: data.classData.title,
-    bookingId: data.booking.id
-  });
   
   try {
     const { booking, classData, customer, coach } = data;
