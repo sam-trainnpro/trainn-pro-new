@@ -200,6 +200,10 @@ export default function PackagesPage() {
                 <p className="text-gray-600">
                   Save money with multi-class packages from top providers
                 </p>
+                <div className="mt-3 mb-4 text-sm text-gray-600">
+                  <p>Package Expiration: 5 classes: 60 days* | 10 classes: 90 days* | 20 classes: 180 days*</p>
+                  <p className="text-xs text-gray-500">* Expiration period begins on the date of purchase</p>
+                </div>
                 {filteredPackages.length > 0 && (
                   <p className="text-sm text-gray-500 mt-2">
                     Showing {filteredPackages.length} package{filteredPackages.length === 1 ? '' : 's'}
