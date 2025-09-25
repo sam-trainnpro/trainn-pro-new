@@ -479,6 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           coachId: req.query.coachId ? Number(req.query.coachId) : undefined,
           searchQuery: req.query.q as string,
           dateFilter: req.query.date ? new Date(req.query.date as string) : undefined,
+          packageClasses: req.query.packageClasses as string,
           limit: 100, // Default pagination limit
           offset: 0
         };
