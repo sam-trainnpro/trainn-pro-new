@@ -25,7 +25,7 @@ import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-ut
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, and, or, desc, inArray, sql, lt, ne, like } from "drizzle-orm";
+import { eq, and, or, desc, inArray, sql, lt, ne, like, gte, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 const PostgresSessionStore = connectPg(session);
@@ -213,6 +213,12 @@ export interface IStorage {
   // Email Reminder Tracking methods
   getEmailReminderTracking(processType: string): Promise<EmailReminderTracking | undefined>;
   upsertEmailReminderTracking(processType: string, lastProcessedDate: string): Promise<EmailReminderTracking>;
+  
+  // Post-class feedback emails
+  getClassesEndedInTimeWindow(startTime: Date, endTime: Date): Promise<Class[]>;
+  getActiveBookingsForClass(classId: number): Promise<Booking[]>;
+  hasPostClassFeedbackEmailBeenSent(bookingId: number): Promise<boolean>;
+  markPostClassFeedbackEmailSent(bookingId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3058,6 +3064,37 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+  
+  // Post-class feedback email methods
+  async getClassesEndedInTimeWindow(startTime: Date, endTime: Date): Promise<Class[]> {
+    return await db.select()
+      .from(classes)
+      .where(and(
+        gte(classes.endTime, startTime),
+        lte(classes.endTime, endTime)
+      ));
+  }
+  
+  async getActiveBookingsForClass(classId: number): Promise<Booking[]> {
+    return await db.select()
+      .from(bookings)
+      .where(and(
+        eq(bookings.classId, classId),
+        eq(bookings.status, 'confirmed')
+      ));
+  }
+  
+  async hasPostClassFeedbackEmailBeenSent(bookingId: number): Promise<boolean> {
+    const processType = `post_class_feedback_${bookingId}`;
+    const result = await this.getEmailReminderTracking(processType);
+    return result !== undefined;
+  }
+  
+  async markPostClassFeedbackEmailSent(bookingId: number): Promise<void> {
+    const processType = `post_class_feedback_${bookingId}`;
+    const todayStr = new Date().toISOString().split('T')[0];
+    await this.upsertEmailReminderTracking(processType, todayStr);
   }
 }
 

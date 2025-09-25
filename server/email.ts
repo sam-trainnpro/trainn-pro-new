@@ -1479,8 +1479,8 @@ export async function sendPostClassFeedbackEmail(
     
     const subject = `Trainn Class Feedback + Your Next Class`;
     
-    // Determine if this was a kids or adult class based on age groups
-    const ageGroupFilter = classData.ageGroups && classData.ageGroups.includes('Kids') ? 'Kids' : 'Adults';
+    // Determine if this was a kids or adult class based on age group
+    const ageGroupFilter = classData.ageGroup === 'Kids' ? 'Kids' : 'Adults';
     const categoryFilter = classData.categoryId || '';
     
     // Build URLs with appropriate filters
