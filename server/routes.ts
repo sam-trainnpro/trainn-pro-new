@@ -16,7 +16,9 @@ import {
   sendPromoCodeApprovalRequest,
   sendPromoCodeApprovalEmail,
   sendPromoCodeRejectionEmail,
-  sendBookingAdminNotification
+  sendBookingAdminNotification,
+  sendPackagePurchaseConfirmation,
+  sendPackagePurchaseNotification
 } from "./email";
 import { 
   sendClassCancellationNotifications,
@@ -3372,6 +3374,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Send email notifications
+      try {
+        // Get customer and coach user data for emails
+        const customer = req.user;
+        const coach = await storage.getUser(packageData.coachId);
+        
+        if (coach) {
+          // Prepare pricing details for customer email
+          const pricingDetails = {
+            originalPrice: packagePrice,
+            discountAmount: 0, // No discount for paid purchases currently
+            finalAmount: totalAmountDollars,
+            stripeFee: stripeFee,
+            appliedCredits: appliedCredits || undefined
+          };
+
+          // Prepare provider pricing details 
+          const providerPricingDetails = {
+            coachPayout: firstProviderPayout,
+            totalAmount: totalAmountDollars
+          };
+
+          // Send customer confirmation email
+          await sendPackagePurchaseConfirmation({
+            packagePurchase,
+            packageDetails: packageData,
+            customer,
+            coach,
+            pricingDetails
+          });
+
+          // Send provider notification email
+          await sendPackagePurchaseNotification({
+            packagePurchase,
+            packageDetails: packageData,
+            customer,
+            coach,
+            pricingDetails: providerPricingDetails
+          });
+        }
+      } catch (emailError) {
+        console.error("Error sending package purchase emails:", emailError);
+        // Don't fail the entire request for email errors
+      }
+
       res.json({ 
         success: true, 
         message: "Package purchase confirmed and saved",
@@ -3432,6 +3479,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Apply credits to this purchase
       await storage.applyCreditsToBooking(userId, appliedCredits, packagePurchase.id);
+
+      // Send email notifications for free credit purchase
+      try {
+        // Get customer and coach user data for emails
+        const customer = req.user;
+        const coach = await storage.getUser(packageData.coachId);
+        
+        if (coach) {
+          // Prepare pricing details for customer email
+          const pricingDetails = {
+            originalPrice: parseFloat(price),
+            discountAmount: 0,
+            finalAmount: 0, // Paid with credits, so final amount is $0
+            stripeFee: 0,
+            appliedCredits: appliedCredits
+          };
+
+          // For free credit purchases, coach gets no immediate payout (fully subsidized by platform)
+          const providerPricingDetails = {
+            coachPayout: 0, // Will be paid when classes are attended
+            totalAmount: 0
+          };
+
+          // Send customer confirmation email
+          await sendPackagePurchaseConfirmation({
+            packagePurchase,
+            packageDetails: packageData,
+            customer,
+            coach,
+            pricingDetails
+          });
+
+          // Send provider notification email
+          await sendPackagePurchaseNotification({
+            packagePurchase,
+            packageDetails: packageData,
+            customer,
+            coach,
+            pricingDetails: providerPricingDetails
+          });
+        }
+      } catch (emailError) {
+        console.error("Error sending package purchase emails:", emailError);
+        // Don't fail the entire request for email errors
+      }
 
       res.json({
         success: true,
