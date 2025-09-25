@@ -1597,15 +1597,16 @@ export async function sendPackagePurchaseConfirmation(
     
     // Format date 
     const PACIFIC_TIMEZONE = 'America/Los_Angeles';
-    const purchaseDate = toZonedTime(new Date(packagePurchase.purchaseDate), PACIFIC_TIMEZONE);
+    const purchaseDate = toZonedTime(new Date(packagePurchase.purchase_date || packagePurchase.purchaseDate), PACIFIC_TIMEZONE);
     const formattedPurchaseDate = format(purchaseDate, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
     const formattedPurchaseTime = format(purchaseDate, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
     // Format expiration date if available
     let expirationInfo = '';
-    if (packagePurchase.expirationDate) {
-      const expirationDate = toZonedTime(new Date(packagePurchase.expirationDate), PACIFIC_TIMEZONE);
-      const formattedExpirationDate = format(expirationDate, 'MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const expirationDate = packagePurchase.expiration_date || packagePurchase.expirationDate;
+    if (expirationDate) {
+      const expDate = toZonedTime(new Date(expirationDate), PACIFIC_TIMEZONE);
+      const formattedExpirationDate = format(expDate, 'MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
       expirationInfo = `
         <tr>
           <td style="padding: 8px 0; color: #666; font-weight: bold;">Expires:</td>
@@ -1646,11 +1647,11 @@ export async function sendPackagePurchaseConfirmation(
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Classes Included:</td>
-                <td style="padding: 8px 0; color: #333;">${packagePurchase.classCount} classes</td>
+                <td style="padding: 8px 0; color: #333;">${packagePurchase.class_count || packagePurchase.classCount} classes</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Remaining Classes:</td>
-                <td style="padding: 8px 0; color: #333; font-weight: bold;">${packagePurchase.remainingClasses} classes</td>
+                <td style="padding: 8px 0; color: #333; font-weight: bold;">${packagePurchase.remaining_classes || packagePurchase.remainingClasses} classes</td>
               </tr>
               ${expirationInfo}
               <tr>
@@ -1744,7 +1745,7 @@ export async function sendPackagePurchaseNotification(
     
     // Format date 
     const PACIFIC_TIMEZONE = 'America/Los_Angeles';
-    const purchaseDate = toZonedTime(new Date(packagePurchase.purchaseDate), PACIFIC_TIMEZONE);
+    const purchaseDate = toZonedTime(new Date(packagePurchase.purchase_date || packagePurchase.purchaseDate), PACIFIC_TIMEZONE);
     const formattedPurchaseDate = format(purchaseDate, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
     const formattedPurchaseTime = format(purchaseDate, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
 
@@ -1776,7 +1777,7 @@ export async function sendPackagePurchaseNotification(
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Classes Purchased:</td>
-                <td style="padding: 8px 0; color: #333;">${packagePurchase.classCount} classes</td>
+                <td style="padding: 8px 0; color: #333;">${packagePurchase.class_count || packagePurchase.classCount} classes</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #666; font-weight: bold;">Purchase Date:</td>
