@@ -138,7 +138,14 @@ export default function Footer() {
               <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
               <li><Link href="/coach-community" className="text-gray-400 hover:text-white transition">Provider Community</Link></li>
               {(user?.role === 'coach' || user?.role === 'admin') && (
-                <li><Link href="/provider-faq" className="text-gray-400 hover:text-white transition">Provider FAQ</Link></li>
+                <li>
+                  <button 
+                    onClick={() => window.location.href = '/provider-faq'} 
+                    className="text-gray-400 hover:text-white transition text-left"
+                  >
+                    Provider FAQ
+                  </button>
+                </li>
               )}
               <li><ReferProviderLinkProviders /></li>
             </ul>
