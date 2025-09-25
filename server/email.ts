@@ -1592,7 +1592,7 @@ export async function sendWeeklyNewsletterEmail(
     const subject = `This Week on Trainn: ${upcomingKidsClasses.length + upcomingAdultClasses.length} Classes Await! 🏃‍♀️`;
     
     // Helper function to format class cards
-    const formatClassCard = (classData: Class & { coach: User }, index: number) => {
+    const formatClassCard = (classData: Class & { coach: User; bookedCount: number }, index: number) => {
       const classDate = new Date(classData.startTime!);
       const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
       const dayName = format(classDatePT, 'EEEE', { timeZone: PACIFIC_TIMEZONE });

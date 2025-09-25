@@ -5,6 +5,8 @@ import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { format, toZonedTime } from 'date-fns-tz';
+import { db } from "./db";
+import { classes, users } from "../shared/schema";
 import { 
   sendBookingConfirmation, 
   sendNewBookingNotificationToCoach, 
@@ -3662,6 +3664,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: 'Failed to send test feedback email',
+        error: error.message
+      });
+    }
+  });
+
+  // Test weekly newsletter endpoints
+  app.post("/api/test/send-weekly-newsletter", async (req, res) => {
+    try {
+      const { sendWeeklyNewsletters } = await import('./email-scheduler');
+      await sendWeeklyNewsletters();
+      
+      res.json({ 
+        success: true, 
+        message: 'Weekly newsletter sent successfully to all customers' 
+      });
+    } catch (error: any) {
+      console.error("Weekly newsletter test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send weekly newsletter',
+        error: error.message
+      });
+    }
+  });
+  
+  // Send weekly newsletter to specific customer (for testing)
+  app.post("/api/test/send-newsletter-to-customer", async (req, res) => {
+    try {
+      const { customerEmail } = req.body;
+      
+      if (!customerEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "customerEmail is required"
+        });
+      }
+
+      // Get customer by email
+      const customer = await storage.getUserByEmail(customerEmail);
+      if (!customer || customer.role !== 'customer') {
+        return res.status(404).json({ success: false, message: "Customer not found" });
+      }
+
+      // Fetch newsletter data
+      const [upcomingKidsClasses, upcomingAdultClasses, newProviders, recentReviews] = await Promise.all([
+        storage.getUpcomingKidsClassesForNewsletter(),
+        storage.getUpcomingAdultClassesForNewsletter(), 
+        storage.getRecentlyJoinedProviders(30),
+        storage.getRecentReviewsForNewsletter()
+      ]);
+
+      const { sendWeeklyNewsletterEmail } = await import('./email');
+      const emailSent = await sendWeeklyNewsletterEmail({
+        customer,
+        upcomingKidsClasses,
+        upcomingAdultClasses,
+        newProviders,
+        recentReviews
+      });
+
+      if (emailSent) {
+        res.json({ 
+          success: true, 
+          message: `Weekly newsletter sent successfully to ${customerEmail}`,
+          details: {
+            customerName: customer.firstName,
+            kidsClasses: upcomingKidsClasses.length,
+            adultClasses: upcomingAdultClasses.length,
+            newProviders: newProviders.length,
+            reviews: recentReviews.length
+          }
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: `Failed to send newsletter to ${customerEmail}` 
+        });
+      }
+    } catch (error: any) {
+      console.error("Customer newsletter test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send newsletter to customer',
+        error: error.message
+      });
+    }
+  });
+
+  // Get newsletter data preview (for debugging)
+  app.get("/api/test/newsletter-data", async (req, res) => {
+    try {
+      // Test simple queries first
+      const allClasses = await db.select({ 
+        id: classes.id, 
+        title: classes.title, 
+        ageGroup: classes.ageGroup, 
+        status: classes.status,
+        startTime: classes.startTime,
+        coachId: classes.coachId
+      }).from(classes).limit(5);
+      
+      const allUsers = await db.select({ 
+        id: users.id, 
+        firstName: users.firstName, 
+        role: users.role, 
+        isApproved: users.isApproved 
+      }).from(users).limit(5);
+
+      res.json({ 
+        success: true, 
+        debug: {
+          totalClasses: allClasses.length,
+          totalUsers: allUsers.length,
+          sampleClasses: allClasses,
+          sampleUsers: allUsers
+        }
+      });
+    } catch (error: any) {
+      console.error("Newsletter data preview error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch newsletter data',
         error: error.message
       });
     }
