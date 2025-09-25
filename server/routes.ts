@@ -3667,6 +3667,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send Sam Roth's specific feedback email for Private Soccer Class
+  app.post("/api/test/send-sam-feedback", async (req, res) => {
+    try {
+      // Use exact data from database for Sam Roth's Private Soccer Class
+      const customer = {
+        id: 36,
+        firstName: "Sam",
+        lastName: "Roth",
+        email: "samgroth@gmail.com",
+        role: 'customer' as const,
+        isApproved: true,
+        createdAt: new Date('2025-06-18T22:11:12.427Z'),
+        updatedAt: new Date('2025-06-18T22:11:12.427Z')
+      };
+      
+      const classData = {
+        id: 1841,
+        title: "Private Soccer Class (Ages 4-8) with Ryan Z",
+        description: "Individualized, outdoor soccer training that helps kids develop technical skills and most importantly HAVE FUN in a small group setting.",
+        startTime: new Date('2025-09-18T00:00:00'),
+        endTime: new Date('2025-09-18T01:00:00'),
+        address: "295 Day Street, San Francisco, CA, 94131",
+        whatToBring: "Water bottle, soccer cleats (optional), soccer ball (optional), desire to improve soccer skills",
+        price: 30,
+        coachId: 175,
+        categoryId: 6,
+        capacity: 10,
+        image: "https://res.cloudinary.com/dbtslhlgp/image/upload/v1755121704/trainn/pnjqbes2itsbpfietkah.jpg",
+        location: "Upper Noe Recreation Center",
+        ageGroup: "Kids",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const coach = {
+        id: 175,
+        firstName: "Ryan",
+        lastName: "Zoradi",
+        email: "rzoradi+coach@gmail.com",
+        role: 'coach' as const,
+        isApproved: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const booking = {
+        id: 267,
+        userId: 36,
+        classId: 1841,
+        quantity: 1,
+        status: "confirmed" as const,
+        paymentDate: new Date('2025-09-12T18:43:07.682Z'),
+        paymentMethod: "link" as const,
+        amount: 3000, // $30.00 in cents
+        currency: "usd",
+        platformFee: 450, // 15% of $30
+        coachPayout: 2550, // 85% of $30
+        createdAt: new Date('2025-09-12T18:43:07.682Z'),
+        stripePaymentId: null,
+        stripeTransferId: null,
+        payoutStatus: null,
+        payoutDate: null,
+        stripePaymentIntentId: "pi_3S6bvuDlfK76TOG01U3kOOfS"
+      };
+
+      const { sendPostClassFeedbackEmail } = await import('./email');
+      const emailSent = await sendPostClassFeedbackEmail({
+        booking,
+        classData,
+        customer,
+        coach
+      });
+
+      if (emailSent) {
+        res.json({ 
+          success: true, 
+          message: 'Post-class feedback email sent successfully to samgroth@gmail.com',
+          details: {
+            customerName: customer.firstName,
+            className: classData.title,
+            coachName: coach.firstName,
+            to: customer.email,
+            classDate: classData.startTime,
+            bookingId: booking.id
+          }
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to send feedback email to Sam Roth' 
+        });
+      }
+    } catch (error: any) {
+      console.error("Sam feedback email error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send feedback email to Sam Roth',
+        error: error.message
+      });
+    }
+  });
+
   // Test endpoint for subsidy calculation
   app.post("/api/test/subsidy-calculation", requireAuth, async (req, res) => {
     try {
