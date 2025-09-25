@@ -1456,3 +1456,114 @@ export async function sendBookingAdminNotification(
     return false;
   }
 }
+
+interface PostClassFeedbackData {
+  booking: Booking;
+  classData: Class;
+  customer: User;
+  coach: User;
+}
+
+export async function sendPostClassFeedbackEmail(
+  data: PostClassFeedbackData
+): Promise<boolean> {
+  console.log('Starting post-class feedback email process...');
+  console.log('Email data:', {
+    customerEmail: data.customer.email,
+    className: data.classData.title,
+    bookingId: data.booking.id
+  });
+  
+  try {
+    const { booking, classData, customer, coach } = data;
+    
+    const subject = `Trainn Class Feedback + Your Next Class`;
+    
+    // Determine if this was a kids or adult class based on age groups
+    const ageGroupFilter = classData.ageGroups && classData.ageGroups.includes('Kids') ? 'Kids' : 'Adults';
+    const categoryFilter = classData.categoryId || '';
+    
+    // Build URLs with appropriate filters
+    const reviewUrl = `https://trainn.pro/review?classId=${classData.id}&bookingId=${booking.id}`;
+    const bookAnotherUrl = `https://trainn.pro/classes?ageGroup=${ageGroupFilter}&category=${categoryFilter}`;
+    
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+          </div>
+          
+          <p style="color: #333; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+            Hi ${customer.firstName || 'there'},
+          </p>
+          
+          <p style="color: #333; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+            Thanks for joining us for <strong>${classData.title}</strong> with <strong>${coach.firstName} ${coach.lastName}</strong>! Your next step is simple:
+          </p>
+          
+          <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0;">
+            <div style="margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span style="color: #28a745; font-size: 18px; margin-right: 10px;">✅</span>
+                <span style="color: #333; font-weight: bold;">Tell us about your experience:</span>
+              </div>
+              <div style="text-align: center; margin-bottom: 25px;">
+                <a href="${reviewUrl}" 
+                   style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
+                  Rate the Class
+                </a>
+              </div>
+            </div>
+            
+            <div>
+              <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <span style="color: #28a745; font-size: 18px; margin-right: 10px;">✅</span>
+                <span style="color: #333; font-weight: bold;">Lock in your next session:</span>
+              </div>
+              <div style="text-align: center;">
+                <a href="${bookAnotherUrl}" 
+                   style="background-color: #28a745; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
+                  Book Another Class
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <p style="color: #333; line-height: 1.6; margin-bottom: 25px; font-size: 16px; text-align: center;">
+            Your future self will thank you. 🙌
+          </p>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #333; margin: 0 0 5px 0; font-size: 16px;">
+              See you soon,
+            </p>
+            <p style="color: #333; margin: 0; font-size: 16px; font-weight: bold;">
+              Sam from Trainn
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              Questions? Contact us at support@trainn.pro
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: customer.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`✅ Post-class feedback email sent to ${customer.email} for class ${classData.title}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Post-class feedback email error:', error);
+    return false;
+  }
+}
