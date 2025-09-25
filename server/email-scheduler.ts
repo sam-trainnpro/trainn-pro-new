@@ -2,7 +2,8 @@ import { storage } from './storage';
 import { 
   sendClassReminder, 
   sendClassCancellationNotification,
-  sendClassScheduleUpdateNotification 
+  sendClassScheduleUpdateNotification,
+  sendPostClassFeedbackEmail
 } from './email';
 import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { addDays, startOfDay, endOfDay } from 'date-fns';
@@ -269,6 +270,95 @@ export async function sendClassUpdateNotifications(
     console.log('Class update notifications completed');
   } catch (error) {
     console.error('Error sending class update notifications:', error);
+    throw error;
+  }
+}
+
+// Post-class feedback email scheduler - sends emails 1 hour after class completion
+export async function sendPostClassFeedbackEmails(): Promise<void> {
+  console.log('Starting post-class feedback email process...');
+  
+  try {
+    const now = new Date();
+    
+    // Find classes that ended approximately 1 hour ago (with 15-minute tolerance window)
+    const oneHourAgo = new Date(now.getTime() - (60 * 60 * 1000)); // 1 hour ago
+    const startWindow = new Date(oneHourAgo.getTime() - (15 * 60 * 1000)); // 15 mins before
+    const endWindow = new Date(oneHourAgo.getTime() + (15 * 60 * 1000)); // 15 mins after
+    
+    console.log(`Looking for classes that ended between ${startWindow.toISOString()} and ${endWindow.toISOString()}`);
+    
+    // Get all classes that ended in the target window
+    const completedClasses = await storage.getClassesEndedInTimeWindow(startWindow, endWindow);
+    console.log(`Found ${completedClasses.length} classes that ended in the target window`);
+    
+    if (completedClasses.length === 0) {
+      console.log('No classes completed in the target window, skipping feedback emails');
+      return;
+    }
+    
+    let emailsSent = 0;
+    
+    for (const classData of completedClasses) {
+      console.log(`Processing feedback emails for class: ${classData.title} (ID: ${classData.id})`);
+      
+      // Get all active bookings for this class
+      const bookings = await storage.getActiveBookingsForClass(classData.id);
+      console.log(`Found ${bookings.length} active bookings for class ${classData.id}`);
+      
+      if (bookings.length === 0) {
+        console.log(`No active bookings for class ${classData.id}, skipping`);
+        continue;
+      }
+      
+      // Get coach information
+      const coach = await storage.getUser(classData.coachId);
+      if (!coach) {
+        console.log(`Coach not found for class ${classData.id}, skipping`);
+        continue;
+      }
+      
+      for (const booking of bookings) {
+        try {
+          // Check if we've already sent feedback email for this booking
+          const alreadySent = await storage.hasPostClassFeedbackEmailBeenSent(booking.id);
+          if (alreadySent) {
+            console.log(`Feedback email already sent for booking ${booking.id}, skipping`);
+            continue;
+          }
+          
+          // Get customer information
+          const customer = await storage.getUser(booking.userId);
+          if (!customer) {
+            console.log(`Customer not found for booking ${booking.id}, skipping`);
+            continue;
+          }
+          
+          // Send the post-class feedback email
+          const emailSent = await sendPostClassFeedbackEmail({
+            booking,
+            classData,
+            customer,
+            coach
+          });
+          
+          if (emailSent) {
+            // Mark this booking as having received feedback email
+            await storage.markPostClassFeedbackEmailSent(booking.id);
+            emailsSent++;
+            console.log(`✅ Feedback email sent for booking ${booking.id} to ${customer.email}`);
+          } else {
+            console.log(`❌ Failed to send feedback email for booking ${booking.id}`);
+          }
+        } catch (bookingError) {
+          console.error(`Error processing feedback email for booking ${booking.id}:`, bookingError);
+        }
+      }
+    }
+    
+    console.log(`✅ Post-class feedback email process completed. Sent ${emailsSent} emails.`);
+  } catch (error) {
+    console.error('Error in post-class feedback email process:', error);
     throw error;
   }
 }

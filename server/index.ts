@@ -214,6 +214,35 @@ app.use((req, res, next) => {
         
         log('📧 [DEV] Daily class reminder processing started (every hour with idempotency)');
       }
+
+      // Start automated post-class feedback email processing
+      if (process.env.NODE_ENV === 'production') {
+        // In production, check for completed classes every 15 minutes
+        setInterval(async () => {
+          try {
+            const { sendPostClassFeedbackEmails } = await import('./email-scheduler');
+            await sendPostClassFeedbackEmails();
+            console.log('🎯 Post-class feedback emails completed');
+          } catch (error) {
+            console.error('Error in post-class feedback email process:', error);
+          }
+        }, 15 * 60 * 1000); // 15 minutes in milliseconds
+        
+        log('🎯 Automated post-class feedback email processing started (every 15 minutes)');
+      } else {
+        // In development, check for completed classes every 5 minutes for testing
+        setInterval(async () => {
+          try {
+            const { sendPostClassFeedbackEmails } = await import('./email-scheduler');
+            await sendPostClassFeedbackEmails();
+            console.log('🎯 [DEV] Post-class feedback emails completed');
+          } catch (error) {
+            console.error('Error in post-class feedback email process:', error);
+          }
+        }, 5 * 60 * 1000); // 5 minutes in milliseconds
+        
+        log('🎯 [DEV] Automated post-class feedback email processing started (every 5 minutes)');
+      }
     });
   } catch (error) {
     console.error('Failed to initialize server application:', error);
