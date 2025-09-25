@@ -12,6 +12,60 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function FAQPage() {
   const faqs = [
     {
+      id: "booking",
+      question: "How do I book a class?",
+      answer:
+        "You can browse classes by category, location, or date. Once you find a class you like, click \"Book Now\", choose your number of spots, and complete payment — it's that easy!",
+    },
+    {
+      id: "book-for-friend",
+      question: "Can I book for a friend too?",
+      answer:
+        "Yes! You can reserve multiple spots in a class. Just adjust the quantity when booking. Some providers even offer promo codes for group bookings!",
+    },
+    {
+      id: "class-details-after-booking",
+      question: "Where can I find my class details after booking?",
+      answer:
+        "Once booked, your class details will appear under \"My Bookings\" in your account. You'll also get a confirmation email with all the info you need.",
+    },
+    {
+      id: "provider-cancellation",
+      question: "What if a class gets canceled by the provider?",
+      answer:
+        "If a provider cancels a class, you'll be notified automatically and issued a full refund — no action needed on your part.",
+    },
+    {
+      id: "promo-codes",
+      question: "How do promo codes work?",
+      answer:
+        "Promo codes can be entered at checkout. Some codes apply only to:\n• Specific classes or providers\n• Group bookings (e.g., 2+ spots)\n• First-time users",
+    },
+    {
+      id: "packages",
+      question: "What are class packages, and how do they work?",
+      answer:
+        "Packages let you buy multiple classes upfront (e.g., 5, 10, or 20 classes) at a discount. You can apply your credits to future bookings with that provider.",
+    },
+    {
+      id: "package-expiration",
+      question: "Do class packages expire?",
+      answer:
+        "Yes. Each package comes with an expiration:\n• 5-class: 60 days\n• 10-class: 90 days\n• 20-class: 180 days\n\n(Note expiration period starts from the purchase date.)",
+    },
+    {
+      id: "charging",
+      question: "When do I get charged?",
+      answer:
+        "You're charged at the time of booking. For packages, you're charged once upfront, and you can redeem class credits later.",
+    },
+    {
+      id: "support-contact",
+      question: "Who do I contact if something goes wrong?",
+      answer:
+        "If you have any issues with a booking, class, or provider, just reach out to us via support@trainn.pro, and we'll take care of it. Expect response within 24 hours.",
+    },
+    {
       id: "cancellation",
       question: "What is your cancellation policy?",
       answer:
