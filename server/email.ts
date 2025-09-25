@@ -1575,6 +1575,269 @@ interface WeeklyNewsletterData {
   }>;
 }
 
+interface PackagePurchaseConfirmationData {
+  packagePurchase: any; // PackagePurchase type
+  packageDetails: any; // ClassPackage type  
+  customer: User;
+  coach: User;
+  pricingDetails?: {
+    originalPrice: number;
+    discountAmount: number;
+    finalAmount: number;
+    stripeFee: number;
+    appliedCredits?: number;
+  };
+}
+
+export async function sendPackagePurchaseConfirmation(
+  data: PackagePurchaseConfirmationData
+): Promise<boolean> {
+  try {
+    const { packagePurchase, packageDetails, customer, coach, pricingDetails } = data;
+    
+    // Format date 
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
+    const purchaseDate = toZonedTime(new Date(packagePurchase.purchaseDate), PACIFIC_TIMEZONE);
+    const formattedPurchaseDate = format(purchaseDate, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedPurchaseTime = format(purchaseDate, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
+
+    // Format expiration date if available
+    let expirationInfo = '';
+    if (packagePurchase.expirationDate) {
+      const expirationDate = toZonedTime(new Date(packagePurchase.expirationDate), PACIFIC_TIMEZONE);
+      const formattedExpirationDate = format(expirationDate, 'MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+      expirationInfo = `
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-weight: bold;">Expires:</td>
+          <td style="padding: 8px 0; color: #333;">${formattedExpirationDate}</td>
+        </tr>
+      `;
+    }
+
+    const subject = `Trainn Package Purchase Confirmation - ${packageDetails.title}`;
+    
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
+          </div>
+          
+          <h2 style="color: #333; margin-bottom: 20px;">Package Purchase Confirmation</h2>
+          
+          <p style="color: #333; line-height: 1.6;">
+            Thank you for purchasing a class package with Trainn!<br>
+            Your package is now active and ready to use. Booking details are shown below.
+          </p>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Package:</td>
+                <td style="padding: 8px 0; color: #333;">${packageDetails.title}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Coach:</td>
+                <td style="padding: 8px 0; color: #333;">
+                  ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}
+                  ${coach.displayBusinessName && coach.businessName ? `<br><span style="color: #666; font-size: 14px;">with ${coach.firstName} ${coach.lastName}</span>` : ''}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Classes Included:</td>
+                <td style="padding: 8px 0; color: #333;">${packagePurchase.classCount} classes</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Remaining Classes:</td>
+                <td style="padding: 8px 0; color: #333; font-weight: bold;">${packagePurchase.remainingClasses} classes</td>
+              </tr>
+              ${expirationInfo}
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Purchase Date:</td>
+                <td style="padding: 8px 0; color: #333;">${formattedPurchaseDate} at ${formattedPurchaseTime}</td>
+              </tr>
+              ${pricingDetails ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Total Paid:</td>
+                <td style="padding: 8px 0; color: #333; font-weight: bold;">$${pricingDetails.finalAmount.toFixed(2)}</td>
+              </tr>
+              ${pricingDetails.appliedCredits ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Credits Applied:</td>
+                <td style="padding: 8px 0; color: #059669;">-$${pricingDetails.appliedCredits.toFixed(2)}</td>
+              </tr>
+              ` : ''}
+              ` : ''}
+            </table>
+          </div>
+          
+          ${packageDetails.description ? `
+          <div style="margin: 25px 0;">
+            <h3 style="color: #333; margin-bottom: 10px;">Package Details</h3>
+            <p style="color: #666; line-height: 1.6;">${packageDetails.description}</p>
+          </div>
+          ` : ''}
+          
+          <div style="background-color: #e0f7fa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #2563eb;">
+            <h3 style="color: #333; margin: 0 0 15px 0;">How to Use Your Package</h3>
+            <p style="color: #666; margin: 0; line-height: 1.6;">
+              Visit your bookings page to see available classes from ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}. 
+              When you book a class, it will automatically use one of your package credits.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://trainn.pro/bookings" style="background-color: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              View My Packages
+            </a>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              Questions? Contact us at <a href="mailto:support@trainn.pro" style="color: #2563eb;">support@trainn.pro</a>
+            </p>
+            <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">
+              Trainn - Building stronger communities through fitness, creativity and play
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: customer.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
+    });
+
+    console.log(`✅ Package purchase confirmation email sent to ${customer.email} for package ${packageDetails.title}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Package purchase confirmation email error:', error);
+    return false;
+  }
+}
+
+interface PackagePurchaseNotificationData {
+  packagePurchase: any; // PackagePurchase type
+  packageDetails: any; // ClassPackage type  
+  customer: User;
+  coach: User;
+  pricingDetails?: {
+    coachPayout: number;
+    totalAmount: number;
+  };
+}
+
+export async function sendPackagePurchaseNotification(
+  data: PackagePurchaseNotificationData  
+): Promise<boolean> {
+  try {
+    const { packagePurchase, packageDetails, customer, coach, pricingDetails } = data;
+    
+    // Format date 
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
+    const purchaseDate = toZonedTime(new Date(packagePurchase.purchaseDate), PACIFIC_TIMEZONE);
+    const formattedPurchaseDate = format(purchaseDate, 'EEEE, MMMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    const formattedPurchaseTime = format(purchaseDate, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
+
+    const subject = `New Package Purchase - ${customer.firstName} ${customer.lastName} bought your ${packageDetails.title}`;
+    
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
+          </div>
+          
+          <h2 style="color: #333; margin-bottom: 20px;">🎉 New Package Purchase!</h2>
+          
+          <p style="color: #333; line-height: 1.6;">
+            Great news! ${customer.firstName} ${customer.lastName} just purchased your "${packageDetails.title}" package.
+          </p>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Customer:</td>
+                <td style="padding: 8px 0; color: #333;">${customer.firstName} ${customer.lastName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Package:</td>
+                <td style="padding: 8px 0; color: #333;">${packageDetails.title}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Classes Purchased:</td>
+                <td style="padding: 8px 0; color: #333;">${packagePurchase.classCount} classes</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Purchase Date:</td>
+                <td style="padding: 8px 0; color: #333;">${formattedPurchaseDate} at ${formattedPurchaseTime}</td>
+              </tr>
+              ${pricingDetails ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Your Earnings:</td>
+                <td style="padding: 8px 0; color: #059669; font-weight: bold;">$${pricingDetails.coachPayout.toFixed(2)}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+          
+          <div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #059669;">
+            <h3 style="color: #333; margin: 0 0 15px 0;">What happens next?</h3>
+            <p style="color: #666; margin: 0; line-height: 1.6;">
+              • ${customer.firstName} can now book your classes using their package credits<br>
+              • You'll receive earnings for each class they attend<br>
+              • Payouts are processed automatically 24 hours after each class completion
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://trainn.pro/my-classes" style="background-color: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              View My Classes
+            </a>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              Questions? Contact us at <a href="mailto:support@trainn.pro" style="color: #2563eb;">support@trainn.pro</a>
+            </p>
+            <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">
+              Trainn - Building stronger communities through fitness, creativity and play
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: coach.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false
+        }
+      }
+    });
+
+    console.log(`✅ Package purchase notification email sent to coach ${coach.email} for package ${packageDetails.title}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Package purchase notification email error:', error);
+    return false;
+  }
+}
+
 export async function sendWeeklyNewsletterEmail(
   data: WeeklyNewsletterData
 ): Promise<boolean> {
