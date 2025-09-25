@@ -3,7 +3,8 @@ import {
   sendClassReminder, 
   sendClassCancellationNotification,
   sendClassScheduleUpdateNotification,
-  sendPostClassFeedbackEmail
+  sendPostClassFeedbackEmail,
+  sendWeeklyNewsletterEmail
 } from './email';
 import { fromZonedTime, toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { addDays, startOfDay, endOfDay } from 'date-fns';
@@ -361,4 +362,153 @@ export async function sendPostClassFeedbackEmails(): Promise<void> {
     console.error('Error in post-class feedback email process:', error);
     throw error;
   }
+}
+
+// Weekly newsletter scheduler - sends every Sunday at 2:00 PM PST
+export async function sendWeeklyNewsletters(): Promise<void> {
+  console.log('Starting weekly newsletter process...');
+  
+  try {
+    // Get all customers for newsletter
+    const customers = await storage.getAllCustomersForNewsletter();
+    console.log(`Found ${customers.length} customers for newsletter`);
+    
+    if (customers.length === 0) {
+      console.log('No customers found for newsletter, skipping');
+      return;
+    }
+    
+    // Fetch newsletter data once for all customers
+    console.log('Fetching newsletter data...');
+    const [upcomingKidsClasses, upcomingAdultClasses, newProviders, recentReviews] = await Promise.all([
+      storage.getUpcomingKidsClassesForNewsletter(),
+      storage.getUpcomingAdultClassesForNewsletter(), 
+      storage.getRecentlyJoinedProviders(30), // Last 30 days
+      storage.getRecentReviewsForNewsletter()
+    ]);
+    
+    console.log(`Newsletter data: ${upcomingKidsClasses.length} kids classes, ${upcomingAdultClasses.length} adult classes, ${newProviders.length} new providers, ${recentReviews.length} reviews`);
+    
+    // Check if there's enough content for newsletter
+    const totalClasses = upcomingKidsClasses.length + upcomingAdultClasses.length;
+    if (totalClasses === 0) {
+      console.log('No upcoming classes found, skipping newsletter this week');
+      return;
+    }
+    
+    let emailsSent = 0;
+    let emailsSkipped = 0;
+    
+    // Send newsletter to each customer
+    for (const customer of customers) {
+      try {
+        const emailSent = await sendWeeklyNewsletterEmail({
+          customer,
+          upcomingKidsClasses,
+          upcomingAdultClasses,
+          newProviders,
+          recentReviews
+        });
+        
+        if (emailSent) {
+          emailsSent++;
+          console.log(`✅ Newsletter sent to ${customer.email}`);
+        } else {
+          emailsSkipped++;
+          console.log(`❌ Failed to send newsletter to ${customer.email}`);
+        }
+        
+        // Add small delay to avoid rate limiting (150ms between emails)
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+      } catch (customerError) {
+        emailsSkipped++;
+        console.error(`Error sending newsletter to ${customer.email}:`, customerError);
+      }
+    }
+    
+    console.log(`✅ Weekly newsletter process completed. Sent: ${emailsSent}, Failed: ${emailsSkipped}`);
+    
+  } catch (error) {
+    console.error('Error in weekly newsletter process:', error);
+    throw error;
+  }
+}
+
+// Weekly newsletter with database idempotency - prevents duplicate sends
+export async function sendWeeklyNewslettersWithIdempotency(): Promise<void> {
+  const timeZone = 'America/Los_Angeles';
+  const now = new Date();
+  const nowInPT = toZonedTime(now, timeZone);
+  
+  // Get current week identifier (using Sunday as start of week)
+  const currentSunday = new Date(nowInPT);
+  const daysSinceSunday = currentSunday.getDay();
+  currentSunday.setDate(currentSunday.getDate() - daysSinceSunday);
+  const weekId = formatInTimeZone(currentSunday, timeZone, 'yyyy-MM-dd');
+  
+  console.log(`Starting weekly newsletter process for week of ${weekId}...`);
+  
+  try {
+    // Check if we've already sent newsletter for this week
+    const processType = 'weekly_newsletter';
+    const lastProcessed = await storage.getEmailReminderTracking(processType);
+    
+    if (lastProcessed && lastProcessed.lastProcessedDate === weekId) {
+      console.log(`[IDEMPOTENCY] Weekly newsletter already sent for week of ${weekId}, skipping...`);
+      return;
+    }
+    
+    await sendWeeklyNewsletters();
+    
+    // Mark this week as processed
+    await storage.upsertEmailReminderTracking(processType, weekId);
+    console.log(`✓ Weekly newsletter completed and marked as processed for week of ${weekId}`);
+    
+  } catch (error) {
+    console.error('Error in weekly newsletter process with idempotency:', error);
+    throw error;
+  }
+}
+
+// Check if it's Sunday and time to send newsletter (2:00 PM PST)
+export function shouldSendWeeklyNewsletter(): boolean {
+  const timeZone = 'America/Los_Angeles';
+  const nowInPT = toZonedTime(new Date(), timeZone);
+  
+  const isSunday = nowInPT.getDay() === 0; // Sunday = 0
+  const currentHour = nowInPT.getHours();
+  const isCorrectTime = currentHour >= 14; // 2:00 PM or later
+  
+  return isSunday && isCorrectTime;
+}
+
+// Startup check for weekly newsletter catch-up
+export async function performWeeklyNewsletterCatchupIfNeeded(): Promise<boolean> {
+  if (!shouldSendWeeklyNewsletter()) {
+    console.log('⏰ Not Sunday afternoon, no weekly newsletter catch-up needed');
+    return false;
+  }
+  
+  const timeZone = 'America/Los_Angeles';
+  const nowInPT = toZonedTime(new Date(), timeZone);
+  
+  // Get current week identifier
+  const currentSunday = new Date(nowInPT);
+  const daysSinceSunday = currentSunday.getDay();
+  currentSunday.setDate(currentSunday.getDate() - daysSinceSunday);
+  const weekId = formatInTimeZone(currentSunday, timeZone, 'yyyy-MM-dd');
+  
+  // Check if we've already processed this week
+  const processType = 'weekly_newsletter';
+  const lastProcessed = await storage.getEmailReminderTracking(processType);
+  
+  if (lastProcessed && lastProcessed.lastProcessedDate === weekId) {
+    console.log(`✓ Weekly newsletter already processed for week of ${weekId}, no catch-up needed`);
+    return false;
+  }
+  
+  console.log(`🚀 STARTUP CATCH-UP: Running weekly newsletter for week of ${weekId}...`);
+  await sendWeeklyNewslettersWithIdempotency();
+  return true;
 }
