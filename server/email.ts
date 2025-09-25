@@ -1599,7 +1599,7 @@ export async function sendWeeklyNewsletterEmail(
       const monthDay = format(classDatePT, 'MMM d', { timeZone: PACIFIC_TIMEZONE });
       const timeSlot = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
       
-      const bookingUrl = `https://trainn.pro/class/${classData.id}/book?utm_source=newsletter&utm_campaign=weekly_${weekStart.replace(' ', '_')}`;
+      const bookingUrl = `https://trainn.pro/checkout/${classData.id}?utm_source=newsletter&utm_campaign=weekly_${weekStart.replace(' ', '_')}`;
       const classDetailUrl = `https://trainn.pro/class/${classData.id}?utm_source=newsletter`;
       
       // Get available spots
