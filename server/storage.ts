@@ -597,6 +597,7 @@ export class DatabaseStorage implements IStorage {
     coachId?: number;
     searchQuery?: string;
     dateFilter?: Date;
+    packageClasses?: string; // Comma-separated list of class IDs or series IDs
     limit?: number;
     offset?: number;
   }): Promise<ClassCardDTO[]> {
@@ -653,6 +654,22 @@ export class DatabaseStorage implements IStorage {
             sql`${classes.startTime} < ${nextDay.toISOString()}::timestamp`
           )
         );
+      }
+
+      if (filters?.packageClasses) {
+        const packageClassIds = filters.packageClasses.split(',').map(id => id.trim());
+        const packageConditions = packageClassIds.map(packageClassId => {
+          if (packageClassId.startsWith('series_')) {
+            // Match by recurring series ID
+            return eq(classes.recurringSeriesId, packageClassId);
+          } else {
+            // Match by individual class ID
+            return eq(classes.id, Number(packageClassId));
+          }
+        });
+        
+        // Classes must match at least one of the package class IDs or series IDs
+        whereConditions.push(or(...packageConditions));
       }
 
       // Single query that joins all necessary tables to eliminate N+1 queries
