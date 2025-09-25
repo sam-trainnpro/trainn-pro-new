@@ -383,7 +383,7 @@ export default function BookingsPage() {
                 <Button onClick={() => refetch()}>Retry</Button>
               </CardContent>
             </Card>
-          ) : bookings && Array.isArray(bookings) && bookings.length > 0 ? (
+          ) : (
             <Tabs defaultValue="upcoming">
               <TabsList className="mb-6">
                 <TabsTrigger value="upcoming">
@@ -792,19 +792,6 @@ export default function BookingsPage() {
                 )}
               </TabsContent>
             </Tabs>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-xl font-bold mb-2">No Bookings Found</h2>
-                <p className="text-muted-foreground mb-6">
-                  You haven't booked any classes yet. Start your fitness journey today!
-                </p>
-                <Button asChild className="bg-primary text-white">
-                  <Link href="/classes">Browse Classes</Link>
-                </Button>
-              </CardContent>
-            </Card>
           )}
         </div>
       </main>
