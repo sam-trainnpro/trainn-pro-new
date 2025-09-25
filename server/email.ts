@@ -1593,7 +1593,14 @@ export async function sendPackagePurchaseConfirmation(
   data: PackagePurchaseConfirmationData
 ): Promise<boolean> {
   try {
+    console.log('📧 [PACKAGE] Starting package purchase confirmation email send...');
     const { packagePurchase, packageDetails, customer, coach, pricingDetails } = data;
+    console.log('📧 [PACKAGE] Email data received:', {
+      customerEmail: customer.email,
+      packageTitle: packageDetails.title,
+      coachName: `${coach.firstName} ${coach.lastName}`,
+      purchaseDate: packagePurchase.purchase_date || packagePurchase.purchaseDate
+    });
     
     // Format date 
     const PACIFIC_TIMEZONE = 'America/Los_Angeles';
@@ -1718,10 +1725,10 @@ export async function sendPackagePurchaseConfirmation(
       }
     });
 
-    console.log(`✅ Package purchase confirmation email sent to ${customer.email} for package ${packageDetails.title}`);
+    console.log(`📧 [PACKAGE] ✅ Package purchase confirmation email sent to ${customer.email} for package ${packageDetails.title}`);
     return true;
   } catch (error) {
-    console.error('❌ Package purchase confirmation email error:', error);
+    console.error('📧 [PACKAGE] ❌ Package purchase confirmation email error:', error);
     return false;
   }
 }
@@ -1741,7 +1748,14 @@ export async function sendPackagePurchaseNotification(
   data: PackagePurchaseNotificationData  
 ): Promise<boolean> {
   try {
+    console.log('📧 [PACKAGE] Starting package purchase notification email to coach...');
     const { packagePurchase, packageDetails, customer, coach, pricingDetails } = data;
+    console.log('📧 [PACKAGE] Notification email data:', {
+      coachEmail: coach.email,
+      customerName: `${customer.firstName} ${customer.lastName}`,
+      packageTitle: packageDetails.title,
+      purchaseDate: packagePurchase.purchase_date || packagePurchase.purchaseDate
+    });
     
     // Format date 
     const PACIFIC_TIMEZONE = 'America/Los_Angeles';
@@ -1831,10 +1845,10 @@ export async function sendPackagePurchaseNotification(
       }
     });
 
-    console.log(`✅ Package purchase notification email sent to coach ${coach.email} for package ${packageDetails.title}`);
+    console.log(`📧 [PACKAGE] ✅ Package purchase notification email sent to coach ${coach.email} for package ${packageDetails.title}`);
     return true;
   } catch (error) {
-    console.error('❌ Package purchase notification email error:', error);
+    console.error('📧 [PACKAGE] ❌ Package purchase notification email error:', error);
     return false;
   }
 }
