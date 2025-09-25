@@ -1561,3 +1561,296 @@ export async function sendPostClassFeedbackEmail(
     return false;
   }
 }
+
+interface WeeklyNewsletterData {
+  customer: User;
+  upcomingKidsClasses: Array<Class & { coach: User }>;
+  upcomingAdultClasses: Array<Class & { coach: User }>;
+  newProviders: Array<User>;
+  recentReviews: Array<{ 
+    review: any; 
+    customer: User; 
+    coach: User; 
+    classData: Class;
+  }>;
+}
+
+export async function sendWeeklyNewsletterEmail(
+  data: WeeklyNewsletterData
+): Promise<boolean> {
+  try {
+    const { customer, upcomingKidsClasses, upcomingAdultClasses, newProviders, recentReviews } = data;
+    
+    // Format date range for the week
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const PACIFIC_TIMEZONE = 'America/Los_Angeles';
+    
+    const weekStart = format(toZonedTime(today, PACIFIC_TIMEZONE), 'MMM d', { timeZone: PACIFIC_TIMEZONE });
+    const weekEnd = format(toZonedTime(nextWeek, PACIFIC_TIMEZONE), 'MMM d, yyyy', { timeZone: PACIFIC_TIMEZONE });
+    
+    const subject = `This Week on Trainn: ${upcomingKidsClasses.length + upcomingAdultClasses.length} Classes Await! 🏃‍♀️`;
+    
+    // Helper function to format class cards
+    const formatClassCard = (classData: Class & { coach: User }, index: number) => {
+      const classDate = new Date(classData.startTime!);
+      const classDatePT = toZonedTime(classDate, PACIFIC_TIMEZONE);
+      const dayName = format(classDatePT, 'EEEE', { timeZone: PACIFIC_TIMEZONE });
+      const monthDay = format(classDatePT, 'MMM d', { timeZone: PACIFIC_TIMEZONE });
+      const timeSlot = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
+      
+      const bookingUrl = `https://trainn.pro/class/${classData.id}/book?utm_source=newsletter&utm_campaign=weekly_${weekStart.replace(' ', '_')}`;
+      const classDetailUrl = `https://trainn.pro/class/${classData.id}?utm_source=newsletter`;
+      
+      // Get available spots
+      const availableSpots = classData.capacity - (classData.bookedCount || 0);
+      
+      return `
+        <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin: 12px 0; background: white;">
+          <div style="margin-bottom: 12px;">
+            <h3 style="color: #2563eb; font-size: 18px; margin: 0 0 8px 0;">
+              ${classData.title}
+            </h3>
+            <div style="color: #6b7280; font-size: 14px;">
+              with ${classData.coach.firstName} ${classData.coach.lastName}
+            </div>
+          </div>
+          
+          <div style="margin: 12px 0;">
+            <div style="margin: 4px 0;">📅 ${dayName}, ${monthDay} at ${timeSlot}</div>
+            <div style="margin: 4px 0;">📍 ${classData.location || classData.address}</div>
+            <div style="margin: 4px 0;">👥 ${availableSpots} spots available</div>
+            <div style="font-weight: 600; color: #059669; margin: 4px 0;">💰 $${classData.price}</div>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <a href="${bookingUrl}" 
+               style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 500; display: inline-block;">
+              Book Now
+            </a>
+            <a href="${classDetailUrl}" 
+               style="color: #2563eb; margin-left: 12px; text-decoration: none; font-size: 14px;">
+              View Details
+            </a>
+          </div>
+        </div>
+      `;
+    };
+
+    // Format provider spotlight cards
+    const formatProviderCard = (provider: User) => {
+      return `
+        <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin: 12px 0; background: white; text-align: center;">
+          <div style="margin-bottom: 15px;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px auto;">
+              ${provider.firstName.charAt(0)}${provider.lastName.charAt(0)}
+            </div>
+            <h3 style="color: #333; font-size: 18px; margin: 0;">
+              ${provider.displayBusinessName && provider.businessName ? provider.businessName : `${provider.firstName} ${provider.lastName}`}
+            </h3>
+            ${provider.displayBusinessName && provider.businessName ? 
+              `<div style="color: #6b7280; font-size: 14px; margin-top: 4px;">with ${provider.firstName} ${provider.lastName}</div>` : 
+              ''
+            }
+          </div>
+          
+          <div style="color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 15px;">
+            ${provider.areasOfExpertise || 'New provider on Trainn'}
+          </div>
+          
+          <a href="https://trainn.pro/classes?coach=${provider.id}&utm_source=newsletter" 
+             style="background: #059669; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">
+            View Classes
+          </a>
+        </div>
+      `;
+    };
+
+    // Format review cards
+    const formatReviewCard = (reviewData: { review: any; customer: User; coach: User; classData: Class }) => {
+      const stars = '★'.repeat(reviewData.review.rating) + '☆'.repeat(5 - reviewData.review.rating);
+      const reviewDate = format(new Date(reviewData.review.createdAt), 'MMM d', { timeZone: PACIFIC_TIMEZONE });
+      
+      return `
+        <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin: 12px 0; background: white;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div>
+              <div style="color: #f59e0b; font-size: 16px; margin-bottom: 4px;">${stars}</div>
+              <div style="font-weight: 600; color: #333; font-size: 14px;">
+                ${reviewData.customer.firstName} ${reviewData.customer.lastName.charAt(0)}.
+              </div>
+            </div>
+            <div style="color: #6b7280; font-size: 12px;">${reviewDate}</div>
+          </div>
+          
+          <div style="color: #333; font-size: 14px; line-height: 1.5; margin-bottom: 12px;">
+            "${reviewData.review.comment}"
+          </div>
+          
+          <div style="color: #6b7280; font-size: 13px;">
+            About <strong>${reviewData.coach.firstName} ${reviewData.coach.lastName}</strong>'s 
+            "${reviewData.classData.title}"
+          </div>
+        </div>
+      `;
+    };
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 30px; text-align: center; color: white;">
+            <h1 style="margin: 0; font-size: 32px; font-weight: 300;">Your Weekly Trainn Digest</h1>
+            <p style="margin: 8px 0 0 0; font-size: 18px; opacity: 0.9;">
+              Week of ${weekStart} - ${weekEnd}
+            </p>
+            <p style="margin: 16px 0 0 0; font-size: 16px; opacity: 0.8;">
+              Hi ${customer.firstName}! ✨ ${upcomingKidsClasses.length + upcomingAdultClasses.length} amazing classes await you this week
+            </p>
+          </div>
+
+          <div style="padding: 30px;">
+            
+            ${upcomingKidsClasses.length > 0 ? `
+            <!-- Kids Classes Section -->
+            <div style="margin-bottom: 40px;">
+              <h2 style="color: #333; font-size: 24px; margin: 0 0 20px 0; border-bottom: 2px solid #2563eb; padding-bottom: 8px;">
+                🧒 Kids Classes This Week (${upcomingKidsClasses.length})
+              </h2>
+              
+              <div>
+                ${upcomingKidsClasses.slice(0, 5).map(classData => formatClassCard(classData, 0)).join('')}
+              </div>
+              
+              ${upcomingKidsClasses.length > 5 ? `
+              <div style="text-align: center; margin-top: 20px;">
+                <a href="https://trainn.pro/classes?ageGroup=Kids&utm_source=newsletter" 
+                   style="color: #2563eb; text-decoration: none; font-weight: 500;">
+                  View All ${upcomingKidsClasses.length} Kids Classes →
+                </a>
+              </div>
+              ` : ''}
+            </div>
+            ` : ''}
+
+            ${upcomingAdultClasses.length > 0 ? `
+            <!-- Adult Classes Section -->
+            <div style="margin-bottom: 40px;">
+              <h2 style="color: #333; font-size: 24px; margin: 0 0 20px 0; border-bottom: 2px solid #2563eb; padding-bottom: 8px;">
+                💪 Adult Classes This Week (${upcomingAdultClasses.length})
+              </h2>
+              
+              <div>
+                ${upcomingAdultClasses.slice(0, 7).map(classData => formatClassCard(classData, 0)).join('')}
+              </div>
+              
+              ${upcomingAdultClasses.length > 7 ? `
+              <div style="text-align: center; margin-top: 20px;">
+                <a href="https://trainn.pro/classes?ageGroup=Adults&utm_source=newsletter" 
+                   style="color: #2563eb; text-decoration: none; font-weight: 500;">
+                  View All ${upcomingAdultClasses.length} Adult Classes →
+                </a>
+              </div>
+              ` : ''}
+            </div>
+            ` : ''}
+
+            ${newProviders.length > 0 ? `
+            <!-- New Provider Spotlight -->
+            <div style="margin-bottom: 40px;">
+              <h2 style="color: #333; font-size: 24px; margin: 0 0 20px 0; border-bottom: 2px solid #059669; padding-bottom: 8px;">
+                ✨ New Provider Spotlight
+              </h2>
+              
+              <p style="color: #666; margin: 0 0 20px 0; line-height: 1.5;">
+                Welcome our newest providers to the Trainn community! 
+                ${newProviders.length === 1 ? 'Discover what they bring' : 'Explore what they bring'} to our growing family.
+              </p>
+              
+              <div>
+                ${newProviders.slice(0, 3).map(provider => formatProviderCard(provider)).join('')}
+              </div>
+            </div>
+            ` : ''}
+
+            ${recentReviews.length > 0 ? `
+            <!-- Customer Reviews Section -->
+            <div style="margin-bottom: 40px;">
+              <h2 style="color: #333; font-size: 24px; margin: 0 0 20px 0; border-bottom: 2px solid #f59e0b; padding-bottom: 8px;">
+                💬 What Our Community Is Saying
+              </h2>
+              
+              <p style="color: #666; margin: 0 0 20px 0; line-height: 1.5;">
+                Real experiences from Trainn community members just like you.
+              </p>
+              
+              <div>
+                ${recentReviews.slice(0, 3).map(review => formatReviewCard(review)).join('')}
+              </div>
+              
+              <div style="text-align: center; margin-top: 20px;">
+                <a href="https://trainn.pro/reviews?utm_source=newsletter" 
+                   style="color: #f59e0b; text-decoration: none; font-weight: 500;">
+                  Read All Reviews →
+                </a>
+              </div>
+            </div>
+            ` : ''}
+
+            <!-- Footer CTA -->
+            <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
+              <h3 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Ready to Get Active?</h3>
+              <p style="color: #666; margin: 0 0 20px 0; line-height: 1.5;">
+                Browse all available classes and find your next adventure
+              </p>
+              <a href="https://trainn.pro/classes?utm_source=newsletter" 
+                 style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">
+                Explore All Classes
+              </a>
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e5e5e5;">
+            <div style="margin-bottom: 15px;">
+              <a href="https://trainn.pro" style="color: #2563eb; text-decoration: none; margin: 0 10px;">Browse Classes</a>
+              <span style="color: #ccc;">•</span>
+              <a href="https://trainn.pro/account" style="color: #2563eb; text-decoration: none; margin: 0 10px;">Your Account</a>
+              <span style="color: #ccc;">•</span>
+              <a href="https://trainn.pro/faq" style="color: #2563eb; text-decoration: none; margin: 0 10px;">Help</a>
+            </div>
+            
+            <p style="color: #666; margin: 0; font-size: 14px; line-height: 1.5;">
+              Questions? Contact us at <a href="mailto:support@trainn.pro" style="color: #2563eb;">support@trainn.pro</a>
+            </p>
+            <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">
+              This weekly digest is sent to active Trainn community members. 
+              <a href="https://trainn.pro/account/settings" style="color: #999;">Manage email preferences</a>
+            </p>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: customer.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: true
+        }
+      }
+    });
+
+    console.log(`✅ Weekly newsletter sent to ${customer.email} (${upcomingKidsClasses.length} kids, ${upcomingAdultClasses.length} adult classes)`);
+    return true;
+  } catch (error) {
+    console.error('❌ Weekly newsletter email error:', error);
+    return false;
+  }
+}
