@@ -76,7 +76,7 @@ export async function sendBookingConfirmation(
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #333; margin-bottom: 20px;">Booking Confirmation</h2>
@@ -396,7 +396,7 @@ export async function sendClassCancellationNotification(
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #dc3545; margin-bottom: 20px;">Class Cancellation Notice</h2>
@@ -568,7 +568,7 @@ export async function sendCoachApprovalNotification(coach: User): Promise<boolea
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Congratulations!</h2>
@@ -641,7 +641,7 @@ export async function sendBookingCancellationConfirmation(
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #333; margin-bottom: 20px;">Booking Cancellation Confirmed</h2>
@@ -730,7 +730,7 @@ export async function sendClassScheduleUpdateNotification(
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #fd7e14; margin-bottom: 20px;">Class Schedule Update</h2>
@@ -811,7 +811,7 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Welcome to Trainn!</h2>
@@ -902,7 +902,7 @@ export async function sendNewBookingNotificationToCoach(
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #28a745; margin-bottom: 20px;">🎉 New Booking!</h2>
@@ -1166,7 +1166,7 @@ export async function sendPromoCodeApprovalEmail(coach: User, promoCode: any): P
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #28a745; margin-bottom: 20px;">🎉 Promo Code Approved!</h2>
@@ -1240,7 +1240,7 @@ export async function sendPromoCodeRejectionEmail(coach: User, promoCode: any): 
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <h2 style="color: #dc3545; margin-bottom: 20px;">Promo Code Update</h2>
@@ -1486,7 +1486,7 @@ export async function sendPostClassFeedbackEmail(
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
-            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness and play</p>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
           </div>
           
           <p style="color: #333; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
@@ -1525,15 +1525,15 @@ export async function sendPostClassFeedbackEmail(
             </div>
           </div>
           
-          <p style="color: #333; line-height: 1.6; margin-bottom: 25px; font-size: 16px; text-align: center;">
+          <p style="color: #333; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
             Your future self will thank you. 🙌
           </p>
           
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+          <div style="margin-top: 30px; padding-top: 20px;">
             <p style="color: #333; margin: 0 0 5px 0; font-size: 16px;">
               See you soon,
             </p>
-            <p style="color: #333; margin: 0; font-size: 16px; font-weight: bold;">
+            <p style="color: #333; margin: 0; font-size: 16px;">
               Sam from Trainn
             </p>
           </div>
