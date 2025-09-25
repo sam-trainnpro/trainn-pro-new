@@ -3133,13 +3133,24 @@ export class DatabaseStorage implements IStorage {
         toFindUs: classes.toFindUs,
         ageGroup: classes.ageGroup,
         image: classes.image,
-        isActive: classes.isActive,
+        status: classes.status,
         createdAt: classes.createdAt,
-        updatedAt: classes.updatedAt,
         parentClassId: classes.parentClassId,
-        seriesId: classes.seriesId,
+        recurringSeriesId: classes.recurringSeriesId,
         isRecurring: classes.isRecurring,
-        recurrenceRule: classes.recurrenceRule,
+        recurrenceType: classes.recurrenceType,
+        latitude: classes.latitude,
+        longitude: classes.longitude,
+        street: classes.street,
+        city: classes.city,
+        state: classes.state,
+        zipCode: classes.zipCode,
+        outdoors: classes.outdoors,
+        recurrenceInterval: classes.recurrenceInterval,
+        recurrenceDaysOfWeek: classes.recurrenceDaysOfWeek,
+        recurrenceEndType: classes.recurrenceEndType,
+        recurrenceEndDate: classes.recurrenceEndDate,
+        recurrenceEndCount: classes.recurrenceEndCount,
         // Coach fields
         coach: {
           id: users.id,
@@ -3149,10 +3160,23 @@ export class DatabaseStorage implements IStorage {
           role: users.role,
           isApproved: users.isApproved,
           createdAt: users.createdAt,
-          updatedAt: users.updatedAt,
           businessName: users.businessName,
           displayBusinessName: users.displayBusinessName,
-          areasOfExpertise: users.areasOfExpertise
+          areasOfExpertise: users.areasOfExpertise,
+          password: users.password,
+          phone: users.phone,
+          bio: users.bio,
+          profileImage: users.profileImage,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeConnectId: users.stripeConnectId,
+          stripeConnectOnboarded: users.stripeConnectOnboarded,
+          bankAccountVerified: users.bankAccountVerified,
+          certifications: users.certifications,
+          googleId: users.googleId,
+          authMethod: users.authMethod,
+          googleProfilePicture: users.googleProfilePicture,
+          referralCode: users.referralCode,
+          providerReferralCode: users.providerReferralCode
         },
         // Booking count
         bookedCount: sql<number>`CAST(COUNT(${bookings.id}) AS INT)`
@@ -3165,24 +3189,14 @@ export class DatabaseStorage implements IStorage {
       ))
       .where(and(
         eq(classes.ageGroup, 'Kids'),
-        eq(classes.isActive, true),
+        eq(classes.status, 'active'),
         eq(users.isApproved, true),
         gte(classes.startTime, now),
         lte(classes.startTime, nextWeek)
       ))
       .groupBy(
         classes.id, 
-        users.id,
-        users.firstName,
-        users.lastName,
-        users.email,
-        users.role,
-        users.isApproved,
-        users.createdAt,
-        users.updatedAt,
-        users.businessName,
-        users.displayBusinessName,
-        users.areasOfExpertise
+        users.id
       )
       .orderBy(classes.startTime)
       .limit(10);
@@ -3217,13 +3231,24 @@ export class DatabaseStorage implements IStorage {
         toFindUs: classes.toFindUs,
         ageGroup: classes.ageGroup,
         image: classes.image,
-        isActive: classes.isActive,
+        status: classes.status,
         createdAt: classes.createdAt,
-        updatedAt: classes.updatedAt,
         parentClassId: classes.parentClassId,
-        seriesId: classes.seriesId,
+        recurringSeriesId: classes.recurringSeriesId,
         isRecurring: classes.isRecurring,
-        recurrenceRule: classes.recurrenceRule,
+        recurrenceType: classes.recurrenceType,
+        latitude: classes.latitude,
+        longitude: classes.longitude,
+        street: classes.street,
+        city: classes.city,
+        state: classes.state,
+        zipCode: classes.zipCode,
+        outdoors: classes.outdoors,
+        recurrenceInterval: classes.recurrenceInterval,
+        recurrenceDaysOfWeek: classes.recurrenceDaysOfWeek,
+        recurrenceEndType: classes.recurrenceEndType,
+        recurrenceEndDate: classes.recurrenceEndDate,
+        recurrenceEndCount: classes.recurrenceEndCount,
         // Coach fields
         coach: {
           id: users.id,
@@ -3233,10 +3258,23 @@ export class DatabaseStorage implements IStorage {
           role: users.role,
           isApproved: users.isApproved,
           createdAt: users.createdAt,
-          updatedAt: users.updatedAt,
           businessName: users.businessName,
           displayBusinessName: users.displayBusinessName,
-          areasOfExpertise: users.areasOfExpertise
+          areasOfExpertise: users.areasOfExpertise,
+          password: users.password,
+          phone: users.phone,
+          bio: users.bio,
+          profileImage: users.profileImage,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeConnectId: users.stripeConnectId,
+          stripeConnectOnboarded: users.stripeConnectOnboarded,
+          bankAccountVerified: users.bankAccountVerified,
+          certifications: users.certifications,
+          googleId: users.googleId,
+          authMethod: users.authMethod,
+          googleProfilePicture: users.googleProfilePicture,
+          referralCode: users.referralCode,
+          providerReferralCode: users.providerReferralCode
         },
         // Booking count
         bookedCount: sql<number>`CAST(COUNT(${bookings.id}) AS INT)`
@@ -3249,24 +3287,14 @@ export class DatabaseStorage implements IStorage {
       ))
       .where(and(
         or(eq(classes.ageGroup, 'Adults'), eq(classes.ageGroup, 'All Ages')),
-        eq(classes.isActive, true),
+        eq(classes.status, 'active'),
         eq(users.isApproved, true),
         gte(classes.startTime, now),
         lte(classes.startTime, nextWeek)
       ))
       .groupBy(
         classes.id, 
-        users.id,
-        users.firstName,
-        users.lastName,
-        users.email,
-        users.role,
-        users.isApproved,
-        users.createdAt,
-        users.updatedAt,
-        users.businessName,
-        users.displayBusinessName,
-        users.areasOfExpertise
+        users.id
       )
       .orderBy(classes.startTime)
       .limit(15);

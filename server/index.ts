@@ -243,6 +243,87 @@ app.use((req, res, next) => {
         
         log('🎯 [DEV] Automated post-class feedback email processing started (every 5 minutes)');
       }
+
+      // Start automated weekly newsletter processing
+      if (process.env.NODE_ENV === 'production') {
+        // In production, check for weekly newsletter every Sunday at 2:00 PM PST
+        const scheduleNextNewsletterCheck = () => {
+          const timeZone = 'America/Los_Angeles';
+          const now = new Date();
+          const nowInPT = toZonedTime(now, timeZone);
+          
+          // Calculate next Sunday at 2:00 PM PT
+          const nextSunday = new Date(nowInPT);
+          const daysSinceLastSunday = nextSunday.getDay() || 7; // 0 becomes 7 for Sunday
+          
+          if (daysSinceLastSunday === 7 && nowInPT.getHours() < 14) {
+            // It's Sunday before 2 PM, schedule for today
+            nextSunday.setHours(14, 0, 0, 0);
+          } else {
+            // Schedule for next Sunday
+            nextSunday.setDate(nextSunday.getDate() + (7 - daysSinceLastSunday));
+            nextSunday.setHours(14, 0, 0, 0); // 2:00 PM PT
+          }
+          
+          const nextSundayUTC = fromZonedTime(nextSunday, timeZone);
+          const msUntilNextRun = nextSundayUTC.getTime() - now.getTime();
+          
+          const executeNewsletter = async () => {
+            try {
+              const { sendWeeklyNewslettersWithIdempotency } = await import('./email-scheduler');
+              await sendWeeklyNewslettersWithIdempotency();
+              console.log('📰 Weekly newsletter completed');
+            } catch (error) {
+              console.error('Error in weekly newsletter process:', error);
+            }
+          };
+          
+          // Schedule next newsletter
+          setTimeout(() => {
+            executeNewsletter().finally(() => {
+              // Schedule the next occurrence (next Sunday)
+              scheduleNextNewsletterCheck();
+            });
+          }, msUntilNextRun);
+          
+          const nextSundayPTStr = formatInTimeZone(nextSundayUTC, timeZone, 'yyyy-MM-dd HH:mm:ss');
+          log(`📰 Next weekly newsletter scheduled for ${format(nextSundayUTC, 'yyyy-MM-dd HH:mm:ss')} UTC (${nextSundayPTStr} PT)`);
+        };
+        
+        // First, perform catch-up if needed (if it's Sunday after 2 PM PT)
+        const performNewsletterCatchup = async () => {
+          try {
+            const { performWeeklyNewsletterCatchupIfNeeded } = await import('./email-scheduler');
+            const catchupPerformed = await performWeeklyNewsletterCatchupIfNeeded();
+            if (catchupPerformed) {
+              console.log('🚀 Weekly newsletter startup catch-up completed');
+            }
+          } catch (error) {
+            console.error('Error in weekly newsletter catch-up:', error);
+          }
+        };
+        
+        performNewsletterCatchup().finally(() => {
+          scheduleNextNewsletterCheck();
+        });
+      } else {
+        // In development, check for weekly newsletter every hour for testing
+        setInterval(async () => {
+          try {
+            const { shouldSendWeeklyNewsletter, sendWeeklyNewslettersWithIdempotency } = await import('./email-scheduler');
+            
+            // Only send if it's Sunday after 2 PM PT (for testing)
+            if (shouldSendWeeklyNewsletter()) {
+              await sendWeeklyNewslettersWithIdempotency();
+              console.log('📰 [DEV] Weekly newsletter completed');
+            }
+          } catch (error) {
+            console.error('Error in weekly newsletter process:', error);
+          }
+        }, 60 * 60 * 1000); // 1 hour in milliseconds
+        
+        log('📰 [DEV] Weekly newsletter processing started (checking every hour on Sunday afternoons)');
+      }
     });
   } catch (error) {
     console.error('Failed to initialize server application:', error);
