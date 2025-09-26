@@ -289,6 +289,22 @@ export const insertReviewSchema = createInsertSchema(reviews).pick({
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviews.$inferSelect;
 
+// Class likes - for users to like/favorite classes
+export const classLikes = pgTable("class_likes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  classId: integer("class_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertClassLikeSchema = createInsertSchema(classLikes).pick({
+  userId: true,
+  classId: true,
+});
+
+export type InsertClassLike = z.infer<typeof insertClassLikeSchema>;
+export type ClassLike = typeof classLikes.$inferSelect;
+
 // Password reset tokens
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
