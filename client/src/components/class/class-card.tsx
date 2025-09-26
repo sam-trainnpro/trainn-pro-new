@@ -10,6 +10,8 @@ import { useSafeAuth } from "../../../../hooks/use-auth-safe";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "../../lib/queryClient";
 import { useToast } from "../../../../hooks/use-toast";
+import { useState } from "react";
+import ClassShareModal from "@/components/class-share-modal";
 
 interface ClassCardProps {
   classItem: ClassCardDTO | Class | ClassWithSchedules;
@@ -21,6 +23,7 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
   const [, navigate] = useLocation();
   const { user } = useSafeAuth();
   const { toast } = useToast();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Fetch user's liked classes
   const { data: likedClasses = [] } = useQuery<number[]>({
@@ -219,8 +222,7 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
               className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
               onClick={(e) => {
                 e.stopPropagation();
-                // Share functionality to be implemented
-                console.log("Share class:", classItem.id);
+                setIsShareModalOpen(true);
               }}
               data-testid={`button-share-${classItem.id}`}
             >
@@ -375,6 +377,16 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
           )}
           </div>
         </div>
+        
+        {/* Share Modal */}
+        <ClassShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          classTitle={classItem.title}
+          classId={classItem.id}
+          coachName={coach ? (coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`) : undefined}
+          price={classItem.price}
+        />
     </div>
   );
 }
