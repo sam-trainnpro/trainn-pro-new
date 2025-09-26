@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
-import { useAuth } from "../../../hooks/use-auth-simple";
+import { useSafeAuth } from "../../../hooks/use-auth-safe";
 import { useToast } from "../../../hooks/use-toast";
 
 type LikesContextType = {
@@ -20,7 +20,7 @@ type LikesContextType = {
 export const LikesContext = createContext<LikesContextType | undefined>(undefined);
 
 export function LikesProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user } = useSafeAuth();
   const { toast } = useToast();
 
   // Fetch user's liked classes

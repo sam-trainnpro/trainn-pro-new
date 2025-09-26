@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { format, formatInTimeZone } from "date-fns-tz";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useSafeAuth } from "../../../../hooks/use-auth-safe";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getQueryFn, apiRequest, queryClient } from "../../lib/queryClient";
+import { useToast } from "../../../../hooks/use-toast";
 
 interface ClassCardProps {
   classItem: ClassCardDTO | Class | ClassWithSchedules;
@@ -15,6 +19,92 @@ interface ClassCardProps {
 
 export default function ClassCard({ classItem, schedules, coach: providedCoach }: ClassCardProps) {
   const [, navigate] = useLocation();
+  const { user } = useSafeAuth();
+  const { toast } = useToast();
+
+  // Fetch user's liked classes
+  const { data: likedClasses = [] } = useQuery<number[]>({
+    queryKey: ["/api/user/liked-classes"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!user, // Only fetch if user is logged in
+  });
+
+  // Check if this class is liked
+  const isLiked = likedClasses.includes(classItem.id);
+
+  // Like a class mutation
+  const likeMutation = useMutation({
+    mutationFn: async (classId: number) => {
+      const res = await apiRequest("POST", `/api/classes/${classId}/like`);
+      return await res.json();
+    },
+    onSuccess: (_, classId) => {
+      // Update the cache by adding the class ID to the liked classes array
+      queryClient.setQueryData(["/api/user/liked-classes"], (oldData: number[] = []) => {
+        if (!oldData.includes(classId)) {
+          return [...oldData, classId];
+        }
+        return oldData;
+      });
+      
+      toast({
+        title: "Class liked!",
+        description: "Added to your favorites",
+      });
+    },
+    onError: (error) => {
+      console.error("Error liking class:", error);
+      toast({
+        title: "Error",
+        description: "Failed to like class. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Unlike a class mutation
+  const unlikeMutation = useMutation({
+    mutationFn: async (classId: number) => {
+      const res = await apiRequest("DELETE", `/api/classes/${classId}/like`);
+      return await res.json();
+    },
+    onSuccess: (_, classId) => {
+      // Update the cache by removing the class ID from the liked classes array
+      queryClient.setQueryData(["/api/user/liked-classes"], (oldData: number[] = []) => {
+        return oldData.filter(id => id !== classId);
+      });
+      
+      toast({
+        title: "Class unliked",
+        description: "Removed from your favorites",
+      });
+    },
+    onError: (error) => {
+      console.error("Error unliking class:", error);
+      toast({
+        title: "Error",
+        description: "Failed to unlike class. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle like button click
+  const handleLikeClick = () => {
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to like classes",
+      });
+      return;
+    }
+
+    if (isLiked) {
+      unlikeMutation.mutate(classItem.id);
+    } else {
+      likeMutation.mutate(classItem.id);
+    }
+  };
   
   // Check if this is a recurring class
   const isRecurring = classItem.isRecurring;
@@ -140,12 +230,18 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
               className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
               onClick={(e) => {
                 e.stopPropagation();
-                // Like functionality to be implemented
-                console.log("Like class:", classItem.id);
+                handleLikeClick();
               }}
               data-testid={`button-like-${classItem.id}`}
+              disabled={likeMutation.isPending || unlikeMutation.isPending}
             >
-              <Heart className="text-primary h-5 w-5" />
+              <Heart 
+                className={`h-5 w-5 transition-colors ${
+                  isLiked 
+                    ? "text-red-500 fill-red-500" 
+                    : "text-primary"
+                }`} 
+              />
             </button>
           </div>
         </div>
