@@ -3562,6 +3562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
 
+
   // Test endpoint to send confirmation email with new format
   app.post("/api/test/send-confirmation-email", async (req, res) => {
     try {

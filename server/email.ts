@@ -1799,8 +1799,12 @@ export async function sendPackagePurchaseNotification(
               </tr>
               ${pricingDetails ? `
               <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Your Earnings:</td>
-                <td style="padding: 8px 0; color: #059669; font-weight: bold;">$${pricingDetails.coachPayout.toFixed(2)}</td>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Total Package Value:</td>
+                <td style="padding: 8px 0; color: #333; font-weight: bold;">$${pricingDetails.totalAmount.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666; font-weight: bold;">Your Potential Earnings:</td>
+                <td style="padding: 8px 0; color: #059669; font-weight: bold;">$${(pricingDetails.totalAmount * 0.85).toFixed(2)}</td>
               </tr>
               ` : ''}
             </table>
