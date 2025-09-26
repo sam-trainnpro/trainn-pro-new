@@ -7,7 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { useToast } from "../../../hooks/use-toast";
 import { ClassCategory } from "@shared/schema";
-import { Loader2, X, DollarSign, Users, Gift } from "lucide-react";
+import { Loader2, X, DollarSign, Users, Gift, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -98,6 +98,12 @@ function DashboardContent() {
     enabled: !!user,
   });
   
+  // Fetch favorite providers (coaches whose classes the user has liked)
+  const { data: favoriteProviders = [] } = useQuery({
+    queryKey: ['/api/user/favorite-providers'],
+    enabled: !!user,
+  });
+  
   const referrals = (referralData as any[]) || [];
   const completedReferrals = referrals.filter((r: any) => r.status === 'completed').length;
   
@@ -144,6 +150,65 @@ function DashboardContent() {
               <p className="text-sm text-muted-foreground">Completed</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="h-5 w-5" />
+            Favorites
+          </CardTitle>
+          <CardDescription>
+            Providers whose classes you've liked
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {favoriteProviders.length > 0 ? (
+            <div className="space-y-3">
+              {favoriteProviders.map((provider: any) => (
+                <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {provider.profileImage ? (
+                      <img 
+                        src={provider.profileImage} 
+                        alt={`${provider.firstName} ${provider.lastName}`}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        {provider.firstName[0]}{provider.lastName[0]}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">
+                        {provider.displayBusinessName && provider.businessName 
+                          ? provider.businessName 
+                          : `${provider.firstName} ${provider.lastName}`}
+                      </p>
+                      {provider.bio && (
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {provider.bio}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = `/coaches/${provider.id}`}
+                    data-testid={`button-view-provider-${provider.id}`}
+                  >
+                    View Profile
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">
+              No favorite providers yet. Like some classes to see them here!
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
