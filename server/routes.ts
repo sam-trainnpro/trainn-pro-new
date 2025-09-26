@@ -2622,17 +2622,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pricingDetails: pricingDetails
           });
           
+          // DEBUG: Log package data before sending email
+          console.log('📧 [ROUTE DEBUG] userPackage.providerPerClassAmount:', userPackage.providerPerClassAmount);
+          console.log('📧 [ROUTE DEBUG] parseFloat result:', parseFloat(userPackage.providerPerClassAmount || '0'));
+          console.log('📧 [ROUTE DEBUG] enrichedUserPackage.packageDetails.title:', enrichedUserPackage.packageDetails.title);
+          console.log('📧 [ROUTE DEBUG] userPackage object:', JSON.stringify(userPackage, null, 2));
+          
+          const packageInfoForEmail = {
+            isPackageBooking: true,
+            perClassAmount: parseFloat(userPackage.providerPerClassAmount || '0'),
+            packageTitle: enrichedUserPackage.packageDetails.title
+          };
+          console.log('📧 [ROUTE DEBUG] packageInfoForEmail:', JSON.stringify(packageInfoForEmail, null, 2));
+          
           // Send notification to coach with package information
           await sendNewBookingNotificationToCoach(
             coach,
             req.user!,
             classDetails,
             booking,
-            {
-              isPackageBooking: true,
-              perClassAmount: parseFloat(userPackage.providerPerClassAmount || '0'),
-              packageTitle: enrichedUserPackage.packageDetails.title
-            }
+            packageInfoForEmail
           );
 
           // Send admin notification

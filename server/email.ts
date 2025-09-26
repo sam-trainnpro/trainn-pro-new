@@ -890,6 +890,18 @@ export async function sendNewBookingNotificationToCoach(
   }
 ): Promise<boolean> {
   try {
+    // DEBUG: Log package info being passed to email function
+    console.log('📧 [EMAIL DEBUG] packageInfo received:', JSON.stringify(packageInfo, null, 2));
+    if (packageInfo?.isPackageBooking) {
+      console.log('📧 [EMAIL DEBUG] This is a package booking');
+      console.log('📧 [EMAIL DEBUG] perClassAmount:', packageInfo.perClassAmount);
+      console.log('📧 [EMAIL DEBUG] packageTitle:', packageInfo.packageTitle);
+      console.log('📧 [EMAIL DEBUG] booking.quantity:', booking.quantity);
+      console.log('📧 [EMAIL DEBUG] classData.price:', classData.price);
+    } else {
+      console.log('📧 [EMAIL DEBUG] This is NOT a package booking');
+    }
+    
     // Format date and time in Pacific Time
     const PACIFIC_TIMEZONE = 'America/Los_Angeles';
     const classDate = new Date(classData.startTime!);
