@@ -41,6 +41,18 @@ export default function ProviderFAQPage() {
       answer:
         "If you offer a set pack (5-class, 10-class, or 20-class packages), here's the default expiration: 5 packs expire after 60 days, 10 packs expire after 90 months and 20 packs expire after 180 days. Expiration starts from the date of purchase.",
     },
+    {
+      id: "package-payment",
+      question: "How do I get paid for a package booking?",
+      answer:
+        "When a customer purchases a package, you will receive 25% of the net package amount upfront. The remaining 75% is released on a prorated basis each time the customer books one of your classes using their package credits.",
+    },
+    {
+      id: "unused-package",
+      question: "What if the customer doesn't use up their package before it expires?",
+      answer:
+        "Customers are responsible for using their package within the set expiration period. If a package expires with unused classes, you will receive the remaining unused balance within 5–7 business days after the expiration date.",
+    },
   ];
   
   const faqSchema = {
