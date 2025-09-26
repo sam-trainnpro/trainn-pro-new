@@ -882,7 +882,12 @@ export async function sendNewBookingNotificationToCoach(
   coach: User,
   customer: User,
   classData: Class,
-  booking: Booking
+  booking: Booking,
+  packageInfo?: {
+    isPackageBooking: boolean;
+    perClassAmount?: number;
+    packageTitle?: string;
+  }
 ): Promise<boolean> {
   try {
     // Format date and time in Pacific Time
@@ -929,9 +934,15 @@ export async function sendNewBookingNotificationToCoach(
                 <td style="padding: 8px 0; color: #155724;">${booking.quantity}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #155724; font-weight: bold;">Total Paid:</td>
-                <td style="padding: 8px 0; color: #155724; font-weight: bold;">$${(classData.price * booking.quantity).toFixed(2)}</td>
+                <td style="padding: 8px 0; color: #155724; font-weight: bold;">${packageInfo?.isPackageBooking ? 'Per-Class Cost:' : 'Total Paid:'}</td>
+                <td style="padding: 8px 0; color: #155724; font-weight: bold;">$${packageInfo?.isPackageBooking && packageInfo.perClassAmount ? (packageInfo.perClassAmount * booking.quantity).toFixed(2) : (classData.price * booking.quantity).toFixed(2)}</td>
               </tr>
+              ${packageInfo?.isPackageBooking ? `
+              <tr>
+                <td style="padding: 8px 0; color: #155724; font-weight: bold;">Booked With:</td>
+                <td style="padding: 8px 0; color: #155724;">Package: ${packageInfo.packageTitle || 'Package'}</td>
+              </tr>
+              ` : ''}
             </table>
           </div>
           

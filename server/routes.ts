@@ -2622,12 +2622,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pricingDetails: pricingDetails
           });
           
-          // Send notification to coach
+          // Send notification to coach with package information
           await sendNewBookingNotificationToCoach(
             coach,
             req.user!,
             classDetails,
-            booking
+            booking,
+            {
+              isPackageBooking: true,
+              perClassAmount: parseFloat(userPackage.providerPerClassAmount || '0'),
+              packageTitle: enrichedUserPackage.packageDetails.title
+            }
           );
 
           // Send admin notification
