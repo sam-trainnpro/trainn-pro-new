@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { Class, ClassCategory, User, Booking, ClassWithSchedules, ClassSchedule } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -170,6 +170,99 @@ export default function ClassDetailsPage() {
     queryFn: () => fetch(`/api/reviews/coach/${classItem?.coachId}?limit=2`).then(res => res.json()),
     enabled: !!classItem?.coachId,
   });
+
+  // Fetch user's liked classes
+  const { data: likedClasses = [] } = useQuery<number[]>({
+    queryKey: ["/api/user/liked-classes"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!user, // Only fetch if user is logged in
+    staleTime: 0, // Always refetch to ensure fresh data
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnMount: true, // Always refetch on mount
+  });
+
+  // Check if this class is liked
+  const isLiked = likedClasses.includes(classId);
+
+  // Like a class mutation
+  const likeMutation = useMutation({
+    mutationFn: async (classId: number) => {
+      const res = await apiRequest("POST", `/api/classes/${classId}/like`);
+      return await res.json();
+    },
+    onSuccess: async (_, classId) => {
+      // Update the cache by adding the class ID to the liked classes array
+      queryClient.setQueryData(["/api/user/liked-classes"], (oldData: number[] = []) => {
+        if (!oldData.includes(classId)) {
+          return [...oldData, classId];
+        }
+        return oldData;
+      });
+      
+      // Force refetch to ensure cache is in sync
+      await queryClient.invalidateQueries({ queryKey: ["/api/user/liked-classes"] });
+      
+      toast({
+        title: "Class liked!",
+        description: "Added to your favorites",
+      });
+    },
+    onError: (error) => {
+      console.error("Error liking class:", error);
+      toast({
+        title: "Error",
+        description: "Failed to like class. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Unlike a class mutation
+  const unlikeMutation = useMutation({
+    mutationFn: async (classId: number) => {
+      const res = await apiRequest("DELETE", `/api/classes/${classId}/like`);
+      return await res.json();
+    },
+    onSuccess: async (_, classId) => {
+      // Update the cache by removing the class ID from the liked classes array
+      queryClient.setQueryData(["/api/user/liked-classes"], (oldData: number[] = []) => {
+        return oldData.filter(id => id !== classId);
+      });
+      
+      // Force refetch to ensure cache is in sync
+      await queryClient.invalidateQueries({ queryKey: ["/api/user/liked-classes"] });
+      
+      toast({
+        title: "Class unliked",
+        description: "Removed from your favorites",
+      });
+    },
+    onError: (error) => {
+      console.error("Error unliking class:", error);
+      toast({
+        title: "Error",
+        description: "Failed to unlike class. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle like button click
+  const handleLikeClick = () => {
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to like classes",
+      });
+      return;
+    }
+
+    if (isLiked) {
+      unlikeMutation.mutate(classId);
+    } else {
+      likeMutation.mutate(classId);
+    }
+  };
   
   const userBooking = bookings?.find(booking => 
     booking.classId === classId && (booking.status === 'pending' || booking.status === 'confirmed')
@@ -293,8 +386,20 @@ export default function ClassDetailsPage() {
                     >
                       <Share2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon">
-                      <Heart className="h-4 w-4" />
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={handleLikeClick}
+                      disabled={likeMutation.isPending || unlikeMutation.isPending}
+                      data-testid="button-like-class"
+                    >
+                      <Heart 
+                        className={`h-4 w-4 transition-colors ${
+                          isLiked 
+                            ? "text-red-500 fill-red-500" 
+                            : "text-muted-foreground"
+                        }`} 
+                      />
                     </Button>
                   </div>
                 </div>
