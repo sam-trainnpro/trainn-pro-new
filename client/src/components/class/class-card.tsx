@@ -1,7 +1,7 @@
 // Removed useQuery - now using consolidated data from props to eliminate N+1 queries
 import { Link, useLocation } from "wouter";
 import { Class, User, ClassCategory, ClassSchedule, ClassWithSchedules, ClassCardDTO } from "@shared/schema";
-import { MapPin, Clock, Star, Heart, Calendar } from "lucide-react";
+import { MapPin, Clock, Star, Heart, Calendar, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, formatInTimeZone } from "date-fns-tz";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -124,12 +124,30 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
           <div className="absolute top-3 left-3 bg-primary text-white text-sm font-medium px-2 py-1 rounded">
             {isLoadingCategory ? <Skeleton className="h-4 w-16" /> : category?.name || "Class"}
           </div>
-          <button 
-            className="absolute top-3 right-3 bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Heart className="text-primary h-5 w-5" />
-          </button>
+          <div className="absolute top-3 right-3 flex gap-2">
+            <button 
+              className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Share functionality to be implemented
+                console.log("Share class:", classItem.id);
+              }}
+              data-testid={`button-share-${classItem.id}`}
+            >
+              <Share2 className="text-primary h-5 w-5" />
+            </button>
+            <button 
+              className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Like functionality to be implemented
+                console.log("Like class:", classItem.id);
+              }}
+              data-testid={`button-like-${classItem.id}`}
+            >
+              <Heart className="text-primary h-5 w-5" />
+            </button>
+          </div>
         </div>
         
         <div className="p-4">
