@@ -3247,12 +3247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paymentIntentId, packageId, classCount, price, promoCode, appliedCredits = 0 } = req.body;
       
-      console.log("🟢 [PACKAGE CONFIRM] Route hit - Processing package payment confirmation");
-      console.log("🟢 [PACKAGE CONFIRM] Request body:", { paymentIntentId, packageId, classCount, price, promoCode, appliedCredits });
-      console.log("🟢 [PACKAGE CONFIRM] User ID:", req.user.id);
-      
       if (!packageId || !classCount || !price) {
-        console.log("❌ [PACKAGE CONFIRM] Missing required parameters");
         return res.status(400).json({ message: "Missing required parameters" });
       }
 
@@ -3386,16 +3381,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email notifications
       try {
-        console.log("📧 [PACKAGE CONFIRM] Starting email notification process...");
         // Get customer and coach user data for emails
         const customer = req.user;
         const coach = await storage.getUser(packageData.coachId);
         
         if (coach) {
-          console.log("📧 [PACKAGE CONFIRM] Customer and coach data retrieved successfully");
-          console.log("📧 [PACKAGE CONFIRM] Customer email:", customer.email);
-          console.log("📧 [PACKAGE CONFIRM] Coach email:", coach.email);
-          
           // Prepare pricing details for customer email
           const pricingDetails = {
             originalPrice: packagePrice,
@@ -3411,33 +3401,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalAmount: totalAmountDollars
           };
 
-          console.log("📧 [PACKAGE CONFIRM] About to send customer confirmation email...");
           // Send customer confirmation email
-          const customerEmailResult = await sendPackagePurchaseConfirmation({
+          await sendPackagePurchaseConfirmation({
             packagePurchase,
             packageDetails: packageData,
             customer,
             coach,
             pricingDetails
           });
-          console.log("📧 [PACKAGE CONFIRM] Customer email result:", customerEmailResult);
 
-          console.log("📧 [PACKAGE CONFIRM] About to send provider notification email...");
           // Send provider notification email
-          const providerEmailResult = await sendPackagePurchaseNotification({
+          await sendPackagePurchaseNotification({
             packagePurchase,
             packageDetails: packageData,
             customer,
             coach,
             pricingDetails: providerPricingDetails
           });
-          console.log("📧 [PACKAGE CONFIRM] Provider email result:", providerEmailResult);
-        } else {
-          console.log("❌ [PACKAGE CONFIRM] Coach not found, skipping emails");
         }
       } catch (emailError) {
-        console.error("❌ [PACKAGE CONFIRM] Error sending package purchase emails:", emailError);
-        console.error("❌ [PACKAGE CONFIRM] Email error stack:", emailError.stack);
+        console.error("Error sending package purchase emails:", emailError);
         // Don't fail the entire request for email errors
       }
 
@@ -3462,11 +3445,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Free package purchase with credits
   app.post("/api/package-payment/free-credit", requireAuth, async (req, res) => {
     try {
-      console.log("🟢 [FREE CREDIT] Route hit - Processing free credit package purchase");
       const { packageId, classCount, price, appliedCredits } = req.body;
       const userId = (req.user as any).id;
-      console.log("🟢 [FREE CREDIT] Request body:", { packageId, classCount, price, appliedCredits });
-      console.log("🟢 [FREE CREDIT] User ID:", userId);
       
       if (!packageId || !classCount || !price || !appliedCredits) {
         return res.status(400).json({ message: "Missing required parameters" });
