@@ -1262,19 +1262,19 @@ export class DatabaseStorage implements IStorage {
 
   async getFavoriteProviders(userId: number): Promise<User[]> {
     // Get unique coach IDs from classes that the user has liked
-    const result = await db
+    const coachIdsResult = await db
       .selectDistinct({ coachId: classes.coachId })
       .from(classLikes)
       .innerJoin(classes, eq(classLikes.classId, classes.id))
       .where(eq(classLikes.userId, userId));
     
-    const coachIds = result.map(r => r.coachId);
+    const coachIds = coachIdsResult.map(r => r.coachId);
     
     if (coachIds.length === 0) {
       return [];
     }
     
-    // Get the full provider/coach information (only approved coaches)
+    // Get the approved coaches information
     const providers = await db
       .select()
       .from(users)
