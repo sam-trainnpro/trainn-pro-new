@@ -1256,6 +1256,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get user's liked classes
+  app.get("/api/user/liked-classes", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const likedClassIds = await storage.getUserLikedClasses(userId);
+      res.json(likedClassIds);
+    } catch (error) {
+      console.error("Error fetching user liked classes:", error);
+      res.status(500).json({ message: "Failed to fetch liked classes" });
+    }
+  });
+
   // Get classes by coach ID
   app.get("/api/coaches/:id/classes", async (req, res) => {
     try {
