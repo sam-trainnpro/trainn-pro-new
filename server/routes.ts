@@ -1199,6 +1199,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update class series" });
     }
   });
+
+  // Like a class
+  app.post("/api/classes/:id/like", requireAuth, async (req, res) => {
+    try {
+      const classId = parseInt(req.params.id);
+      const userId = req.user.id;
+
+      // Check if class exists
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+
+      // Check if already liked
+      const isAlreadyLiked = await storage.isClassLikedByUser(userId, classId);
+      if (isAlreadyLiked) {
+        return res.status(400).json({ message: "Class already liked" });
+      }
+
+      const like = await storage.likeClass(userId, classId);
+      res.status(201).json({ message: "Class liked successfully", like });
+    } catch (error) {
+      console.error("Error liking class:", error);
+      res.status(500).json({ message: "Failed to like class" });
+    }
+  });
+
+  // Unlike a class
+  app.delete("/api/classes/:id/like", requireAuth, async (req, res) => {
+    try {
+      const classId = parseInt(req.params.id);
+      const userId = req.user.id;
+
+      // Check if class exists
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+
+      // Check if actually liked
+      const isLiked = await storage.isClassLikedByUser(userId, classId);
+      if (!isLiked) {
+        return res.status(400).json({ message: "Class not liked" });
+      }
+
+      const success = await storage.unlikeClass(userId, classId);
+      if (success) {
+        res.json({ message: "Class unliked successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to unlike class" });
+      }
+    } catch (error) {
+      console.error("Error unliking class:", error);
+      res.status(500).json({ message: "Failed to unlike class" });
+    }
+  });
   
   // Get classes by coach ID
   app.get("/api/coaches/:id/classes", async (req, res) => {
