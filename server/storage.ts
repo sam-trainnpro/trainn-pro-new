@@ -19,7 +19,8 @@ import {
   classPackages, type ClassPackage, type InsertClassPackage,
   packagePurchases, type PackagePurchase, type InsertPackagePurchase,
   packageBookings, type PackageBooking, type InsertPackageBooking,
-  emailReminderTracking, type EmailReminderTracking, type InsertEmailReminderTracking
+  emailReminderTracking, type EmailReminderTracking, type InsertEmailReminderTracking,
+  classLikes, type ClassLike, type InsertClassLike
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -110,6 +111,12 @@ export interface IStorage {
   updateReview(id: number, review: Partial<Review>): Promise<Review | undefined>;
   getClassRatingStats(classId: number): Promise<{ averageRating: number; totalReviews: number }>;
   getCoachRatingStats(coachId: number): Promise<{ averageRating: number; totalReviews: number }>;
+  
+  // Class likes
+  likeClass(userId: number, classId: number): Promise<ClassLike>;
+  unlikeClass(userId: number, classId: number): Promise<boolean>;
+  getUserLikedClasses(userId: number): Promise<number[]>;
+  isClassLikedByUser(userId: number, classId: number): Promise<boolean>;
   
   // Stripe
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
@@ -1213,6 +1220,43 @@ export class DatabaseStorage implements IStorage {
   
   async getUserReviews(userId: number): Promise<Review[]> {
     return await db.select().from(reviews).where(eq(reviews.userId, userId));
+  }
+  
+  // Class likes methods
+  async likeClass(userId: number, classId: number): Promise<ClassLike> {
+    const result = await db.insert(classLikes)
+      .values({
+        userId,
+        classId,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return result[0];
+  }
+  
+  async unlikeClass(userId: number, classId: number): Promise<boolean> {
+    const result = await db.delete(classLikes)
+      .where(and(eq(classLikes.userId, userId), eq(classLikes.classId, classId)))
+      .returning();
+    
+    return result.length > 0;
+  }
+  
+  async getUserLikedClasses(userId: number): Promise<number[]> {
+    const result = await db.select({ classId: classLikes.classId })
+      .from(classLikes)
+      .where(eq(classLikes.userId, userId));
+    
+    return result.map(like => like.classId);
+  }
+  
+  async isClassLikedByUser(userId: number, classId: number): Promise<boolean> {
+    const result = await db.select()
+      .from(classLikes)
+      .where(and(eq(classLikes.userId, userId), eq(classLikes.classId, classId)));
+    
+    return result.length > 0;
   }
   
   // Stripe
