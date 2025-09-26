@@ -117,6 +117,7 @@ export interface IStorage {
   unlikeClass(userId: number, classId: number): Promise<boolean>;
   getUserLikedClasses(userId: number): Promise<number[]>;
   isClassLikedByUser(userId: number, classId: number): Promise<boolean>;
+  getFavoriteProviders(userId: number): Promise<User[]>;
   
   // Stripe
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
@@ -1257,6 +1258,33 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(classLikes.userId, userId), eq(classLikes.classId, classId)));
     
     return result.length > 0;
+  }
+
+  async getFavoriteProviders(userId: number): Promise<User[]> {
+    // Get unique coach IDs from classes that the user has liked
+    const result = await db
+      .selectDistinct({ coachId: classes.coachId })
+      .from(classLikes)
+      .innerJoin(classes, eq(classLikes.classId, classes.id))
+      .where(eq(classLikes.userId, userId));
+    
+    const coachIds = result.map(r => r.coachId);
+    
+    if (coachIds.length === 0) {
+      return [];
+    }
+    
+    // Get the full provider/coach information (only approved coaches)
+    const providers = await db
+      .select()
+      .from(users)
+      .where(and(
+        inArray(users.id, coachIds),
+        eq(users.role, 'coach'),
+        eq(users.isApproved, true)
+      ));
+    
+    return providers;
   }
   
   // Stripe

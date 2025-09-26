@@ -1268,6 +1268,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's favorite providers (coaches whose classes they liked)
+  app.get("/api/user/favorite-providers", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const favoriteProviders = await storage.getFavoriteProviders(userId);
+      res.json(favoriteProviders);
+    } catch (error) {
+      console.error("Error fetching favorite providers:", error);
+      res.status(500).json({ message: "Failed to fetch favorite providers" });
+    }
+  });
+
   // Get classes by coach ID
   app.get("/api/coaches/:id/classes", async (req, res) => {
     try {
