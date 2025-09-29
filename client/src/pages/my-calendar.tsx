@@ -108,13 +108,31 @@ export default function MyCalendarPage() {
 
   // Filter classes for admin based on selected coach
   const filteredClasses = useMemo(() => {
-    if (user?.role === 'admin' && selectedCoachId && selectedCoachId !== 'all') {
-      // Normalize both sides to numbers for comparison
-      const target = Number(selectedCoachId);
-      if (!Number.isFinite(target)) return classes;
-      return classes.filter(cls => Number(cls.coachId) === target);
+    // Return all classes for non-admin users or when 'all' is selected
+    if (user?.role !== 'admin' || !selectedCoachId || selectedCoachId === 'all') {
+      return classes;
     }
-    return classes;
+    
+    // Parse the selected coach ID, handling various formats
+    const targetCoachId = parseInt(selectedCoachId, 10);
+    
+    // If we can't parse the coach ID, return all classes
+    if (isNaN(targetCoachId)) {
+      return classes;
+    }
+    
+    // Filter classes, being defensive about coachId data types and null/undefined values
+    return classes.filter(classItem => {
+      // Handle various coachId formats (string, number, null, undefined)
+      if (!classItem.coachId && classItem.coachId !== 0) {
+        return false; // Skip classes without a valid coachId
+      }
+      
+      const classCoachId = parseInt(String(classItem.coachId), 10);
+      
+      // Return true only if we have a valid parsed coachId that matches
+      return !isNaN(classCoachId) && classCoachId === targetCoachId;
+    });
   }, [classes, selectedCoachId, user?.role]);
 
   const handleClassClick = (classItem: Class) => {
