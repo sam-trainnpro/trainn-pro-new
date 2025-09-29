@@ -27,7 +27,7 @@ export default function BookAgainClasses() {
     <section className="py-8 md:py-12 bg-[#F7F7F7]">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl md:text-3xl font-heading font-bold">Book it again</h2>
+          <h2 className="text-2xl md:text-3xl font-heading font-bold">Book It Again</h2>
           <Link href="/classes" className="text-secondary hover:underline font-medium flex items-center">
             View All <ChevronRight className="ml-1 h-4 w-4" />
           </Link>
