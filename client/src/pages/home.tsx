@@ -4,6 +4,7 @@ import MobileNavigation from "@/components/layout/mobile-navigation";
 import HeroSection from "@/components/home/hero-section";
 import SearchFilters from "@/components/home/search-filters";
 import FeaturedClasses from "@/components/home/featured-classes";
+import BookAgainClasses from "@/components/home/book-again-classes";
 import HowItWorks from "@/components/home/how-it-works";
 import DownloadApp from "@/components/home/download-app";
 import Testimonials from "@/components/home/testimonials";
@@ -76,6 +77,7 @@ export default function Home() {
         <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
         <HowItWorks />
         <FeaturedClasses />
+        <BookAgainClasses />
         <DownloadApp />
         <Testimonials />
         <CTASection />
