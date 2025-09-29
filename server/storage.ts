@@ -119,6 +119,9 @@ export interface IStorage {
   isClassLikedByUser(userId: number, classId: number): Promise<boolean>;
   getFavoriteProviders(userId: number): Promise<User[]>;
   
+  // Book Again recommendations
+  getBookAgainRecommendations(userId: number): Promise<ClassCardDTO[]>;
+  
   // Stripe
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
   
@@ -1285,6 +1288,199 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return providers;
+  }
+
+  async getBookAgainRecommendations(userId: number): Promise<ClassCardDTO[]> {
+    // Get user's booking history (most recent first) to find coaches they've booked with
+    const userBookingsResult = await db
+      .select({ 
+        classId: bookings.classId,
+        createdAt: bookings.createdAt 
+      })
+      .from(bookings)
+      .where(and(
+        eq(bookings.userId, userId),
+        or(
+          eq(bookings.status, 'confirmed'),
+          eq(bookings.status, 'completed')
+        )
+      ))
+      .orderBy(desc(bookings.createdAt))
+      .limit(20); // Get last 20 bookings to avoid performance issues
+    
+    if (userBookingsResult.length === 0) {
+      return [];
+    }
+    
+    // Get the class IDs from those bookings
+    const bookedClassIds = userBookingsResult.map(b => b.classId);
+    
+    // Get unique coach IDs from the classes the user has booked
+    const coachIdsResult = await db
+      .selectDistinct({ coachId: classes.coachId })
+      .from(classes)
+      .where(inArray(classes.id, bookedClassIds));
+    
+    const coachIds = coachIdsResult.map(r => r.coachId);
+    
+    if (coachIds.length === 0) {
+      return [];
+    }
+    
+    // Get upcoming classes from those coaches
+    const now = new Date();
+    
+    const recommendedClasses = await db
+      .select({
+        // Class fields
+        id: classes.id,
+        title: classes.title,
+        description: classes.description,
+        coachId: classes.coachId,
+        categoryId: classes.categoryId,
+        price: classes.price,
+        capacity: classes.capacity,
+        location: classes.location,
+        latitude: classes.latitude,
+        longitude: classes.longitude,
+        address: classes.address,
+        street: classes.street,
+        city: classes.city,
+        state: classes.state,
+        zipCode: classes.zipCode,
+        image: classes.image,
+        startTime: classes.startTime,
+        endTime: classes.endTime,
+        isRecurring: classes.isRecurring,
+        parentClassId: classes.parentClassId,
+        recurringSeriesId: classes.recurringSeriesId,
+        recurrenceType: classes.recurrenceType,
+        recurrenceInterval: classes.recurrenceInterval,
+        recurrenceDaysOfWeek: classes.recurrenceDaysOfWeek,
+        recurrenceEndType: classes.recurrenceEndType,
+        recurrenceEndDate: classes.recurrenceEndDate,
+        recurrenceEndCount: classes.recurrenceEndCount,
+        whatToBring: classes.whatToBring,
+        toFindUs: classes.toFindUs,
+        ageGroup: classes.ageGroup,
+        outdoors: classes.outdoors,
+        status: classes.status,
+        createdAt: classes.createdAt,
+        // Coach fields
+        coachFirstName: users.firstName,
+        coachLastName: users.lastName,
+        coachBusinessName: users.businessName,
+        coachDisplayBusinessName: users.displayBusinessName,
+        coachEmail: users.email,
+        coachPhone: users.phone,
+        coachRole: users.role,
+        coachBio: users.bio,
+        coachProfileImage: users.profileImage,
+        coachIsApproved: users.isApproved,
+        coachStripeCustomerId: users.stripeCustomerId,
+        coachStripeConnectId: users.stripeConnectId,
+        coachStripeConnectOnboarded: users.stripeConnectOnboarded,
+        coachBankAccountVerified: users.bankAccountVerified,
+        coachAreasOfExpertise: users.areasOfExpertise,
+        coachCertifications: users.certifications,
+        coachGoogleId: users.googleId,
+        coachAuthMethod: users.authMethod,
+        coachGoogleProfilePicture: users.googleProfilePicture,
+        coachReferralCode: users.referralCode,
+        coachProviderReferralCode: users.providerReferralCode,
+        // Category fields
+        categoryName: classCategories.name,
+        categoryImage: classCategories.image,
+      })
+      .from(classes)
+      .innerJoin(users, eq(classes.coachId, users.id))
+      .innerJoin(classCategories, eq(classes.categoryId, classCategories.id))
+      .where(and(
+        inArray(classes.coachId, coachIds),
+        eq(classes.status, 'active'),
+        gte(classes.startTime, now) // Only future classes
+      ))
+      .orderBy(classes.startTime)
+      .limit(10); // Limit to 10 recommendations
+
+    // Transform to ClassCardDTO format
+    const classCardDTOs: ClassCardDTO[] = recommendedClasses.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      coachId: row.coachId,
+      categoryId: row.categoryId,
+      price: row.price,
+      capacity: row.capacity,
+      location: row.location,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      address: row.address,
+      street: row.street,
+      city: row.city,
+      state: row.state,
+      zipCode: row.zipCode,
+      image: row.image,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      isRecurring: row.isRecurring,
+      parentClassId: row.parentClassId,
+      recurringSeriesId: row.recurringSeriesId,
+      recurrenceType: row.recurrenceType,
+      recurrenceInterval: row.recurrenceInterval,
+      recurrenceDaysOfWeek: row.recurrenceDaysOfWeek,
+      recurrenceEndType: row.recurrenceEndType,
+      recurrenceEndDate: row.recurrenceEndDate,
+      recurrenceEndCount: row.recurrenceEndCount,
+      whatToBring: row.whatToBring,
+      toFindUs: row.toFindUs,
+      ageGroup: row.ageGroup,
+      outdoors: row.outdoors,
+      status: row.status,
+      createdAt: row.createdAt,
+      schedules: [], // Will be populated separately if needed
+      coach: {
+        id: row.coachId,
+        firstName: row.coachFirstName,
+        lastName: row.coachLastName,
+        businessName: row.coachBusinessName,
+        displayBusinessName: row.coachDisplayBusinessName,
+        email: row.coachEmail,
+        phone: row.coachPhone,
+        role: row.coachRole,
+        bio: row.coachBio,
+        profileImage: row.coachProfileImage,
+        isApproved: row.coachIsApproved,
+        createdAt: new Date(), // Default value
+        stripeCustomerId: row.coachStripeCustomerId,
+        stripeConnectId: row.coachStripeConnectId,
+        stripeConnectOnboarded: row.coachStripeConnectOnboarded,
+        bankAccountVerified: row.coachBankAccountVerified,
+        areasOfExpertise: row.coachAreasOfExpertise,
+        certifications: row.coachCertifications,
+        googleId: row.coachGoogleId,
+        authMethod: row.coachAuthMethod,
+        googleProfilePicture: row.coachGoogleProfilePicture,
+        referralCode: row.coachReferralCode,
+        providerReferralCode: row.coachProviderReferralCode,
+      },
+      category: {
+        id: row.categoryId,
+        name: row.categoryName,
+        image: row.categoryImage,
+      },
+      bookingStats: {
+        totalBookings: 0,
+        activeBookings: 0,
+        spotsLeft: row.capacity, // Will be calculated later if needed
+      },
+      ratingStats: {
+        averageRating: 0,
+        totalReviews: 0,
+      },
+    }));
+
+    return classCardDTOs;
   }
   
   // Stripe
