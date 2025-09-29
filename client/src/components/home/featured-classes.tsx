@@ -96,9 +96,9 @@ export default function FeaturedClasses() {
         </div>
         
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex gap-6 overflow-x-auto pb-4 scroll-smooth sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-x-visible sm:pb-0" style={{ scrollSnapType: 'x mandatory' }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm p-4">
+              <div key={i} className="bg-white rounded-xl shadow-sm p-4 flex-shrink-0 w-80 sm:w-auto sm:flex-shrink" style={{ scrollSnapAlign: 'start' }}>
                 <Skeleton className="h-48 w-full rounded-lg mb-4" />
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2 mb-4" />
@@ -118,9 +118,11 @@ export default function FeaturedClasses() {
             <p>Error loading classes. Please try again later.</p>
           </div>
         ) : featuredClasses && featuredClasses.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex gap-6 overflow-x-auto pb-4 scroll-smooth sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-x-visible sm:pb-0" style={{ scrollSnapType: 'x mandatory' }}>
             {featuredClasses.map((classItem) => (
-              <ClassCard key={classItem.id} classItem={classItem} />
+              <div key={classItem.id} className="flex-shrink-0 w-80 sm:w-auto sm:flex-shrink" style={{ scrollSnapAlign: 'start' }}>
+                <ClassCard classItem={classItem} />
+              </div>
             ))}
           </div>
         ) : (
