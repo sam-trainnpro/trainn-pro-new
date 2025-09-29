@@ -109,7 +109,10 @@ export default function MyCalendarPage() {
   // Filter classes for admin based on selected coach
   const filteredClasses = useMemo(() => {
     if (user?.role === 'admin' && selectedCoachId && selectedCoachId !== 'all') {
-      return classes.filter(cls => cls.coachId === parseInt(selectedCoachId));
+      // Normalize both sides to numbers for comparison
+      const target = Number(selectedCoachId);
+      if (!Number.isFinite(target)) return classes;
+      return classes.filter(cls => Number(cls.coachId) === target);
     }
     return classes;
   }, [classes, selectedCoachId, user?.role]);
@@ -481,7 +484,7 @@ export default function MyCalendarPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {classes.length === 0 ? (
+            {filteredClasses.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No classes scheduled</h3>
@@ -495,7 +498,7 @@ export default function MyCalendarPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {classes
+                {filteredClasses
                   .filter(classItem => {
                     const classDate = parseISO(classItem.startTime);
                     const today = new Date();
