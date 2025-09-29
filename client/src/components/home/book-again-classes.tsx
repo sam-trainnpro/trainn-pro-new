@@ -34,9 +34,9 @@ export default function BookAgainClasses() {
         </div>
         
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex gap-6 overflow-x-auto pb-4 scroll-smooth" style={{ scrollSnapType: 'x mandatory' }}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm p-4 flex-shrink-0 w-80" style={{ scrollSnapAlign: 'start' }}>
                 <Skeleton className="h-48 w-full rounded-lg mb-4" />
                 <Skeleton className="h-6 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-1/2 mb-4" />
@@ -56,9 +56,11 @@ export default function BookAgainClasses() {
             <p>Error loading recommendations. Please try again later.</p>
           </div>
         ) : recommendations && recommendations.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex gap-6 overflow-x-auto pb-4 scroll-smooth" style={{ scrollSnapType: 'x mandatory' }}>
             {recommendations.map((classItem) => (
-              <ClassCard key={classItem.id} classItem={classItem} />
+              <div key={classItem.id} className="flex-shrink-0 w-80" style={{ scrollSnapAlign: 'start' }}>
+                <ClassCard classItem={classItem} />
+              </div>
             ))}
           </div>
         ) : null}
