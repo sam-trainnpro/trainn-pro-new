@@ -310,7 +310,10 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
                     target.style.display = 'none';
                     const container = target.parentElement;
                     if (container) {
-                      container.innerHTML = `<span class="text-xs font-medium text-gray-700">${coach?.firstName?.[0] || ''}${coach?.lastName?.[0] || ''}</span>`;
+                      const span = document.createElement('span');
+                      span.className = 'text-xs font-medium text-gray-700';
+                      span.textContent = `${coach?.firstName?.[0] || ''}${coach?.lastName?.[0] || ''}`;
+                      container.appendChild(span);
                     }
                   }}
                 />
