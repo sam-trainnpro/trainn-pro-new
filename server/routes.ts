@@ -4517,6 +4517,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update newsletter preference
+  app.put("/api/users/:id/newsletter-preference", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Only allow users to update their own preference
+      if (userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this preference" });
+      }
+      
+      const { receiveNewsletter } = req.body;
+      
+      if (typeof receiveNewsletter !== 'boolean') {
+        return res.status(400).json({ message: "Invalid newsletter preference value" });
+      }
+      
+      // Update the user's newsletter preference
+      const updatedUser = await storage.updateUser(userId, { receiveNewsletter });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive information
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating newsletter preference:", error);
+      res.status(500).json({ message: "Failed to update newsletter preference" });
+    }
+  });
+
   // Change password endpoint
   app.put("/api/users/:id/password", requireAuth, async (req, res) => {
     const userId = parseInt(req.params.id);
