@@ -3773,95 +3773,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test endpoint for post-class feedback email (development only)
   app.post("/api/test/send-feedback-email", async (req, res) => {
     try {
-      // Create test data for feedback email
-      const testCustomer = {
-        id: 123,
-        firstName: "Carlos",
-        email: "charleslozano@gmail.com",
-        lastName: "Test",
-        username: "carlos_test",
-        password: "test",
-        role: 'customer' as const,
-        isApproved: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      const { bookingId } = req.body;
       
-      const testClassData = {
-        id: 626,
-        title: "Boot Camp @ Dolores Park",
-        description: "High-intensity outdoor workout session",
-        startTime: new Date('2025-09-24T14:00:00-08:00'),
-        endTime: new Date('2025-09-24T15:00:00-08:00'),
-        address: "Dolores Park, San Francisco, CA",
-        whatToBring: "Water bottle and towel",
-        price: 25.00,
-        coachId: 456,
-        categoryId: 1,
-        capacity: 20,
-        image: null,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      const testCoach = {
-        id: 456,
-        firstName: "Maria",
-        lastName: "Rodriguez",
-        email: "coach@example.com",
-        username: "maria_coach",
-        password: "test",
-        role: 'coach' as const,
-        isApproved: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      const testBooking = {
-        id: 320,
-        userId: testCustomer.id,
-        classId: testClassData.id,
-        quantity: 1,
-        status: "confirmed" as const,
-        stripePaymentIntentId: "test_pi_" + Date.now(),
-        paymentDate: new Date(),
-        paymentMethod: "stripe" as const,
-        amount: testClassData.price * 100,
-        currency: "usd",
-        platformFee: Math.round(testClassData.price * 100 * 0.15),
-        coachPayout: Math.round(testClassData.price * 100 * 0.85),
-        createdAt: new Date(),
-        stripePaymentId: null,
-        stripeTransferId: null,
-        payoutStatus: null,
-        payoutDate: null
-      };
-
-      const { sendPostClassFeedbackEmail } = await import('./email');
-      const emailSent = await sendPostClassFeedbackEmail({
-        booking: testBooking,
-        classData: testClassData,
-        customer: testCustomer,
-        coach: testCoach
-      });
-
-      if (emailSent) {
-        res.json({ 
-          success: true, 
-          message: 'Test post-class feedback email sent successfully to charleslozano@gmail.com',
-          details: {
-            customerName: testCustomer.firstName,
-            className: testClassData.title,
-            coachName: testCoach.firstName,
-            to: testCustomer.email
-          }
+      if (bookingId) {
+        // Use real booking data from database
+        const booking = await storage.getBooking(bookingId);
+        if (!booking) {
+          return res.status(404).json({ 
+            success: false, 
+            message: 'Booking not found' 
+          });
+        }
+        
+        const classData = await storage.getClass(booking.classId);
+        const customer = await storage.getUser(booking.userId);
+        const coach = classData ? await storage.getUser(classData.coachId) : null;
+        
+        if (!classData || !customer || !coach) {
+          return res.status(404).json({ 
+            success: false, 
+            message: 'Missing required data for email' 
+          });
+        }
+        
+        const { sendPostClassFeedbackEmail } = await import('./email');
+        const emailSent = await sendPostClassFeedbackEmail({
+          booking,
+          classData,
+          customer,
+          coach
         });
+        
+        if (emailSent) {
+          res.json({ 
+            success: true, 
+            message: `Post-class feedback email sent successfully to ${customer.email}`,
+            details: {
+              customerName: customer.firstName,
+              className: classData.title,
+              coachName: coach.firstName,
+              to: customer.email
+            }
+          });
+        } else {
+          res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send feedback email' 
+          });
+        }
       } else {
-        res.status(500).json({ 
-          success: false, 
-          message: 'Failed to send test feedback email' 
+        // Use test data if no bookingId provided
+        const testCustomer = {
+          id: 123,
+          firstName: "Carlos",
+          email: "charleslozano@gmail.com",
+          lastName: "Test",
+          username: "carlos_test",
+          password: "test",
+          role: 'customer' as const,
+          isApproved: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        const testClassData = {
+          id: 626,
+          title: "Boot Camp @ Dolores Park",
+          description: "High-intensity outdoor workout session",
+          startTime: new Date('2025-09-24T14:00:00-08:00'),
+          endTime: new Date('2025-09-24T15:00:00-08:00'),
+          address: "Dolores Park, San Francisco, CA",
+          whatToBring: "Water bottle and towel",
+          price: 25.00,
+          coachId: 456,
+          categoryId: 1,
+          capacity: 20,
+          image: null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        const testCoach = {
+          id: 456,
+          firstName: "Maria",
+          lastName: "Rodriguez",
+          email: "coach@example.com",
+          username: "maria_coach",
+          password: "test",
+          role: 'coach' as const,
+          isApproved: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        const testBooking = {
+          id: 320,
+          userId: testCustomer.id,
+          classId: testClassData.id,
+          quantity: 1,
+          status: "confirmed" as const,
+          stripePaymentIntentId: "test_pi_" + Date.now(),
+          paymentDate: new Date(),
+          paymentMethod: "stripe" as const,
+          amount: testClassData.price * 100,
+          currency: "usd",
+          platformFee: Math.round(testClassData.price * 100 * 0.15),
+          coachPayout: Math.round(testClassData.price * 100 * 0.85),
+          createdAt: new Date(),
+          stripePaymentId: null,
+          stripeTransferId: null,
+          payoutStatus: null,
+          payoutDate: null
+        };
+
+        const { sendPostClassFeedbackEmail } = await import('./email');
+        const emailSent = await sendPostClassFeedbackEmail({
+          booking: testBooking,
+          classData: testClassData,
+          customer: testCustomer,
+          coach: testCoach
         });
+
+        if (emailSent) {
+          res.json({ 
+            success: true, 
+            message: 'Test post-class feedback email sent successfully to charleslozano@gmail.com',
+            details: {
+              customerName: testCustomer.firstName,
+              className: testClassData.title,
+              coachName: testCoach.firstName,
+              to: testCustomer.email
+            }
+          });
+        } else {
+          res.status(500).json({ 
+            success: false, 
+            message: 'Failed to send test feedback email' 
+          });
+        }
       }
     } catch (error: any) {
       console.error("Test feedback email error:", error);
