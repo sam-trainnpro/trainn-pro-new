@@ -2122,7 +2122,7 @@ export async function sendWeeklyNewsletterEmail(
             <div style="margin-bottom: 15px;">
               <a href="https://trainn.pro" style="color: #2563eb; text-decoration: none; margin: 0 10px;">Browse Classes</a>
               <span style="color: #ccc;">•</span>
-              <a href="https://trainn.pro/account" style="color: #2563eb; text-decoration: none; margin: 0 10px;">Your Account</a>
+              <a href="https://trainn.pro/profile" style="color: #2563eb; text-decoration: none; margin: 0 10px;">Your Account</a>
               <span style="color: #ccc;">•</span>
               <a href="https://trainn.pro/faq" style="color: #2563eb; text-decoration: none; margin: 0 10px;">Help</a>
             </div>
