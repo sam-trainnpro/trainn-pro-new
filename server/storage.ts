@@ -3460,7 +3460,12 @@ export class DatabaseStorage implements IStorage {
         eq(classes.status, 'active'),
         eq(users.isApproved, true),
         gte(classes.startTime, now),
-        lte(classes.startTime, nextWeek)
+        lte(classes.startTime, nextWeek),
+        sql`EXISTS (
+          SELECT 1 FROM ${classes} c2
+          WHERE c2.coach_id = ${users.id}
+          AND c2.price > 0
+        )`
       ))
       .groupBy(
         classes.id, 
@@ -3558,7 +3563,12 @@ export class DatabaseStorage implements IStorage {
         eq(classes.status, 'active'),
         eq(users.isApproved, true),
         gte(classes.startTime, now),
-        lte(classes.startTime, nextWeek)
+        lte(classes.startTime, nextWeek),
+        sql`EXISTS (
+          SELECT 1 FROM ${classes} c2
+          WHERE c2.coach_id = ${users.id}
+          AND c2.price > 0
+        )`
       ))
       .groupBy(
         classes.id, 
