@@ -1522,8 +1522,7 @@ export async function sendPostClassFeedbackEmail(
           
           <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0;">
             <div style="margin-bottom: 20px;">
-              <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                <span style="color: #28a745; font-size: 18px; margin-right: 10px;">✅</span>
+              <div style="margin-bottom: 15px;">
                 <span style="color: #333; font-weight: bold;">Tell us about your experience:</span>
               </div>
               <div style="text-align: center; margin-bottom: 25px;">
@@ -1535,8 +1534,7 @@ export async function sendPostClassFeedbackEmail(
             </div>
             
             <div>
-              <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                <span style="color: #28a745; font-size: 18px; margin-right: 10px;">✅</span>
+              <div style="margin-bottom: 15px;">
                 <span style="color: #333; font-weight: bold;">Lock in your next session:</span>
               </div>
               <div style="text-align: center;">
