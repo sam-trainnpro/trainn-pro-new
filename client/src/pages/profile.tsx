@@ -7,7 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { useToast } from "../../../hooks/use-toast";
 import { ClassCategory } from "@shared/schema";
-import { Loader2, X, DollarSign, Users, Gift, Heart } from "lucide-react";
+import { Loader2, X, DollarSign, Users, Gift, Heart, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -83,6 +83,7 @@ interface StripeStatus {
 // Dashboard Component
 function DashboardContent() {
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // Fetch user credit balance 
   const { data: creditData } = useQuery({
@@ -209,6 +210,52 @@ function DashboardContent() {
               No favorite providers yet. Like some classes to see them here!
             </p>
           )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email Preferences
+          </CardTitle>
+          <CardDescription>
+            Manage your email notifications and subscriptions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-0.5">
+              <div className="font-medium">Weekly Newsletter</div>
+              <div className="text-sm text-gray-600">
+                Receive our weekly digest with upcoming classes, new providers, and community reviews
+              </div>
+            </div>
+            <Checkbox
+              checked={user.receiveNewsletter ?? true}
+              onCheckedChange={async (checked) => {
+                try {
+                  await apiRequest("PUT", `/api/users/${user.id}/newsletter-preference`, {
+                    receiveNewsletter: checked
+                  });
+                  await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+                  toast({
+                    title: "Preferences Updated",
+                    description: checked 
+                      ? "You'll now receive our weekly newsletter" 
+                      : "You've unsubscribed from the weekly newsletter",
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to update email preferences",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              data-testid="newsletter-preference-toggle"
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -700,48 +747,6 @@ export default function ProfilePage() {
                             <p className="text-sm text-gray-600">
                               Upload a profile picture. Square images work best. Accepted formats: JPG, PNG, GIF (max 40MB)
                             </p>
-                          </div>
-
-                          <div className="space-y-4 pt-6 border-t">
-                            <div>
-                              <h3 className="text-lg font-medium">Email Preferences</h3>
-                              <p className="text-sm text-gray-600 mt-1">
-                                Manage your email notifications and subscriptions
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center justify-between p-4 border rounded-lg">
-                              <div className="space-y-0.5">
-                                <div className="font-medium">Weekly Newsletter</div>
-                                <div className="text-sm text-gray-600">
-                                  Receive our weekly digest with upcoming classes, new providers, and community reviews
-                                </div>
-                              </div>
-                              <Checkbox
-                                checked={user.receiveNewsletter ?? true}
-                                onCheckedChange={async (checked) => {
-                                  try {
-                                    await apiRequest("PUT", `/api/users/${user.id}/newsletter-preference`, {
-                                      receiveNewsletter: checked
-                                    });
-                                    await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-                                    toast({
-                                      title: "Preferences Updated",
-                                      description: checked 
-                                        ? "You'll now receive our weekly newsletter" 
-                                        : "You've unsubscribed from the weekly newsletter",
-                                    });
-                                  } catch (error) {
-                                    toast({
-                                      title: "Error",
-                                      description: "Failed to update email preferences",
-                                      variant: "destructive",
-                                    });
-                                  }
-                                }}
-                                data-testid="newsletter-preference-toggle"
-                              />
-                            </div>
                           </div>
 
                           {user.role === 'coach' && (
