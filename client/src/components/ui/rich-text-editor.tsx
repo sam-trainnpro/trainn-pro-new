@@ -74,10 +74,12 @@ export function RichTextEditor({
 
   const insertLink = () => {
     if (linkUrl && linkText) {
-      const sanitizedUrl = DOMPurify.sanitize(linkUrl, { ALLOWED_TAGS: [] });
-      const sanitizedText = DOMPurify.sanitize(linkText, { ALLOWED_TAGS: [] });
-      const linkHtml = `<a href="${sanitizedUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">${sanitizedText}</a>`;
-      executeCommand('insertHTML', linkHtml);
+      const linkHtml = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">${linkText}</a>`;
+      const sanitizedLinkHtml = DOMPurify.sanitize(linkHtml, {
+        ALLOWED_TAGS: ['a'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'style']
+      });
+      executeCommand('insertHTML', sanitizedLinkHtml);
       setLinkUrl('');
       setLinkText('');
       setShowLinkDialog(false);
