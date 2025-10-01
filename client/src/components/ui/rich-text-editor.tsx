@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Input } from './input';
@@ -47,7 +48,11 @@ export function RichTextEditor({
   // Initialize content when value changes from parent
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value || '';
+      const sanitizedValue = DOMPurify.sanitize(value || '', {
+        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'ul', 'li', 'br', 'p', 'span'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'style']
+      });
+      editorRef.current.innerHTML = sanitizedValue;
     }
   }, [value]);
 
@@ -69,7 +74,9 @@ export function RichTextEditor({
 
   const insertLink = () => {
     if (linkUrl && linkText) {
-      const linkHtml = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">${linkText}</a>`;
+      const sanitizedUrl = DOMPurify.sanitize(linkUrl, { ALLOWED_TAGS: [] });
+      const sanitizedText = DOMPurify.sanitize(linkText, { ALLOWED_TAGS: [] });
+      const linkHtml = `<a href="${sanitizedUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">${sanitizedText}</a>`;
       executeCommand('insertHTML', linkHtml);
       setLinkUrl('');
       setLinkText('');

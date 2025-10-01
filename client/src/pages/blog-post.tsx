@@ -1,6 +1,7 @@
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import DOMPurify from "dompurify";
 import { Clock, Tag, ArrowLeft, User } from "lucide-react";
 import Header from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
@@ -166,7 +167,12 @@ export default function BlogPostPage() {
             <div className="prose prose-lg max-w-none">
               <div 
                 className="text-gray-800 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: (post.content || '').replace(/\n/g, '<br>') }}
+                dangerouslySetInnerHTML={{ 
+                  __html: DOMPurify.sanitize((post.content || '').replace(/\n/g, '<br>'), {
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'ul', 'li', 'br', 'p', 'span'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel', 'style']
+                  })
+                }}
               />
             </div>
           </article>
