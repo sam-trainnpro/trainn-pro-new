@@ -6367,6 +6367,76 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // Test endpoint to send newsletter to sam@trainn.pro
+  app.post("/api/test/send-newsletter", async (req, res) => {
+    try {
+      const { sendWeeklyNewsletterEmail } = await import('./email');
+      
+      // Fetch real newsletter data
+      const [upcomingKidsClasses, upcomingAdultClasses, newProviders, recentReviews] = await Promise.all([
+        storage.getUpcomingKidsClassesForNewsletter(),
+        storage.getUpcomingAdultClassesForNewsletter(), 
+        storage.getRecentlyJoinedProviders(30),
+        storage.getRecentReviewsForNewsletter()
+      ]);
+      
+      // Create test user for Sam
+      const testUser = {
+        id: 0,
+        email: 'sam@trainn.pro',
+        firstName: 'Sam',
+        lastName: 'Test',
+        role: 'customer' as const,
+        isApproved: true,
+        createdAt: new Date(),
+        stripeCustomerId: null,
+        stripeConnectId: null,
+        stripeConnectOnboarded: false,
+        bankAccountVerified: false,
+        password: null,
+        phone: null,
+        bio: null,
+        profileImage: null,
+        areasOfExpertise: [],
+        certifications: null,
+        googleId: null,
+        authMethod: 'password' as const,
+        googleProfilePicture: null,
+        referralCode: null,
+        providerReferralCode: null,
+        businessName: null,
+        displayBusinessName: false
+      };
+      
+      // Send newsletter
+      const success = await sendWeeklyNewsletterEmail({
+        customer: testUser,
+        upcomingKidsClasses,
+        upcomingAdultClasses,
+        newProviders,
+        recentReviews
+      });
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: 'Test newsletter sent to sam@trainn.pro',
+          stats: {
+            kidsClasses: upcomingKidsClasses.length,
+            adultClasses: upcomingAdultClasses.length,
+            newProviders: newProviders.length,
+            recentReviews: recentReviews.length
+          }
+        });
+      } else {
+        res.status(500).json({ success: false, message: 'Failed to send newsletter' });
+      }
+    } catch (error) {
+      console.error('Error sending test newsletter:', error);
+      res.status(500).json({ success: false, error: String(error) });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
