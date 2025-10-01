@@ -1575,6 +1575,11 @@ export async function sendPostClassFeedbackEmail(
       from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+        },
+      },
     });
 
     console.log(`✅ Post-class feedback email sent to ${customer.email} for class ${classData.title}`);
