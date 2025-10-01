@@ -30,6 +30,8 @@ export const users = pgTable("users", {
   // Referral system
   referralCode: text("referral_code").unique(), // Unique referral code for each user
   providerReferralCode: text("provider_referral_code").unique(), // Unique provider referral code for each user
+  // Email preferences
+  receiveNewsletter: boolean("receive_newsletter").default(true), // User preference for weekly newsletter
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
