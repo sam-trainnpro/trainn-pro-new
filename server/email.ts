@@ -1938,7 +1938,7 @@ export async function sendWeeklyNewsletterEmail(
     };
 
     // Format provider spotlight cards
-    const formatProviderCard = (provider: User) => {
+    const formatProviderCard = (provider: User & { categoryNames: string[] }) => {
       // Use profile image if available, otherwise use initials
       const profileImageUrl = provider.profileImage || provider.googleProfilePicture;
       const imageElement = profileImageUrl ? 
@@ -1948,6 +1948,10 @@ export async function sendWeeklyNewsletterEmail(
         `<div style="width: 60px; height: 60px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px auto;">
            ${provider.firstName.charAt(0)}${provider.lastName.charAt(0)}
          </div>`;
+      
+      const categoryText = provider.categoryNames && provider.categoryNames.length > 0 
+        ? provider.categoryNames.join(', ') 
+        : (provider.areasOfExpertise || 'New provider on Trainn');
       
       return `
         <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin: 12px 0; background: white; text-align: center;">
@@ -1963,10 +1967,10 @@ export async function sendWeeklyNewsletterEmail(
           </div>
           
           <div style="color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 15px;">
-            ${provider.areasOfExpertise || 'New provider on Trainn'}
+            ${categoryText}
           </div>
           
-          <a href="https://trainn.pro/classes?coach=${provider.id}&utm_source=newsletter" 
+          <a href="https://trainn.pro/coaches/${provider.id}?utm_source=newsletter" 
              style="background: #059669; color: white; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;">
             View Classes
           </a>
@@ -2095,13 +2099,6 @@ export async function sendWeeklyNewsletterEmail(
               
               <div>
                 ${recentReviews.slice(0, 3).map(review => formatReviewCard(review)).join('')}
-              </div>
-              
-              <div style="text-align: center; margin-top: 20px;">
-                <a href="https://trainn.pro/reviews?utm_source=newsletter" 
-                   style="color: #f59e0b; text-decoration: none; font-weight: 500;">
-                  Read All Reviews →
-                </a>
               </div>
             </div>
             ` : ''}

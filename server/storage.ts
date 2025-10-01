@@ -3584,19 +3584,76 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getRecentlyJoinedProviders(days: number = 30): Promise<User[]> {
+  async getRecentlyJoinedProviders(days: number = 30): Promise<Array<User & { categoryNames: string[] }>> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
-    return await db.select()
+    const providers = await db.select()
       .from(users)
       .where(and(
         eq(users.role, 'coach'),
         eq(users.isApproved, true),
-        gte(users.createdAt, cutoffDate)
+        gte(users.createdAt, cutoffDate),
+        sql`EXISTS (SELECT 1 FROM ${classes} WHERE ${classes.coachId} = ${users.id})`
       ))
       .orderBy(desc(users.createdAt))
       .limit(5);
+
+    const providersWithCategories = await Promise.all(
+      providers.map(async (provider) => {
+        const providerClasses = await db
+          .select({
+            categoryId: classes.categoryId,
+            categoryName: classCategories.name
+          })
+          .from(classes)
+          .innerJoin(classCategories, eq(classes.categoryId, classCategories.id))
+          .where(eq(classes.coachId, provider.id))
+          .groupBy(classes.categoryId, classCategories.name);
+
+        const categoryNames = providerClasses.map(c => c.categoryName);
+        
+        return {
+          ...provider,
+          categoryNames
+        };
+      })
+    );
+
+    if (providersWithCategories.length === 0) {
+      const existingProviders = await db.select()
+        .from(users)
+        .where(and(
+          eq(users.role, 'coach'),
+          eq(users.isApproved, true),
+          sql`EXISTS (SELECT 1 FROM ${classes} WHERE ${classes.coachId} = ${users.id})`
+        ))
+        .orderBy(desc(users.createdAt))
+        .limit(3);
+
+      return await Promise.all(
+        existingProviders.map(async (provider) => {
+          const providerClasses = await db
+            .select({
+              categoryId: classes.categoryId,
+              categoryName: classCategories.name
+            })
+            .from(classes)
+            .innerJoin(classCategories, eq(classes.categoryId, classCategories.id))
+            .where(eq(classes.coachId, provider.id))
+            .groupBy(classes.categoryId, classCategories.name);
+
+          const categoryNames = providerClasses.map(c => c.categoryName);
+          
+          return {
+            ...provider,
+            categoryNames
+          };
+        })
+      );
+    }
+
+    return providersWithCategories;
   }
 
   async getRecentReviewsForNewsletter(): Promise<Array<{ 
