@@ -702,6 +702,48 @@ export default function ProfilePage() {
                             </p>
                           </div>
 
+                          <div className="space-y-4 pt-6 border-t">
+                            <div>
+                              <h3 className="text-lg font-medium">Email Preferences</h3>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Manage your email notifications and subscriptions
+                              </p>
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-4 border rounded-lg">
+                              <div className="space-y-0.5">
+                                <div className="font-medium">Weekly Newsletter</div>
+                                <div className="text-sm text-gray-600">
+                                  Receive our weekly digest with upcoming classes, new providers, and community reviews
+                                </div>
+                              </div>
+                              <Checkbox
+                                checked={user.receiveNewsletter ?? true}
+                                onCheckedChange={async (checked) => {
+                                  try {
+                                    await apiRequest("PUT", `/api/users/${user.id}/newsletter-preference`, {
+                                      receiveNewsletter: checked
+                                    });
+                                    await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+                                    toast({
+                                      title: "Preferences Updated",
+                                      description: checked 
+                                        ? "You'll now receive our weekly newsletter" 
+                                        : "You've unsubscribed from the weekly newsletter",
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to update email preferences",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                data-testid="newsletter-preference-toggle"
+                              />
+                            </div>
+                          </div>
+
                           {user.role === 'coach' && (
                             <>
                               <FormField
