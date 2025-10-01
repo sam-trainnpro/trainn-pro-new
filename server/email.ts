@@ -2132,7 +2132,7 @@ export async function sendWeeklyNewsletterEmail(
             </p>
             <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">
               This weekly digest is sent to active Trainn community members. 
-              <a href="https://trainn.pro/account/settings" style="color: #999;">Manage email preferences</a>
+              <a href="https://trainn.pro/profile" style="color: #999;">Manage email preferences</a>
             </p>
           </div>
 
