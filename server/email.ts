@@ -1904,8 +1904,7 @@ export async function sendWeeklyNewsletterEmail(
       const monthDay = format(classDatePT, 'MMM d', { timeZone: PACIFIC_TIMEZONE });
       const timeSlot = format(classDatePT, 'h:mm a', { timeZone: PACIFIC_TIMEZONE }) + ' PT';
       
-      const bookingUrl = `https://trainn.pro/checkout/${classData.id}?utm_source=newsletter&utm_campaign=weekly_${weekStart.replace(' ', '_')}`;
-      const classDetailUrl = `https://trainn.pro/class/${classData.id}?utm_source=newsletter`;
+      const classDetailUrl = `https://trainn.pro/classes/${classData.id}?utm_source=newsletter&utm_campaign=weekly_${weekStart.replace(' ', '_')}`;
       
       // Get available spots
       const availableSpots = classData.capacity - (classData.bookedCount || 0);
@@ -1929,13 +1928,9 @@ export async function sendWeeklyNewsletterEmail(
           </div>
           
           <div style="margin-top: 16px;">
-            <a href="${bookingUrl}" 
+            <a href="${classDetailUrl}" 
                style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 500; display: inline-block;">
               Book Now
-            </a>
-            <a href="${classDetailUrl}" 
-               style="color: #2563eb; margin-left: 12px; text-decoration: none; font-size: 14px;">
-              View Details
             </a>
           </div>
         </div>
