@@ -3691,7 +3691,8 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(and(
         eq(users.role, 'customer'),
-        eq(users.isApproved, true)
+        eq(users.isApproved, true),
+        eq(users.receiveNewsletter, true)
       ))
       .orderBy(desc(users.createdAt));
   }
