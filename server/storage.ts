@@ -28,6 +28,7 @@ import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
 import { eq, and, or, desc, inArray, sql, lt, ne, like, gte, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 const PostgresSessionStore = connectPg(session);
 
@@ -672,15 +673,31 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (filters?.dateFilter) {
+        // The dateFilter is the selected date. We need to find all classes that occur on this date in Pacific time.
+        // Classes are stored in UTC, so we need to convert Pacific date boundaries to UTC.
+        const pacificTimeZone = 'America/Los_Angeles';
+        
+        // Get the date string in YYYY-MM-DD format from the filter
         const filterDate = new Date(filters.dateFilter);
-        filterDate.setHours(0, 0, 0, 0);
-        const nextDay = new Date(filterDate);
-        nextDay.setDate(nextDay.getDate() + 1);
+        const year = filterDate.getUTCFullYear();
+        const month = String(filterDate.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(filterDate.getUTCDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
+        // Create Pacific timezone wall-time boundaries for the selected date
+        const startOfDayPTString = `${dateStr}T00:00:00`;
+        const endOfDayPTString = `${dateStr}T23:59:59`;
+        
+        // Convert Pacific wall-time to UTC for database comparison
+        const startOfDayPT = new Date(startOfDayPTString);
+        const endOfDayPT = new Date(endOfDayPTString);
+        const startOfDayUTC = fromZonedTime(startOfDayPT, pacificTimeZone);
+        const endOfDayUTC = fromZonedTime(endOfDayPT, pacificTimeZone);
         
         whereConditions.push(
           and(
-            sql`${classes.startTime} >= ${filterDate.toISOString()}::timestamp`,
-            sql`${classes.startTime} < ${nextDay.toISOString()}::timestamp`
+            sql`${classes.startTime} >= ${startOfDayUTC.toISOString()}::timestamp`,
+            sql`${classes.startTime} <= ${endOfDayUTC.toISOString()}::timestamp`
           )
         );
       }
