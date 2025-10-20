@@ -398,10 +398,22 @@ export async function sendWeeklyNewsletters(): Promise<void> {
     
     let emailsSent = 0;
     let emailsSkipped = 0;
+    let emailsSkippedDueToPreference = 0;
     
     // Send newsletter to each customer
     for (const customer of customers) {
       try {
+        // DOUBLE-CHECK: Verify customer still wants newsletter before sending
+        // This prevents race conditions where preference changed after initial query
+        const currentCustomer = await storage.getUser(customer.id);
+        
+        if (!currentCustomer || !currentCustomer.receiveNewsletter) {
+          emailsSkipped++;
+          emailsSkippedDueToPreference++;
+          console.log(`⏭️  Skipping ${customer.email} - newsletter preference is now FALSE (Customer ID: ${customer.id})`);
+          continue;
+        }
+        
         const emailSent = await sendWeeklyNewsletterEmail({
           customer,
           upcomingKidsClasses,
@@ -427,7 +439,7 @@ export async function sendWeeklyNewsletters(): Promise<void> {
       }
     }
     
-    console.log(`✅ Weekly newsletter process completed. Sent: ${emailsSent}, Failed: ${emailsSkipped}`);
+    console.log(`✅ Weekly newsletter process completed. Sent: ${emailsSent}, Skipped: ${emailsSkipped} (${emailsSkippedDueToPreference} due to preference change)`);
     
   } catch (error) {
     console.error('Error in weekly newsletter process:', error);
