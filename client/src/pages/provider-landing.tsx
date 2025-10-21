@@ -210,7 +210,7 @@ export default function ProviderLanding() {
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
               <div>
-                <div className="text-4xl md:text-5xl font-bold mb-2">150+</div>
+                <div className="text-4xl md:text-5xl font-bold mb-2">20+</div>
                 <div className="text-teal-100">Active Coaches</div>
               </div>
               <div>
