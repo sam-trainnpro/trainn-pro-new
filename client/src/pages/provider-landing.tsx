@@ -321,7 +321,7 @@ export default function ProviderLanding() {
               Ready to Grow Your Coaching Business?
             </h2>
             <p className="text-xl text-teal-100 mb-8">
-              Join hundreds of coaches who are already reaching more students and earning more with Trainn
+              Join hundreds of providers who are already reaching more students and earning more with Trainn
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
