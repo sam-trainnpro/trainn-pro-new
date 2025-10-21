@@ -14,11 +14,10 @@ export default function ProviderLanding() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Grow Your Fitness Business with Trainn
+              Grow Your Business with Trainn
             </h1>
             <p className="text-xl md:text-2xl text-teal-100 mb-8">
-              Connect with thousands of eager students in the San Francisco Bay Area. 
-              Free to join, easy to manage, and built to help you succeed.
+              Connect with hundreds of eager students. Trainn is free to join, easy to manage, and built to help you succeed.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
@@ -45,7 +44,7 @@ export default function ProviderLanding() {
             Why Coaches Choose Trainn
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Everything you need to manage and grow your coaching business in one powerful platform
+            Everything you need to manage and grow your services business in one powerful platform
           </p>
         </div>
 
