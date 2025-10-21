@@ -10,6 +10,15 @@ import MobileNavigation from "@/components/layout/mobile-navigation";
 export default function LandingPages() {
   const landingPages = [
     {
+      title: "Provider Landing Page",
+      url: "/provider-landing",
+      description: "Dedicated landing page for fitness providers to learn about Trainn's platform. Highlights free signup, easy management tools, promo codes, and SF Bay Area local support.",
+      targetKeywords: ["fitness provider platform", "list fitness classes", "grow coaching business"],
+      features: ["Provider-focused messaging", "Benefit highlights", "Conversion optimized"],
+      status: "Live",
+      category: "Provider"
+    },
+    {
       title: "Outdoor Workouts San Francisco",
       url: "/outdoor-workouts-san-francisco",
       description: "Discover outdoor fitness classes in San Francisco's best parks and outdoor locations. Featuring top-rated coaches and flexible scheduling.",
