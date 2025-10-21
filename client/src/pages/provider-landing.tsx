@@ -338,7 +338,7 @@ export default function ProviderLanding() {
               </Link>
             </div>
             <p className="text-teal-100 mt-6 text-sm">
-              No credit card required • Set up in 30 minutes • Cancel anytime
+              No credit card required • Set up in 30 minutes • Easy maintenance
             </p>
           </div>
         </div>
