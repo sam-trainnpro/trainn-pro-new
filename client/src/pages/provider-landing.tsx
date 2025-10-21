@@ -214,7 +214,7 @@ export default function ProviderLanding() {
                 <div className="text-teal-100">Active Coaches</div>
               </div>
               <div>
-                <div className="text-4xl md:text-5xl font-bold mb-2">150+</div>
+                <div className="text-4xl md:text-5xl font-bold mb-2">100+</div>
                 <div className="text-teal-100">Students</div>
               </div>
               <div>
