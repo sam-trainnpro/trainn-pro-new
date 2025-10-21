@@ -60,6 +60,7 @@ import OutdoorWorkoutsSF from "@/pages/outdoor-workouts-sf";
 import KidsDropInSportsSF from "@/pages/kids-drop-in-sports-sf";
 import KidsAfterSchoolActivitiesSF from "@/pages/kids-after-school-activities-sf";
 import LandingPagesPage from "@/pages/landing-pages";
+import ProviderLandingPage from "@/pages/provider-landing";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -97,6 +98,9 @@ function Router() {
       </Route>
       <Route path="/landing-pages">
         <LandingPagesPage />
+      </Route>
+      <Route path="/provider-landing">
+        <ProviderLandingPage />
       </Route>
       <Route path="/classes">
         <ClassesPage />
