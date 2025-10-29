@@ -90,7 +90,8 @@ export function setupAuth(app: Express) {
       },
       async (email, password, done) => {
         try {
-          const user = await storage.getUserByEmail(email);
+          // Normalize email to lowercase for case-insensitive login
+          const user = await storage.getUserByEmail(email.toLowerCase());
           if (!user || !user.password || !(await comparePasswords(password, user.password))) {
             return done(null, false);
           } else {
@@ -147,20 +148,39 @@ export function setupAuth(app: Express) {
             const lastName = profile.name?.familyName || "";
             const googleProfilePicture = profile.photos?.[0]?.value || null;
 
-            // Check if user exists with this email
-            let user = await storage.getUserByEmail(email);
+            // DUPLICATE ACCOUNT PREVENTION: Check if user exists with this email (case-insensitive)
+            let user = await storage.getUserByEmail(email.toLowerCase());
 
             if (user) {
-              // Update existing user with Google info
-              user = await storage.updateUser(user.id, {
+              // ACCOUNT MERGING: User already exists - link Google OAuth to existing account
+              console.log(`🔗 Merging Google OAuth with existing account for ${email} (User ID: ${user.id})`);
+              console.log(`   Previous auth method: ${user.authMethod}, Has password: ${!!user.password}, Has Google ID: ${!!user.googleId}`);
+              
+              // Check if this Google account is already linked to a different user
+              if (user.googleId && user.googleId !== profile.id) {
+                console.warn(`⚠️  Warning: User ${user.id} (${email}) has different Google ID. Updating to new Google ID.`);
+              }
+              
+              const updatedUser = await storage.updateUser(user.id, {
                 googleId: profile.id,
                 authMethod: user.password ? "both" : "google",
                 googleProfilePicture,
+                firstName: user.firstName || firstName,
+                lastName: user.lastName || lastName,
               });
+              
+              if (!updatedUser) {
+                return done(new Error("Failed to update user during account merge"));
+              }
+              
+              user = updatedUser;
+              console.log(`✅ Successfully merged account. New auth method: ${user.authMethod}`);
             } else {
               // Create new user with Google info
+              console.log(`✨ Creating new user account via Google OAuth for ${email}`);
+              
               user = await storage.createUser({
-                email,
+                email: email.toLowerCase(),
                 firstName,
                 lastName,
                 googleId: profile.id,
@@ -173,6 +193,7 @@ export function setupAuth(app: Express) {
               try {
                 const { sendWelcomeEmail } = await import('./email');
                 await sendWelcomeEmail(user);
+                console.log(`📧 Welcome email sent to ${email}`);
               } catch (emailError) {
                 console.error('Failed to send welcome email:', emailError);
               }
@@ -180,6 +201,7 @@ export function setupAuth(app: Express) {
 
             done(null, user);
           } catch (error) {
+            console.error('❌ Google OAuth error:', error);
             done(error);
           }
         }
@@ -191,8 +213,11 @@ export function setupAuth(app: Express) {
     try {
       const { email, password, firstName, lastName, phone, role, referralCode, providerReferralCode } = req.body;
       
+      // Normalize email to lowercase to prevent duplicate accounts
+      const normalizedEmail = email.toLowerCase();
+      
       // Check if email already exists
-      const existingUser = await storage.getUserByEmail(email);
+      const existingUser = await storage.getUserByEmail(normalizedEmail);
       if (existingUser) {
         return res.status(400).json({ message: "Email already registered" });
       }
@@ -200,7 +225,7 @@ export function setupAuth(app: Express) {
       // Create the user with hashed password
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         firstName,
         lastName,
