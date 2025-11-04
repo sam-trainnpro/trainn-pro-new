@@ -82,14 +82,14 @@ export default function ClassDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-4">
-        <DialogHeader>
+      <DialogContent className="max-w-md mx-4 max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-lg font-semibold">
             {classItem.title}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-2 -mr-2">
           {/* Class Image */}
           <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
             <img 
@@ -165,36 +165,39 @@ export default function ClassDetailModal({
             </div>
           )}
 
-          {/* Action Buttons - Only show for class owner or admin */}
-          {canManageClass && (
-            <div className="flex gap-2 pt-4 border-t">
-              <Link href={`/edit-class/${classItem.id}`} className="flex-1">
-                <Button variant="outline" className="w-full flex items-center gap-2">
-                  <Edit3 className="h-4 w-4" />
-                  Edit
-                </Button>
-              </Link>
-              
-              <Button 
-                variant="outline" 
-                onClick={handleDuplicate}
-                className="flex-1 flex items-center gap-2"
-              >
-                <Copy className="h-4 w-4" />
-                Duplicate
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={handleDelete}
-                className="flex-1 flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Button>
-            </div>
-          )}
         </div>
+
+        {/* Action Buttons - Only show for class owner or admin */}
+        {canManageClass && (
+          <div className="flex gap-2 pt-4 border-t flex-shrink-0">
+            <Link href={`/edit-class/${classItem.id}`} className="flex-1">
+              <Button variant="outline" className="w-full flex items-center gap-2" data-testid="button-edit-class">
+                <Edit3 className="h-4 w-4" />
+                Edit
+              </Button>
+            </Link>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleDuplicate}
+              className="flex-1 flex items-center gap-2"
+              data-testid="button-duplicate-class"
+            >
+              <Copy className="h-4 w-4" />
+              Duplicate
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleDelete}
+              className="flex-1 flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              data-testid="button-delete-class"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
