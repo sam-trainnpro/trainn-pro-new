@@ -40,10 +40,10 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = process.env.STRIPE_SECRET_KEY ? 
   new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" }) : null;
 
-// Check if Cloudinary is available
-const cloudinaryAvailable = !!process.env.CLOUDINARY_URL;
+// Check if Cloudinary is available - DISABLED due to hanging issue
+const cloudinaryAvailable = false; // !!process.env.CLOUDINARY_URL;
 if (!cloudinaryAvailable) {
-  console.warn('⚠️  CLOUDINARY_URL not found. Image uploads will use local storage (not recommended for production).');
+  console.warn('⚠️  Using local storage for image uploads (Cloudinary disabled due to compatibility issues).');
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
