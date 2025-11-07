@@ -40,10 +40,23 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = process.env.STRIPE_SECRET_KEY ? 
   new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-12-18.acacia" }) : null;
 
-// Check if Cloudinary is available - DISABLED due to hanging issue
-const cloudinaryAvailable = false; // !!process.env.CLOUDINARY_URL;
-if (!cloudinaryAvailable) {
-  console.warn('⚠️  Using local storage for image uploads (Cloudinary disabled due to compatibility issues).');
+// Check if Cloudinary is available
+const cloudinaryAvailable = !!process.env.CLOUDINARY_URL;
+
+// Initialize Cloudinary if available
+let cloudinary: any = null;
+if (cloudinaryAvailable) {
+  try {
+    const cloudinaryModule = await import('cloudinary');
+    cloudinary = cloudinaryModule.v2;
+    cloudinary.config({
+      secure: true,
+      folder: 'trainn'
+    });
+    console.log('✅ Cloudinary configured successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Cloudinary:', error);
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -53,62 +66,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // Configure multer storage - use Cloudinary if available, otherwise local disk
-  let storage_multer;
-  let cloudinaryEnabled = false;
-  
-  if (cloudinaryAvailable) {
-    try {
-      // Dynamic import of Cloudinary to avoid configuration errors at startup
-      const { v2: cloudinary } = await import('cloudinary');
-      const { CloudinaryStorage } = await import('multer-storage-cloudinary');
-      
-      cloudinary.config({
-        secure: true, // Always use HTTPS
-        folder: 'trainn' // Organize uploads in a folder
-      });
-      
-      storage_multer = new CloudinaryStorage({
-        cloudinary: cloudinary,
-        params: async (req, file) => ({
-          folder: 'trainn',
-          allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-          public_id: `upload_${Date.now()}`,
-        })
-      });
-      cloudinaryEnabled = true;
-      console.log('✅ Cloudinary configured successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize Cloudinary storage:', error);
-      console.warn('⚠️  Falling back to local storage.');
-      storage_multer = multer.diskStorage({
-        destination: (req, file, cb) => {
-          cb(null, uploadsDir);
-        },
-        filename: (req, file, cb) => {
-          // Generate unique filename with timestamp
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-          const ext = path.extname(file.originalname);
-          cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-        }
-      });
-    }
-  } else {
-    storage_multer = multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, uploadsDir);
-      },
-      filename: (req, file, cb) => {
-        // Generate unique filename with timestamp
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-      }
-    });
-  }
-
+  // Use memory storage - we'll handle Cloudinary upload manually
   const upload = multer({ 
-    storage: storage_multer,
+    storage: multer.memoryStorage(),
     limits: {
       fileSize: 40 * 1024 * 1024 // 40MB limit
     },
@@ -123,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Serve uploaded files statically (only needed for local storage)
-  if (!cloudinaryEnabled) {
+  if (!cloudinaryAvailable) {
     app.use('/uploads', express.static(uploadsDir));
   }
 
@@ -733,28 +693,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Image upload endpoint - with timeout protection and error handling
+  // Image upload endpoint - using direct Cloudinary SDK to avoid multer-storage-cloudinary deadlock
   console.log("📸 Registering /api/upload-image endpoint");
   
-  app.post("/api/upload-image", requireAuth, (req, res) => {
+  app.post("/api/upload-image", requireAuth, async (req, res) => {
     console.log("📸 Upload request received, user ID:", req.user?.id);
-    console.log("📸 Headers:", {
-      'content-type': req.headers['content-type'],
-      'content-length': req.headers['content-length']
-    });
+    console.log("📸 Using Cloudinary:", cloudinaryAvailable);
     
-    // Set a timeout for the upload operation
-    const uploadTimeout = setTimeout(() => {
-      console.error("❌ Upload timeout - multer middleware hung");
-      if (!res.headersSent) {
-        res.status(500).json({ message: "Upload timeout - please try again" });
-      }
-    }, 30000); // 30 second timeout
-    
-    // Apply multer middleware with error handling
-    upload.single('image')(req, res, (err) => {
-      clearTimeout(uploadTimeout);
-      
+    // Apply multer middleware to parse the file into memory
+    upload.single('image')(req, res, async (err) => {
       if (err) {
         console.error("❌ Multer error:", err);
         if (err instanceof multer.MulterError) {
@@ -766,45 +713,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: `Upload failed: ${err.message || 'Unknown error'}` });
       }
       
-      // Process uploaded file
+      if (!req.file) {
+        console.error("❌ No file received");
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      console.log("✅ File received in memory:", {
+        originalname: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
+      
       try {
-        console.log("📸 Processing uploaded file");
-        
-        if (!req.file) {
-          console.error("❌ No file received");
-          return res.status(400).json({ message: "No file uploaded" });
-        }
-        
-        console.log("✅ File details:", {
-          filename: req.file.filename,
-          originalname: req.file.originalname,
-          size: req.file.size,
-          mimetype: req.file.mimetype,
-          path: (req.file as any).path || req.file.filename
-        });
-        
         let imageUrl: string;
         
-        if (cloudinaryEnabled && (req.file as any).path && (req.file as any).path.startsWith('http')) {
-          // Cloudinary returns the URL in the path property
-          imageUrl = (req.file as any).path;
-          console.log("✅ Cloudinary URL:", imageUrl);
+        if (cloudinaryAvailable && cloudinary) {
+          // Upload to Cloudinary using SDK's upload_stream
+          console.log("📤 Uploading to Cloudinary via SDK...");
+          
+          imageUrl = await new Promise<string>((resolve, reject) => {
+            const uploadTimeout = setTimeout(() => {
+              reject(new Error('Cloudinary upload timeout'));
+            }, 30000);
+            
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: 'trainn',
+                allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+                public_id: `upload_${Date.now()}`,
+                resource_type: 'auto'
+              },
+              (error: any, result: any) => {
+                clearTimeout(uploadTimeout);
+                
+                if (error) {
+                  console.error("❌ Cloudinary upload error:", error);
+                  reject(error);
+                } else {
+                  console.log("✅ Cloudinary upload successful:", result.secure_url);
+                  resolve(result.secure_url);
+                }
+              }
+            );
+            
+            // Write the buffer to the upload stream
+            uploadStream.end(req.file!.buffer);
+          });
         } else {
-          // Local storage fallback
-          const filePath = path.join(uploadsDir, req.file.filename);
-          if (!fs.existsSync(filePath)) {
-            console.error("❌ File not saved to disk:", filePath);
-            return res.status(500).json({ message: "File upload failed - file not saved" });
-          }
-          imageUrl = `/uploads/${req.file.filename}`;
-          console.log("📁 Local storage URL:", imageUrl);
+          // Fallback to local storage
+          console.log("📁 Saving to local storage...");
+          const filename = `image-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(req.file.originalname)}`;
+          const filePath = path.join(uploadsDir, filename);
+          
+          await fs.promises.writeFile(filePath, req.file.buffer);
+          imageUrl = `/uploads/${filename}`;
+          console.log("✅ File saved locally:", imageUrl);
         }
         
         console.log("📤 Sending success response with imageUrl:", imageUrl);
         res.json({ imageUrl });
       } catch (error) {
-        console.error("❌ Error processing file:", error);
-        res.status(500).json({ message: "Failed to process uploaded file" });
+        console.error("❌ Upload processing error:", error);
+        res.status(500).json({ 
+          message: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        });
       }
     });
   });
