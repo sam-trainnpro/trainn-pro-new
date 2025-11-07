@@ -70,14 +70,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       storage_multer = new CloudinaryStorage({
         cloudinary: cloudinary,
-        params: {
-          folder: 'trainn', // Organize uploads in a folder
+        params: async (req, file) => ({
+          folder: 'trainn',
           allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-          transformation: [
-            { width: 1200, height: 1200, crop: 'limit', quality: 'auto' }, // Optimize images
-            { fetch_format: 'auto' } // Auto-select best format
-          ]
-        } as any
+          public_id: `upload_${Date.now()}`,
+        })
       });
       cloudinaryEnabled = true;
       console.log('✅ Cloudinary configured successfully');
