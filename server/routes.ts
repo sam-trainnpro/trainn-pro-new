@@ -736,63 +736,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Image upload endpoint with proper error handling
-  app.post("/api/upload-image", requireAuth, (req, res) => {
-    console.log("📸 Image upload request received");
-    
-    // Apply multer middleware
-    upload.single('image')(req, res, (err) => {
-      // Handle multer errors
-      if (err) {
-        console.error("❌ Multer error:", err);
-        if (err instanceof multer.MulterError) {
-          if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ message: "File too large. Maximum size is 40MB." });
-          }
-          return res.status(400).json({ message: `Upload error: ${err.message}` });
-        }
-        return res.status(500).json({ message: `Upload failed: ${err.message}` });
+  // Image upload endpoint
+  const uploadMiddleware = upload.single('image');
+  
+  app.post("/api/upload-image", requireAuth, uploadMiddleware, async (req, res) => {
+    try {
+      console.log("📸 Image upload handler executing");
+      
+      if (!req.file) {
+        console.error("❌ No file received in upload request");
+        return res.status(400).json({ message: "No file uploaded" });
       }
       
-      // Process the uploaded file
-      try {
-        if (!req.file) {
-          console.error("No file received in upload request");
-          return res.status(400).json({ message: "No file uploaded" });
+      console.log("✅ File received:", {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
+      
+      let imageUrl: string;
+      
+      if (cloudinaryEnabled) {
+        // Using Cloudinary - the URL is in the path property
+        imageUrl = (req.file as any).path;
+        console.log("✅ Cloudinary upload successful. URL:", imageUrl);
+      } else {
+        // Using local storage - verify file exists on disk
+        const filePath = path.join(uploadsDir, req.file.filename);
+        if (!fs.existsSync(filePath)) {
+          console.error("❌ File was not saved to disk:", filePath);
+          return res.status(500).json({ message: "File upload failed - file not saved" });
         }
         
-        console.log("✅ File upload successful:", {
-          filename: req.file.filename,
-          originalname: req.file.originalname,
-          size: req.file.size,
-          mimetype: req.file.mimetype
-        });
-        
-        let imageUrl: string;
-        
-        if (cloudinaryEnabled) {
-          // Using Cloudinary - the URL is in the path property
-          imageUrl = (req.file as any).path;
-          console.log("✅ Cloudinary URL:", imageUrl);
-        } else {
-          // Using local storage - verify file exists on disk
-          const filePath = path.join(uploadsDir, req.file.filename);
-          if (!fs.existsSync(filePath)) {
-            console.error("File was not saved to disk:", filePath);
-            return res.status(500).json({ message: "File upload failed - file not saved" });
-          }
-          
-          // Return the file path that can be used as the image URL
-          imageUrl = `/uploads/${req.file.filename}`;
-          console.log("📁 Local storage URL:", imageUrl);
-        }
-        
-        res.json({ imageUrl });
-      } catch (error) {
-        console.error("Error processing uploaded file:", error);
-        res.status(500).json({ message: "File upload failed" });
+        // Return the file path that can be used as the image URL
+        imageUrl = `/uploads/${req.file.filename}`;
+        console.log("📁 Local storage upload successful. URL:", imageUrl);
       }
-    });
+      
+      console.log("📤 Sending response with imageUrl:", imageUrl);
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error("❌ Error processing uploaded file:", error);
+      res.status(500).json({ message: "File upload failed", error: String(error) });
+    }
+  });
+  
+  // Add error handler for multer specifically
+  app.use((err: any, req: any, res: any, next: any) => {
+    if (err instanceof multer.MulterError) {
+      console.error("❌ Multer error caught:", err);
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: "File too large. Maximum size is 40MB." });
+      }
+      return res.status(400).json({ message: `Upload error: ${err.message}` });
+    }
+    next(err);
   });
 
   // Create a new class (coaches and admins)
