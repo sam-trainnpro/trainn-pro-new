@@ -736,12 +736,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Image upload endpoint
+  // Image upload endpoint with detailed logging
+  console.log("📸 Registering /api/upload-image endpoint");
+  
   const uploadMiddleware = upload.single('image');
   
-  app.post("/api/upload-image", requireAuth, uploadMiddleware, async (req, res) => {
+  app.post("/api/upload-image", (req, res, next) => {
+    console.log("📸 [1/3] Request received at /api/upload-image");
+    console.log("📸 Request headers:", {
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length']
+    });
+    next();
+  }, requireAuth, (req, res, next) => {
+    console.log("📸 [2/3] Passed auth check, user ID:", req.user?.id);
+    next();
+  }, uploadMiddleware, async (req, res) => {
     try {
-      console.log("📸 Image upload handler executing");
+      console.log("📸 [3/3] Upload handler executing");
       
       if (!req.file) {
         console.error("❌ No file received in upload request");
