@@ -733,62 +733,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Image upload endpoint with detailed logging
+  // Image upload endpoint - with timeout protection and error handling
   console.log("📸 Registering /api/upload-image endpoint");
   
-  const uploadMiddleware = upload.single('image');
-  
-  app.post("/api/upload-image", (req, res, next) => {
-    console.log("📸 [1/3] Request received at /api/upload-image");
-    console.log("📸 Request headers:", {
+  app.post("/api/upload-image", requireAuth, (req, res) => {
+    console.log("📸 Upload request received, user ID:", req.user?.id);
+    console.log("📸 Headers:", {
       'content-type': req.headers['content-type'],
       'content-length': req.headers['content-length']
     });
-    next();
-  }, requireAuth, (req, res, next) => {
-    console.log("📸 [2/3] Passed auth check, user ID:", req.user?.id);
-    next();
-  }, uploadMiddleware, async (req, res) => {
-    try {
-      console.log("📸 [3/3] Upload handler executing");
+    
+    // Set a timeout for the upload operation
+    const uploadTimeout = setTimeout(() => {
+      console.error("❌ Upload timeout - multer middleware hung");
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Upload timeout - please try again" });
+      }
+    }, 30000); // 30 second timeout
+    
+    // Apply multer middleware with error handling
+    upload.single('image')(req, res, (err) => {
+      clearTimeout(uploadTimeout);
       
-      if (!req.file) {
-        console.error("❌ No file received in upload request");
-        return res.status(400).json({ message: "No file uploaded" });
+      if (err) {
+        console.error("❌ Multer error:", err);
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ message: "File too large. Maximum size is 40MB." });
+          }
+          return res.status(400).json({ message: `Upload error: ${err.message}` });
+        }
+        return res.status(500).json({ message: `Upload failed: ${err.message || 'Unknown error'}` });
       }
       
-      console.log("✅ File received:", {
-        filename: req.file.filename,
-        originalname: req.file.originalname,
-        size: req.file.size,
-        mimetype: req.file.mimetype
-      });
-      
-      let imageUrl: string;
-      
-      if (cloudinaryEnabled) {
-        // Using Cloudinary - the URL is in the path property
-        imageUrl = (req.file as any).path;
-        console.log("✅ Cloudinary upload successful. URL:", imageUrl);
-      } else {
-        // Using local storage - verify file exists on disk
-        const filePath = path.join(uploadsDir, req.file.filename);
-        if (!fs.existsSync(filePath)) {
-          console.error("❌ File was not saved to disk:", filePath);
-          return res.status(500).json({ message: "File upload failed - file not saved" });
+      // Process uploaded file
+      try {
+        console.log("📸 Processing uploaded file");
+        
+        if (!req.file) {
+          console.error("❌ No file received");
+          return res.status(400).json({ message: "No file uploaded" });
         }
         
-        // Return the file path that can be used as the image URL
-        imageUrl = `/uploads/${req.file.filename}`;
-        console.log("📁 Local storage upload successful. URL:", imageUrl);
+        console.log("✅ File details:", {
+          filename: req.file.filename,
+          originalname: req.file.originalname,
+          size: req.file.size,
+          mimetype: req.file.mimetype,
+          path: (req.file as any).path || req.file.filename
+        });
+        
+        let imageUrl: string;
+        
+        if (cloudinaryEnabled && (req.file as any).path && (req.file as any).path.startsWith('http')) {
+          // Cloudinary returns the URL in the path property
+          imageUrl = (req.file as any).path;
+          console.log("✅ Cloudinary URL:", imageUrl);
+        } else {
+          // Local storage fallback
+          const filePath = path.join(uploadsDir, req.file.filename);
+          if (!fs.existsSync(filePath)) {
+            console.error("❌ File not saved to disk:", filePath);
+            return res.status(500).json({ message: "File upload failed - file not saved" });
+          }
+          imageUrl = `/uploads/${req.file.filename}`;
+          console.log("📁 Local storage URL:", imageUrl);
+        }
+        
+        console.log("📤 Sending success response with imageUrl:", imageUrl);
+        res.json({ imageUrl });
+      } catch (error) {
+        console.error("❌ Error processing file:", error);
+        res.status(500).json({ message: "Failed to process uploaded file" });
       }
-      
-      console.log("📤 Sending response with imageUrl:", imageUrl);
-      res.json({ imageUrl });
-    } catch (error) {
-      console.error("❌ Error processing uploaded file:", error);
-      res.status(500).json({ message: "File upload failed", error: String(error) });
-    }
+    });
   });
   
   // Add error handler for multer specifically
