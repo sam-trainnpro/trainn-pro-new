@@ -615,39 +615,21 @@ export default function CreateClassPage() {
 
   // Upload image and get URL
   const uploadImage = async (file: File): Promise<string> => {
-    console.log("📤 Starting upload for file:", file.name, "Size:", file.size, "Type:", file.type);
-    
     const formData = new FormData();
     formData.append('image', file);
     
-    console.log("📤 Sending fetch request to /api/upload-image");
+    const response = await fetch("/api/upload-image", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
     
-    try {
-      const response = await fetch("/api/upload-image", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      
-      console.log("📥 Response received:", response.status, response.statusText);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Upload failed with status:", response.status, "Error:", errorText);
-        throw new Error(`Upload failed: ${response.statusText}`);
-      }
-      
-      const result = await response.json();
-      console.log("✅ Upload successful, imageUrl:", result.imageUrl);
-      return result.imageUrl;
-    } catch (error) {
-      console.error("❌ Upload error details:", {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
     }
+    
+    const result = await response.json();
+    return result.imageUrl;
   };
 
   // Form submission handler
