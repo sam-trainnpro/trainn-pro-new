@@ -52,6 +52,7 @@ import EditPackagePage from "@/pages/edit-package";
 import PackagesPage from "@/pages/packages";
 import PackagePurchasePage from "@/pages/package-purchase";
 import PackageCheckoutPage from "@/pages/package-checkout";
+import TimeBoundPackageCheckoutPage from "@/pages/time-bound-package-checkout";
 import CoachResourcesPage from "@/pages/coach-resources";
 import SuccessStoriesPage from "@/pages/success-stories";
 import BusinessToolsPage from "@/pages/business-tools";
@@ -113,6 +114,9 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/package-checkout">
         <PackageCheckoutPage />
+      </ProtectedRoute>
+      <ProtectedRoute path="/time-bound-package-checkout">
+        <TimeBoundPackageCheckoutPage />
       </ProtectedRoute>
       <Route path="/classes/:id">
         <ClassDetailsPage />
