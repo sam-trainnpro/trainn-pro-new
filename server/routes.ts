@@ -1740,7 +1740,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Time bound package not found" });
       }
       
-      res.json(packageWithSessions);
+      // Flatten response: spread package fields and add sessions array
+      const { package: pkg, sessions } = packageWithSessions;
+      
+      res.json({
+        ...pkg,
+        sessions
+      });
     } catch (error) {
       console.error("Error fetching time_bound package:", error);
       res.status(500).json({ message: "Failed to fetch time_bound package" });
