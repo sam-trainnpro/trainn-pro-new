@@ -1688,12 +1688,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create package with time_bound type
+      // Convert ISO string dates to Date objects for Drizzle
       const newPackage = await storage.createPackage({
         ...packageData,
         coachId: req.user.id,
         packageType: 'time_bound',
         isActive: true,
-        status: 'enabled'
+        status: 'enabled',
+        startDate: packageData.startDate ? new Date(packageData.startDate) : undefined,
+        endDate: packageData.endDate ? new Date(packageData.endDate) : undefined,
       });
       
       // Create all sessions for this package
