@@ -44,12 +44,12 @@ import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 import * as z from "zod";
 
-// Session schema for time_bound packages
+// Session schema for time_bound packages - matches create-class pattern
 const sessionSchema = z.object({
   sessionNumber: z.number(),
   date: z.date(),
   startTime: z.string(),
-  endTime: z.string(),
+  duration: z.number().min(15, "Duration must be at least 15 minutes"), // Changed from endTime to duration
   useDifferentLocation: z.boolean().default(false),
   sessionType: z.string().optional(),
   // Location fields for individual sessions
@@ -242,7 +242,7 @@ export default function CreatePackage() {
       sessionNumber: sessions.length + 1,
       date: new Date(),
       startTime: "09:00",
-      endTime: "10:00",
+      duration: 60, // Changed from endTime to duration (default 60 minutes)
       useDifferentLocation: false,
       sessionType: "",
       location: "",
@@ -472,17 +472,16 @@ export default function CreatePackage() {
         }
 
         // Compute startDate and endDate from sessions
-        // Combine date + time to create proper timestamps
+        // Match create-class.tsx pattern: combine date + startTime + duration
         const sessionTimes = sessions.map(s => {
           const sessionDate = new Date(s.date);
           const [startHour, startMinute] = s.startTime.split(':').map(Number);
-          const [endHour, endMinute] = s.endTime.split(':').map(Number);
           
           const start = new Date(sessionDate);
           start.setHours(startHour, startMinute, 0, 0);
           
-          const end = new Date(sessionDate);
-          end.setHours(endHour, endMinute, 0, 0);
+          // Calculate end time by adding duration in minutes
+          const end = new Date(start.getTime() + s.duration * 60000);
           
           return { start, end };
         });
@@ -490,7 +489,7 @@ export default function CreatePackage() {
         const startDate = new Date(Math.min(...sessionTimes.map(t => t.start.getTime())));
         const endDate = new Date(Math.max(...sessionTimes.map(t => t.end.getTime())));
 
-        // Prepare package data with sessions - combine date + time for each session
+        // Prepare package data with sessions - compute timestamps from date + startTime + duration
         const packageData = {
           ...data,
           coachId: user?.id,
@@ -500,19 +499,18 @@ export default function CreatePackage() {
           sessions: sessions.map(session => {
             const sessionDate = new Date(session.date);
             const [startHour, startMinute] = session.startTime.split(':').map(Number);
-            const [endHour, endMinute] = session.endTime.split(':').map(Number);
             
-            const startTime = new Date(sessionDate);
-            startTime.setHours(startHour, startMinute, 0, 0);
+            const startDateTime = new Date(sessionDate);
+            startDateTime.setHours(startHour, startMinute, 0, 0);
             
-            const endTime = new Date(sessionDate);
-            endTime.setHours(endHour, endMinute, 0, 0);
+            // Calculate end time by adding duration in minutes (same as create-class.tsx)
+            const endDateTime = new Date(startDateTime.getTime() + session.duration * 60000);
             
             return {
               sessionNumber: session.sessionNumber,
               date: sessionDate.toISOString(),
-              startTime: startTime.toISOString(),
-              endTime: endTime.toISOString(),
+              startTime: startDateTime.toISOString(),
+              endTime: endDateTime.toISOString(),
               location: session.location,
               addressLine1: session.addressLine1,
               city: session.city,
@@ -1278,24 +1276,18 @@ export default function CreatePackage() {
                           </Select>
                         </div>
 
-                        {/* End Time */}
+                        {/* Duration */}
                         <div className="space-y-2">
-                          <label className="text-sm font-medium">End Time <span className="text-destructive">*</span></label>
-                          <Select 
-                            value={session.endTime}
-                            onValueChange={(value) => updateSession(index, 'endTime', value)}
-                          >
-                            <SelectTrigger data-testid={`select-session-end-time-${index}`}>
-                              <SelectValue placeholder="Select time" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {timeSlots.map((slot) => (
-                                <SelectItem key={slot.value} value={slot.value}>
-                                  {slot.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <label className="text-sm font-medium">Duration (minutes) <span className="text-destructive">*</span></label>
+                          <Input 
+                            type="number"
+                            min="15"
+                            step="5"
+                            placeholder="e.g. 60"
+                            value={session.duration}
+                            onChange={(e) => updateSession(index, 'duration', parseInt(e.target.value) || 60)}
+                            data-testid={`input-session-duration-${index}`}
+                          />
                         </div>
                       </div>
 
