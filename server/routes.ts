@@ -3864,6 +3864,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Time-Bound Package Payment API endpoints
+  app.post("/api/time-bound-package-payment/create-intent", requireAuth, async (req, res) => {
+    try {
+      const { packageId } = req.body;
+      
+      if (!packageId) {
+        return res.status(400).json({ message: "Missing required parameter: packageId" });
+      }
+
+      // Get package details with sessions
+      const packageData = await storage.getTimeBoundPackageWithSessions(parseInt(packageId));
+      if (!packageData || !packageData.package) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      const pkg = packageData.package;
+      let finalAmount = pkg.price || 0;
+      
+      // Calculate prorated price if late join is allowed
+      if (pkg.allowLateJoin && packageData.sessions) {
+        const now = new Date();
+        const passedSessions = packageData.sessions.filter(s => new Date(s.date) < now);
+        const remainingSessions = packageData.sessions.length - passedSessions.length;
+        const totalSessions = packageData.sessions.length;
+        
+        if (remainingSessions < totalSessions && remainingSessions > 0) {
+          // Prorate the price based on remaining sessions
+          finalAmount = (pkg.price || 0) * (remainingSessions / totalSessions);
+          console.log(`📦 Prorated pricing for package ${packageId}:`);
+          console.log(`   Total sessions: ${totalSessions}`);
+          console.log(`   Remaining sessions: ${remainingSessions}`);
+          console.log(`   Original price: $${pkg.price}`);
+          console.log(`   Prorated price: $${finalAmount.toFixed(2)}`);
+        }
+      }
+      
+      // Add 5% processing fee
+      const processingFee = finalAmount * 0.05;
+      finalAmount = finalAmount + processingFee;
+      
+      console.log(`📦 Time-bound package pricing breakdown:`);
+      console.log(`   Package price: $${(finalAmount - processingFee).toFixed(2)}`);
+      console.log(`   Processing fee (5%): $${processingFee.toFixed(2)}`);
+      console.log(`   Total: $${finalAmount.toFixed(2)}`);
+
+      // Create Stripe PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(finalAmount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          packageId: packageId.toString(),
+          packageType: 'time_bound',
+          userId: req.user.id.toString(),
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        finalAmount: finalAmount,
+        proratedAmount: pkg.allowLateJoin ? (finalAmount - processingFee) : null,
+        requiresPayment: true
+      });
+
+    } catch (error: any) {
+      console.error("Error creating time-bound package payment intent:", error);
+      res.status(500).json({ 
+        message: "Failed to create payment intent", 
+        error: error.message 
+      });
+    }
+  });
+
   // Scheduled Payout Management Routes
   
   // Process due payouts (admin only)
