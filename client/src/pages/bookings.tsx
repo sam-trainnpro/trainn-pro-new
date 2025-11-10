@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
-import { Booking, Class } from "@shared/schema";
+import { Booking, Class, TimeBoundPackageBooking, ClassPackage, TimeBoundPackageSession } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,6 +94,20 @@ interface PackagePurchaseWithDetails {
     lastName: string;
     email: string;
   };
+}
+
+interface TimeBoundPackageWithDetails {
+  package: ClassPackage;
+  sessions: TimeBoundPackageSession[];
+}
+
+interface CoachDetails {
+  id: number;
+  firstName: string;
+  lastName: string;
+  businessName: string | null;
+  displayBusinessName: boolean | null;
+  email: string;
 }
 
 export default function BookingsPage() {
@@ -234,6 +249,56 @@ export default function BookingsPage() {
   } = useQuery<PackagePurchaseWithDetails[]>({
     queryKey: ['/api/user/packages'],
     enabled: !!user,
+  });
+
+  // Fetch time_bound package bookings
+  const { 
+    data: timeBoundBookings, 
+    isLoading: isLoadingTimeBound, 
+    error: timeBoundError 
+  } = useQuery<TimeBoundPackageBooking[]>({
+    queryKey: ['/api/time-bound-packages/my/bookings'],
+    enabled: !!user,
+  });
+
+  // Fetch package and session details for each time_bound booking
+  const timeBoundPackageQueries = useQuery({
+    queryKey: ['time-bound-packages-details', timeBoundBookings?.map(b => b.packageId)],
+    queryFn: async () => {
+      if (!timeBoundBookings || timeBoundBookings.length === 0) return [];
+      
+      const packagePromises = timeBoundBookings.map(booking =>
+        fetch(`/api/time-bound-packages/${booking.packageId}`)
+          .then(res => res.json())
+          .catch(() => null)
+      );
+      
+      return Promise.all(packagePromises);
+    },
+    enabled: !!timeBoundBookings && timeBoundBookings.length > 0,
+  });
+
+  // Fetch coach details for each package
+  const coachQueries = useQuery({
+    queryKey: ['time-bound-coaches', timeBoundPackageQueries.data?.map((p: any) => p?.package?.coachId)],
+    queryFn: async () => {
+      if (!timeBoundPackageQueries.data) return [];
+      
+      const coachIds = timeBoundPackageQueries.data
+        .filter((p: any) => p?.package?.coachId)
+        .map((p: any) => p.package.coachId);
+      
+      const uniqueCoachIds = Array.from(new Set(coachIds));
+      
+      const coachPromises = uniqueCoachIds.map(coachId =>
+        fetch(`/api/coaches/${coachId}`)
+          .then(res => res.json())
+          .catch(() => null)
+      );
+      
+      return Promise.all(coachPromises);
+    },
+    enabled: !!timeBoundPackageQueries.data && timeBoundPackageQueries.data.length > 0,
   });
   
   // Cancel booking mutation
@@ -649,147 +714,358 @@ export default function BookingsPage() {
               </TabsContent>
 
               <TabsContent value="packages">
-                {isLoadingPackages ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-32 w-full" />
-                    <Skeleton className="h-32 w-full" />
-                  </div>
-                ) : packagesError ? (
-                  <Card>
-                    <CardContent className="py-8 text-center">
-                      <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Packages</h3>
-                      <p className="text-gray-500">Something went wrong. Please try again later.</p>
-                    </CardContent>
-                  </Card>
-                ) : packages && packages.length > 0 ? (
-                  <div className="space-y-4">
-                    {packages.map((packagePurchase) => (
-                      <Card key={packagePurchase.id}>
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Package className="h-5 w-5 text-primary" />
-                                <h3 className="font-semibold text-lg">
-                                  {packagePurchase.packageDetails?.title || 'Class Package'}
-                                </h3>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                  <p className="text-sm text-gray-600 mb-1">Purchase Date</p>
-                                  <p className="font-medium">
-                                    {format(new Date(packagePurchase.purchaseDate), "MMMM d, yyyy")}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-gray-600 mb-1">Expires</p>
-                                  <p className="font-medium">
-                                    {format(new Date(packagePurchase.expirationDate), "MMMM d, yyyy")}
-                                  </p>
-                                </div>
-                              </div>
+                <div className="space-y-6">
+                  {/* Time-Bound Packages Section */}
+                  {isLoadingTimeBound ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-48 w-full" />
+                      <Skeleton className="h-48 w-full" />
+                    </div>
+                  ) : timeBoundError ? (
+                    <Card>
+                      <CardContent className="py-8 text-center">
+                        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" data-testid="time-bound-error-icon" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2" data-testid="time-bound-error-title">Failed to Load Programs</h3>
+                        <p className="text-gray-500" data-testid="time-bound-error-message">Something went wrong loading your programs. Please try again later.</p>
+                      </CardContent>
+                    </Card>
+                  ) : timeBoundBookings && timeBoundBookings.length > 0 ? (
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-semibold text-gray-900" data-testid="time-bound-section-title">My Programs</h2>
+                      {timeBoundBookings.map((booking, index) => {
+                        const packageData = timeBoundPackageQueries.data?.[index];
+                        const pkg = packageData?.package;
+                        const sessions = packageData?.sessions || [];
+                        const coach = coachQueries.data?.find((c: any) => c?.id === pkg?.coachId);
+                        
+                        if (!pkg) return null;
 
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                  <User className="h-5 w-5 text-gray-600" />
-                                </div>
-                                <div>
-                                  <p className="text-sm text-gray-600">Provider</p>
-                                  <p className="font-medium">
-                                    {packagePurchase.coachDetails ? 
-                                      `${packagePurchase.coachDetails.firstName} ${packagePurchase.coachDetails.lastName}` : 
-                                      'Coach Name'
-                                    }
-                                  </p>
-                                </div>
-                              </div>
+                        const now = new Date();
+                        const pastSessions = sessions.filter((s: TimeBoundPackageSession) => new Date(s.endTime) <= now);
+                        const upcomingSessions = sessions.filter((s: TimeBoundPackageSession) => new Date(s.startTime) > now);
+                        const nextSession = upcomingSessions.length > 0 ? upcomingSessions[0] : null;
+                        const completedCount = booking.sessionsCompleted || pastSessions.length;
+                        const totalCount = booking.totalSessions || sessions.length;
+                        const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-                              <div className="flex items-center justify-between mb-4">
+                        return (
+                          <Card key={booking.id} data-testid={`time-bound-package-${booking.id}`}>
+                            <CardContent className="p-6">
+                              <div className="space-y-4">
+                                {/* Header */}
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <BookOpen className="h-5 w-5 text-primary" data-testid={`package-icon-${booking.id}`} />
+                                      <h3 className="font-semibold text-lg" data-testid={`package-title-${booking.id}`}>
+                                        {pkg.title || 'Program Package'}
+                                      </h3>
+                                    </div>
+                                    {pkg.description && (
+                                      <p className="text-sm text-gray-600 mb-3" data-testid={`package-description-${booking.id}`}>
+                                        {pkg.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Badge className="bg-green-500" data-testid={`package-status-${booking.id}`}>
+                                    Active
+                                  </Badge>
+                                </div>
+
+                                {/* Provider Info */}
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <User className="h-5 w-5 text-gray-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-gray-600">Provider</p>
+                                    <p className="font-medium" data-testid={`provider-name-${booking.id}`}>
+                                      {coach ? (
+                                        coach.displayBusinessName && coach.businessName
+                                          ? coach.businessName
+                                          : `${coach.firstName} ${coach.lastName}`
+                                      ) : 'Loading...'}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Session Count */}
                                 <div>
-                                  <p className="text-sm text-gray-600">Classes Used</p>
-                                  <p className="font-semibold text-lg">
-                                    {packagePurchase.usedClasses}/{packagePurchase.classCount} classes used
+                                  <p className="text-sm text-gray-600 mb-1">Total Sessions</p>
+                                  <p className="font-semibold text-lg" data-testid={`total-sessions-${booking.id}`}>
+                                    {totalCount} sessions
                                   </p>
                                 </div>
-                                <div className="w-16 h-16 relative">
-                                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                                    <path
-                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                      fill="none"
-                                      stroke="#e5e7eb"
-                                      strokeWidth="2"
-                                    />
-                                    <path
-                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                      fill="none"
-                                      stroke="#3b82f6"
-                                      strokeWidth="2"
-                                      strokeDasharray={`${(packagePurchase.usedClasses / packagePurchase.classCount) * 100}, 100`}
-                                    />
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-xs font-medium">
-                                      {Math.round((packagePurchase.usedClasses / packagePurchase.classCount) * 100)}%
+
+                                {/* Progress Tracking */}
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <p className="text-sm font-medium" data-testid={`progress-text-${booking.id}`}>
+                                      {completedCount} of {totalCount} sessions completed
+                                    </p>
+                                    <span className="text-sm font-medium text-primary" data-testid={`progress-percent-${booking.id}`}>
+                                      {progressPercent}%
                                     </span>
+                                  </div>
+                                  <Progress value={progressPercent} className="h-2" data-testid={`progress-bar-${booking.id}`} />
+                                </div>
+
+                                {/* Next Upcoming Session Highlight */}
+                                {nextSession && (
+                                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4" data-testid={`next-session-${booking.id}`}>
+                                    <div className="flex items-start gap-3">
+                                      <div className="bg-blue-500 rounded-full p-2">
+                                        <CalendarDays className="h-5 w-5 text-white" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="font-semibold text-blue-900 mb-1" data-testid={`next-session-label-${booking.id}`}>
+                                          Next Session
+                                        </p>
+                                        <p className="text-sm text-blue-800" data-testid={`next-session-date-${booking.id}`}>
+                                          {formatDate(nextSession.startTime)}
+                                        </p>
+                                        <p className="text-sm text-blue-800" data-testid={`next-session-time-${booking.id}`}>
+                                          {formatTime(nextSession.startTime)} - {formatTime(nextSession.endTime)}
+                                        </p>
+                                        {nextSession.location && (
+                                          <p className="text-sm text-blue-800 flex items-center gap-1 mt-1" data-testid={`next-session-location-${booking.id}`}>
+                                            <MapPin className="h-4 w-4" />
+                                            {nextSession.location}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Sessions List */}
+                                <div className="space-y-2">
+                                  <h4 className="font-medium text-gray-900" data-testid={`sessions-list-title-${booking.id}`}>
+                                    All Sessions
+                                  </h4>
+                                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                                    {sessions.length === 0 ? (
+                                      <p className="text-sm text-gray-500 py-4 text-center" data-testid={`no-sessions-${booking.id}`}>
+                                        No sessions scheduled yet
+                                      </p>
+                                    ) : (
+                                      sessions.map((session: TimeBoundPackageSession) => {
+                                        const isPast = new Date(session.endTime) <= now;
+                                        const isNext = nextSession?.id === session.id;
+                                        
+                                        return (
+                                          <div
+                                            key={session.id}
+                                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                                              isNext 
+                                                ? 'border-blue-300 bg-blue-50' 
+                                                : isPast 
+                                                ? 'border-gray-200 bg-gray-50' 
+                                                : 'border-gray-200 bg-white'
+                                            }`}
+                                            data-testid={`session-${booking.id}-${session.id}`}
+                                          >
+                                            <div className="flex items-center gap-3 flex-1">
+                                              <div className={`flex-shrink-0 ${isPast ? 'text-gray-400' : 'text-primary'}`}>
+                                                {isPast ? (
+                                                  <CheckCircle className="h-5 w-5" data-testid={`session-completed-icon-${session.id}`} />
+                                                ) : (
+                                                  <Calendar className="h-5 w-5" data-testid={`session-upcoming-icon-${session.id}`} />
+                                                )}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                  <p className={`font-medium text-sm ${isPast ? 'text-gray-600' : 'text-gray-900'}`} data-testid={`session-number-${session.id}`}>
+                                                    Session {session.sessionNumber}
+                                                  </p>
+                                                  {session.sessionType && (
+                                                    <Badge variant="outline" className="text-xs" data-testid={`session-type-${session.id}`}>
+                                                      {session.sessionType}
+                                                    </Badge>
+                                                  )}
+                                                  {isPast && (
+                                                    <Badge variant="outline" className="text-xs bg-gray-100" data-testid={`session-past-badge-${session.id}`}>
+                                                      Completed
+                                                    </Badge>
+                                                  )}
+                                                  {isNext && (
+                                                    <Badge className="text-xs bg-blue-500" data-testid={`session-next-badge-${session.id}`}>
+                                                      Next Up
+                                                    </Badge>
+                                                  )}
+                                                </div>
+                                                <p className={`text-xs ${isPast ? 'text-gray-500' : 'text-gray-600'}`} data-testid={`session-datetime-${session.id}`}>
+                                                  {format(new Date(session.startTime), "MMM d, yyyy")} • {formatTime(session.startTime)} - {formatTime(session.endTime)}
+                                                </p>
+                                                {session.address && (
+                                                  <p className={`text-xs ${isPast ? 'text-gray-500' : 'text-gray-600'} flex items-center gap-1`} data-testid={`session-location-${session.id}`}>
+                                                    <MapPin className="h-3 w-3" />
+                                                    {session.address}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+
+                  {/* Set Pack Packages Section */}
+                  {isLoadingPackages ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  ) : packagesError ? (
+                    <Card>
+                      <CardContent className="py-8 text-center">
+                        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" data-testid="packages-error-icon" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2" data-testid="packages-error-title">Failed to Load Packages</h3>
+                        <p className="text-gray-500" data-testid="packages-error-message">Something went wrong. Please try again later.</p>
+                      </CardContent>
+                    </Card>
+                  ) : packages && packages.length > 0 ? (
+                    <div className="space-y-4">
+                      <h2 className="text-lg font-semibold text-gray-900" data-testid="set-pack-section-title">Class Packages</h2>
+                      {packages.map((packagePurchase) => (
+                        <Card key={packagePurchase.id} data-testid={`set-pack-package-${packagePurchase.id}`}>
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Package className="h-5 w-5 text-primary" />
+                                  <h3 className="font-semibold text-lg" data-testid={`set-pack-title-${packagePurchase.id}`}>
+                                    {packagePurchase.packageDetails?.title || 'Class Package'}
+                                  </h3>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <div>
+                                    <p className="text-sm text-gray-600 mb-1">Purchase Date</p>
+                                    <p className="font-medium" data-testid={`set-pack-purchase-date-${packagePurchase.id}`}>
+                                      {format(new Date(packagePurchase.purchaseDate), "MMMM d, yyyy")}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-gray-600 mb-1">Expires</p>
+                                    <p className="font-medium" data-testid={`set-pack-expiration-${packagePurchase.id}`}>
+                                      {format(new Date(packagePurchase.expirationDate), "MMMM d, yyyy")}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <User className="h-5 w-5 text-gray-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-gray-600">Provider</p>
+                                    <p className="font-medium" data-testid={`set-pack-provider-${packagePurchase.id}`}>
+                                      {packagePurchase.coachDetails ? 
+                                        `${packagePurchase.coachDetails.firstName} ${packagePurchase.coachDetails.lastName}` : 
+                                        'Coach Name'
+                                      }
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mb-4">
+                                  <div>
+                                    <p className="text-sm text-gray-600">Classes Used</p>
+                                    <p className="font-semibold text-lg" data-testid={`set-pack-classes-used-${packagePurchase.id}`}>
+                                      {packagePurchase.usedClasses}/{packagePurchase.classCount} classes used
+                                    </p>
+                                  </div>
+                                  <div className="w-16 h-16 relative">
+                                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                      <path
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        fill="none"
+                                        stroke="#e5e7eb"
+                                        strokeWidth="2"
+                                      />
+                                      <path
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        fill="none"
+                                        stroke="#3b82f6"
+                                        strokeWidth="2"
+                                        strokeDasharray={`${(packagePurchase.usedClasses / packagePurchase.classCount) * 100}, 100`}
+                                      />
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className="text-xs font-medium" data-testid={`set-pack-progress-percent-${packagePurchase.id}`}>
+                                        {Math.round((packagePurchase.usedClasses / packagePurchase.classCount) * 100)}%
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex justify-end">
-                            <Button 
-                              asChild 
-                              variant="outline" 
-                              className="flex items-center gap-2"
-                            >
-                              <Link 
-                                href={(() => {
-                                  // Use same filtering logic as "View Classes" on packages page
-                                  let classesUrl = `/classes?coachId=${packagePurchase.packageDetails?.coachId}`;
-                                  
-                                  // Add eligible classes filter if specific classes are defined
-                                  if (packagePurchase.packageDetails?.eligibleClasses && 
-                                      packagePurchase.packageDetails.eligibleClasses !== 'all') {
-                                    try {
-                                      const eligibleClassIds = JSON.parse(packagePurchase.packageDetails.eligibleClasses);
-                                      if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
-                                        classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
-                                      }
-                                    } catch (e) {
-                                      // If parsing fails, fall back to coach-only filter
-                                      console.warn('Failed to parse eligible classes:', packagePurchase.packageDetails.eligibleClasses);
-                                    }
-                                  }
-                                  
-                                  return classesUrl;
-                                })()}
+                            
+                            <div className="flex justify-end">
+                              <Button 
+                                asChild 
+                                variant="outline" 
+                                className="flex items-center gap-2"
+                                data-testid={`set-pack-view-schedule-${packagePurchase.id}`}
                               >
-                                View Schedule Details
-                                <ChevronRight className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h2 className="text-xl font-bold mb-2">No Packages Found</h2>
-                      <p className="text-muted-foreground mb-6">
-                        You haven't purchased any class packages yet. Browse available packages to get started!
-                      </p>
-                      <Button asChild className="bg-primary text-white">
-                        <Link href="/packages">Browse Available Packages</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
+                                <Link 
+                                  href={(() => {
+                                    let classesUrl = `/classes?coachId=${packagePurchase.packageDetails?.coachId}`;
+                                    
+                                    if (packagePurchase.packageDetails?.eligibleClasses && 
+                                        packagePurchase.packageDetails.eligibleClasses !== 'all') {
+                                      try {
+                                        const eligibleClassIds = JSON.parse(packagePurchase.packageDetails.eligibleClasses);
+                                        if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
+                                          classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
+                                        }
+                                      } catch (e) {
+                                        console.warn('Failed to parse eligible classes:', packagePurchase.packageDetails.eligibleClasses);
+                                      }
+                                    }
+                                    
+                                    return classesUrl;
+                                  })()}
+                                >
+                                  View Schedule Details
+                                  <ChevronRight className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {/* Empty State - Show only if both are empty */}
+                  {!isLoadingPackages && !isLoadingTimeBound && 
+                   (!packages || packages.length === 0) && 
+                   (!timeBoundBookings || timeBoundBookings.length === 0) && (
+                    <Card>
+                      <CardContent className="py-12 text-center">
+                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" data-testid="no-packages-icon" />
+                        <h2 className="text-xl font-bold mb-2" data-testid="no-packages-title">No Packages Found</h2>
+                        <p className="text-muted-foreground mb-6" data-testid="no-packages-message">
+                          You haven't purchased any class packages yet. Browse available packages to get started!
+                        </p>
+                        <Button asChild className="bg-primary text-white" data-testid="browse-packages-button">
+                          <Link href="/packages">Browse Available Packages</Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           )}
