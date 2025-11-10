@@ -62,11 +62,15 @@ interface TimeBoundPackageSession {
   endTime: string;
   location: string | null;
   notes: string | null;
+  sessionType: string | null;
 }
 
 interface TimeBoundPackageDetails extends ClassPackage {
   sessions: TimeBoundPackageSession[];
   bookedCount?: number;
+  image: string | null;
+  address: string | null;
+  whatToBring: string | null;
 }
 
 export default function PackagesPage() {
@@ -462,6 +466,18 @@ export default function PackagesPage() {
               </DialogHeader>
 
               <div className="space-y-6 mt-4">
+                {/* Package Image */}
+                {packageDetails.image && (
+                  <div className="rounded-lg overflow-hidden">
+                    <img 
+                      src={packageDetails.image} 
+                      alt={packageDetails.title}
+                      className="w-full h-64 object-cover"
+                      data-testid="package-image"
+                    />
+                  </div>
+                )}
+
                 {/* Package info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="flex items-center gap-2 text-sm">
@@ -521,40 +537,87 @@ export default function PackagesPage() {
                   </div>
                 </div>
 
+                {/* Location */}
+                {packageDetails.location && (
+                  <Card className="p-4" data-testid="package-location">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <div className="font-medium mb-1">Primary Location</div>
+                        <div className="text-sm text-muted-foreground">
+                          {packageDetails.address || packageDetails.location}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* What to Bring */}
+                {packageDetails.whatToBring && (
+                  <Card className="p-4" data-testid="what-to-bring">
+                    <div className="flex items-start gap-3">
+                      <Package className="w-5 h-5 text-muted-foreground mt-0.5" />
+                      <div>
+                        <div className="font-medium mb-1">What to Bring</div>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {packageDetails.whatToBring}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
                 {/* Sessions list */}
                 <div>
                   <h3 className="font-semibold mb-3">Session Schedule</h3>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {packageDetails.sessions?.map((session, index) => (
-                      <Card key={session.id} className="p-3" data-testid={`session-card-${index}`}>
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex-1">
-                            <div className="font-medium">Session {index + 1}</div>
-                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(session.date).toLocaleDateString()}
+                    {packageDetails.sessions?.map((session, index) => {
+                      // Format times from ISO timestamps
+                      const startTime = new Date(session.startTime).toLocaleTimeString([], { 
+                        hour: 'numeric', 
+                        minute: '2-digit' 
+                      });
+                      const endTime = new Date(session.endTime).toLocaleTimeString([], { 
+                        hour: 'numeric', 
+                        minute: '2-digit' 
+                      });
+                      
+                      return (
+                        <Card key={session.id} className="p-3" data-testid={`session-card-${index}`}>
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1">
+                              <div className="font-medium">
+                                Session {index + 1}
+                                {session.sessionType && (
+                                  <span className="text-sm text-muted-foreground ml-2">
+                                    ({session.sessionType})
+                                  </span>
+                                )}
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {session.startTime} - {session.endTime}
-                              </div>
-                              {session.location && (
+                              <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(session.date).toLocaleDateString()}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {startTime} - {endTime}
+                                </div>
                                 <div className="flex items-center gap-1">
                                   <MapPin className="w-3 h-3" />
-                                  {session.location}
+                                  {session.location || packageDetails.location || 'TBD'}
+                                </div>
+                              </div>
+                              {session.notes && (
+                                <div className="mt-2 text-sm text-muted-foreground">
+                                  {session.notes}
                                 </div>
                               )}
                             </div>
-                            {session.notes && (
-                              <div className="mt-2 text-sm text-muted-foreground">
-                                {session.notes}
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      </Card>
-                    ))}
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
 
