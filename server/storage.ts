@@ -19,6 +19,8 @@ import {
   classPackages, type ClassPackage, type InsertClassPackage,
   packagePurchases, type PackagePurchase, type InsertPackagePurchase,
   packageBookings, type PackageBooking, type InsertPackageBooking,
+  timeBoundPackageSessions, type TimeBoundPackageSession, type InsertTimeBoundPackageSession,
+  timeBoundPackageBookings, type TimeBoundPackageBooking, type InsertTimeBoundPackageBooking,
   emailReminderTracking, type EmailReminderTracking, type InsertEmailReminderTracking,
   classLikes, type ClassLike, type InsertClassLike
 } from "@shared/schema";
@@ -221,6 +223,22 @@ export interface IStorage {
   getUserPackageBookings(userId: number): Promise<PackageBooking[]>;
   getPackageBookingsByPackagePurchase(packagePurchaseId: number): Promise<PackageBooking[]>;
   updatePackageBooking(id: number, bookingData: Partial<PackageBooking>): Promise<PackageBooking | undefined>;
+
+  // Time Bound Package Session methods
+  createTimeBoundPackageSessions(sessions: InsertTimeBoundPackageSession[]): Promise<TimeBoundPackageSession[]>;
+  getTimeBoundPackageSessions(packageId: number): Promise<TimeBoundPackageSession[]>;
+  updateTimeBoundPackageSession(id: number, sessionData: Partial<TimeBoundPackageSession>): Promise<TimeBoundPackageSession | undefined>;
+  deleteTimeBoundPackageSession(id: number): Promise<boolean>;
+  
+  // Time Bound Package Booking methods
+  createTimeBoundPackageBooking(bookingData: InsertTimeBoundPackageBooking): Promise<TimeBoundPackageBooking>;
+  getTimeBoundPackageBooking(id: number): Promise<TimeBoundPackageBooking | undefined>;
+  getUserTimeBoundPackageBookings(userId: number): Promise<TimeBoundPackageBooking[]>;
+  getTimeBoundPackageBookingsByPackage(packageId: number): Promise<TimeBoundPackageBooking[]>;
+  updateTimeBoundPackageBooking(id: number, bookingData: Partial<TimeBoundPackageBooking>): Promise<TimeBoundPackageBooking | undefined>;
+  
+  // Time Bound Package composite helper
+  getTimeBoundPackageWithSessions(packageId: number): Promise<{ package: ClassPackage; sessions: TimeBoundPackageSession[] } | undefined>;
 
   // Email Reminder Tracking methods
   getEmailReminderTracking(processType: string): Promise<EmailReminderTracking | undefined>;
@@ -3328,6 +3346,107 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+
+  // Time Bound Package Session Management Methods
+  async createTimeBoundPackageSessions(sessions: InsertTimeBoundPackageSession[]): Promise<TimeBoundPackageSession[]> {
+    // Use transaction to ensure all-or-nothing writes
+    return await db.transaction(async (tx) => {
+      const createdSessions = await tx.insert(timeBoundPackageSessions)
+        .values(sessions)
+        .returning();
+      return createdSessions;
+    });
+  }
+
+  async getTimeBoundPackageSessions(packageId: number): Promise<TimeBoundPackageSession[]> {
+    const result = await db.select()
+      .from(timeBoundPackageSessions)
+      .where(eq(timeBoundPackageSessions.packageId, packageId))
+      .orderBy(timeBoundPackageSessions.sessionNumber);
+    
+    return result;
+  }
+
+  async updateTimeBoundPackageSession(id: number, sessionData: Partial<TimeBoundPackageSession>): Promise<TimeBoundPackageSession | undefined> {
+    const [updated] = await db.update(timeBoundPackageSessions)
+      .set(sessionData)
+      .where(eq(timeBoundPackageSessions.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteTimeBoundPackageSession(id: number): Promise<boolean> {
+    const result = await db.delete(timeBoundPackageSessions)
+      .where(eq(timeBoundPackageSessions.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+
+  // Time Bound Package Booking Management Methods
+  async createTimeBoundPackageBooking(bookingData: InsertTimeBoundPackageBooking): Promise<TimeBoundPackageBooking> {
+    const [booking] = await db.insert(timeBoundPackageBookings)
+      .values({
+        ...bookingData,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return booking;
+  }
+
+  async getTimeBoundPackageBooking(id: number): Promise<TimeBoundPackageBooking | undefined> {
+    const result = await db.select()
+      .from(timeBoundPackageBookings)
+      .where(eq(timeBoundPackageBookings.id, id));
+    
+    return result[0];
+  }
+
+  async getUserTimeBoundPackageBookings(userId: number): Promise<TimeBoundPackageBooking[]> {
+    const result = await db.select()
+      .from(timeBoundPackageBookings)
+      .where(eq(timeBoundPackageBookings.userId, userId))
+      .orderBy(desc(timeBoundPackageBookings.bookingDate));
+    
+    return result;
+  }
+
+  async getTimeBoundPackageBookingsByPackage(packageId: number): Promise<TimeBoundPackageBooking[]> {
+    const result = await db.select()
+      .from(timeBoundPackageBookings)
+      .where(eq(timeBoundPackageBookings.packageId, packageId))
+      .orderBy(desc(timeBoundPackageBookings.bookingDate));
+    
+    return result;
+  }
+
+  async updateTimeBoundPackageBooking(id: number, bookingData: Partial<TimeBoundPackageBooking>): Promise<TimeBoundPackageBooking | undefined> {
+    const [updated] = await db.update(timeBoundPackageBookings)
+      .set({
+        ...bookingData,
+        updatedAt: new Date(),
+      })
+      .where(eq(timeBoundPackageBookings.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  // Time Bound Package composite helper - prevents N+1 queries
+  async getTimeBoundPackageWithSessions(packageId: number): Promise<{ package: ClassPackage; sessions: TimeBoundPackageSession[] } | undefined> {
+    const pkg = await this.getPackage(packageId);
+    if (!pkg || pkg.packageType !== 'time_bound') {
+      return undefined;
+    }
+    
+    const sessions = await this.getTimeBoundPackageSessions(packageId);
+    
+    return {
+      package: pkg,
+      sessions
+    };
   }
 
   // Email Reminder Tracking methods

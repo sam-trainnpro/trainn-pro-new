@@ -25,6 +25,7 @@ interface ClassPackage {
   coachProfileImage?: string;
   title: string;
   packageType: 'set_pack' | 'time_bound';
+  // Set pack fields
   classCount1: number | null;
   classCount2: number | null;
   classCount3: number | null;
@@ -32,6 +33,15 @@ interface ClassPackage {
   price2: number | null;
   price3: number | null;
   eligibleClasses: string | null;
+  // Time bound fields
+  totalSessions: number | null;
+  price: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  capacity: number | null;
+  allowLateJoin: boolean | null;
+  location: string | null;
+  // Shared fields
   description: string | null;
   categoryId: number | null;
   categoryName?: string;
@@ -158,7 +168,23 @@ export default function PackagesPage() {
       }
       return options.join(' | ');
     } else {
-      return 'Time-bound package';
+      // Time-bound package
+      const parts: string[] = [];
+      if (pkg.totalSessions) {
+        parts.push(`${pkg.totalSessions} sessions`);
+      }
+      if (pkg.startDate && pkg.endDate) {
+        const start = new Date(pkg.startDate);
+        const end = new Date(pkg.endDate);
+        parts.push(`${start.toLocaleDateString()} - ${end.toLocaleDateString()}`);
+      }
+      if (pkg.price) {
+        parts.push(`${formatPrice(pkg.price)}`);
+      }
+      if (pkg.allowLateJoin) {
+        parts.push('(Prorated pricing available)');
+      }
+      return parts.join(' | ');
     }
   };
 

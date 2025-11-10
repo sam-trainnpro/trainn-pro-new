@@ -1655,6 +1655,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== TIME BOUND PACKAGE ROUTES ==========
+  
+  // Create a new time_bound package with sessions (coaches only)
+  app.post("/api/time-bound-packages", requireAuth, async (req, res) => {
+    try {
+      // Check if user is coach
+      if (req.user.role !== "coach") {
+        return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      // Check if coach is approved
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
+      }
+      
+      const { sessions, ...packageData } = req.body;
+      
+      // Validate required fields for time_bound package
+      if (!packageData.title || !packageData.totalSessions || !packageData.price) {
+        return res.status(400).json({ message: "Missing required fields: title, totalSessions, price" });
+      }
+      
+      if (!sessions || !Array.isArray(sessions) || sessions.length === 0) {
+        return res.status(400).json({ message: "Sessions array is required and must not be empty" });
+      }
+      
+      if (sessions.length !== packageData.totalSessions) {
+        return res.status(400).json({ 
+          message: `Number of sessions (${sessions.length}) must match totalSessions (${packageData.totalSessions})` 
+        });
+      }
+      
+      // Create package with time_bound type
+      const newPackage = await storage.createPackage({
+        ...packageData,
+        coachId: req.user.id,
+        packageType: 'time_bound',
+        isActive: true,
+        status: 'enabled'
+      });
+      
+      // Create all sessions for this package
+      const sessionRecords = sessions.map((session: any, index: number) => ({
+        packageId: newPackage.id,
+        sessionNumber: index + 1,
+        date: new Date(session.date),
+        startTime: new Date(session.startTime),
+        endTime: new Date(session.endTime),
+        location: session.location || packageData.location,
+        addressLine1: session.addressLine1 || packageData.addressLine1,
+        city: session.city || packageData.city,
+        state: session.state || packageData.state,
+        zipCode: session.zipCode || packageData.zipCode,
+        address: session.address || packageData.address,
+        latitude: session.latitude || packageData.latitude,
+        longitude: session.longitude || packageData.longitude,
+        sessionType: session.sessionType || null,
+        status: 'scheduled'
+      }));
+      
+      const createdSessions = await storage.createTimeBoundPackageSessions(sessionRecords);
+      
+      res.status(201).json({
+        package: newPackage,
+        sessions: createdSessions
+      });
+    } catch (error) {
+      console.error("Error creating time_bound package:", error);
+      res.status(500).json({ message: "Failed to create time_bound package" });
+    }
+  });
+
+  // Get a time_bound package with all its sessions
+  app.get("/api/time-bound-packages/:id", async (req, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+      const packageWithSessions = await storage.getTimeBoundPackageWithSessions(packageId);
+      
+      if (!packageWithSessions) {
+        return res.status(404).json({ message: "Time bound package not found" });
+      }
+      
+      res.json(packageWithSessions);
+    } catch (error) {
+      console.error("Error fetching time_bound package:", error);
+      res.status(500).json({ message: "Failed to fetch time_bound package" });
+    }
+  });
+
+  // Book a time_bound package (creates booking and scheduled payout)
+  app.post("/api/time-bound-packages/:id/book", requireAuth, async (req, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+      const { paymentIntentId, stripeFee } = req.body;
+      
+      // Get package with sessions
+      const packageWithSessions = await storage.getTimeBoundPackageWithSessions(packageId);
+      if (!packageWithSessions) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      const { package: pkg, sessions } = packageWithSessions;
+      
+      // Verify it's a time_bound package
+      if (pkg.packageType !== 'time_bound') {
+        return res.status(400).json({ message: "Package is not a time_bound package" });
+      }
+      
+      // Check if user is trying to book their own package
+      if (pkg.coachId === req.user.id) {
+        return res.status(400).json({ message: "You cannot book your own package" });
+      }
+      
+      // Check capacity
+      const existingBookings = await storage.getTimeBoundPackageBookingsByPackage(packageId);
+      const activeBookings = existingBookings.filter(b => b.status === 'active');
+      if (activeBookings.length >= (pkg.capacity || 999)) {
+        return res.status(400).json({ message: "Package is fully booked" });
+      }
+      
+      // Calculate prorated pricing if late join is allowed
+      const now = new Date();
+      const futureSessions = sessions.filter(s => new Date(s.startTime) > now);
+      const sessionsRemaining = futureSessions.length;
+      
+      let finalPrice = pkg.price;
+      if (pkg.allowLateJoin && sessionsRemaining < pkg.totalSessions) {
+        // Prorated price based on remaining sessions
+        finalPrice = (pkg.price / pkg.totalSessions) * sessionsRemaining;
+      } else if (!pkg.allowLateJoin && sessionsRemaining < pkg.totalSessions) {
+        return res.status(400).json({ message: "Cannot join after program has started" });
+      }
+      
+      // Calculate fees (Stripe fee comes from frontend, platform fee is 15%)
+      const stripeFeeDecimal = stripeFee || 0;
+      const netAmount = finalPrice - stripeFeeDecimal;
+      const platformFee = netAmount * 0.15;
+      const providerPayout = netAmount - platformFee;
+      
+      // Create the booking
+      const booking = await storage.createTimeBoundPackageBooking({
+        packageId: pkg.id,
+        userId: req.user.id,
+        totalPrice: finalPrice.toString(),
+        originalPrice: pkg.price.toString(),
+        sessionsAtBooking: sessionsRemaining,
+        totalSessions: pkg.totalSessions,
+        currency: 'usd',
+        paymentIntentId,
+        paymentStatus: 'completed',
+        stripeFee: stripeFeeDecimal.toString(),
+        netAmount: netAmount.toString(),
+        platformFee: platformFee.toString(),
+        providerPayout: providerPayout.toString(),
+        sessionsCompleted: 0,
+        status: 'active'
+      });
+      
+      // Create scheduled payout (2 days after booking)
+      const scheduledPayoutDate = new Date();
+      scheduledPayoutDate.setDate(scheduledPayoutDate.getDate() + 2);
+      
+      await storage.createScheduledPayout({
+        classPackageId: pkg.id,
+        coachId: pkg.coachId,
+        customerId: req.user.id,
+        stripePaymentIntentId: paymentIntentId,
+        amountCents: Math.round(finalPrice * 100),
+        stripeFee: Math.round(stripeFeeDecimal * 100),
+        netAmount: Math.round(netAmount * 100),
+        coachPayout: Math.round(providerPayout * 100),
+        platformFee: Math.round(platformFee * 100),
+        payoutType: 'package_purchase',
+        scheduledPayoutDate,
+        status: 'scheduled'
+      });
+      
+      res.status(201).json(booking);
+    } catch (error) {
+      console.error("Error booking time_bound package:", error);
+      res.status(500).json({ message: "Failed to book package" });
+    }
+  });
+
+  // Get customer's time_bound package bookings
+  app.get("/api/time-bound-packages/my/bookings", requireAuth, async (req, res) => {
+    try {
+      const bookings = await storage.getUserTimeBoundPackageBookings(req.user.id);
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error fetching user time_bound package bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
   // Check class availability (used before payment)
   app.post("/api/classes/:id/check-availability", requireAuth, async (req, res) => {
     try {
