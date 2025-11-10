@@ -597,6 +597,25 @@ export const classPackages = pgTable("class_packages", {
   // Eligible classes for this package
   eligibleClasses: text("eligible_classes"), // JSON array of class IDs or "all"
   
+  // For time_bound packages
+  totalSessions: integer("total_sessions"), // Total number of sessions in the package
+  startDate: timestamp("start_date"), // First session date
+  endDate: timestamp("end_date"), // Last session date
+  capacity: integer("capacity"), // Max number of customers
+  allowLateJoin: boolean("allow_late_join").default(false), // Allow customers to join after start
+  price: real("price"), // Total package price
+  image: text("image"), // Package image URL
+  location: text("location"), // Primary location name
+  addressLine1: text("address_line_1"), // Street address
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  address: text("address"), // Full formatted address
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  whatToBring: text("what_to_bring"), // What participants should bring
+  outdoors: boolean("outdoors").default(false),
+  
   // Fields from Create Class form
   description: text("description"),
   categoryId: integer("category_id"),
@@ -609,26 +628,75 @@ export const classPackages = pgTable("class_packages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertClassPackageSchema = createInsertSchema(classPackages).pick({
-  coachId: true,
-  title: true,
-  packageType: true,
-  classCount1: true,
-  classCount2: true,
-  classCount3: true,
-  price1: true,
-  price2: true,
-  price3: true,
-  eligibleClasses: true,
-  description: true,
-  categoryId: true,
-  ageGroup: true,
-  isActive: true,
-  status: true,
+export const insertClassPackageSchema = createInsertSchema(classPackages).omit({
+  id: true,
+  creationDate: true,
+  createdAt: true,
 });
 
 export type InsertClassPackage = z.infer<typeof insertClassPackageSchema>;
 export type ClassPackage = typeof classPackages.$inferSelect;
+
+// Time Bound Package Sessions - Individual scheduled sessions for time_bound packages
+export const timeBoundPackageSessions = pgTable("time_bound_package_sessions", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id").notNull(), // FK to class_packages
+  sessionNumber: integer("session_number").notNull(), // 1, 2, 3, etc.
+  date: timestamp("date").notNull(), // Session date
+  startTime: timestamp("start_time").notNull(), // Session start time
+  endTime: timestamp("end_time").notNull(), // Session end time
+  location: text("location"), // Location name (can differ from package default)
+  addressLine1: text("address_line_1"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  address: text("address"), // Full formatted address
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  sessionType: text("session_type"), // Optional: "Practice", "Game", "Workshop", etc.
+  status: text("status").notNull().default("scheduled"), // "scheduled", "completed", "cancelled"
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTimeBoundPackageSessionSchema = createInsertSchema(timeBoundPackageSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTimeBoundPackageSession = z.infer<typeof insertTimeBoundPackageSessionSchema>;
+export type TimeBoundPackageSession = typeof timeBoundPackageSessions.$inferSelect;
+
+// Time Bound Package Bookings - Customer enrollments in time_bound packages
+export const timeBoundPackageBookings = pgTable("time_bound_package_bookings", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id").notNull(), // FK to class_packages
+  userId: integer("user_id").notNull(), // FK to users (customer)
+  totalPrice: numeric("total_price", { precision: 10, scale: 2 }).notNull(), // Amount paid (may be prorated)
+  originalPrice: numeric("original_price", { precision: 10, scale: 2 }).notNull(), // Full package price
+  sessionsAtBooking: integer("sessions_at_booking").notNull(), // Sessions remaining when booked
+  totalSessions: integer("total_sessions").notNull(), // Total sessions in package
+  currency: text("currency").notNull().default("usd"),
+  paymentIntentId: text("payment_intent_id"),
+  paymentStatus: text("payment_status").notNull().default("pending"), // "completed", "pending", "refunded"
+  stripeFee: numeric("stripe_fee", { precision: 10, scale: 2 }).notNull().default('0.00'),
+  netAmount: numeric("net_amount", { precision: 10, scale: 2 }).notNull(), // After Stripe fees
+  platformFee: numeric("platform_fee", { precision: 10, scale: 2 }).notNull().default('0.00'), // 15% of net
+  providerPayout: numeric("provider_payout", { precision: 10, scale: 2 }).notNull(), // 85% of net
+  bookingDate: timestamp("booking_date").defaultNow(),
+  sessionsCompleted: integer("sessions_completed").notNull().default(0),
+  status: text("status").notNull().default("active"), // "active", "completed", "cancelled"
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTimeBoundPackageBookingSchema = createInsertSchema(timeBoundPackageBookings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTimeBoundPackageBooking = z.infer<typeof insertTimeBoundPackageBookingSchema>;
+export type TimeBoundPackageBooking = typeof timeBoundPackageBookings.$inferSelect;
 
 // Package Purchases
 export const packagePurchases = pgTable("package_purchases", {

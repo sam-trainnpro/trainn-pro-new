@@ -3,9 +3,12 @@ import { useLocation } from 'wouter';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from "react-hook-form";
+import { format } from "date-fns";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { ClassCategory } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import GoogleMapsScript from "@/components/maps/google-maps-script";
+import InteractiveLocationPicker from "@/components/maps/interactive-location-picker";
 import {
   Form,
   FormControl,
@@ -27,12 +30,38 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "../../../hooks/use-toast";
-import { ArrowLeft, Package } from 'lucide-react';
+import { ArrowLeft, Package, CalendarIcon, MapPin, Plus, X } from 'lucide-react';
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 import * as z from "zod";
+
+// Session schema for time_bound packages
+const sessionSchema = z.object({
+  sessionNumber: z.number(),
+  date: z.date(),
+  startTime: z.string(),
+  endTime: z.string(),
+  useDifferentLocation: z.boolean().default(false),
+  sessionType: z.string().optional(),
+  // Location fields for individual sessions
+  location: z.string().optional(),
+  addressLine1: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+});
 
 // Form validation schema
 const createPackageSchema = z.object({
@@ -43,18 +72,35 @@ const createPackageSchema = z.object({
     required_error: "Please select a package type"
   }),
   // Class counts - classCount1 is mandatory for set_pack, others optional
-  classCount1: z.coerce.number().min(1, "First class count is required"),
+  classCount1: z.coerce.number().min(1).optional(),
   classCount2: z.coerce.number().min(1).optional(),
   classCount3: z.coerce.number().min(1).optional(),
   // Prices - price1 is mandatory for set_pack, others optional  
-  price1: z.coerce.number().min(0, "First price is required"),
+  price1: z.coerce.number().min(0).optional(),
   price2: z.coerce.number().min(0).optional(),
   price3: z.coerce.number().min(0).optional(),
-  // Eligible classes - mandatory selection
-  eligibleClasses: z.string().min(1, "Please select eligible classes"),
+  // Eligible classes - mandatory for set_pack
+  eligibleClasses: z.string().optional(),
   // Fields from Create Class form
   ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
   outdoors: z.boolean().default(false),
+  // Time-bound specific fields
+  totalSessions: z.coerce.number().min(1).optional(),
+  price: z.coerce.number().min(0).optional(),
+  capacity: z.coerce.number().min(1).optional(),
+  allowLateJoin: z.boolean().default(false),
+  image: z.string().optional(),
+  // Location fields for time_bound packages
+  location: z.string().optional(),
+  addressLine1: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  whatToBring: z.string().optional(),
+  sessions: z.array(sessionSchema).optional(),
 }).refine((data) => {
   // Custom validation for set_pack type
   if (data.packageType === 'set_pack') {
@@ -64,12 +110,47 @@ const createPackageSchema = z.object({
     if (!data.price1 || data.price1 < 0) {
       return false;
     }
+    if (!data.eligibleClasses || data.eligibleClasses === "") {
+      return false;
+    }
+  }
+  // Custom validation for time_bound type
+  if (data.packageType === 'time_bound') {
+    if (!data.totalSessions || data.totalSessions < 1) {
+      return false;
+    }
+    if (data.price === undefined || data.price < 0) {
+      return false;
+    }
   }
   return true;
 }, {
-  message: "Class count and price are required for set pack type",
-  path: ["classCount1"]
+  message: "Required fields are missing for the selected package type",
+  path: ["packageType"]
 });
+
+// Time slots for the day
+const generateTimeSlots = () => {
+  const slots = [];
+  const totalMinutesInDay = 24 * 60;
+  const intervalMinutes = 30;
+  
+  for (let minutes = 0; minutes < totalMinutesInDay; minutes += intervalMinutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const timeString = `${displayHours}:${mins.toString().padStart(2, '0')} ${period}`;
+    slots.push({
+      value: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`,
+      label: timeString
+    });
+  }
+  
+  return slots;
+};
+
+const timeSlots = generateTimeSlots();
 
 export default function CreatePackage() {
   const { user } = useAuth();
@@ -79,6 +160,11 @@ export default function CreatePackage() {
   const [categories, setCategories] = useState<ClassCategory[]>([]);
   const [coachClasses, setCoachClasses] = useState<any[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+  
+  // Time-bound package specific state
+  const [sessions, setSessions] = useState<z.infer<typeof sessionSchema>[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Form definition
   const form = useForm<z.infer<typeof createPackageSchema>>({
@@ -97,6 +183,22 @@ export default function CreatePackage() {
       eligibleClasses: "",
       ageGroup: "Adults",
       outdoors: false,
+      // Time-bound defaults
+      totalSessions: 1,
+      price: 0,
+      capacity: 10,
+      allowLateJoin: false,
+      image: "",
+      location: "",
+      addressLine1: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      address: "",
+      latitude: undefined,
+      longitude: undefined,
+      whatToBring: "",
+      sessions: [],
     },
   });
 
@@ -105,6 +207,76 @@ export default function CreatePackage() {
   const classCount1 = form.watch("classCount1");
   const classCount2 = form.watch("classCount2");
   const classCount3 = form.watch("classCount3");
+  const totalSessions = form.watch("totalSessions");
+
+  // Helper functions for time_bound packages
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  // Upload image and get URL
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await fetch("/api/upload-image", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    return result.imageUrl;
+  };
+
+  // Add a new session
+  const handleAddSession = () => {
+    const newSession: z.infer<typeof sessionSchema> = {
+      sessionNumber: sessions.length + 1,
+      date: new Date(),
+      startTime: "09:00",
+      endTime: "10:00",
+      useDifferentLocation: false,
+      sessionType: "",
+      location: "",
+      addressLine1: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      address: "",
+      latitude: undefined,
+      longitude: undefined,
+    };
+    setSessions([...sessions, newSession]);
+  };
+
+  // Remove a session
+  const handleRemoveSession = (index: number) => {
+    const updatedSessions = sessions.filter((_, i) => i !== index);
+    // Renumber remaining sessions
+    const renumberedSessions = updatedSessions.map((session, i) => ({
+      ...session,
+      sessionNumber: i + 1
+    }));
+    setSessions(renumberedSessions);
+  };
+
+  // Update a session field
+  const updateSession = (index: number, field: string, value: any) => {
+    const updatedSessions = [...sessions];
+    updatedSessions[index] = {
+      ...updatedSessions[index],
+      [field]: value
+    };
+    setSessions(updatedSessions);
+  };
 
   // Load categories on mount
   useEffect(() => {
@@ -246,30 +418,86 @@ export default function CreatePackage() {
   // Create package mutation
   const createPackageMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createPackageSchema>) => {
-      if (!validateEligibleClasses()) {
-        throw new Error("Validation failed");
+      // Handle set_pack validation
+      if (data.packageType === 'set_pack') {
+        if (!validateEligibleClasses()) {
+          throw new Error("Validation failed");
+        }
+        
+        // Calculate total future occurrences from selected classes
+        let totalFutureOccurrences = 0;
+        if (selectedClasses.includes('all')) {
+          totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
+        } else {
+          totalFutureOccurrences = selectedClasses.reduce((total, identifier) => {
+            const classData = coachClasses.find(cls => cls.packageIdentifier === identifier);
+            return total + (classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0);
+          }, 0);
+        }
+        
+        const packageData = {
+          ...data,
+          coachId: user?.id,
+          futureClassCount: totalFutureOccurrences,
+          status: 'enabled',
+          isActive: true
+        };
+        
+        return apiRequest('POST', '/api/packages', packageData);
       }
       
-      // Calculate total future occurrences from selected classes
-      let totalFutureOccurrences = 0;
-      if (selectedClasses.includes('all')) {
-        totalFutureOccurrences = coachClasses.reduce((total, cls) => total + (cls.estimatedFutureOccurrences || cls.futureOccurrences || 0), 0);
-      } else {
-        totalFutureOccurrences = selectedClasses.reduce((total, identifier) => {
-          const classData = coachClasses.find(cls => cls.packageIdentifier === identifier);
-          return total + (classData?.estimatedFutureOccurrences || classData?.futureOccurrences || 0);
-        }, 0);
+      // Handle time_bound package
+      if (data.packageType === 'time_bound') {
+        // Validate sessions exist
+        if (!sessions || sessions.length === 0) {
+          throw new Error("Please add at least one session to the package");
+        }
+        
+        // Upload image if selected
+        let imageUrl = data.image || "";
+        if (selectedImage) {
+          try {
+            setUploadingImage(true);
+            imageUrl = await uploadImage(selectedImage);
+          } catch (uploadError) {
+            console.error("Image upload failed:", uploadError);
+            toast({
+              title: "Image upload failed",
+              description: "Your package will be created without an image",
+              variant: "destructive",
+            });
+          } finally {
+            setUploadingImage(false);
+          }
+        }
+
+        // Compute startDate and endDate from sessions
+        const sessionTimes = sessions.map(s => ({
+          start: new Date(s.startTime),
+          end: new Date(s.endTime)
+        }));
+        const startDate = new Date(Math.min(...sessionTimes.map(t => t.start.getTime())));
+        const endDate = new Date(Math.max(...sessionTimes.map(t => t.end.getTime())));
+
+        // Prepare package data with sessions
+        const packageData = {
+          ...data,
+          coachId: user?.id,
+          image: imageUrl,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          sessions: sessions.map(session => ({
+            ...session,
+            date: session.date.toISOString(),
+          })),
+          status: 'enabled',
+          isActive: true
+        };
+        
+        return apiRequest('POST', '/api/time-bound-packages', packageData);
       }
       
-      const packageData = {
-        ...data,
-        coachId: user?.id,
-        futureClassCount: totalFutureOccurrences,
-        status: 'enabled',
-        isActive: true
-      };
-      
-      return apiRequest('POST', '/api/packages', packageData);
+      throw new Error("Invalid package type");
     },
     onSuccess: () => {
       toast({
@@ -279,6 +507,7 @@ export default function CreatePackage() {
       // Invalidate both the general packages query and the coach's specific packages query
       queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/packages/my'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/time-bound-packages'] });
       navigate('/my-packages');
     },
     onError: (error: any) => {
@@ -292,10 +521,13 @@ export default function CreatePackage() {
     }
   });
 
-  const onSubmit = (data: z.infer<typeof createPackageSchema>) => {
+  const onSubmit = async (data: z.infer<typeof createPackageSchema>) => {
     setSubmitting(true);
-    createPackageMutation.mutate(data);
-    setSubmitting(false);
+    try {
+      await createPackageMutation.mutateAsync(data);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Check if user is logged in and is an approved coach
@@ -666,17 +898,478 @@ export default function CreatePackage() {
               </div>
             )}
 
+            {/* Conditional Fields for TIME BOUND */}
+            {packageType === 'time_bound' && (
+              <div className="space-y-6">
+                <Separator />
+                <h3 className="text-lg font-semibold">Time-Bound Package Details</h3>
+                
+                {/* Total Sessions and Price */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="totalSessions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Sessions <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            placeholder="e.g. 8" 
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              // Auto-adjust sessions array when totalSessions changes
+                              const newTotal = parseInt(e.target.value) || 0;
+                              if (newTotal > sessions.length) {
+                                // Add more sessions
+                                const sessionsToAdd = newTotal - sessions.length;
+                                for (let i = 0; i < sessionsToAdd; i++) {
+                                  handleAddSession();
+                                }
+                              } else if (newTotal < sessions.length) {
+                                // Remove excess sessions
+                                setSessions(sessions.slice(0, newTotal));
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Number of sessions in this package
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            {/* Select Eligible Classes */}
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium leading-none">
-                  Select Eligible Classes <span className="text-destructive">*</span>
-                </label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Choose which classes can be booked with this package
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Package Price <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              step="0.01"
+                              className="pl-7 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                              placeholder="e.g. 200.00" 
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Total price for the entire package
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Capacity and Allow Late Join */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="capacity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Capacity</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            placeholder="e.g. 15" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Maximum number of participants (optional)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="allowLateJoin"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Allow Late Join
+                          </FormLabel>
+                          <FormDescription>
+                            Can students join after the package has started?
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Image Upload */}
+                <div>
+                  <label className="text-sm font-medium leading-none">
+                    Package Image (optional)
+                  </label>
+                  <div className="mt-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="h-16 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                      data-testid="input-package-image"
+                    />
+                    {selectedImage && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Selected: {selectedImage.name}
+                      </p>
+                    )}
+                    {uploadingImage && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Uploading image...
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload an image that represents your package (max 40MB)
+                  </p>
+                </div>
+
+                {/* Package Location */}
+                <Separator />
+                <h4 className="text-md font-semibold">Package Location</h4>
+                <p className="text-sm text-muted-foreground">
+                  Set the default location for all sessions. Individual sessions can override this.
                 </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g. Central Park, Community Center" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Name of the location for this package
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="addressLine1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address Line 1</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 123 Main St" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. San Francisco" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. CA" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="zipCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ZIP Code</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 94102" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* What To Bring */}
+                <FormField
+                  control={form.control}
+                  name="whatToBring"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What To Bring (optional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="e.g. Water bottle, yoga mat, comfortable clothing..." 
+                          className="min-h-24" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        List items participants should bring to the sessions
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Session Builder */}
+                <Separator />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-md font-semibold">Session Schedule</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Define the date and time for each session
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddSession}
+                      className="flex items-center gap-2"
+                      data-testid="button-add-session"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Session
+                    </Button>
+                  </div>
+
+                  {sessions.map((session, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h5 className="font-medium">Session {session.sessionNumber}</h5>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveSession(index)}
+                          className="text-destructive hover:text-destructive"
+                          data-testid={`button-remove-session-${index}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Date Picker */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Date <span className="text-destructive">*</span></label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full pl-3 text-left font-normal justify-start"
+                                data-testid={`button-session-date-${index}`}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {session.date ? format(session.date, "PPP") : <span>Select date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={session.date}
+                                onSelect={(date) => {
+                                  if (date) updateSession(index, 'date', date);
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        {/* Start Time */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Start Time <span className="text-destructive">*</span></label>
+                          <Select 
+                            value={session.startTime}
+                            onValueChange={(value) => updateSession(index, 'startTime', value)}
+                          >
+                            <SelectTrigger data-testid={`select-session-start-time-${index}`}>
+                              <SelectValue placeholder="Select time" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeSlots.map((slot) => (
+                                <SelectItem key={slot.value} value={slot.value}>
+                                  {slot.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* End Time */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">End Time <span className="text-destructive">*</span></label>
+                          <Select 
+                            value={session.endTime}
+                            onValueChange={(value) => updateSession(index, 'endTime', value)}
+                          >
+                            <SelectTrigger data-testid={`select-session-end-time-${index}`}>
+                              <SelectValue placeholder="Select time" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeSlots.map((slot) => (
+                                <SelectItem key={slot.value} value={slot.value}>
+                                  {slot.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Session Type (optional) */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Session Type (optional)</label>
+                          <Input 
+                            placeholder="e.g. Practice, Game, Workshop" 
+                            value={session.sessionType || ""}
+                            onChange={(e) => updateSession(index, 'sessionType', e.target.value)}
+                            data-testid={`input-session-type-${index}`}
+                          />
+                        </div>
+
+                        {/* Use Different Location Checkbox */}
+                        <div className="flex items-center space-x-2 pt-6">
+                          <Checkbox
+                            id={`different-location-${index}`}
+                            checked={session.useDifferentLocation}
+                            onCheckedChange={(checked) => updateSession(index, 'useDifferentLocation', !!checked)}
+                            data-testid={`checkbox-different-location-${index}`}
+                          />
+                          <label 
+                            htmlFor={`different-location-${index}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Use different location for this session
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Session-specific Location Fields */}
+                      {session.useDifferentLocation && (
+                        <div className="border-t pt-4 mt-4 space-y-4">
+                          <h6 className="text-sm font-medium">Session Location</h6>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Location Name</label>
+                              <Input 
+                                placeholder="e.g. Different Park" 
+                                value={session.location || ""}
+                                onChange={(e) => updateSession(index, 'location', e.target.value)}
+                                data-testid={`input-session-location-${index}`}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Address Line 1</label>
+                              <Input 
+                                placeholder="e.g. 456 Other St" 
+                                value={session.addressLine1 || ""}
+                                onChange={(e) => updateSession(index, 'addressLine1', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">City</label>
+                              <Input 
+                                placeholder="City" 
+                                value={session.city || ""}
+                                onChange={(e) => updateSession(index, 'city', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">State</label>
+                              <Input 
+                                placeholder="State" 
+                                value={session.state || ""}
+                                onChange={(e) => updateSession(index, 'state', e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">ZIP</label>
+                              <Input 
+                                placeholder="ZIP" 
+                                value={session.zipCode || ""}
+                                onChange={(e) => updateSession(index, 'zipCode', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {sessions.length === 0 && (
+                    <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                      <p className="text-muted-foreground">
+                        No sessions added yet. Click "Add Session" to start building your schedule.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+
+            {/* Select Eligible Classes - only for set_pack */}
+            {packageType === 'set_pack' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium leading-none">
+                    Select Eligible Classes <span className="text-destructive">*</span>
+                  </label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Choose which classes can be booked with this package
+                  </p>
+                </div>
               
               <div className="border rounded-lg p-4 space-y-3 max-h-64 overflow-y-auto">
                 {/* Select All Option */}
@@ -717,7 +1410,8 @@ export default function CreatePackage() {
                   </p>
                 )}
               </div>
-            </div>
+              </div>
+            )}
 
 
             {/* Submit Buttons */}
