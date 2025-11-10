@@ -472,24 +472,58 @@ export default function CreatePackage() {
         }
 
         // Compute startDate and endDate from sessions
-        const sessionTimes = sessions.map(s => ({
-          start: new Date(s.startTime),
-          end: new Date(s.endTime)
-        }));
+        // Combine date + time to create proper timestamps
+        const sessionTimes = sessions.map(s => {
+          const sessionDate = new Date(s.date);
+          const [startHour, startMinute] = s.startTime.split(':').map(Number);
+          const [endHour, endMinute] = s.endTime.split(':').map(Number);
+          
+          const start = new Date(sessionDate);
+          start.setHours(startHour, startMinute, 0, 0);
+          
+          const end = new Date(sessionDate);
+          end.setHours(endHour, endMinute, 0, 0);
+          
+          return { start, end };
+        });
+        
         const startDate = new Date(Math.min(...sessionTimes.map(t => t.start.getTime())));
         const endDate = new Date(Math.max(...sessionTimes.map(t => t.end.getTime())));
 
-        // Prepare package data with sessions
+        // Prepare package data with sessions - combine date + time for each session
         const packageData = {
           ...data,
           coachId: user?.id,
           image: imageUrl,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          sessions: sessions.map(session => ({
-            ...session,
-            date: session.date.toISOString(),
-          })),
+          sessions: sessions.map(session => {
+            const sessionDate = new Date(session.date);
+            const [startHour, startMinute] = session.startTime.split(':').map(Number);
+            const [endHour, endMinute] = session.endTime.split(':').map(Number);
+            
+            const startTime = new Date(sessionDate);
+            startTime.setHours(startHour, startMinute, 0, 0);
+            
+            const endTime = new Date(sessionDate);
+            endTime.setHours(endHour, endMinute, 0, 0);
+            
+            return {
+              sessionNumber: session.sessionNumber,
+              date: sessionDate.toISOString(),
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              location: session.location,
+              addressLine1: session.addressLine1,
+              city: session.city,
+              state: session.state,
+              zipCode: session.zipCode,
+              address: session.address,
+              latitude: session.latitude,
+              longitude: session.longitude,
+              sessionType: session.sessionType,
+            };
+          }),
           status: 'enabled',
           isActive: true
         };
