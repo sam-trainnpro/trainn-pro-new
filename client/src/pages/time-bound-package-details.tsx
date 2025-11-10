@@ -167,7 +167,7 @@ export default function TimeBoundPackageDetailsPage() {
     <div className="flex flex-col min-h-screen">
       {packageDetails && (
         <Helmet>
-          <title>{packageDetails.title} - {packageDetails.totalSessions} Sessions - Trainn</title>
+          <title>{`${packageDetails.title} - ${packageDetails.totalSessions} Sessions - Trainn`}</title>
           <meta name="description" content={packageDetails.description || `${packageDetails.totalSessions} session package with ${displayName}`} />
           <link rel="canonical" href={`https://trainn.pro/package/${packageDetails.id}`} />
           <meta property="og:title" content={`${packageDetails.title} - Trainn`} />
