@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
@@ -33,7 +33,9 @@ import {
   Package as PackageIcon,
   AlertCircle,
   CheckCircle,
-  UserCheck
+  UserCheck,
+  Plus,
+  Minus
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
@@ -83,6 +85,7 @@ export default function TimeBoundPackageDetailsPage() {
   const [_, params] = useRoute<{ id: string }>("/package/:id");
   const { user } = useAuth();
   const { toast } = useToast();
+  const [quantity, setQuantity] = useState(1);
 
   if (!params) {
     navigate("/packages");
@@ -151,17 +154,34 @@ export default function TimeBoundPackageDetailsPage() {
       return;
     }
     
-    // Navigate to package checkout
-    navigate(`/time-bound-package-checkout/${packageId}`);
+    // Navigate to package checkout with query parameters including quantity
+    navigate(`/time-bound-package-checkout?packageId=${packageId}&quantity=${quantity}`);
   };
 
   const displayName = packageDetails?.displayBusinessName && packageDetails?.coachBusinessName 
     ? packageDetails.coachBusinessName 
     : packageDetails?.coachName;
 
-  const spotsRemaining = packageDetails?.capacity 
-    ? packageDetails.capacity - (packageDetails.bookedCount || 0)
-    : null;
+  // Handle capacity correctly: null = unlimited, 0 = full, number = limited
+  const spotsRemaining = packageDetails?.capacity !== null && packageDetails?.capacity !== undefined
+    ? Math.max(0, packageDetails.capacity - (packageDetails.bookedCount || 0))
+    : null; // null means unlimited capacity
+  
+  const isUnlimitedCapacity = packageDetails?.capacity === null || packageDetails?.capacity === undefined;
+  const isProgramFull = spotsRemaining === 0;
+
+  // Clamp quantity when capacity changes to prevent over-booking
+  useEffect(() => {
+    if (isUnlimitedCapacity) {
+      // For unlimited capacity, cap at 10
+      if (quantity > 10) {
+        setQuantity(10);
+      }
+    } else if (spotsRemaining !== null && quantity > spotsRemaining) {
+      // For limited capacity, clamp to available spots
+      setQuantity(Math.max(1, spotsRemaining));
+    }
+  }, [spotsRemaining, isUnlimitedCapacity, quantity]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -290,22 +310,31 @@ export default function TimeBoundPackageDetailsPage() {
                           </div>
                         </div>
                         
-                        {packageDetails.capacity && (
-                          <div className="flex items-center">
-                            <Users className="h-5 w-5 mr-3 text-primary" />
-                            <div>
-                              <p className="text-sm text-muted-foreground">Capacity</p>
-                              <p className="font-medium">
-                                {packageDetails.bookedCount || 0} / {packageDetails.capacity} enrolled
-                                {spotsRemaining !== null && spotsRemaining > 0 && (
-                                  <span className="text-sm text-muted-foreground ml-2">
-                                    ({spotsRemaining} spots left)
-                                  </span>
-                                )}
-                              </p>
-                            </div>
+                        <div className="flex items-center">
+                          <Users className="h-5 w-5 mr-3 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Capacity</p>
+                            <p className="font-medium">
+                              {isUnlimitedCapacity ? (
+                                `${packageDetails.bookedCount || 0} enrolled (unlimited capacity)`
+                              ) : (
+                                <>
+                                  {packageDetails.bookedCount || 0} / {packageDetails.capacity} enrolled
+                                  {spotsRemaining !== null && spotsRemaining > 0 && (
+                                    <span className="text-sm text-muted-foreground ml-2">
+                                      ({spotsRemaining} spots left)
+                                    </span>
+                                  )}
+                                  {isProgramFull && (
+                                    <span className="text-sm text-red-600 ml-2 font-medium">
+                                      (Full)
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </p>
                           </div>
-                        )}
+                        </div>
                       </div>
 
                       {packageDetails.allowLateJoin && (
@@ -488,28 +517,76 @@ export default function TimeBoundPackageDetailsPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <span className="text-2xl font-bold">
-                          ${packageDetails.price}
+                          ${packageDetails.price && quantity ? (packageDetails.price * quantity).toFixed(2) : packageDetails.price}
                         </span>
                         <Badge variant="secondary">
                           {packageDetails.totalSessions} sessions
                         </Badge>
                       </CardTitle>
                       <CardDescription>
-                        Full package price
+                        {quantity > 1 ? `${quantity} × $${packageDetails.price} per person` : 'Full package price'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {/* Quantity Selector - Show for unlimited or when spots available */}
+                      {!isProgramFull && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Number of spots</label>
+                          <div className="flex items-center justify-between border rounded-lg p-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                              disabled={quantity <= 1}
+                              data-testid="button-decrease-quantity"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="text-lg font-semibold px-4" data-testid="text-quantity">
+                              {quantity}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                if (isUnlimitedCapacity) {
+                                  // For unlimited capacity, allow any reasonable number (cap at 10)
+                                  setQuantity(Math.min(10, quantity + 1));
+                                } else if (spotsRemaining !== null) {
+                                  // For limited capacity, respect spots remaining
+                                  setQuantity(Math.min(spotsRemaining, quantity + 1));
+                                }
+                              }}
+                              disabled={!isUnlimitedCapacity && spotsRemaining !== null && quantity >= spotsRemaining}
+                              data-testid="button-increase-quantity"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">
+                            {isUnlimitedCapacity 
+                              ? 'Book for yourself and your guests (up to 10 spots)' 
+                              : 'Book for yourself and your guests'}
+                          </p>
+                        </div>
+                      )}
+                      
                       <Button 
                         className="w-full" 
                         size="lg"
                         onClick={handleBookPackage}
-                        disabled={spotsRemaining === 0}
+                        disabled={isProgramFull || (!isUnlimitedCapacity && spotsRemaining !== null && quantity > spotsRemaining)}
                         data-testid="button-book-package"
                       >
-                        {spotsRemaining === 0 ? 'Program Full' : 'Book Package'}
+                        {isProgramFull ? 'Program Full' : quantity > 1 ? `Book ${quantity} Spots` : 'Book Package'}
                       </Button>
                       
-                      {spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <= 3 && (
+                      {/* Capacity status messaging */}
+                      {isProgramFull ? (
+                        <p className="text-sm text-center text-red-600 font-medium">
+                          This program is currently full
+                        </p>
+                      ) : spotsRemaining !== null && spotsRemaining <= 3 && (
                         <p className="text-sm text-center text-orange-600 font-medium">
                           Only {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} left!
                         </p>
