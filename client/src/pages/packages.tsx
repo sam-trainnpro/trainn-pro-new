@@ -12,9 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Helmet } from "react-helmet";
-import { Package, CheckCircle, XCircle, Calendar, User } from "lucide-react";
+import { Package, CheckCircle, XCircle, Calendar, User, Clock, MapPin, Users } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface ClassPackage {
   id: number;
@@ -53,6 +54,21 @@ interface ClassPackage {
   createdAt: string;
 }
 
+interface TimeBoundPackageSession {
+  id: number;
+  packageId: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string | null;
+  notes: string | null;
+}
+
+interface TimeBoundPackageDetails extends ClassPackage {
+  sessions: TimeBoundPackageSession[];
+  bookedCount?: number;
+}
+
 export default function PackagesPage() {
   // Scroll to top when component mounts
   useEffect(() => {
@@ -63,6 +79,10 @@ export default function PackagesPage() {
   // Get search params from URL and ensure it's a string for queryString.parse
   const searchQuery: string = typeof window.location.search === 'string' ? window.location.search : '';
   const searchParams = queryString.parse(searchQuery);
+  
+  // Modal state for time-bound package details
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Initialize filters from URL params
   const [filters, setFilters] = useState<SearchFiltersType>({
@@ -98,6 +118,15 @@ export default function PackagesPage() {
     isLoading: isLoadingCategories 
   } = useQuery<ClassCategory[]>({
     queryKey: ['/api/categories'],
+  });
+
+  // Fetch time-bound package details when modal is open
+  const { 
+    data: packageDetails, 
+    isLoading: isLoadingDetails 
+  } = useQuery<TimeBoundPackageDetails>({
+    queryKey: ['/api/time-bound-packages', selectedPackageId],
+    enabled: !!selectedPackageId && isModalOpen,
   });
 
   // Filter packages based on search criteria
@@ -373,24 +402,31 @@ export default function PackagesPage() {
                             <Button 
                               className="bg-primary text-white hover:bg-primary/90"
                               size="sm"
+                              data-testid={`button-buy-package-${pkg.id}`}
                               onClick={() => {
-                                // Count available options
-                                const options = [];
-                                if (pkg.classCount1 && pkg.price1) options.push({ count: pkg.classCount1, price: pkg.price1 });
-                                if (pkg.classCount2 && pkg.price2) options.push({ count: pkg.classCount2, price: pkg.price2 });
-                                if (pkg.classCount3 && pkg.price3) options.push({ count: pkg.classCount3, price: pkg.price3 });
-                                
-                                // If only one option, go directly to checkout
-                                if (options.length === 1) {
-                                  const option = options[0];
-                                  navigate(`/package-checkout?packageId=${pkg.id}&classCount=${option.count}&price=${option.price}`);
+                                if (pkg.packageType === 'time_bound') {
+                                  // Open detail modal for time-bound packages
+                                  setSelectedPackageId(pkg.id);
+                                  setIsModalOpen(true);
                                 } else {
-                                  // Multiple options, go to selection page
-                                  navigate(`/package/${pkg.id}/purchase`);
+                                  // Handle set_pack packages as before
+                                  const options = [];
+                                  if (pkg.classCount1 && pkg.price1) options.push({ count: pkg.classCount1, price: pkg.price1 });
+                                  if (pkg.classCount2 && pkg.price2) options.push({ count: pkg.classCount2, price: pkg.price2 });
+                                  if (pkg.classCount3 && pkg.price3) options.push({ count: pkg.classCount3, price: pkg.price3 });
+                                  
+                                  // If only one option, go directly to checkout
+                                  if (options.length === 1) {
+                                    const option = options[0];
+                                    navigate(`/package-checkout?packageId=${pkg.id}&classCount=${option.count}&price=${option.price}`);
+                                  } else {
+                                    // Multiple options, go to selection page
+                                    navigate(`/package/${pkg.id}/purchase`);
+                                  }
                                 }
                               }}
                             >
-                              Buy Package
+                              {pkg.packageType === 'time_bound' ? 'View Details' : 'Buy Package'}
                             </Button>
                           </div>
                         </div>
@@ -406,6 +442,153 @@ export default function PackagesPage() {
       
       <Footer />
       <MobileNavigation />
+      
+      {/* Time-bound package detail modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="dialog-package-details">
+          {isLoadingDetails ? (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          ) : packageDetails ? (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{packageDetails.title}</DialogTitle>
+                <DialogDescription>
+                  {packageDetails.description}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 mt-4">
+                {/* Package info */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">Sessions</div>
+                      <div className="text-muted-foreground">{packageDetails.totalSessions}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">Capacity</div>
+                      <div className="text-muted-foreground">
+                        {packageDetails.bookedCount || 0} / {packageDetails.capacity}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Package className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">Price</div>
+                      <div className="text-muted-foreground">${packageDetails.price}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">Age Group</div>
+                      <div className="text-muted-foreground">{packageDetails.ageGroup}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Provider info */}
+                <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage 
+                      src={packageDetails.coachProfileImage || undefined} 
+                      alt={packageDetails.displayBusinessName && packageDetails.coachBusinessName 
+                        ? packageDetails.coachBusinessName 
+                        : packageDetails.coachName}
+                    />
+                    <AvatarFallback>
+                      {(packageDetails.displayBusinessName && packageDetails.coachBusinessName 
+                        ? packageDetails.coachBusinessName 
+                        : packageDetails.coachName).split(' ').map(name => name[0]).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">
+                      {packageDetails.displayBusinessName && packageDetails.coachBusinessName 
+                        ? packageDetails.coachBusinessName 
+                        : packageDetails.coachName}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Provider</div>
+                  </div>
+                </div>
+
+                {/* Sessions list */}
+                <div>
+                  <h3 className="font-semibold mb-3">Session Schedule</h3>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {packageDetails.sessions?.map((session, index) => (
+                      <Card key={session.id} className="p-3" data-testid={`session-card-${index}`}>
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1">
+                            <div className="font-medium">Session {index + 1}</div>
+                            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(session.date).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {session.startTime} - {session.endTime}
+                              </div>
+                              {session.location && (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {session.location}
+                                </div>
+                              )}
+                            </div>
+                            {session.notes && (
+                              <div className="mt-2 text-sm text-muted-foreground">
+                                {session.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Booking button */}
+                <div className="flex justify-between items-center pt-4 border-t">
+                  <div>
+                    <div className="text-2xl font-bold">${packageDetails.price}</div>
+                    {packageDetails.allowLateJoin && (
+                      <div className="text-sm text-muted-foreground">
+                        Prorated pricing available for late joins
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    size="lg" 
+                    className="bg-primary text-white hover:bg-primary/90"
+                    data-testid="button-book-package"
+                    onClick={() => {
+                      // Navigate to time-bound package checkout
+                      navigate(`/time-bound-package-checkout?packageId=${packageDetails.id}`);
+                    }}
+                  >
+                    Book Now
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Package details not found</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
