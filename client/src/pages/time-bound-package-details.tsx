@@ -53,7 +53,7 @@ import { useToast } from "../../../hooks/use-toast";
 import { formatInTimeZone } from "date-fns-tz";
 import { Helmet } from "react-helmet";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 // Payment Form Component
 function PaymentForm({
