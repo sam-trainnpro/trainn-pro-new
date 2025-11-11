@@ -1757,7 +1757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/time-bound-packages/:id/book", requireAuth, async (req, res) => {
     try {
       const packageId = parseInt(req.params.id);
-      const { paymentIntentId, stripeFee } = req.body;
+      const { paymentIntentId, quantity = 1, stripeFee, promoCode, appliedCredits = 0 } = req.body;
       
       // Get package with sessions
       const packageWithSessions = await storage.getTimeBoundPackageWithSessions(packageId);
@@ -1777,11 +1777,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You cannot book your own package" });
       }
       
-      // Check capacity
+      // Check capacity for quantity
       const existingBookings = await storage.getTimeBoundPackageBookingsByPackage(packageId);
       const activeBookings = existingBookings.filter(b => b.status === 'active');
-      if (activeBookings.length >= (pkg.capacity || 999)) {
-        return res.status(400).json({ message: "Package is fully booked" });
+      if (activeBookings.length + quantity > (pkg.capacity || 999)) {
+        return res.status(400).json({ message: "Not enough spots available" });
       }
       
       // Calculate prorated pricing if late join is allowed
@@ -1789,62 +1789,359 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const futureSessions = sessions.filter(s => new Date(s.startTime) > now);
       const sessionsRemaining = futureSessions.length;
       
-      let finalPrice = pkg.price;
+      let pricePerSpot = pkg.price;
       if (pkg.allowLateJoin && sessionsRemaining < pkg.totalSessions) {
-        // Prorated price based on remaining sessions
-        finalPrice = (pkg.price / pkg.totalSessions) * sessionsRemaining;
+        pricePerSpot = (pkg.price / pkg.totalSessions) * sessionsRemaining;
       } else if (!pkg.allowLateJoin && sessionsRemaining < pkg.totalSessions) {
         return res.status(400).json({ message: "Cannot join after program has started" });
       }
       
-      // Calculate fees (Stripe fee comes from frontend, platform fee is 15%)
+      // Get promo code data if provided
+      let promoCodeRecord = null;
+      let totalDiscount = 0;
+      let totalSubsidy = 0;
+      
+      if (promoCode) {
+        const validation = await storage.validatePromoCodeForPackage(promoCode, req.user.id, packageId, quantity);
+        if (validation.valid && validation.promoCode) {
+          promoCodeRecord = validation.promoCode;
+          const baseAmountCents = Math.round(pricePerSpot * quantity * 100);
+          const discountCalc = await storage.calculateDiscount(promoCodeRecord, baseAmountCents);
+          totalDiscount = discountCalc.discountAmount;
+          totalSubsidy = discountCalc.subsidyAmount;
+        }
+      }
+      
+      // Deduct credits if used
+      if (appliedCredits > 0) {
+        await storage.deductUserCredits(
+          req.user.id,
+          appliedCredits,
+          `Applied to time-bound package: ${pkg.name}`
+        );
+      }
+      
+      // Create booking(s) for each quantity
+      const bookings = [];
       const stripeFeeDecimal = stripeFee || 0;
-      const netAmount = finalPrice - stripeFeeDecimal;
-      const platformFee = netAmount * 0.15;
-      const providerPayout = netAmount - platformFee;
+      const stripeFeePerSpot = stripeFeeDecimal / quantity;
       
-      // Create the booking
-      const booking = await storage.createTimeBoundPackageBooking({
-        packageId: pkg.id,
-        userId: req.user.id,
-        totalPrice: finalPrice.toString(),
-        originalPrice: pkg.price.toString(),
-        sessionsAtBooking: sessionsRemaining,
-        totalSessions: pkg.totalSessions,
-        currency: 'usd',
-        paymentIntentId,
-        paymentStatus: 'completed',
-        stripeFee: stripeFeeDecimal.toString(),
-        netAmount: netAmount.toString(),
-        platformFee: platformFee.toString(),
-        providerPayout: providerPayout.toString(),
-        sessionsCompleted: 0,
-        status: 'active'
+      for (let i = 0; i < quantity; i++) {
+        const netAmount = pricePerSpot - stripeFeePerSpot;
+        const platformFee = netAmount * 0.15;
+        const providerPayout = netAmount - platformFee;
+        
+        const booking = await storage.createTimeBoundPackageBooking({
+          packageId: pkg.id,
+          userId: req.user.id,
+          totalPrice: pricePerSpot.toString(),
+          originalPrice: pkg.price.toString(),
+          sessionsAtBooking: sessionsRemaining,
+          totalSessions: pkg.totalSessions,
+          currency: 'usd',
+          paymentIntentId,
+          paymentStatus: 'completed',
+          stripeFee: stripeFeePerSpot.toString(),
+          netAmount: netAmount.toString(),
+          platformFee: platformFee.toString(),
+          providerPayout: providerPayout.toString(),
+          sessionsCompleted: 0,
+          status: 'active'
+        });
+        
+        bookings.push(booking);
+        
+        // Record promo code usage (only once for first booking)
+        if (promoCodeRecord && i === 0) {
+          await storage.recordPromoCodeUsage({
+            promoCodeId: promoCodeRecord.id,
+            userId: req.user.id,
+            bookingId: null,
+            packageId: pkg.id,
+            usedAt: new Date(),
+            discountAmount: Math.round(totalDiscount / quantity),
+            subsidyAmount: Math.round(totalSubsidy / quantity)
+          });
+        }
+        
+        // Create scheduled payout (2 days after booking)
+        const scheduledPayoutDate = new Date();
+        scheduledPayoutDate.setDate(scheduledPayoutDate.getDate() + 2);
+        
+        // Platform subsidy covers discount and credits used (per spot)
+        const platformSubsidyPerSpot = Math.round((totalDiscount + appliedCredits) / quantity);
+        const coachPayoutWithSubsidy = Math.round(providerPayout * 100) + platformSubsidyPerSpot;
+        
+        await storage.createScheduledPayout({
+          classPackageId: pkg.id,
+          coachId: pkg.coachId,
+          customerId: req.user.id,
+          stripePaymentIntentId: paymentIntentId,
+          amountCents: Math.round(pricePerSpot * 100),
+          stripeFee: Math.round(stripeFeePerSpot * 100),
+          netAmount: Math.round(netAmount * 100),
+          coachPayout: coachPayoutWithSubsidy,
+          platformFee: Math.round(platformFee * 100) - platformSubsidyPerSpot,
+          payoutType: 'package_purchase',
+          scheduledPayoutDate,
+          status: 'scheduled'
+        });
+      }
+      
+      // Send confirmation emails
+      try {
+        const coach = await storage.getUser(pkg.coachId);
+        if (coach) {
+          const { sendPackagePurchaseConfirmation, sendPackagePurchaseNotification } = await import('./email');
+          
+          const totalPaid = (pricePerSpot * quantity) - (totalDiscount / 100) - (appliedCredits / 100);
+          
+          const pricingDetails = {
+            originalPrice: pricePerSpot * quantity,
+            discountAmount: totalDiscount / 100,
+            finalAmount: totalPaid,
+            stripeFee: stripeFeeDecimal,
+            appliedCredits: appliedCredits / 100
+          };
+          
+          // Customer confirmation
+          await sendPackagePurchaseConfirmation({
+            packagePurchase: { id: bookings[0].id, quantity } as any,
+            packageDetails: pkg,
+            customer: req.user,
+            coach,
+            pricingDetails
+          });
+          
+          // Coach notification
+          const providerPayoutTotal = bookings.reduce((sum, b) => sum + parseFloat(b.providerPayout), 0);
+          await sendPackagePurchaseNotification({
+            packagePurchase: { id: bookings[0].id, quantity } as any,
+            packageDetails: pkg,
+            customer: req.user,
+            coach,
+            pricingDetails: {
+              coachPayout: providerPayoutTotal,
+              totalAmount: pricePerSpot * quantity
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error("Error sending package booking emails:", emailError);
+      }
+      
+      res.status(201).json({
+        success: true,
+        booking: bookings[0],
+        message: `Successfully booked ${quantity} spot(s) in ${pkg.name}`
       });
-      
-      // Create scheduled payout (2 days after booking)
-      const scheduledPayoutDate = new Date();
-      scheduledPayoutDate.setDate(scheduledPayoutDate.getDate() + 2);
-      
-      await storage.createScheduledPayout({
-        classPackageId: pkg.id,
-        coachId: pkg.coachId,
-        customerId: req.user.id,
-        stripePaymentIntentId: paymentIntentId,
-        amountCents: Math.round(finalPrice * 100),
-        stripeFee: Math.round(stripeFeeDecimal * 100),
-        netAmount: Math.round(netAmount * 100),
-        coachPayout: Math.round(providerPayout * 100),
-        platformFee: Math.round(platformFee * 100),
-        payoutType: 'package_purchase',
-        scheduledPayoutDate,
-        status: 'scheduled'
-      });
-      
-      res.status(201).json(booking);
     } catch (error) {
       console.error("Error booking time_bound package:", error);
       res.status(500).json({ message: "Failed to book package" });
+    }
+  });
+
+  // Free booking for time-bound packages (promo codes or credits covering full cost)
+  app.post("/api/time-bound-packages/free-booking", requireAuth, async (req, res) => {
+    try {
+      const { packageId, quantity = 1, promoCode, appliedCredits = 0 } = req.body;
+      
+      if (!packageId) {
+        return res.status(400).json({ message: "Package ID is required" });
+      }
+      
+      // Get package with sessions
+      const packageWithSessions = await storage.getTimeBoundPackageWithSessions(parseInt(packageId));
+      if (!packageWithSessions) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      const { package: pkg, sessions } = packageWithSessions;
+      
+      // Verify it's a time_bound package
+      if (pkg.packageType !== 'time_bound') {
+        return res.status(400).json({ message: "Package is not a time_bound package" });
+      }
+      
+      // Check if user is trying to book their own package
+      if (pkg.coachId === req.user.id) {
+        return res.status(400).json({ message: "You cannot book your own package" });
+      }
+      
+      // Check capacity for quantity
+      const existingBookings = await storage.getTimeBoundPackageBookingsByPackage(parseInt(packageId));
+      const activeBookings = existingBookings.filter(b => b.status === 'active');
+      if (activeBookings.length + quantity > (pkg.capacity || 999)) {
+        return res.status(400).json({ message: "Not enough spots available" });
+      }
+      
+      // Calculate prorated pricing if late join is allowed
+      const now = new Date();
+      const futureSessions = sessions.filter(s => new Date(s.startTime) > now);
+      const sessionsRemaining = futureSessions.length;
+      
+      let pricePerSpot = pkg.price;
+      if (pkg.allowLateJoin && sessionsRemaining < pkg.totalSessions) {
+        pricePerSpot = (pkg.price / pkg.totalSessions) * sessionsRemaining;
+      } else if (!pkg.allowLateJoin && sessionsRemaining < pkg.totalSessions) {
+        return res.status(400).json({ message: "Cannot join after program has started" });
+      }
+      
+      const totalPrice = pricePerSpot * quantity;
+      const totalPriceCents = Math.round(totalPrice * 100);
+      
+      let promoCodeRecord = null;
+      let discountAmount = 0;
+      let subsidyAmount = 0;
+      
+      // Validate and apply promo code if provided
+      if (promoCode) {
+        const validation = await storage.validatePromoCodeForPackage(promoCode, req.user.id, parseInt(packageId), quantity);
+        if (!validation.valid) {
+          return res.status(400).json({ message: validation.error || "Invalid promo code" });
+        }
+        promoCodeRecord = validation.promoCode!;
+        
+        const discountCalc = await storage.calculateDiscount(promoCodeRecord, totalPriceCents);
+        discountAmount = discountCalc.discountAmount;
+        subsidyAmount = discountCalc.subsidyAmount;
+      }
+      
+      const finalAmount = Math.max(0, totalPriceCents - discountAmount - appliedCredits);
+      
+      if (finalAmount > 0) {
+        return res.status(400).json({ message: "This endpoint is only for free bookings (100% covered by promo or credits)" });
+      }
+      
+      // Deduct credits if used
+      if (appliedCredits > 0) {
+        const userCreditBalance = await storage.getUserCreditBalance(req.user.id);
+        if (userCreditBalance < appliedCredits) {
+          return res.status(400).json({ message: "Insufficient credits" });
+        }
+      }
+      
+      // Create booking(s) for each quantity
+      const bookings = [];
+      for (let i = 0; i < quantity; i++) {
+        const netAmount = pricePerSpot;
+        const platformFee = netAmount * 0.15;
+        const providerPayout = netAmount - platformFee;
+        
+        const booking = await storage.createTimeBoundPackageBooking({
+          packageId: pkg.id,
+          userId: req.user.id,
+          totalPrice: pricePerSpot.toString(),
+          originalPrice: pkg.price.toString(),
+          sessionsAtBooking: sessionsRemaining,
+          totalSessions: pkg.totalSessions,
+          currency: 'usd',
+          paymentIntentId: null,
+          paymentStatus: 'completed',
+          stripeFee: '0',
+          netAmount: netAmount.toString(),
+          platformFee: platformFee.toString(),
+          providerPayout: providerPayout.toString(),
+          sessionsCompleted: 0,
+          status: 'active'
+        });
+        
+        bookings.push(booking);
+        
+        // Record promo code usage if applicable
+        if (promoCodeRecord && i === 0) {
+          await storage.recordPromoCodeUsage({
+            promoCodeId: promoCodeRecord.id,
+            userId: req.user.id,
+            bookingId: null,
+            packageId: pkg.id,
+            usedAt: new Date(),
+            discountAmount: Math.round(discountAmount / quantity),
+            subsidyAmount: Math.round(subsidyAmount / quantity)
+          });
+        }
+        
+        // Deduct credits for each spot
+        if (appliedCredits > 0 && i === 0) {
+          await storage.deductUserCredits(
+            req.user.id,
+            appliedCredits,
+            `Applied to time-bound package: ${pkg.name}`,
+            booking.id
+          );
+        }
+        
+        // Schedule payout with platform subsidy for discounts/credits
+        const scheduledPayoutDate = new Date();
+        scheduledPayoutDate.setDate(scheduledPayoutDate.getDate() + 2);
+        
+        // Platform subsidy covers discount and credits used
+        const platformSubsidy = Math.round((discountAmount + appliedCredits) / quantity);
+        const coachPayoutWithSubsidy = Math.round(providerPayout * 100) + platformSubsidy;
+        
+        await storage.createScheduledPayout({
+          classPackageId: pkg.id,
+          coachId: pkg.coachId,
+          customerId: req.user.id,
+          stripePaymentIntentId: null,
+          amountCents: Math.round(pricePerSpot * 100),
+          stripeFee: 0,
+          netAmount: Math.round(pricePerSpot * 100),
+          coachPayout: coachPayoutWithSubsidy,
+          platformFee: Math.round(platformFee * 100) - platformSubsidy,
+          payoutType: 'package_purchase',
+          scheduledPayoutDate,
+          status: 'scheduled'
+        });
+      }
+      
+      // Send confirmation emails
+      try {
+        const coach = await storage.getUser(pkg.coachId);
+        if (coach) {
+          const { sendPackagePurchaseConfirmation, sendPackagePurchaseNotification } = await import('./email');
+          
+          const pricingDetails = {
+            originalPrice: totalPrice,
+            discountAmount: discountAmount / 100,
+            finalAmount: 0,
+            stripeFee: 0,
+            appliedCredits: appliedCredits / 100
+          };
+          
+          // Customer confirmation
+          await sendPackagePurchaseConfirmation({
+            packagePurchase: { id: bookings[0].id, quantity } as any,
+            packageDetails: pkg,
+            customer: req.user,
+            coach,
+            pricingDetails
+          });
+          
+          // Coach notification
+          await sendPackagePurchaseNotification({
+            packagePurchase: { id: bookings[0].id, quantity } as any,
+            packageDetails: pkg,
+            customer: req.user,
+            coach,
+            pricingDetails: {
+              coachPayout: (providerPayout * quantity),
+              totalAmount: totalPrice
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error("Error sending free package booking emails:", emailError);
+      }
+      
+      res.json({
+        success: true,
+        message: `Successfully booked ${quantity} spot(s) in ${pkg.name}`,
+        booking: bookings[0]
+      });
+    } catch (error: any) {
+      console.error("Free time-bound package booking error:", error);
+      res.status(500).json({ message: error.message });
     }
   });
 
@@ -2311,26 +2608,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validation = await storage.validatePromoCode(promoCode, req.user!.id, classId);
         if (validation.valid && validation.promoCode) {
           promoCodeData = validation.promoCode;
-          console.log(`Promo code ${promoCode} metadata stored`);
         }
       }
       
       // Store credits applied for metadata (frontend already deducted from amount)
       if (useCredits && appliedCredits > 0) {
         creditsApplied = appliedCredits; // Store in cents for metadata
-        console.log(`Credits metadata stored: ${appliedCredits} cents ($${(appliedCredits/100).toFixed(2)})`);
       }
-      
-      console.log(`🔥 BACKEND PAYMENT INTENT Creation:`, {
-        originalPrice: `$${originalClassPrice.toFixed(2)}`,
-        finalAmountToCharge: `$${finalAmount.toFixed(2)}`,
-        useCredits,
-        appliedCredits: `${appliedCredits} cents ($${(appliedCredits/100).toFixed(2)})`,
-        promoCode: promoCode || 'none',
-        userId: req.user!.id,
-        classId,
-        timestamp: new Date().toISOString()
-      });
       
       // Check if user already has confirmed bookings for this class
       const userBookings = await storage.getUserBookings(req.user.id);
@@ -2644,7 +2928,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Apply credits for credit-only free booking
         await storage.applyCreditsToBooking(req.user.id, originalAmount, booking.id);
-        console.log(`✅ Applied ${originalAmount} cents in credits for free booking ${booking.id}`);
       }
       
       // Create scheduled payout for coach (always needed when booking is confirmed)
@@ -2659,20 +2942,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Promo code with platform_subsidized = false and 100% discount = $0 for coach
           coachPayout = 0;
           payoutType = 'promo_non_subsidized';
-          console.log(`🚫 Promo code ${promoCode} is not platform subsidized - coach gets $0`);
         } else {
           // Platform subsidizes the discount or credit-only booking
           coachPayout = Math.round(amountCents * 0.85); // 85% of class price
           payoutType = 'fully_subsidized_booking';
-          console.log(`🏦 Creating fully subsidized payout for coach ${classDetails.coachId}`);
         }
         
         // Calculate payout date: 2 days after class end time
         const classEndTime = new Date(classDetails.endTime || classDetails.startTime);
         const payoutDate = new Date(classEndTime);
         payoutDate.setDate(payoutDate.getDate() + 2);
-        
-        console.log(`Amount: $${(amountCents / 100).toFixed(2)}, Coach payout: $${(coachPayout / 100).toFixed(2)}`);
         
         await storage.createScheduledPayout({
           bookingId: booking.id,
@@ -2688,12 +2967,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           payoutType: payoutType,
           scheduledPayoutDate: payoutDate
         });
-        
-        if (coachPayout > 0) {
-          console.log(`✅ Scheduled payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
-        } else {
-          console.log(`✅ Scheduled $0 payout to coach ${classDetails.coachId} (non-subsidized promo code)`);
-        }
       }
       
       // Send confirmation email
@@ -2901,9 +3174,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const payoutDate = new Date(classEndTime);
         payoutDate.setDate(payoutDate.getDate() + 2);
         
-        console.log(`🏦 Creating payout for package booking - coach ${classDetails.coachId}`);
-        console.log(`Class price: $${(originalAmount / 100).toFixed(2)}, Package per-class payout: $${(coachPayout / 100).toFixed(2)}`);
-        
         await storage.createScheduledPayout({
           bookingId: booking.id,
           classId: parseInt(classId),
@@ -2918,8 +3188,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           payoutType: 'package_usage',
           scheduledPayoutDate: payoutDate
         });
-        
-        console.log(`✅ Scheduled package payout for $${(coachPayout / 100).toFixed(2)} to coach ${classDetails.coachId}`);
       }
       
       // Send confirmation email
@@ -2941,18 +3209,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pricingDetails: pricingDetails
           });
           
-          // DEBUG: Log package data before sending email
-          console.log('📧 [ROUTE DEBUG] userPackage.providerPerClassAmount:', userPackage.providerPerClassAmount);
-          console.log('📧 [ROUTE DEBUG] parseFloat result:', parseFloat(userPackage.providerPerClassAmount || '0'));
-          console.log('📧 [ROUTE DEBUG] enrichedUserPackage.packageDetails.title:', enrichedUserPackage.packageDetails.title);
-          console.log('📧 [ROUTE DEBUG] userPackage object:', JSON.stringify(userPackage, null, 2));
-          
           const packageInfoForEmail = {
             isPackageBooking: true,
             perClassAmount: parseFloat(userPackage.providerPerClassAmount || '0'),
             packageTitle: enrichedUserPackage.packageDetails.title
           };
-          console.log('📧 [ROUTE DEBUG] packageInfoForEmail:', JSON.stringify(packageInfoForEmail, null, 2));
           
           // Send notification to coach with package information
           await sendNewBookingNotificationToCoach(
@@ -3007,15 +3268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paymentIntentId, classId, quantity = 1, appliedCredits = 0 } = req.body;
       
-      console.log("=== PAYMENT CONFIRMATION STARTED ===");
-      console.log("Payment Intent ID:", paymentIntentId);
-      console.log("Class ID:", classId);
-      console.log("Quantity:", quantity);
-      console.log("Applied Credits:", appliedCredits);
-      console.log("User:", req.user.id, req.user.email);
-      
       if (!paymentIntentId || !classId) {
-        console.log("Missing required fields - paymentIntentId:", paymentIntentId, "classId:", classId);
         return res.status(400).json({ message: "Missing required fields" });
       }
       
@@ -3043,10 +3296,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (paymentIntent.payment_method) {
             const paymentMethodObj = await stripe.paymentMethods.retrieve(paymentIntent.payment_method as string);
             paymentMethod = paymentMethodObj.type || "stripe";
-            console.log("Detected payment method:", paymentMethod);
           }
         } catch (stripeError) {
-          console.log("Could not retrieve payment method from Stripe, using default:", stripeError);
+          // Use default payment method
         }
       }
 
@@ -3060,24 +3312,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const promoCode = await storage.getPromoCodeByCode(paymentIntent.metadata.promoCode);
             if (promoCode) {
               promoCodeUsed = promoCode;
-              console.log(`Promo code ${promoCode.code} was used in this payment`);
             }
           }
         } catch (stripeError) {
-          console.log("Could not retrieve promo code from payment intent:", stripeError);
+          // Could not retrieve promo code
         }
       }
 
       // Create new confirmed booking directly (no pending status)
-      console.log("Creating booking with data:", {
-        userId: req.user.id,
-        classId: parseInt(classId),
-        quantity: quantity,
-        status: "confirmed",
-        stripePaymentIntentId: paymentIntentId,
-        paymentMethod: paymentMethod
-      });
-      
       const booking = await storage.createBooking({
         userId: req.user.id,
         classId: parseInt(classId),
@@ -3091,10 +3333,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Record promo code usage if one was used
       if (promoCodeUsed && paymentIntent) {
         try {
-          console.log("=== PROMO CODE USAGE RECORDING ===");
-          console.log("Payment Intent Metadata:", paymentIntent.metadata);
-          console.log("Payment Intent Amount (charged):", paymentIntent.amount);
-          
           const originalClassPrice = parseFloat(paymentIntent.metadata?.originalAmount || '0') * 100; // in cents
           
           // Calculate the actual discount applied to the class price
@@ -3119,18 +3357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Subsidy is the difference in coach payouts
             subsidyAmount = originalCoachPayout - discountedCoachPayout;
-            
-            console.log("=== SUBSIDY CALCULATION ===");
-            console.log("Original class price (cents):", originalClassPrice);
-            console.log("Discounted class price (cents):", discountedPrice);
-            console.log("Original coach payout (cents):", originalCoachPayout);
-            console.log("Discounted coach payout (cents):", discountedCoachPayout);
-            console.log("Platform subsidy needed (cents):", subsidyAmount);
           }
-
-          console.log("Original Class Price (cents):", originalClassPrice);
-          console.log("Actual Discount Applied (cents):", actualDiscountAmount);
-          console.log("Platform Subsidy Amount (cents):", subsidyAmount);
 
           await storage.recordPromoCodeUsage({
             promoCodeId: promoCodeUsed.id,
@@ -3139,8 +3366,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             discountAmount: actualDiscountAmount,
             subsidyAmount
           });
-
-          console.log(`Recorded promo code usage: ${promoCodeUsed.code}, discount: $${actualDiscountAmount/100}, subsidy: $${subsidyAmount/100}`);
         } catch (promoError) {
           console.error("Error recording promo code usage:", promoError);
         }
@@ -3158,54 +3383,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isFirstPaidBooking = completedBookings.length === 0; // This booking will be their first
       const hasCreditsToApply = userCreditBalance > 0;
       
-      console.log("=== CREDIT DEDUCTION ANALYSIS ===");
-      console.log("User ID:", req.user.id, "Email:", req.user.email);
-      console.log("Is referral user:", isFirstTimeReferralUser);
-      console.log("Is first paid booking:", isFirstPaidBooking);
-      console.log("Credit balance:", userCreditBalance, "cents");
-      console.log("Applied credits from frontend:", appliedCredits, "cents");
-      
       // Process credits that were applied by frontend OR auto-apply for first-time referral users
       let actualCreditsToDeduct = appliedCredits;
       
       // If frontend applied credits, use those
       if (appliedCredits > 0) {
-        console.log("✅ Using credits applied by frontend:", appliedCredits, "cents");
         actualCreditsToDeduct = appliedCredits;
       }
       // Otherwise, auto-apply for first-time referral users
       else if (isFirstTimeReferralUser && isFirstPaidBooking && hasCreditsToApply) {
         // Frontend didn't apply credits but user should get them automatically
         actualCreditsToDeduct = Math.min(userCreditBalance, paymentIntent.amount); // Apply up to full amount or balance
-        console.log("🎯 AUTO-APPLYING referral credits:", actualCreditsToDeduct, "cents");
       }
 
       // Process credit deduction if credits should be applied
       if (actualCreditsToDeduct > 0) {
         try {
-          console.log("=== CREDIT DEDUCTION & PLATFORM SUBSIDY ===");
-          console.log("Booking ID:", booking.id);
-          console.log("Deducting credits:", actualCreditsToDeduct, "cents");
-          
           // Check user balance before deduction
           const balanceBefore = await storage.getUserCreditBalance(req.user.id);
-          console.log("User credit balance BEFORE deduction:", balanceBefore, "cents");
           
           await storage.applyCreditsToBooking(req.user.id, actualCreditsToDeduct, booking.id);
-          console.log(`✅ Successfully deducted ${actualCreditsToDeduct} cents in credits for booking ${booking.id}`);
           
           // Verify balance after deduction
           const balanceAfter = await storage.getUserCreditBalance(req.user.id);
-          console.log("User credit balance AFTER deduction:", balanceAfter, "cents");
-          console.log("Balance difference:", balanceBefore - balanceAfter, "cents (should equal applied credits)");
           
           // Ensure credit deduction worked properly
           if ((balanceBefore - balanceAfter) !== actualCreditsToDeduct) {
             console.error("⚠️ WARNING: Credit deduction mismatch!");
             console.error("Expected difference:", actualCreditsToDeduct);
             console.error("Actual difference:", balanceBefore - balanceAfter);
-          } else {
-            console.log("✅ Credit deduction verified successfully");
           }
           
           // CREATE PLATFORM SUBSIDY for referral credits (like promo codes)
@@ -3233,29 +3439,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Platform subsidy = difference in coach payouts (what Trainn pays to make coach whole)
             const subsidyAmount = originalCoachPayout - discountedCoachPayout;
             
-            console.log("=== REFERRAL CREDIT SUBSIDY CALCULATION ===");
-            console.log("Original class price (cents):", originalBaseCents);
-            console.log("Original + 5% fee (cents):", originalWithFeeCents);
-            console.log("Original Stripe fee (cents):", originalStripeFee);
-            console.log("Original net after Stripe (cents):", originalNetCents);
-            console.log("Original coach payout 85% (cents):", originalCoachPayout);
-            console.log("---");
-            console.log("Credits applied (cents):", actualCreditsToDeduct);
-            console.log("Discounted base price (cents):", discountedBaseCents);
-            console.log("Discounted + 5% fee (cents):", discountedWithFeeCents);
-            console.log("Discounted Stripe fee (cents):", discountedStripeFee);
-            console.log("Discounted net after Stripe (cents):", discountedNetCents);
-            console.log("Discounted coach payout 85% (cents):", discountedCoachPayout);
-            console.log("---");
-            console.log("Platform subsidy needed (cents):", subsidyAmount);
-            console.log("Coach gets: Original payout + Platform subsidy =", originalCoachPayout, "+", subsidyAmount, "=", originalCoachPayout + subsidyAmount, "cents");
-            
             // Note: Credit subsidy calculation is now handled in storage.calculateCreditSubsidyForBooking()
             // This ensures coaches get paid the full amount when credits are used
-            if (subsidyAmount > 0) {
-              console.log(`✅ Platform will subsidize $${(subsidyAmount/100).toFixed(2)} for referral credit usage`);
-              console.log(`   Coach will receive full payout despite customer using credits`);
-            }
           }
         } catch (creditError) {
           console.error("Error processing credits/subsidy:", creditError);
@@ -3285,8 +3470,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let payoutAmountCents, payoutStripeFee, payoutNetAmount, finalCoachPayout, finalPlatformFee;
             
             if (actualCreditsToDeduct > 0) {
-              console.log("=== CALCULATING SPLIT PAYOUT FOR CREDIT USAGE ===");
-              
               // Get original and reduced amounts
               const originalClassPrice = parseFloat(metadata.originalAmount || '0') * 100; // in cents
               const originalWithFee = Math.round(originalClassPrice * 1.05); // Add 5% service fee
@@ -3303,13 +3486,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Calculate platform subsidy amount
               const platformSubsidyPayout = fullCoachPayout - customerPortionCoachPayout;
-              
-              console.log("Original class price (cents):", originalClassPrice);
-              console.log("Customer paid amount (cents):", customerPaidAmount);
-              console.log("Credits used (cents):", actualCreditsToDeduct);
-              console.log("Customer portion coach payout (cents):", customerPortionCoachPayout);
-              console.log("Platform subsidy payout (cents):", platformSubsidyPayout);
-              console.log("Total coach payout (cents):", fullCoachPayout);
               
               // Create first payout: Customer-paid portion
               await storage.createScheduledPayout({
@@ -3347,11 +3523,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
               }
               
-              console.log(`✅ Created two scheduled payouts:`);
-              console.log(`   Customer portion: $${(customerPortionCoachPayout/100).toFixed(2)}`);
-              console.log(`   Platform subsidy: $${(platformSubsidyPayout/100).toFixed(2)}`);
-              console.log(`   Total coach payout: $${(fullCoachPayout/100).toFixed(2)}`);
-              
             } else {
               // No credits used, use standard calculation
               payoutAmountCents = parseInt(metadata.amount || '0');
@@ -3375,9 +3546,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 scheduledPayoutDate: payoutDate,
                 status: 'scheduled'
               });
-              
-              console.log(`✅ Scheduled payout created for coach ${classItem.coachId}`);
-              console.log(`   Coach payout: $${(finalCoachPayout/100).toFixed(2)}`);
             }
           }
         } catch (error) {
@@ -3515,15 +3683,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const processingFee = packagePrice * 0.05;
       let finalAmount = packagePrice + processingFee;
       
-      console.log(`📦 Package pricing breakdown:`);
-      console.log(`   Package price: $${packagePrice.toFixed(2)}`);
-      console.log(`   Processing fee (5%): $${processingFee.toFixed(2)}`);
-      console.log(`   Total before credits: $${finalAmount.toFixed(2)}`);
-      
       // Apply credits if specified
       if (appliedCredits > 0) {
         finalAmount = Math.max(0, finalAmount - (appliedCredits / 100)); // Credits are in cents
-        console.log(`   After credits: $${finalAmount.toFixed(2)}`);
       }
 
       // If amount is 0 (fully covered by credits), don't create payment intent
@@ -3613,12 +3775,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalAmountCents = stripePaymentIntent ? stripePaymentIntent.amount : Math.round(totalAmountDollarsFromPrice * 100);
       const totalAmountDollars = totalAmountCents / 100;
       
-      console.log(`💰 Payment confirmation breakdown:`);
-      console.log(`   Package price: $${packagePrice.toFixed(2)}`);
-      console.log(`   Processing fee: $${processingFee.toFixed(2)}`);
-      console.log(`   Expected total: $${totalAmountDollarsFromPrice.toFixed(2)}`);
-      console.log(`   Actual charged: $${totalAmountDollars.toFixed(2)}`);
-      
       // Calculate Stripe fee (2.9% + 30¢ for US cards)
       const stripeFee = stripePaymentIntent ? Math.round(totalAmountCents * 0.029 + 30) / 100 : 0;
       const netAmount = totalAmountDollars - stripeFee;
@@ -3690,8 +3846,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           completedAt: null,
           failureReason: null
         });
-
-        console.log(`💰 Created scheduled payout (ID: ${scheduledPayout.id}) for package purchase - Amount: $${firstProviderPayout.toFixed(2)} to coach ${packageData.coachId}, scheduled for: ${scheduledPayoutDate.toISOString()}`);
       } catch (scheduledPayoutError: any) {
         console.error("❌ Error creating scheduled payout for package purchase:", scheduledPayoutError);
         // Don't fail the entire request, but log the error
@@ -3701,7 +3855,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (appliedCredits > 0) {
         try {
           await storage.addCredit(req.user.id, -appliedCredits, `Package purchase: ${packageData.title}`);
-          console.log(`💳 Applied ${appliedCredits} credits for package purchase`);
         } catch (error) {
           console.error("Error applying credits:", error);
         }
@@ -3876,7 +4029,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Time-Bound Package Payment API endpoints
   app.post("/api/time-bound-package-payment/create-intent", requireAuth, async (req, res) => {
     try {
-      const { packageId } = req.body;
+      const { packageId, quantity = 1, promoCode, useCredits = false, appliedCredits = 0 } = req.body;
       
       if (!packageId) {
         return res.status(400).json({ message: "Missing required parameter: packageId" });
@@ -3889,7 +4042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const pkg = packageData.package;
-      let finalAmount = pkg.price || 0;
+      let pricePerSpot = pkg.price || 0;
       
       // Calculate prorated price if late join is allowed
       if (pkg.allowLateJoin && packageData.sessions) {
@@ -3899,33 +4052,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const totalSessions = packageData.sessions.length;
         
         if (remainingSessions < totalSessions && remainingSessions > 0) {
-          // Prorate the price based on remaining sessions
-          finalAmount = (pkg.price || 0) * (remainingSessions / totalSessions);
-          console.log(`📦 Prorated pricing for package ${packageId}:`);
-          console.log(`   Total sessions: ${totalSessions}`);
-          console.log(`   Remaining sessions: ${remainingSessions}`);
-          console.log(`   Original price: $${pkg.price}`);
-          console.log(`   Prorated price: $${finalAmount.toFixed(2)}`);
+          pricePerSpot = (pkg.price || 0) * (remainingSessions / totalSessions);
         }
       }
       
-      // Add 5% processing fee
-      const processingFee = finalAmount * 0.05;
-      finalAmount = finalAmount + processingFee;
+      // Calculate base amount for total quantity
+      let baseAmount = pricePerSpot * quantity;
+      const baseAmountCents = Math.round(baseAmount * 100);
+      let finalAmountCents = baseAmountCents;
       
-      console.log(`📦 Time-bound package pricing breakdown:`);
-      console.log(`   Package price: $${(finalAmount - processingFee).toFixed(2)}`);
-      console.log(`   Processing fee (5%): $${processingFee.toFixed(2)}`);
-      console.log(`   Total: $${finalAmount.toFixed(2)}`);
+      let promoCodeData = null;
+      let discountAmount = 0;
+      let subsidyAmount = 0;
+      
+      // Validate and apply promo code if provided
+      if (promoCode) {
+        const validation = await storage.validatePromoCodeForPackage(promoCode, req.user.id, parseInt(packageId), quantity);
+        if (!validation.valid) {
+          return res.status(400).json({ message: validation.error || "Invalid promo code" });
+        }
+        promoCodeData = validation.promoCode;
+        
+        const discountCalc = await storage.calculateDiscount(promoCodeData, baseAmountCents);
+        discountAmount = discountCalc.discountAmount;
+        subsidyAmount = discountCalc.subsidyAmount;
+        finalAmountCents -= discountAmount;
+      }
+      
+      // Apply credits if requested
+      if (useCredits && appliedCredits > 0) {
+        const userCreditBalance = await storage.getUserCreditBalance(req.user.id);
+        if (userCreditBalance < appliedCredits) {
+          return res.status(400).json({ message: "Insufficient credits" });
+        }
+        finalAmountCents = Math.max(0, finalAmountCents - appliedCredits);
+      }
+      
+      // Calculate 5% processing fee on amount after discounts/credits
+      const subtotalCents = finalAmountCents; // Amount before processing fee
+      const processingFeeCents = Math.round(subtotalCents * 0.05);
+      const totalAmountCents = subtotalCents + processingFeeCents;
+      
+      // If final amount is $0, don't create payment intent
+      if (totalAmountCents <= 0) {
+        return res.json({
+          clientSecret: null,
+          subtotal: 0,
+          stripeFee: 0,
+          totalAmount: 0,
+          unitPriceCents: Math.round(pricePerSpot * 100), // Convert to cents for consistency
+          requiresPayment: false,
+          message: "No payment required - booking covered by promo/credits"
+        });
+      }
 
       // Create Stripe PaymentIntent
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(finalAmount * 100), // Convert to cents
+        amount: totalAmountCents,
         currency: "usd",
         metadata: {
           packageId: packageId.toString(),
           packageType: 'time_bound',
           userId: req.user.id.toString(),
+          quantity: quantity.toString(),
+          promoCode: promoCode || '',
+          promoCodeId: promoCodeData?.id?.toString() || '',
+          discountApplied: promoCodeData ? 'true' : 'false',
+          appliedCredits: appliedCredits.toString(),
+          creditsUsed: useCredits ? 'true' : 'false',
+          originalAmount: baseAmountCents.toString(),
+          subsidyAmount: subsidyAmount.toString()
         },
         automatic_payment_methods: {
           enabled: true,
@@ -3934,8 +4130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         clientSecret: paymentIntent.client_secret,
-        finalAmount: finalAmount,
-        proratedAmount: pkg.allowLateJoin ? (finalAmount - processingFee) : null,
+        subtotal: subtotalCents,
+        stripeFee: processingFeeCents,
+        totalAmount: totalAmountCents,
+        unitPriceCents: Math.round(pricePerSpot * 100), // Convert to cents for consistency
         requiresPayment: true
       });
 
@@ -4458,12 +4656,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log("=== TESTING SUBSIDY CALCULATION ===");
-      console.log("Booking ID:", bookingId);
-      
       // Get platform subsidy for this booking
       const subsidyAmount = await storage.getPlatformSubsidyForBooking(bookingId);
-      console.log("Platform subsidy calculated:", subsidyAmount, "cents");
       
       // Get booking details for context
       const booking = await storage.getBooking(bookingId);
@@ -4615,7 +4809,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       switch (event.type) {
         case 'payment_intent.succeeded':
           const paymentIntent = event.data.object;
-          console.log(`PaymentIntent ${paymentIntent.id} succeeded`);
           
           // Create confirmed booking directly (no pending status)
           if (paymentIntent.metadata && paymentIntent.metadata.classId && paymentIntent.metadata.userId) {
@@ -4677,7 +4870,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
           
         case 'payment_intent.payment_failed':
-          console.log(`Payment failed: ${event.data.object.id}`);
           break;
           
         default:
@@ -6094,6 +6286,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error validating promo code:", error);
+      res.status(500).json({ message: "Failed to validate promo code" });
+    }
+  });
+
+  // Validate promo code for package booking
+  app.post("/api/promo-codes/validate-package", requireAuth, async (req, res) => {
+    try {
+      const { code, packageId, quantity = 1 } = req.body;
+      
+      if (!code || !packageId) {
+        return res.status(400).json({ message: "Code and package ID are required" });
+      }
+
+      const validation = await storage.validatePromoCodeForPackage(code, req.user!.id, packageId, quantity);
+      
+      if (!validation.valid) {
+        console.log(`Promo code validation failed for ${code}: ${validation.error}`);
+        return res.status(400).json({ 
+          valid: false, 
+          error: validation.error 
+        });
+      }
+
+      // Get package to calculate discount
+      const packageItem = await storage.getPackage(packageId);
+      if (!packageItem) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      // Calculate discount based on total price (package price * quantity)
+      const totalPrice = packageItem.price * quantity * 100; // Convert to cents
+      const discountCalc = await storage.calculateDiscount(validation.promoCode!, totalPrice);
+      
+      res.json({
+        valid: true,
+        promoCode: validation.promoCode,
+        discountAmount: discountCalc.discountAmount,
+        finalAmount: discountCalc.finalAmount,
+        subsidyAmount: discountCalc.subsidyAmount
+      });
+    } catch (error: any) {
+      console.error("Error validating promo code for package:", error);
       res.status(500).json({ message: "Failed to validate promo code" });
     }
   });
