@@ -289,7 +289,6 @@ export default function TimeBoundPackageDetailsPage() {
   const [quantity, setQuantity] = useState(1);
   
   // Payment state
-  const [showPayment, setShowPayment] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
   const [unitPriceCents, setUnitPriceCents] = useState<number | null>(null);
   const [finalAmount, setFinalAmount] = useState(0);
@@ -371,33 +370,9 @@ export default function TimeBoundPackageDetailsPage() {
     return formatInTimeZone(date, timeZone, "h:mm a") + " PT";
   };
 
-  const handleBookPackage = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to book this package",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
-    }
-    
-    // Show payment section and initialize payment
-    setShowPayment(true);
-    
-    // Scroll to payment section
-    setTimeout(() => {
-      const paymentSection = document.getElementById('payment-section');
-      if (paymentSection) {
-        paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
-    
-    // Initialize payment intent
-    await initializePayment();
-  };
-  
   const initializePayment = async () => {
+    if (!user || !packageDetails) return;
+    
     try {
       setIsInitializingPayment(true);
       
@@ -435,7 +410,6 @@ export default function TimeBoundPackageDetailsPage() {
         description: err.message || "Failed to initialize payment. Please try again.",
         variant: "destructive",
       });
-      setShowPayment(false);
     } finally {
       setIsInitializingPayment(false);
     }
@@ -512,12 +486,19 @@ export default function TimeBoundPackageDetailsPage() {
     setAppliedCredits(useCredits ? creditsToApply : 0);
   }, [useCredits, creditBalance, packageDetails, quantity, discountAmount]);
 
-  // Reinitialize payment when credits or promo changes
+  // Initialize payment when package loads
   useEffect(() => {
-    if (showPayment && packageDetails) {
+    if (packageDetails && user) {
       initializePayment();
     }
-  }, [appliedCredits, useCredits, appliedPromoCode]);
+  }, [packageDetails, user]);
+
+  // Reinitialize payment when quantity, credits, or promo changes
+  useEffect(() => {
+    if (packageDetails && user && (appliedCredits || appliedPromoCode || quantity)) {
+      initializePayment();
+    }
+  }, [appliedCredits, useCredits, appliedPromoCode, quantity]);
 
   const displayName = packageDetails?.displayBusinessName && packageDetails?.coachBusinessName 
     ? packageDetails.coachBusinessName 
@@ -926,29 +907,31 @@ export default function TimeBoundPackageDetailsPage() {
                         </div>
                       )}
                       
-                      <Button 
-                        className="w-full" 
-                        size="lg"
-                        onClick={handleBookPackage}
-                        disabled={isProgramFull || (!isUnlimitedCapacity && spotsRemaining !== null && quantity > spotsRemaining)}
-                        data-testid="button-book-package"
-                      >
-                        {isProgramFull ? 'Program Full' : quantity > 1 ? `Book ${quantity} Spots` : 'Book Package'}
-                      </Button>
-                      
                       {/* Capacity status messaging */}
                       {isProgramFull ? (
-                        <p className="text-sm text-center text-red-600 font-medium">
-                          This program is currently full
-                        </p>
-                      ) : spotsRemaining !== null && spotsRemaining <= 3 && (
-                        <p className="text-sm text-center text-orange-600 font-medium">
-                          Only {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} left!
-                        </p>
-                      )}
+                        <div className="space-y-3">
+                          <Button 
+                            className="w-full" 
+                            size="lg"
+                            disabled={true}
+                            data-testid="button-book-package"
+                          >
+                            Program Full
+                          </Button>
+                          <p className="text-sm text-center text-red-600 font-medium">
+                            This program is currently full
+                          </p>
+                        </div>
+                      ) : spotsRemaining !== null && spotsRemaining <= 3 ? (
+                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          <p className="text-sm text-center text-orange-700 font-medium">
+                            Only {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} left!
+                          </p>
+                        </div>
+                      ) : null}
 
-                      {/* Payment Section */}
-                      {showPayment && (
+                      {/* Payment Details Section */}
+                      {!isProgramFull && user && (
                         <div id="payment-section" className="space-y-4 pt-4 border-t">
                           {isInitializingPayment ? (
                             <div className="py-8 text-center">
@@ -1088,6 +1071,23 @@ export default function TimeBoundPackageDetailsPage() {
                               )}
                             </>
                           )}
+                        </div>
+                      )}
+
+                      {/* Sign-in prompt for unauthenticated users */}
+                      {!user && !isProgramFull && (
+                        <div className="space-y-3 pt-4 border-t">
+                          <p className="text-sm text-muted-foreground text-center">
+                            Sign in to view pricing and book this package
+                          </p>
+                          <Button 
+                            className="w-full" 
+                            size="lg"
+                            onClick={() => navigate("/auth")}
+                            data-testid="button-sign-in"
+                          >
+                            Sign In to Book
+                          </Button>
                         </div>
                       )}
                       
