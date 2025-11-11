@@ -189,6 +189,13 @@ export interface IStorage {
   createBookingSubsidy(subsidyData: InsertBookingSubsidy): Promise<BookingSubsidy>;
   getPlatformSubsidyForBooking(bookingId: number): Promise<number>;
   
+  // Promo Code validation for packages
+  validatePromoCodeForPackage(code: string, userId: number, packageId: number, quantity: number): Promise<{
+    valid: boolean;
+    promoCode?: PromoCode;
+    error?: string;
+  }>;
+  
   // Provider Referral system
   createProviderReferral(referralData: InsertProviderReferral): Promise<ProviderReferral>;
   getProviderReferralByCode(code: string): Promise<ProviderReferral | undefined>;
@@ -2216,6 +2223,85 @@ export class DatabaseStorage implements IStorage {
     const subsidyAmount = promoCode.platformSubsidized ? discountAmount : 0;
 
     return { discountAmount, finalAmount, subsidyAmount };
+  }
+
+  async validatePromoCodeForPackage(code: string, userId: number, packageId: number, quantity: number = 1): Promise<{
+    valid: boolean;
+    promoCode?: PromoCode;
+    error?: string;
+  }> {
+    const promoCode = await this.getPromoCodeByCode(code);
+    
+    if (!promoCode) {
+      return { valid: false, error: "Promo code not found" };
+    }
+
+    if (!promoCode.isActive) {
+      return { valid: false, error: "Promo code is inactive" };
+    }
+
+    if (!promoCode.isApproved) {
+      return { valid: false, error: "Promo code is pending approval" };
+    }
+
+    if (quantity < promoCode.minimumQuantity) {
+      if (promoCode.minimumQuantity === 2) {
+        return { valid: false, error: "This promo code requires at least 2 spots" };
+      } else {
+        return { valid: false, error: `This promo code requires at least ${promoCode.minimumQuantity} spots` };
+      }
+    }
+
+    const now = new Date();
+    if (now < new Date(promoCode.validFrom)) {
+      return { valid: false, error: "Promo code is not yet valid" };
+    }
+
+    if (now > new Date(promoCode.validUntil)) {
+      return { valid: false, error: "Promo code has expired" };
+    }
+
+    if (promoCode.usageLimit && promoCode.usageCount >= promoCode.usageLimit) {
+      return { valid: false, error: "Promo code usage limit reached" };
+    }
+
+    const existingUsage = await db.select()
+      .from(promoCodeUsage)
+      .where(and(
+        eq(promoCodeUsage.promoCodeId, promoCode.id),
+        eq(promoCodeUsage.userId, userId)
+      ))
+      .limit(1);
+
+    if (existingUsage.length > 0) {
+      return { valid: false, error: "You have already used this promo code" };
+    }
+
+    if (promoCode.firstBookingOnly) {
+      const userBookings = await db.select()
+        .from(bookings)
+        .where(eq(bookings.userId, userId))
+        .limit(1);
+
+      if (userBookings.length > 0) {
+        return { valid: false, error: "This promo code is only valid for new customers making their first booking" };
+      }
+    }
+
+    if (promoCode.coachId) {
+      const packageItem = await this.getPackage(packageId);
+      if (!packageItem || packageItem.coachId !== promoCode.coachId) {
+        return { valid: false, error: "This promo code is only valid for specific coach's packages" };
+      }
+    }
+
+    if (promoCode.platformSubsidized && promoCode.budgetLimit) {
+      if (promoCode.budgetUsed >= promoCode.budgetLimit) {
+        return { valid: false, error: "Promo code budget limit reached" };
+      }
+    }
+
+    return { valid: true, promoCode };
   }
 
   async recordPromoCodeUsage(promoCodeUsageData: InsertPromoCodeUsage): Promise<PromoCodeUsage> {

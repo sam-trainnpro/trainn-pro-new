@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useAuth } from "../../../hooks/use-auth-simple";
@@ -15,8 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Helmet } from "react-helmet";
-import { Package, User, Calendar, CheckCircle, CreditCard, Loader2, Clock, MapPin, CalendarDays } from "lucide-react";
+import { Package, User, Calendar, CheckCircle, CreditCard, Loader2, Clock, MapPin, CalendarDays, DollarSign } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -70,16 +73,26 @@ interface TimeBoundPackageDetails {
 // Time-Bound Package Checkout Form component
 const TimeBoundPackageCheckoutForm = ({ 
   packageData, 
+  quantity,
+  appliedPromoCode,
+  discountAmount,
   finalAmount,
-  proratedAmount,
+  unitPriceCents,
   stripeFee,
+  appliedCredits = 0,
+  useCredits = false,
   onPaymentSuccess, 
   setIsBookingSuccess 
 }: { 
   packageData: TimeBoundPackage; 
+  quantity: number;
+  appliedPromoCode?: any;
+  discountAmount: number;
   finalAmount: number;
-  proratedAmount: number | null;
+  unitPriceCents: number | null;
   stripeFee: number;
+  appliedCredits?: number;
+  useCredits?: boolean;
   onPaymentSuccess?: () => void;
   setIsBookingSuccess?: (value: boolean) => void;
 }) => {
@@ -119,7 +132,7 @@ const TimeBoundPackageCheckoutForm = ({
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin + "/time-bound-package-checkout?packageId=" + packageData.id + "&payment_status=success",
+        return_url: window.location.origin + "/time-bound-package-checkout?packageId=" + packageData.id + "&quantity=" + quantity + "&payment_status=success",
       },
       redirect: "if_required",
     });
@@ -133,18 +146,14 @@ const TimeBoundPackageCheckoutForm = ({
       setPaymentStatus("error");
     } else {
       // Payment succeeded, now book the package
-      console.log("=== TIME-BOUND PACKAGE PAYMENT SUCCEEDED ===");
-      console.log("Payment Intent:", paymentIntent);
-      console.log("Payment Intent ID:", paymentIntent?.id);
-      console.log("Package ID:", packageData.id);
-      
       try {
         const bookResponse = await apiRequest("POST", `/api/time-bound-packages/${packageData.id}/book`, {
           paymentIntentId: paymentIntent?.id,
-          stripeFee: stripeFee
+          quantity: quantity,
+          stripeFee: stripeFee,
+          promoCode: appliedPromoCode?.code || null,
+          appliedCredits: appliedCredits
         });
-        
-        console.log("Time-bound package booking response:", bookResponse.status);
         
         if (bookResponse.ok) {
           // Invalidate relevant cache to refresh data
@@ -168,7 +177,6 @@ const TimeBoundPackageCheckoutForm = ({
           throw new Error("Failed to book package");
         }
       } catch (error) {
-        console.error("Package booking error:", error);
         toast({
           title: "Booking Error",
           description: "Payment succeeded but booking failed. Please contact support.",
@@ -227,6 +235,35 @@ const TimeBoundPackageCheckoutForm = ({
         </CardContent>
       </Card>
 
+      {/* Pricing Summary - Uses backend-calculated values (all in cents) */}
+      <div className="space-y-3">
+        <div className="flex justify-between">
+          <span>Package price {quantity > 1 ? `(${quantity} × $${((unitPriceCents || 0) / 100).toFixed(2)})` : ''}</span>
+          <span>${(((unitPriceCents || 0) * quantity) / 100).toFixed(2)}</span>
+        </div>
+        {appliedPromoCode && discountAmount > 0 && (
+          <div className="flex justify-between text-green-600">
+            <span>Discount ({appliedPromoCode.code})</span>
+            <span>-${(discountAmount / 100).toFixed(2)}</span>
+          </div>
+        )}
+        {useCredits && appliedCredits > 0 && (
+          <div className="flex justify-between text-blue-600">
+            <span>Credits Applied</span>
+            <span>-${(appliedCredits / 100).toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <span>Service fee</span>
+          <span>${(stripeFee / 100).toFixed(2)}</span>
+        </div>
+        <Separator />
+        <div className="flex justify-between font-medium">
+          <span>Total</span>
+          <span>${((finalAmount + stripeFee) / 100).toFixed(2)}</span>
+        </div>
+      </div>
+
       <Button 
         type="submit" 
         className="w-full" 
@@ -241,10 +278,14 @@ const TimeBoundPackageCheckoutForm = ({
           </>
         ) : (
           <>
-            Complete Purchase • ${finalAmount.toFixed(2)}
+            Complete Purchase • ${((finalAmount + stripeFee) / 100).toFixed(2)}
           </>
         )}
       </Button>
+      
+      <p className="text-xs text-muted-foreground text-center">
+        By completing this purchase, you agree to our Terms of Service and Privacy Policy.
+      </p>
     </form>
   );
 };
@@ -257,18 +298,36 @@ export default function TimeBoundPackageCheckoutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isBookingSuccess, setIsBookingSuccess] = useState(false);
-  const [proratedAmount, setProratedAmount] = useState<number | null>(null);
+  const [unitPriceCents, setUnitPriceCents] = useState<number | null>(null);
   const [finalAmount, setFinalAmount] = useState(0);
   const [stripeFee, setStripeFee] = useState(0);
+  
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState<any>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  
+  // Account credits state
+  const [appliedCredits, setAppliedCredits] = useState(0);
+  const [useCredits, setUseCredits] = useState(false);
 
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // Get URL parameter for package ID
+  // Get URL parameters for package ID and quantity
   const urlParams = new URLSearchParams(window.location.search);
   const packageId = urlParams.get('packageId') ? parseInt(urlParams.get('packageId')!) : null;
+  const quantity = parseInt(urlParams.get('quantity') || '1');
+  const paymentStatus = urlParams.get('payment_status');
+
+  // Redirect if not logged in
+  if (!user) {
+    navigate("/auth");
+    return null;
+  }
 
   // Fetch package details with sessions
   const { 
@@ -283,47 +342,220 @@ export default function TimeBoundPackageCheckoutPage() {
   const packageData = packageDetails?.package;
   const sessions = packageDetails?.sessions || [];
 
-  // Initialize payment intent when package data is loaded
-  useEffect(() => {
-    if (packageData && user && !clientSecret) {
-      initializePayment();
-    }
-  }, [packageData, user]);
+  // Fetch user credit balance
+  const { data: creditData, refetch: refetchCredits } = useQuery({
+    queryKey: ['/api/credits/balance'],
+    enabled: !!user,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+  
+  const creditBalance = (creditData as { balance?: number })?.balance || 0;
 
-  const initializePayment = async () => {
-    try {
-      setIsLoading(true);
-      
-      const response = await apiRequest("POST", "/api/time-bound-package-payment/create-intent", {
-        packageId: packageData!.id
-      });
-
+  // Free booking mutation for 100% discount promo codes or credits
+  const freeBookingMutation = useMutation({
+    mutationFn: async (data: { packageId: number; quantity: number; promoCode?: string; appliedCredits?: number }) => {
+      const response = await apiRequest("POST", "/api/time-bound-packages/free-booking", data);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to initialize payment");
+        throw new Error(errorData.message || "Failed to book package");
       }
-
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
-      setFinalAmount(data.finalAmount);
-      setProratedAmount(data.proratedAmount);
+      return response.json();
+    },
+    onSuccess: async (result) => {
+      const isCreditsBooking = !result.message?.includes('promo code');
       
-      // Calculate Stripe fee (5% of final amount)
-      const fee = data.finalAmount * 0.05;
-      setStripeFee(fee);
+      // Set success state and navigate
+      setIsBookingSuccess(true);
+      navigate("/bookings?tab=packages");
       
-    } catch (err: any) {
-      console.error("Payment initialization error:", err);
-      setError(err.message || "Failed to initialize payment");
+      // Background toast and cleanup
+      setTimeout(() => {
+        toast({
+          title: "Package booked!",
+          description: isCreditsBooking 
+            ? "Your package booking has been confirmed with account credits."
+            : "Your package booking has been confirmed with promo code.",
+        });
+        
+        queryClient.removeQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: ['/api/time-bound-packages'] });
+        
+        if (isCreditsBooking) {
+          queryClient.invalidateQueries({ queryKey: ['/api/credits/balance'] });
+          refetchCredits();
+        }
+      }, 0);
+    },
+    onError: (error: Error) => {
+      const isCreditsError = error.message?.includes('credits') || error.message?.includes('Insufficient');
       toast({
-        title: "Payment Error",
-        description: err.message || "Failed to initialize payment. Please try again.",
+        title: "Booking failed",
+        description: error.message || (isCreditsError 
+          ? "Failed to book package with account credits" 
+          : "Failed to book package with promo code"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Validate promo code function
+  const validatePromoCode = async (code: string) => {
+    if (!code.trim()) return;
+    
+    setIsValidatingPromo(true);
+    try {
+      const response = await apiRequest('POST', '/api/promo-codes/validate-package', {
+        code: code.toUpperCase(),
+        packageId: packageId,
+        quantity: quantity
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setAppliedPromoCode(result.promoCode);
+        setDiscountAmount(result.discountAmount);
+        setFinalAmount(result.finalAmount);
+        
+        toast({
+          title: "Promo Code Applied!",
+          description: `You saved $${(result.discountAmount / 100).toFixed(2)}`,
+        });
+      } else {
+        toast({
+          title: "Invalid Promo Code",
+          description: "This promo code is not valid for this package.",
+          variant: "destructive",
+        });
+        setAppliedPromoCode(null);
+        setDiscountAmount(0);
+        setFinalAmount(packageData ? (packageData.price || 0) * quantity * 100 : 0);
+      }
+    } catch (error) {
+      toast({
+        title: "Promo Code Not Accepted",
+        description: "This promo code is not valid for this package.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsValidatingPromo(false);
     }
   };
+
+  // Remove promo code
+  const removePromoCode = () => {
+    setPromoCode("");
+    setAppliedPromoCode(null);
+    setDiscountAmount(0);
+    setFinalAmount(packageData ? (packageData.price || 0) * quantity * 100 : 0);
+  };
+
+  // Calculate final amount when package loads or payment options change
+  useEffect(() => {
+    if (!packageData || creditBalance === undefined) return;
+    
+    const baseAmount = (packageData.price || 0) * quantity * 100; // Amount in cents
+    const discountToApply = appliedPromoCode ? discountAmount : 0;
+    const amountAfterPromo = Math.max(0, baseAmount - discountToApply);
+    
+    // Calculate credits to apply if credits are enabled
+    if (useCredits && creditBalance > 0) {
+      const creditsToApply = Math.min(creditBalance, amountAfterPromo);
+      setAppliedCredits(creditsToApply);
+    } else {
+      setAppliedCredits(0);
+    }
+    
+    // Calculate final amount with credits
+    const creditToApply = useCredits ? appliedCredits : 0;
+    const calculatedAmount = Math.max(0, amountAfterPromo - creditToApply);
+    
+    setFinalAmount(calculatedAmount);
+  }, [
+    packageData?.id, 
+    packageData?.price,
+    quantity, 
+    creditBalance, 
+    appliedPromoCode?.code, 
+    discountAmount, 
+    useCredits, 
+    appliedCredits
+  ]);
+
+  // Reset client secret when key parameters change
+  useEffect(() => {
+    if (clientSecret) {
+      setClientSecret("");
+    }
+  }, [appliedCredits, useCredits, appliedPromoCode, discountAmount]);
+
+  // Initialize payment intent when package data is loaded
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    const initializePayment = async () => {
+      try {
+        // Strict validation - all data must be loaded
+        if (!packageData || creditBalance === null) {
+          return;
+        }
+        
+        // Skip payment intent if already successful
+        if (paymentStatus === 'success') {
+          return;
+        }
+        
+        // Don't create if we already have a client secret
+        if (clientSecret) {
+          return;
+        }
+        
+        // For free bookings, skip payment intent
+        if (finalAmount === 0) {
+          return;
+        }
+        
+        setIsLoading(true);
+        
+        const response = await apiRequest("POST", "/api/time-bound-package-payment/create-intent", {
+          packageId: packageData.id,
+          quantity: quantity,
+          promoCode: appliedPromoCode?.code || null,
+          useCredits: useCredits,
+          appliedCredits: appliedCredits
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to initialize payment");
+        }
+
+        const data = await response.json();
+        
+        // Use backend-provided values (all in cents)
+        setClientSecret(data.clientSecret);
+        setFinalAmount(data.subtotal); // Subtotal after discounts/credits, before fee
+        setStripeFee(data.stripeFee); // Processing fee
+        setUnitPriceCents(data.unitPriceCents); // Price per unit (may be prorated)
+        
+      } catch (err: any) {
+        setError(err.message || "Failed to initialize payment");
+        toast({
+          title: "Payment Error",
+          description: err.message || "Failed to initialize payment. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Run with slight delay to allow state to stabilize
+    timeoutId = setTimeout(initializePayment, 150);
+    
+    return () => clearTimeout(timeoutId);
+  }, [packageData, user, clientSecret, finalAmount, creditBalance, useCredits, appliedCredits, appliedPromoCode, paymentStatus]);
 
   const formatPrice = (price: number) => {
     return `$${Math.floor(price)}`;
@@ -459,9 +691,18 @@ export default function TimeBoundPackageCheckoutPage() {
     paymentMethodOrder: ['card', 'link', 'amazon_pay', 'apple_pay', 'google_pay']
   };
 
-  const basePrice = proratedAmount || packageData.price || 0;
-  const processingFee = basePrice * 0.05;
-  const totalAmount = basePrice + processingFee;
+  // Pricing calculations in cents for consistency with backend
+  const basePriceCents = unitPriceCents || Math.round((packageData.price || 0) * 100);
+  const basePriceTotalCents = basePriceCents * quantity;
+  const discountCents = appliedPromoCode ? discountAmount : 0;
+  const creditsCents = useCredits ? appliedCredits : 0;
+  const subtotalCents = basePriceTotalCents - discountCents - creditsCents;
+  
+  // Prefer backend-provided stripeFee when available (after payment intent created)
+  // Otherwise estimate at 5% for initial display
+  const hasBackendFee = stripeFee > 0 && clientSecret;
+  const displayStripeFeeCents = hasBackendFee ? stripeFee : Math.round(subtotalCents * 0.05);
+  const displayTotalCents = subtotalCents + displayStripeFeeCents;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -478,11 +719,11 @@ export default function TimeBoundPackageCheckoutPage() {
           {/* Back button */}
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/packages')}
+            onClick={() => navigate(`/package/${packageId}`)}
             className="mb-4"
             data-testid="button-back"
           >
-            ← Back to Packages
+            ← Back to Package
           </Button>
 
           {/* Package Summary */}
@@ -527,6 +768,11 @@ export default function TimeBoundPackageCheckoutPage() {
                   <Badge variant="outline" data-testid="badge-total-sessions">
                     {packageData.totalSessions} sessions
                   </Badge>
+                  {quantity > 1 && (
+                    <Badge variant="outline" className="bg-blue-50" data-testid="badge-quantity">
+                      {quantity} spots
+                    </Badge>
+                  )}
                 </div>
               </div>
 
@@ -537,7 +783,7 @@ export default function TimeBoundPackageCheckoutPage() {
                   </p>
                   <p className="text-sm text-blue-700 mt-1">
                     Joining with {remainingSessions} of {packageData.totalSessions} sessions remaining. 
-                    Price adjusted from ${packageData.price} to ${proratedAmount?.toFixed(2)}.
+                    Price adjusted from ${packageData.price} to ${((unitPriceCents || 0) / 100).toFixed(2)}.
                   </p>
                 </div>
               )}
@@ -547,23 +793,43 @@ export default function TimeBoundPackageCheckoutPage() {
               {/* Pricing Breakdown */}
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span data-testid="text-label-package-price">Package price</span>
-                  <span data-testid="text-value-package-price">${basePrice.toFixed(2)}</span>
+                  <span data-testid="text-label-package-price">
+                    Package price {quantity > 1 ? `(${quantity} × $${(basePriceCents / 100).toFixed(2)})` : ''}
+                  </span>
+                  <span data-testid="text-value-package-price">${(basePriceTotalCents / 100).toFixed(2)}</span>
                 </div>
                 {isProrated && packageData.price && (
                   <div className="flex justify-between text-sm text-gray-600">
                     <span data-testid="text-label-original-price">Original price</span>
-                    <span className="line-through" data-testid="text-value-original-price">${packageData.price.toFixed(2)}</span>
+                    <span className="line-through" data-testid="text-value-original-price">${(packageData.price * quantity).toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span data-testid="text-label-processing-fee">Processing fee (5%)</span>
-                  <span data-testid="text-value-processing-fee">${processingFee.toFixed(2)}</span>
-                </div>
+                {appliedPromoCode && discountCents > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({appliedPromoCode.code})</span>
+                    <span>-${(discountCents / 100).toFixed(2)}</span>
+                  </div>
+                )}
+                {useCredits && creditsCents > 0 && (
+                  <div className="flex justify-between text-blue-600">
+                    <span>Credits Applied</span>
+                    <span>-${(creditsCents / 100).toFixed(2)}</span>
+                  </div>
+                )}
+                {subtotalCents > 0 && (
+                  <div className="flex justify-between">
+                    <span data-testid="text-label-processing-fee">
+                      {hasBackendFee ? 'Service fee' : 'Estimated service fee'}
+                    </span>
+                    <span data-testid="text-value-processing-fee">${(displayStripeFeeCents / 100).toFixed(2)}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-semibold">
                   <span data-testid="text-label-total">Total</span>
-                  <span className="text-lg" data-testid="text-value-total">${totalAmount.toFixed(2)}</span>
+                  <span className={`text-lg ${displayTotalCents === 0 ? 'text-green-600' : ''}`} data-testid="text-value-total">
+                    {displayTotalCents === 0 ? 'FREE' : `$${(displayTotalCents / 100).toFixed(2)}`}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -605,16 +871,16 @@ export default function TimeBoundPackageCheckoutPage() {
                         </div>
                         <div className="space-y-1 text-sm text-gray-600">
                           <div className="flex items-center gap-2" data-testid={`text-session-date-${session.id}`}>
-                            <Calendar className="w-4 h-4" />
+                            <Calendar className="w-3 h-3" />
                             {date}
                           </div>
                           <div className="flex items-center gap-2" data-testid={`text-session-time-${session.id}`}>
-                            <Clock className="w-4 h-4" />
+                            <Clock className="w-3 h-3" />
                             {time}
                           </div>
                           {(session.location || session.address || session.city) && (
                             <div className="flex items-center gap-2" data-testid={`text-session-location-${session.id}`}>
-                              <MapPin className="w-4 h-4" />
+                              <MapPin className="w-3 h-3" />
                               {session.location || session.address || `${session.city}, ${session.state}`}
                             </div>
                           )}
@@ -627,18 +893,164 @@ export default function TimeBoundPackageCheckoutPage() {
             </CardContent>
           </Card>
 
-          {/* Payment Form */}
-          {clientSecret && (
+          {/* Promo Code Section */}
+          <div className="p-4 border rounded-lg bg-gray-50">
+            <h3 className="font-medium mb-3">Promo Code</h3>
+            {appliedPromoCode ? (
+              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded">
+                <div className="flex items-center">
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                  <span className="text-green-800 font-medium">
+                    {appliedPromoCode.code} applied
+                  </span>
+                  <span className="ml-2 text-green-600">
+                    (-${(discountAmount / 100).toFixed(2)})
+                  </span>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={removePromoCode}
+                  className="text-green-700 hover:text-green-800"
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  className="flex-1"
+                  data-testid="input-promo-code"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => validatePromoCode(promoCode)}
+                  disabled={!promoCode.trim() || isValidatingPromo}
+                  data-testid="button-apply-promo"
+                >
+                  {isValidatingPromo ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Apply'
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Account Credits Section */}
+          {creditBalance > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                  Account Credits
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Available Credits</p>
+                    <p className="text-sm text-gray-600">
+                      You have ${(creditBalance / 100).toFixed(2)} in account credits
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="use-credits">Use Credits</Label>
+                    <Switch
+                      id="use-credits"
+                      checked={useCredits}
+                      onCheckedChange={setUseCredits}
+                      data-testid="toggle-credits"
+                    />
+                  </div>
+                </div>
+                
+                {useCredits && appliedCredits > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-800">
+                      Using ${(appliedCredits / 100).toFixed(2)} from your account credits
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Free Booking Section - When total is $0 */}
+          {finalAmount === 0 && (appliedPromoCode || (useCredits && appliedCredits > 0)) ? (
+            <div className="space-y-6">
+              <div className={`p-4 rounded-lg text-center ${
+                appliedPromoCode ? 'bg-green-50' : 'bg-blue-50'
+              }`}>
+                <CheckCircle className={`h-8 w-8 mx-auto mb-2 ${
+                  appliedPromoCode ? 'text-green-600' : 'text-blue-600'
+                }`} />
+                <h3 className={`font-medium mb-1 ${
+                  appliedPromoCode ? 'text-green-800' : 'text-blue-800'
+                }`}>
+                  {appliedPromoCode 
+                    ? 'This package is free with your promo code!' 
+                    : 'This package is free with your account credits!'
+                  }
+                </h3>
+                <p className={`text-sm ${
+                  appliedPromoCode ? 'text-green-600' : 'text-blue-600'
+                }`}>
+                  Click below to complete your booking - no payment required.
+                </p>
+              </div>
+              
+              <Button 
+                className={`w-full text-white ${
+                  appliedPromoCode ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                onClick={() => {
+                  freeBookingMutation.mutate({ 
+                    packageId: packageData.id, 
+                    quantity: quantity,
+                    promoCode: appliedPromoCode?.code,
+                    appliedCredits: useCredits ? appliedCredits : 0
+                  });
+                }}
+                disabled={freeBookingMutation.isPending}
+                data-testid="button-book-free"
+              >
+                {freeBookingMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Booking...
+                  </>
+                ) : (
+                  <>Book Free Package {quantity > 1 ? `(${quantity} Spots)` : ''}</>
+                )}
+              </Button>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                By completing this booking, you agree to our Terms of Service and Privacy Policy.
+              </p>
+            </div>
+          ) : clientSecret ? (
+            /* Payment Form */
             <Elements options={options} stripe={stripePromise}>
               <TimeBoundPackageCheckoutForm
                 packageData={packageData}
-                finalAmount={totalAmount}
-                proratedAmount={proratedAmount}
+                quantity={quantity}
+                appliedPromoCode={appliedPromoCode}
+                discountAmount={discountAmount}
+                finalAmount={finalAmount}
+                unitPriceCents={unitPriceCents}
                 stripeFee={stripeFee}
+                appliedCredits={appliedCredits}
+                useCredits={useCredits}
+                onPaymentSuccess={() => setIsBookingSuccess(true)}
                 setIsBookingSuccess={setIsBookingSuccess}
               />
             </Elements>
-          )}
+          ) : null}
 
         </div>
       </main>
