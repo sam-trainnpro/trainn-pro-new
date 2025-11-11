@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -21,6 +25,10 @@ import {
   TabsTrigger 
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -35,12 +43,205 @@ import {
   CheckCircle,
   UserCheck,
   Plus,
-  Minus
+  Minus,
+  CreditCard,
+  Loader2,
+  Tag
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
 import { formatInTimeZone } from "date-fns-tz";
 import { Helmet } from "react-helmet";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
+
+// Payment Form Component
+function PaymentForm({
+  packageId,
+  quantity,
+  finalAmount,
+  stripeFee,
+  appliedPromoCode,
+  appliedCredits,
+  onSuccess
+}: {
+  packageId: number;
+  quantity: number;
+  finalAmount: number;
+  stripeFee: number;
+  appliedPromoCode: any;
+  appliedCredits: number;
+  onSuccess: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      toast({
+        title: "Payment Error",
+        description: "Payment system not loaded. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      toast({
+        title: "Payment Failed", 
+        description: submitError.message || "Please check your payment information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.origin + "/package/" + packageId,
+      },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    } else {
+      try {
+        const bookResponse = await apiRequest("POST", `/api/time-bound-packages/${packageId}/book`, {
+          paymentIntentId: paymentIntent?.id,
+          quantity: quantity,
+          stripeFee: stripeFee,
+          promoCode: appliedPromoCode?.code || null,
+          appliedCredits: appliedCredits
+        });
+        
+        if (bookResponse.ok) {
+          toast({
+            title: "Package booked!",
+            description: "You've successfully booked this package",
+          });
+          onSuccess();
+        } else {
+          throw new Error("Failed to book package");
+        }
+      } catch (error) {
+        toast({
+          title: "Booking Error",
+          description: "Payment succeeded but booking failed. Please contact support.",
+          variant: "destructive",
+        });
+      }
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      <Button 
+        type="submit" 
+        className="w-full" 
+        size="lg"
+        disabled={!stripe || !elements || isProcessing}
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Complete Purchase • ${((finalAmount + stripeFee) / 100).toFixed(2)}
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}
+
+// Free Booking Button Component
+function FreeBookingButton({
+  packageId,
+  quantity,
+  appliedPromoCode,
+  appliedCredits,
+  onSuccess
+}: {
+  packageId: number;
+  quantity: number;
+  appliedPromoCode: any;
+  appliedCredits: number;
+  onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleFreeBooking = async () => {
+    setIsProcessing(true);
+    try {
+      const response = await apiRequest("POST", `/api/time-bound-package-payment/free-booking`, {
+        packageId: packageId,
+        quantity: quantity,
+        promoCode: appliedPromoCode?.code || null,
+        appliedCredits: appliedCredits
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to book package");
+      }
+
+      toast({
+        title: "Package booked!",
+        description: "You've successfully booked this package",
+      });
+      
+      onSuccess();
+    } catch (err: any) {
+      toast({
+        title: "Booking Error",
+        description: err.message || "Failed to book package. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <Button 
+      onClick={handleFreeBooking}
+      className="w-full" 
+      size="lg"
+      disabled={isProcessing}
+    >
+      {isProcessing ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Booking...
+        </>
+      ) : (
+        <>
+          <CheckCircle className="mr-2 h-4 w-4" />
+          Complete Free Booking
+        </>
+      )}
+    </Button>
+  );
+}
 
 interface TimeBoundPackageSession {
   id: number;
@@ -86,6 +287,33 @@ export default function TimeBoundPackageDetailsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
+  
+  // Payment state
+  const [showPayment, setShowPayment] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+  const [unitPriceCents, setUnitPriceCents] = useState<number | null>(null);
+  const [finalAmount, setFinalAmount] = useState(0);
+  const [stripeFee, setStripeFee] = useState(0);
+  const [isInitializingPayment, setIsInitializingPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "success">("idle");
+  
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  
+  // Credits state
+  const [useCredits, setUseCredits] = useState(false);
+  const [appliedCredits, setAppliedCredits] = useState(0);
+  
+  // Fetch user credit balance
+  const { data: creditData } = useQuery<{ balance: string }>({
+    queryKey: ['/api/credits/balance'],
+    enabled: !!user,
+  });
+  
+  const creditBalance = creditData ? parseInt(creditData.balance) : 0;
 
   if (!params) {
     navigate("/packages");
@@ -143,7 +371,7 @@ export default function TimeBoundPackageDetailsPage() {
     return formatInTimeZone(date, timeZone, "h:mm a") + " PT";
   };
 
-  const handleBookPackage = () => {
+  const handleBookPackage = async () => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -154,9 +382,142 @@ export default function TimeBoundPackageDetailsPage() {
       return;
     }
     
-    // Navigate to package checkout with query parameters including quantity
-    navigate(`/time-bound-package-checkout?packageId=${packageId}&quantity=${quantity}`);
+    // Show payment section and initialize payment
+    setShowPayment(true);
+    
+    // Scroll to payment section
+    setTimeout(() => {
+      const paymentSection = document.getElementById('payment-section');
+      if (paymentSection) {
+        paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+    
+    // Initialize payment intent
+    await initializePayment();
   };
+  
+  const initializePayment = async () => {
+    try {
+      setIsInitializingPayment(true);
+      
+      const response = await apiRequest("POST", "/api/time-bound-package-payment/create-intent", {
+        packageId: packageId,
+        quantity: quantity,
+        promoCode: appliedPromoCode?.code || null,
+        useCredits: useCredits,
+        appliedCredits: appliedCredits
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to initialize payment");
+      }
+
+      const data = await response.json();
+      
+      // Use backend-provided values (all in cents)
+      if (data.requiresPayment) {
+        setClientSecret(data.clientSecret);
+        setFinalAmount(data.subtotal);
+        setStripeFee(data.stripeFee);
+        setUnitPriceCents(data.unitPriceCents);
+      } else {
+        // Free booking
+        setFinalAmount(0);
+        setStripeFee(0);
+        setUnitPriceCents(data.unitPriceCents);
+      }
+      
+    } catch (err: any) {
+      toast({
+        title: "Payment Error",
+        description: err.message || "Failed to initialize payment. Please try again.",
+        variant: "destructive",
+      });
+      setShowPayment(false);
+    } finally {
+      setIsInitializingPayment(false);
+    }
+  };
+
+  // Promo code validation
+  const validatePromoCode = async () => {
+    if (!promoCode.trim()) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter a promo code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsValidatingPromo(true);
+    try {
+      const response = await apiRequest("POST", "/api/time-bound-package-payment/validate-promo", {
+        code: promoCode.trim(),
+        packageId: packageId,
+        quantity: quantity
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Invalid promo code");
+      }
+
+      const data = await response.json();
+      setAppliedPromoCode(data.promoCode);
+      setDiscountAmount(data.discountAmount);
+      
+      toast({
+        title: "Promo code applied!",
+        description: `You saved $${(data.discountAmount / 100).toFixed(2)}`,
+      });
+
+      // Reinitialize payment with promo code
+      await initializePayment();
+    } catch (err: any) {
+      toast({
+        title: "Invalid Code",
+        description: err.message || "This promo code cannot be applied",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
+  const removePromoCode = async () => {
+    setAppliedPromoCode(null);
+    setDiscountAmount(0);
+    setPromoCode("");
+    
+    toast({
+      title: "Promo code removed",
+    });
+
+    // Reinitialize payment without promo code
+    await initializePayment();
+  };
+
+  // Credit management
+  useEffect(() => {
+    if (!packageDetails) return;
+    
+    const basePrice = (packageDetails.price || 0) * quantity;
+    const basePriceCents = Math.round(basePrice * 100);
+    const afterDiscount = basePriceCents - discountAmount;
+    const creditsToApply = Math.min(creditBalance, Math.max(0, afterDiscount));
+    
+    setAppliedCredits(useCredits ? creditsToApply : 0);
+  }, [useCredits, creditBalance, packageDetails, quantity, discountAmount]);
+
+  // Reinitialize payment when credits or promo changes
+  useEffect(() => {
+    if (showPayment && packageDetails) {
+      initializePayment();
+    }
+  }, [appliedCredits, useCredits, appliedPromoCode]);
 
   const displayName = packageDetails?.displayBusinessName && packageDetails?.coachBusinessName 
     ? packageDetails.coachBusinessName 
@@ -395,7 +756,7 @@ export default function TimeBoundPackageDetailsPage() {
                       {packageDetails.address || packageDetails.location ? (
                         <>
                           <div className="mb-4">
-                            <div className="flex items-start gap-3 mb-4">
+                            <div className="flex items-start gap-3 p-4 border rounded-lg bg-gray-50">
                               <MapPin className="h-5 w-5 text-primary mt-0.5" />
                               <div>
                                 <p className="font-medium">Primary Location</p>
@@ -405,12 +766,6 @@ export default function TimeBoundPackageDetailsPage() {
                               </div>
                             </div>
                           </div>
-                          
-                          <GoogleMapsScript>
-                            <LocationPreview 
-                              location={packageDetails.address || packageDetails.location || ''} 
-                            />
-                          </GoogleMapsScript>
 
                           {/* Show session-specific locations if they differ */}
                           {packageDetails.sessions?.some(s => s.location && s.location !== packageDetails.location) && (
@@ -590,6 +945,150 @@ export default function TimeBoundPackageDetailsPage() {
                         <p className="text-sm text-center text-orange-600 font-medium">
                           Only {spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} left!
                         </p>
+                      )}
+
+                      {/* Payment Section */}
+                      {showPayment && (
+                        <div id="payment-section" className="space-y-4 pt-4 border-t">
+                          {isInitializingPayment ? (
+                            <div className="py-8 text-center">
+                              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                              <p className="text-sm text-muted-foreground">Preparing payment...</p>
+                            </div>
+                          ) : (
+                            <>
+                              {/* Promo Code */}
+                              <div className="space-y-2">
+                                <Label htmlFor="promo-code" className="flex items-center gap-2">
+                                  <Tag className="h-4 w-4" />
+                                  Promo Code
+                                </Label>
+                                {appliedPromoCode ? (
+                                  <div className="flex items-center justify-between border rounded-lg p-3 bg-green-50">
+                                    <div>
+                                      <p className="font-medium text-green-700">{appliedPromoCode.code}</p>
+                                      <p className="text-sm text-green-600">
+                                        Saved ${(discountAmount / 100).toFixed(2)}
+                                      </p>
+                                    </div>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={removePromoCode}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-2">
+                                    <Input
+                                      id="promo-code"
+                                      placeholder="Enter code"
+                                      value={promoCode}
+                                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                      onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          validatePromoCode();
+                                        }
+                                      }}
+                                    />
+                                    <Button 
+                                      onClick={validatePromoCode}
+                                      disabled={isValidatingPromo || !promoCode.trim()}
+                                      variant="outline"
+                                    >
+                                      {isValidatingPromo ? "Checking..." : "Apply"}
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Account Credits */}
+                              {creditBalance > 0 && (
+                                <div className="flex items-center justify-between border rounded-lg p-3">
+                                  <div>
+                                    <Label htmlFor="use-credits" className="cursor-pointer">
+                                      Use Account Credits
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                      ${(creditBalance / 100).toFixed(2)} available
+                                    </p>
+                                  </div>
+                                  <Switch
+                                    id="use-credits"
+                                    checked={useCredits}
+                                    onCheckedChange={setUseCredits}
+                                  />
+                                </div>
+                              )}
+
+                              {/* Pricing Breakdown */}
+                              <div className="space-y-2 pt-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>Package price</span>
+                                  <span>${((packageDetails.price || 0) * quantity).toFixed(2)}</span>
+                                </div>
+                                {appliedPromoCode && discountAmount > 0 && (
+                                  <div className="flex justify-between text-sm text-green-600">
+                                    <span>Discount ({appliedPromoCode.code})</span>
+                                    <span>-${(discountAmount / 100).toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {useCredits && appliedCredits > 0 && (
+                                  <div className="flex justify-between text-sm text-blue-600">
+                                    <span>Credits Applied</span>
+                                    <span>-${(appliedCredits / 100).toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {finalAmount > 0 && (
+                                  <div className="flex justify-between text-sm">
+                                    <span>Service fee</span>
+                                    <span>${(stripeFee / 100).toFixed(2)}</span>
+                                  </div>
+                                )}
+                                <Separator />
+                                <div className="flex justify-between font-semibold">
+                                  <span>Total</span>
+                                  <span className={finalAmount + stripeFee === 0 ? "text-green-600" : ""}>
+                                    {finalAmount + stripeFee === 0 ? "FREE" : `$${((finalAmount + stripeFee) / 100).toFixed(2)}`}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Stripe Payment Form or Free Booking */}
+                              {finalAmount + stripeFee > 0 && clientSecret ? (
+                                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                                  <PaymentForm 
+                                    packageId={packageId}
+                                    quantity={quantity}
+                                    finalAmount={finalAmount}
+                                    stripeFee={stripeFee}
+                                    appliedPromoCode={appliedPromoCode}
+                                    appliedCredits={appliedCredits}
+                                    onSuccess={() => {
+                                      setPaymentStatus("success");
+                                      queryClient.invalidateQueries({ queryKey: ['/api/time-bound-packages'] });
+                                      navigate("/bookings?tab=packages");
+                                    }}
+                                  />
+                                </Elements>
+                              ) : (finalAmount + stripeFee === 0) && (
+                                <FreeBookingButton
+                                  packageId={packageId}
+                                  quantity={quantity}
+                                  appliedPromoCode={appliedPromoCode}
+                                  appliedCredits={appliedCredits}
+                                  onSuccess={() => {
+                                    setPaymentStatus("success");
+                                    queryClient.invalidateQueries({ queryKey: ['/api/time-bound-packages'] });
+                                    navigate("/bookings?tab=packages");
+                                  }}
+                                />
+                              )}
+                            </>
+                          )}
+                        </div>
                       )}
                       
                       <div className="pt-4 border-t space-y-3">
