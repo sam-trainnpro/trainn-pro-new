@@ -714,24 +714,31 @@ export default function BookingsPage() {
               </TabsContent>
 
               <TabsContent value="packages">
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {/* Time-Bound Packages Section */}
-                  {isLoadingTimeBound ? (
-                    <div className="space-y-4">
-                      <Skeleton className="h-48 w-full" />
-                      <Skeleton className="h-48 w-full" />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <h2 className="text-xl font-bold text-gray-900" data-testid="time-bound-section-title">
+                        Time-Bound Packages
+                      </h2>
                     </div>
-                  ) : timeBoundError ? (
-                    <Card>
-                      <CardContent className="py-8 text-center">
-                        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" data-testid="time-bound-error-icon" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2" data-testid="time-bound-error-title">Failed to Load Programs</h3>
-                        <p className="text-gray-500" data-testid="time-bound-error-message">Something went wrong loading your programs. Please try again later.</p>
-                      </CardContent>
-                    </Card>
-                  ) : timeBoundBookings && timeBoundBookings.length > 0 ? (
-                    <div className="space-y-4">
-                      <h2 className="text-lg font-semibold text-gray-900" data-testid="time-bound-section-title">My Programs</h2>
+                    
+                    {isLoadingTimeBound ? (
+                      <div className="space-y-4">
+                        <Skeleton className="h-48 w-full" />
+                        <Skeleton className="h-48 w-full" />
+                      </div>
+                    ) : timeBoundError ? (
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" data-testid="time-bound-error-icon" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2" data-testid="time-bound-error-title">Failed to Load Time-Bound Packages</h3>
+                          <p className="text-gray-500" data-testid="time-bound-error-message">Something went wrong loading your time-bound packages. Please try again later.</p>
+                        </CardContent>
+                      </Card>
+                    ) : timeBoundBookings && timeBoundBookings.length > 0 ? (
+                      <div className="space-y-4">
                       {timeBoundBookings.map((booking, index) => {
                         const packageData = timeBoundPackageQueries.data?.[index];
                         const pkg = packageData?.package;
@@ -916,26 +923,43 @@ export default function BookingsPage() {
                           </Card>
                         );
                       })}
-                    </div>
-                  ) : null}
+                      </div>
+                    ) : (
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" data-testid="no-time-bound-icon" />
+                          <p className="text-gray-600 text-sm" data-testid="no-time-bound-message">
+                            No time-bound packages booked yet
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
 
-                  {/* Set Pack Packages Section */}
-                  {isLoadingPackages ? (
-                    <div className="space-y-4">
-                      <Skeleton className="h-32 w-full" />
-                      <Skeleton className="h-32 w-full" />
+                  {/* Class Pack Packages Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <Package className="h-5 w-5 text-primary" />
+                      <h2 className="text-xl font-bold text-gray-900" data-testid="set-pack-section-title">
+                        Class Pack Packages
+                      </h2>
                     </div>
-                  ) : packagesError ? (
-                    <Card>
-                      <CardContent className="py-8 text-center">
-                        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" data-testid="packages-error-icon" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2" data-testid="packages-error-title">Failed to Load Packages</h3>
-                        <p className="text-gray-500" data-testid="packages-error-message">Something went wrong. Please try again later.</p>
-                      </CardContent>
-                    </Card>
-                  ) : packages && packages.length > 0 ? (
-                    <div className="space-y-4">
-                      <h2 className="text-lg font-semibold text-gray-900" data-testid="set-pack-section-title">Class Packages</h2>
+                    
+                    {isLoadingPackages ? (
+                      <div className="space-y-4">
+                        <Skeleton className="h-32 w-full" />
+                        <Skeleton className="h-32 w-full" />
+                      </div>
+                    ) : packagesError ? (
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" data-testid="packages-error-icon" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2" data-testid="packages-error-title">Failed to Load Class Pack Packages</h3>
+                          <p className="text-gray-500" data-testid="packages-error-message">Something went wrong loading your class pack packages. Please try again later.</p>
+                        </CardContent>
+                      </Card>
+                    ) : packages && packages.length > 0 ? (
+                      <div className="space-y-4">
                       {packages.map((packagePurchase) => (
                         <Card key={packagePurchase.id} data-testid={`set-pack-package-${packagePurchase.id}`}>
                           <CardContent className="p-6">
@@ -1045,26 +1069,18 @@ export default function BookingsPage() {
                           </CardContent>
                         </Card>
                       ))}
-                    </div>
-                  ) : null}
-
-                  {/* Empty State - Show only if both are empty */}
-                  {!isLoadingPackages && !isLoadingTimeBound && 
-                   (!packages || packages.length === 0) && 
-                   (!timeBoundBookings || timeBoundBookings.length === 0) && (
-                    <Card>
-                      <CardContent className="py-12 text-center">
-                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" data-testid="no-packages-icon" />
-                        <h2 className="text-xl font-bold mb-2" data-testid="no-packages-title">No Packages Found</h2>
-                        <p className="text-muted-foreground mb-6" data-testid="no-packages-message">
-                          You haven't purchased any class packages yet. Browse available packages to get started!
-                        </p>
-                        <Button asChild className="bg-primary text-white" data-testid="browse-packages-button">
-                          <Link href="/packages">Browse Available Packages</Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )}
+                      </div>
+                    ) : (
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" data-testid="no-class-pack-icon" />
+                          <p className="text-gray-600 text-sm" data-testid="no-class-pack-message">
+                            No class pack packages purchased yet
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
