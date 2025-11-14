@@ -280,13 +280,14 @@ export default function BookingsPage() {
 
   // Fetch coach details for each package
   const coachQueries = useQuery({
-    queryKey: ['time-bound-coaches', timeBoundPackageQueries.data?.map((p: any) => p?.package?.coachId)],
+    queryKey: ['time-bound-coaches', timeBoundPackageQueries.data?.map((p: any) => p?.coachId)],
     queryFn: async () => {
       if (!timeBoundPackageQueries.data) return [];
       
+      // API returns flattened response, so coachId is at root level
       const coachIds = timeBoundPackageQueries.data
-        .filter((p: any) => p?.package?.coachId)
-        .map((p: any) => p.package.coachId);
+        .filter((p: any) => p?.coachId)
+        .map((p: any) => p.coachId);
       
       const uniqueCoachIds = Array.from(new Set(coachIds));
       
@@ -741,11 +742,11 @@ export default function BookingsPage() {
                       <div className="space-y-4">
                       {timeBoundBookings.map((booking, index) => {
                         const packageData = timeBoundPackageQueries.data?.[index];
-                        const pkg = packageData?.package;
+                        // API returns flattened response: { ...packageFields, sessions: [] }
                         const sessions = packageData?.sessions || [];
-                        const coach = coachQueries.data?.find((c: any) => c?.id === pkg?.coachId);
+                        const coach = coachQueries.data?.find((c: any) => c?.id === packageData?.coachId);
                         
-                        if (!pkg) return null;
+                        if (!packageData) return null;
 
                         const now = new Date();
                         const pastSessions = sessions.filter((s: TimeBoundPackageSession) => new Date(s.endTime) <= now);
@@ -765,12 +766,12 @@ export default function BookingsPage() {
                                     <div className="flex items-center gap-2 mb-2">
                                       <BookOpen className="h-5 w-5 text-primary" data-testid={`package-icon-${booking.id}`} />
                                       <h3 className="font-semibold text-lg" data-testid={`package-title-${booking.id}`}>
-                                        {pkg.title || 'Program Package'}
+                                        {packageData.title || 'Program Package'}
                                       </h3>
                                     </div>
-                                    {pkg.description && (
+                                    {packageData.description && (
                                       <p className="text-sm text-gray-600 mb-3" data-testid={`package-description-${booking.id}`}>
-                                        {pkg.description}
+                                        {packageData.description}
                                       </p>
                                     )}
                                   </div>
