@@ -212,6 +212,92 @@ export default function BookingsPage() {
       document.body.removeChild(link);
     }
   };
+
+  // Calendar functions for time-bound package sessions
+  const generateSessionGoogleCalendarUrl = (session: TimeBoundPackageSession, packageTitle: string) => {
+    const startTime = new Date(session.startTime);
+    const endTime = new Date(session.endTime);
+    
+    const title = encodeURIComponent(`${packageTitle} - Session ${session.sessionNumber}`);
+    const description = encodeURIComponent(
+      `${packageTitle}\n\nSession ${session.sessionNumber}${session.sessionType ? ` (${session.sessionType})` : ''}\n\nBooked through Trainn`
+    );
+    const location = encodeURIComponent(session.address || session.location || '');
+    const startDateTime = formatDateForCalendar(startTime);
+    const endDateTime = formatDateForCalendar(endTime);
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateTime}/${endDateTime}&details=${description}&location=${location}`;
+  };
+
+  const generateSessionOutlookCalendarUrl = (session: TimeBoundPackageSession, packageTitle: string) => {
+    const startTime = new Date(session.startTime);
+    const endTime = new Date(session.endTime);
+    
+    const title = encodeURIComponent(`${packageTitle} - Session ${session.sessionNumber}`);
+    const description = encodeURIComponent(
+      `${packageTitle}\n\nSession ${session.sessionNumber}${session.sessionType ? ` (${session.sessionType})` : ''}\n\nBooked through Trainn`
+    );
+    const location = encodeURIComponent(session.address || session.location || '');
+    const startDateTime = formatDateForCalendar(startTime);
+    const endDateTime = formatDateForCalendar(endTime);
+
+    return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDateTime}&enddt=${endDateTime}&body=${description}&location=${location}`;
+  };
+
+  const generateSessionAppleCalendarICS = (session: TimeBoundPackageSession, packageTitle: string) => {
+    const startTime = new Date(session.startTime);
+    const endTime = new Date(session.endTime);
+    
+    const title = `${packageTitle} - Session ${session.sessionNumber}`;
+    const description = `${packageTitle}\n\nSession ${session.sessionNumber}${session.sessionType ? ` (${session.sessionType})` : ''}\n\nBooked through Trainn`;
+    const location = session.address || session.location || '';
+    const startDateTime = formatDateForCalendar(startTime);
+    const endDateTime = formatDateForCalendar(endTime);
+    const uid = `session-${session.id}-${Date.now()}@trainn.pro`;
+    
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Trainn//Event//EN',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTART:${startDateTime}`,
+      `DTEND:${endDateTime}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
+      `LOCATION:${location}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+    
+    return `data:text/calendar;charset=utf8,${encodeURIComponent(icsContent)}`;
+  };
+
+  const handleAddSessionToGoogleCalendar = (session: TimeBoundPackageSession, packageTitle: string) => {
+    const calendarUrl = generateSessionGoogleCalendarUrl(session, packageTitle);
+    if (calendarUrl) {
+      window.open(calendarUrl, '_blank');
+    }
+  };
+
+  const handleAddSessionToOutlookCalendar = (session: TimeBoundPackageSession, packageTitle: string) => {
+    const calendarUrl = generateSessionOutlookCalendarUrl(session, packageTitle);
+    if (calendarUrl) {
+      window.open(calendarUrl, '_blank');
+    }
+  };
+
+  const handleAddSessionToAppleCalendar = (session: TimeBoundPackageSession, packageTitle: string) => {
+    const icsUrl = generateSessionAppleCalendarICS(session, packageTitle);
+    if (icsUrl) {
+      const link = document.createElement('a');
+      link.href = icsUrl;
+      link.download = `${packageTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_session_${session.sessionNumber}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
   
   // Check for refresh parameter and force page reload on payment completion
   useEffect(() => {
@@ -913,6 +999,54 @@ export default function BookingsPage() {
                                                 )}
                                               </div>
                                             </div>
+                                            {/* Add to Calendar Button */}
+                                            {!isPast && (
+                                              <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                  <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    className="ml-2"
+                                                    data-testid={`add-to-calendar-${session.id}`}
+                                                  >
+                                                    <Calendar className="h-4 w-4 mr-2" />
+                                                    Add to Calendar
+                                                  </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48">
+                                                  <DropdownMenuItem 
+                                                    className="cursor-pointer"
+                                                    data-testid={`google-calendar-session-${session.id}`}
+                                                    onClick={() => handleAddSessionToGoogleCalendar(session, packageData.title)}
+                                                  >
+                                                    <div className="flex items-center">
+                                                      <FcGoogle className="w-4 h-4 mr-3" />
+                                                      Google Calendar
+                                                    </div>
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem 
+                                                    className="cursor-pointer"
+                                                    data-testid={`outlook-calendar-session-${session.id}`}
+                                                    onClick={() => handleAddSessionToOutlookCalendar(session, packageData.title)}
+                                                  >
+                                                    <div className="flex items-center">
+                                                      <Mail className="w-4 h-4 mr-3 text-blue-600" />
+                                                      Outlook Calendar
+                                                    </div>
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem 
+                                                    className="cursor-pointer"
+                                                    data-testid={`apple-calendar-session-${session.id}`}
+                                                    onClick={() => handleAddSessionToAppleCalendar(session, packageData.title)}
+                                                  >
+                                                    <div className="flex items-center">
+                                                      <SiApple className="w-4 h-4 mr-3" />
+                                                      Apple Calendar
+                                                    </div>
+                                                  </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                            )}
                                           </div>
                                         );
                                       })
