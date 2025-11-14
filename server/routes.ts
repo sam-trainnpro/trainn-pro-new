@@ -1765,6 +1765,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a time_bound package and its sessions
+  app.put("/api/time-bound-packages/:id", requireAuth, async (req, res) => {
+    try {
+      // Check if user is coach
+      if (req.user.role !== "coach") {
+        return res.status(403).json({ message: "Coach access required" });
+      }
+      
+      if (req.user.role === "coach" && !req.user.isApproved) {
+        return res.status(403).json({ message: "Your coach account is pending approval" });
+      }
+      
+      const packageId = parseInt(req.params.id);
+      const existingPackage = await storage.getPackage(packageId);
+      
+      if (!existingPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+      
+      if (existingPackage.coachId !== req.user.id) {
+        return res.status(403).json({ message: "You can only update your own packages" });
+      }
+      
+      const { sessions, ...packageData } = req.body;
+      
+      // Filter out fields that shouldn't be updated
+      const {
+        id, coachId, packageType, createdAt, updatedAt,
+        ...updateData
+      } = packageData;
+      
+      // Update package fields
+      const updatedPackage = await storage.updatePackage(packageId, updateData);
+      
+      // Update sessions if provided
+      if (sessions && Array.isArray(sessions)) {
+        // Delete existing sessions
+        await storage.deleteTimeBoundPackageSessions(packageId);
+        
+        // Create new sessions with computed timestamps
+        const sessionRecords = sessions.map((session: any) => {
+          const sessionDate = new Date(session.date);
+          const [hours, minutes] = session.startTime.split(':');
+          const startDateTime = new Date(sessionDate);
+          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          
+          const endDateTime = new Date(startDateTime);
+          endDateTime.setMinutes(endDateTime.getMinutes() + session.duration);
+          
+          return {
+            packageId,
+            sessionNumber: session.sessionNumber,
+            date: sessionDate,
+            startTime: startDateTime,
+            endTime: endDateTime,
+            location: session.location || updateData.location,
+            addressLine1: session.addressLine1 || updateData.addressLine1,
+            city: session.city || updateData.city,
+            state: session.state || updateData.state,
+            zipCode: session.zipCode || updateData.zipCode,
+            address: session.address || updateData.address,
+            latitude: session.latitude || updateData.latitude,
+            longitude: session.longitude || updateData.longitude,
+            sessionType: session.sessionType || null,
+            status: 'scheduled'
+          };
+        });
+        
+        await storage.createTimeBoundPackageSessions(sessionRecords);
+      }
+      
+      res.json(updatedPackage);
+    } catch (error) {
+      console.error("Error updating time_bound package:", error);
+      res.status(500).json({ message: "Failed to update time_bound package" });
+    }
+  });
+
   // Book a time_bound package (creates booking and scheduled payout)
   app.post("/api/time-bound-packages/:id/book", requireAuth, async (req, res) => {
     try {
