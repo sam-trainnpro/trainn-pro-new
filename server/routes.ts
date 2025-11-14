@@ -1796,6 +1796,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...updateData
       } = packageData;
       
+      // Convert date strings to Date objects if present
+      if (updateData.startDate && typeof updateData.startDate === 'string') {
+        updateData.startDate = new Date(updateData.startDate);
+      }
+      if (updateData.endDate && typeof updateData.endDate === 'string') {
+        updateData.endDate = new Date(updateData.endDate);
+      }
+      
       // Update package fields
       const updatedPackage = await storage.updatePackage(packageId, updateData);
       
