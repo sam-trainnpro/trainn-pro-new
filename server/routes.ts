@@ -1753,6 +1753,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get sessions for a time_bound package
+  app.get("/api/time-bound-packages/:id/sessions", async (req, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+      const sessions = await storage.getTimeBoundPackageSessions(packageId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching time_bound package sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
   // Book a time_bound package (creates booking and scheduled payout)
   app.post("/api/time-bound-packages/:id/book", requireAuth, async (req, res) => {
     try {
