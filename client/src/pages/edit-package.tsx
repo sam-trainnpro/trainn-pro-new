@@ -279,19 +279,32 @@ export default function EditPackage() {
       const res = await fetch(`/api/time-bound-packages/${packageId}/sessions`);
       if (res.ok) {
         const sessionsData = await res.json();
+        
         // Convert session data to form format
         const formattedSessions = sessionsData.map((session: any) => {
-          const startTime = new Date(session.startTime);
-          const endTime = new Date(session.endTime);
-          const duration = Math.round((endTime.getTime() - startTime.getTime()) / 60000); // Duration in minutes
+          const startDateTime = new Date(session.startTime);
+          const endDateTime = new Date(session.endTime);
+          const duration = Math.round((endDateTime.getTime() - startDateTime.getTime()) / 60000); // Duration in minutes
+          
+          // Extract just the date part (without time) for the date picker
+          const sessionDate = new Date(session.startTime);
+          sessionDate.setHours(0, 0, 0, 0);
+          
+          // Format time as HH:MM
+          const hours = startDateTime.getHours().toString().padStart(2, '0');
+          const minutes = startDateTime.getMinutes().toString().padStart(2, '0');
+          const timeString = `${hours}:${minutes}`;
+          
+          // Check if this session has a different location from package default
+          const hasDifferentLocation = session.location && session.location !== packageData?.location;
           
           return {
             id: session.id,
             sessionNumber: session.sessionNumber,
-            date: new Date(session.date),
-            startTime: `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`,
+            date: sessionDate,
+            startTime: timeString,
             duration,
-            useDifferentLocation: !!(session.location || session.address),
+            useDifferentLocation: hasDifferentLocation,
             sessionType: session.sessionType || '',
             location: session.location || '',
             addressLine1: session.addressLine1 || '',
@@ -303,10 +316,16 @@ export default function EditPackage() {
             longitude: session.longitude || undefined,
           };
         });
+        
         setSessions(formattedSessions);
       }
     } catch (error) {
       console.error("Error loading sessions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load package sessions",
+        variant: "destructive",
+      });
     }
   };
 
