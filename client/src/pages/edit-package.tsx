@@ -1086,7 +1086,7 @@ export default function EditPackage() {
                                 </div>
                                 <FormControl>
                                   <Switch
-                                    checked={field.value}
+                                    checked={field.value || false}
                                     onCheckedChange={field.onChange}
                                   />
                                 </FormControl>
@@ -1130,7 +1130,7 @@ export default function EditPackage() {
                                 </div>
                                 <FormControl>
                                   <Switch
-                                    checked={field.value}
+                                    checked={field.value || false}
                                     onCheckedChange={field.onChange}
                                   />
                                 </FormControl>
@@ -1142,28 +1142,106 @@ export default function EditPackage() {
                         {/* Package Location */}
                         <div className="space-y-4">
                           <h4 className="font-medium">Package Location</h4>
-                          <InteractiveLocationPicker
-                            onLocationSelect={(locationData) => {
-                              form.setValue('location', locationData.locationName || '');
-                              form.setValue('addressLine1', locationData.addressLine1 || '');
-                              form.setValue('city', locationData.city || '');
-                              form.setValue('state', locationData.state || '');
-                              form.setValue('zipCode', locationData.zipCode || '');
-                              form.setValue('address', locationData.fullAddress || '');
-                              form.setValue('latitude', locationData.latitude || 0);
-                              form.setValue('longitude', locationData.longitude || 0);
-                            }}
-                            initialLocation={{
-                              locationName: form.getValues('location') || '',
-                              addressLine1: form.getValues('addressLine1') || '',
-                              city: form.getValues('city') || '',
-                              state: form.getValues('state') || '',
-                              zipCode: form.getValues('zipCode') || '',
-                              fullAddress: form.getValues('address') || '',
-                              latitude: form.getValues('latitude') || 37.7749,
-                              longitude: form.getValues('longitude') || -122.4194,
-                            }}
-                          />
+                          <p className="text-sm text-muted-foreground">
+                            Set the default location for all sessions. Individual sessions can override this.
+                          </p>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                              control={form.control}
+                              name="location"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Location Name</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="e.g. Central Park, Community Center" 
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Name of the location for this package
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="addressLine1"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Address Line 1</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="e.g. 123 Main St" 
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="city"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>City</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="e.g. San Francisco" 
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="state"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>State</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="e.g. CA" 
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="zipCode"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>ZIP Code</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="e.g. 94102" 
+                                      {...field}
+                                      value={field.value || ''}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         </div>
 
                         {/* Session Schedule */}
@@ -1289,29 +1367,57 @@ export default function EditPackage() {
 
                                     {/* Session Location */}
                                     {session.useDifferentLocation && (
-                                      <div className="mt-4">
-                                        <InteractiveLocationPicker
-                                          onLocationSelect={(locationData) => {
-                                            updateSession(index, 'location', locationData.locationName || '');
-                                            updateSession(index, 'addressLine1', locationData.addressLine1 || '');
-                                            updateSession(index, 'city', locationData.city || '');
-                                            updateSession(index, 'state', locationData.state || '');
-                                            updateSession(index, 'zipCode', locationData.zipCode || '');
-                                            updateSession(index, 'address', locationData.fullAddress || '');
-                                            updateSession(index, 'latitude', locationData.latitude || 0);
-                                            updateSession(index, 'longitude', locationData.longitude || 0);
-                                          }}
-                                          initialLocation={{
-                                            locationName: session.location || '',
-                                            addressLine1: session.addressLine1 || '',
-                                            city: session.city || '',
-                                            state: session.state || '',
-                                            zipCode: session.zipCode || '',
-                                            fullAddress: session.address || '',
-                                            latitude: session.latitude || 37.7749,
-                                            longitude: session.longitude || -122.4194,
-                                          }}
-                                        />
+                                      <div className="mt-4 space-y-4">
+                                        <Label className="text-sm font-medium">Session Location</Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          <div className="space-y-2">
+                                            <Label>Location Name</Label>
+                                            <Input
+                                              placeholder="e.g. Central Park"
+                                              value={session.location || ''}
+                                              onChange={(e) => updateSession(index, 'location', e.target.value)}
+                                              data-testid={`session-location-${index}`}
+                                            />
+                                          </div>
+                                          <div className="space-y-2">
+                                            <Label>Address Line 1</Label>
+                                            <Input
+                                              placeholder="e.g. 123 Main St"
+                                              value={session.addressLine1 || ''}
+                                              onChange={(e) => updateSession(index, 'addressLine1', e.target.value)}
+                                              data-testid={`session-address-${index}`}
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                          <div className="space-y-2">
+                                            <Label>City</Label>
+                                            <Input
+                                              placeholder="e.g. San Francisco"
+                                              value={session.city || ''}
+                                              onChange={(e) => updateSession(index, 'city', e.target.value)}
+                                              data-testid={`session-city-${index}`}
+                                            />
+                                          </div>
+                                          <div className="space-y-2">
+                                            <Label>State</Label>
+                                            <Input
+                                              placeholder="e.g. CA"
+                                              value={session.state || ''}
+                                              onChange={(e) => updateSession(index, 'state', e.target.value)}
+                                              data-testid={`session-state-${index}`}
+                                            />
+                                          </div>
+                                          <div className="space-y-2">
+                                            <Label>ZIP Code</Label>
+                                            <Input
+                                              placeholder="e.g. 94102"
+                                              value={session.zipCode || ''}
+                                              onChange={(e) => updateSession(index, 'zipCode', e.target.value)}
+                                              data-testid={`session-zipcode-${index}`}
+                                            />
+                                          </div>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -1376,6 +1482,7 @@ export default function EditPackage() {
                       )}
                     </div>
                   </div>
+                  )}
 
                   {/* Submit Buttons */}
                   <div className="flex justify-end gap-4">
