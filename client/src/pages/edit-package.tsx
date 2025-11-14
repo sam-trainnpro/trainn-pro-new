@@ -576,7 +576,6 @@ export default function EditPackage() {
           image: imageUrl,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          totalSessions: sessions.length,
           sessions: sessions.map(session => {
             const sessionDate = new Date(session.date);
             const [startHour, startMinute] = session.startTime.split(':').map(Number);
@@ -590,8 +589,8 @@ export default function EditPackage() {
               id: session.id, // Include ID if updating existing session
               sessionNumber: session.sessionNumber,
               date: sessionDate.toISOString(),
-              startTime: startDateTime.toISOString(),
-              endTime: endDateTime.toISOString(),
+              startTime: session.startTime, // Send as "HH:MM" format
+              duration: session.duration,
               location: session.location,
               addressLine1: session.addressLine1,
               city: session.city,
@@ -605,7 +604,7 @@ export default function EditPackage() {
           }),
         };
         
-        return apiRequest('PUT', `/api/packages/${packageId}`, packageData);
+        return apiRequest('PUT', `/api/time-bound-packages/${packageId}`, packageData);
       }
       
       throw new Error("Invalid package type");
@@ -619,6 +618,8 @@ export default function EditPackage() {
       queryClient.invalidateQueries({ queryKey: ['/api/packages'] });
       queryClient.invalidateQueries({ queryKey: [`/api/packages/${packageId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/packages/my'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/time-bound-packages/${packageId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/time-bound-packages/${packageId}/sessions`] });
       navigate('/my-packages');
     },
     onError: (error: any) => {
@@ -1041,6 +1042,33 @@ export default function EditPackage() {
                           </div>
                         </div>
 
+                        {/* Total Sessions (Time Bound only) */}
+                        {packageType === 'time_bound' && (
+                          <FormField
+                            control={form.control}
+                            name="totalSessions"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Total Sessions <span className="text-destructive">*</span></FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    min="1"
+                                    placeholder="8" 
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Number of sessions in this program
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
                         {/* Package Price, Capacity, Allow Late Join */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField
@@ -1092,26 +1120,28 @@ export default function EditPackage() {
                             )}
                           />
 
-                          <FormField
-                            control={form.control}
-                            name="allowLateJoin"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-col justify-between">
-                                <div>
-                                  <FormLabel>Allow Late Join</FormLabel>
-                                  <FormDescription>
-                                    Let customers join after start date
-                                  </FormDescription>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value || false}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
+                          {packageType === 'time_bound' && (
+                            <FormField
+                              control={form.control}
+                              name="allowLateJoin"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-col justify-between">
+                                  <div>
+                                    <FormLabel>Allow Late Join</FormLabel>
+                                    <FormDescription>
+                                      Let customers join after start date
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value || false}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          )}
                         </div>
 
                         {/* What to Bring and Outdoors */}

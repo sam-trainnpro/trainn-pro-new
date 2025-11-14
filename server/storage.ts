@@ -236,6 +236,7 @@ export interface IStorage {
   getTimeBoundPackageSessions(packageId: number): Promise<TimeBoundPackageSession[]>;
   updateTimeBoundPackageSession(id: number, sessionData: Partial<TimeBoundPackageSession>): Promise<TimeBoundPackageSession | undefined>;
   deleteTimeBoundPackageSession(id: number): Promise<boolean>;
+  deleteTimeBoundPackageSessions(packageId: number): Promise<boolean>;
   
   // Time Bound Package Booking methods
   createTimeBoundPackageBooking(bookingData: InsertTimeBoundPackageBooking): Promise<TimeBoundPackageBooking>;
@@ -3466,6 +3467,14 @@ export class DatabaseStorage implements IStorage {
   async deleteTimeBoundPackageSession(id: number): Promise<boolean> {
     const result = await db.delete(timeBoundPackageSessions)
       .where(eq(timeBoundPackageSessions.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+
+  async deleteTimeBoundPackageSessions(packageId: number): Promise<boolean> {
+    const result = await db.delete(timeBoundPackageSessions)
+      .where(eq(timeBoundPackageSessions.packageId, packageId))
       .returning();
     
     return result.length > 0;
