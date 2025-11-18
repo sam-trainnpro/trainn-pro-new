@@ -278,6 +278,123 @@ export default function CreatePackage() {
     setSessions(updatedSessions);
   };
 
+  // Helper function to extract address components from geocoding result
+  const extractAddressComponents = (addressComponents: any[]) => {
+    let addressLine1 = '';
+    let city = '';
+    let state = '';
+    let zipCode = '';
+    
+    addressComponents.forEach((component: any) => {
+      const types = component.types;
+      
+      if (types.includes('street_number')) {
+        addressLine1 = component.long_name + ' ';
+      } else if (types.includes('route')) {
+        addressLine1 += component.long_name;
+      } else if (types.includes('locality')) {
+        city = component.long_name;
+      } else if (types.includes('administrative_area_level_1')) {
+        state = component.short_name;
+      } else if (types.includes('postal_code')) {
+        zipCode = component.long_name;
+      }
+    });
+    
+    return { addressLine1: addressLine1.trim(), city, state, zipCode };
+  };
+
+  // Auto-populate address fields when location name changes
+  const handleLocationNameChange = async (locationName: string) => {
+    if (locationName.length < 3) return;
+    
+    try {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: locationName }, (results: any, status: any) => {
+        if (status === 'OK' && results[0]) {
+          const place = results[0];
+          const addressComponents = place.address_components || [];
+          
+          const { addressLine1, city, state, zipCode } = extractAddressComponents(addressComponents);
+          
+          // If no street address found, use the place name
+          const finalAddressLine1 = addressLine1 || (place.name ? place.name : '');
+          
+          // Auto-populate the address fields
+          if (finalAddressLine1) form.setValue('addressLine1', finalAddressLine1);
+          if (city) form.setValue('city', city);
+          if (state) form.setValue('state', state);
+          if (zipCode) form.setValue('zipCode', zipCode);
+          
+          // Construct the full address for the address field
+          const addressParts = [finalAddressLine1, city, state, zipCode].filter(Boolean);
+          if (addressParts.length > 0) {
+            form.setValue('address', addressParts.join(', '));
+          }
+          
+          // Set coordinates
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          form.setValue('latitude', lat);
+          form.setValue('longitude', lng);
+        }
+      });
+    } catch (error) {
+      console.log('Geocoding not available:', error);
+    }
+  };
+
+  // Handle pin movement on interactive map with reverse geocoding
+  const handleMapPinChange = async (lat: number, lng: number) => {
+    // Update coordinates immediately
+    form.setValue('latitude', lat);
+    form.setValue('longitude', lng);
+    
+    // Perform reverse geocoding to update address fields
+    if (window.google && window.google.maps) {
+      try {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode(
+          { location: { lat, lng } },
+          (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+            if (status === 'OK' && results && results.length > 0) {
+              const place = results[0];
+              const addressComponents = place.address_components || [];
+              
+              const { addressLine1, city, state, zipCode } = extractAddressComponents(addressComponents);
+              
+              // Use formatted address as fallback for addressLine1
+              const finalAddressLine1 = addressLine1 || place.formatted_address.split(',')[0].trim();
+              
+              // Update address fields with reverse geocoded data
+              if (finalAddressLine1) form.setValue('addressLine1', finalAddressLine1);
+              if (city) form.setValue('city', city);
+              if (state) form.setValue('state', state);
+              if (zipCode) form.setValue('zipCode', zipCode);
+              
+              // Update full address field
+              const addressParts = [finalAddressLine1, city, state, zipCode].filter(Boolean);
+              if (addressParts.length > 0) {
+                form.setValue('address', addressParts.join(', '));
+              } else {
+                // Fallback to formatted address
+                form.setValue('address', place.formatted_address);
+              }
+              
+              // Show success message
+              toast({
+                title: "Address updated",
+                description: "Address fields updated based on pin location."
+              });
+            }
+          }
+        );
+      } catch (error) {
+        console.error('Reverse geocoding error:', error);
+      }
+    }
+  };
+
   // Load categories on mount
   useEffect(() => {
     async function loadCategories() {
@@ -1093,15 +1210,24 @@ export default function CreatePackage() {
                     name="location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Location Name</FormLabel>
+                        <FormLabel>Location Name <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="e.g. Central Park, Community Center" 
                             {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              // Auto-populate address when location name is typed
+                              const value = e.target.value;
+                              if (value.length > 3) {
+                                handleLocationNameChange(value);
+                              }
+                            }}
+                            data-testid="input-location-name"
                           />
                         </FormControl>
                         <FormDescription>
-                          Name of the location for this package
+                          Type a location name and we'll try to auto-fill the address details below
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1165,6 +1291,36 @@ export default function CreatePackage() {
                       </FormItem>
                     )}
                   />
+                </div>
+
+                {/* Interactive Map Preview */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-medium">Location Preview:</p>
+                    <p className="text-sm text-muted-foreground">
+                      {form.watch('latitude') && form.watch('longitude') 
+                        ? `${form.watch('latitude')?.toFixed(6)}, ${form.watch('longitude')?.toFixed(6)}`
+                        : 'No coordinates set'
+                      }
+                    </p>
+                  </div>
+                  
+                  <GoogleMapsScript>
+                    {form.watch('latitude') && form.watch('longitude') ? (
+                      <InteractiveLocationPicker
+                        latitude={form.watch('latitude')!}
+                        longitude={form.watch('longitude')!}
+                        onLocationChange={handleMapPinChange}
+                        height="300px"
+                        className="mt-2"
+                      />
+                    ) : (
+                      <div className="mt-2 p-8 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-500">
+                        <MapPin className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                        <p>Enter a location name above to show the interactive map</p>
+                      </div>
+                    )}
+                  </GoogleMapsScript>
                 </div>
 
                 {/* What To Bring */}
