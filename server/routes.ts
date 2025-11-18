@@ -4,9 +4,39 @@ import { createServer, type Server } from "http";
 import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { format, toZonedTime } from 'date-fns-tz';
+import { format, toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { db } from "./db";
 import { classes, users } from "../shared/schema";
+
+// Map US states to their IANA timezone identifiers
+function getTimezoneForState(state: string | null): string {
+  if (!state) return 'America/Los_Angeles'; // Default to Pacific
+  
+  const stateUpper = state.toUpperCase();
+  
+  // Eastern Time (UTC-5/UTC-4)
+  const easternStates = ['CT', 'DE', 'FL', 'GA', 'ME', 'MD', 'MA', 'NH', 'NJ', 'NY', 'NC', 'OH', 'PA', 'RI', 'SC', 'VT', 'VA', 'WV', 'DC'];
+  // Central Time (UTC-6/UTC-5)
+  const centralStates = ['AL', 'AR', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'MN', 'MS', 'MO', 'NE', 'ND', 'OK', 'SD', 'TN', 'TX', 'WI'];
+  // Mountain Time (UTC-7/UTC-6)
+  const mountainStates = ['AZ', 'CO', 'ID', 'MT', 'NM', 'UT', 'WY'];
+  // Pacific Time (UTC-8/UTC-7)
+  const pacificStates = ['CA', 'NV', 'OR', 'WA'];
+  // Alaska Time (UTC-9/UTC-8)
+  const alaskaStates = ['AK'];
+  // Hawaii Time (UTC-10)
+  const hawaiiStates = ['HI'];
+  
+  if (easternStates.includes(stateUpper)) return 'America/New_York';
+  if (centralStates.includes(stateUpper)) return 'America/Chicago';
+  if (mountainStates.includes(stateUpper)) return 'America/Denver';
+  if (pacificStates.includes(stateUpper)) return 'America/Los_Angeles';
+  if (alaskaStates.includes(stateUpper)) return 'America/Anchorage';
+  if (hawaiiStates.includes(stateUpper)) return 'America/Honolulu';
+  
+  // Default to Pacific if unknown
+  return 'America/Los_Angeles';
+}
 import { 
   sendBookingConfirmation, 
   sendNewBookingNotificationToCoach, 
@@ -1699,24 +1729,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate: packageData.endDate ? new Date(packageData.endDate) : undefined,
       });
       
-      // Create all sessions for this package
-      const sessionRecords = sessions.map((session: any, index: number) => ({
-        packageId: newPackage.id,
-        sessionNumber: index + 1,
-        date: new Date(session.date),
-        startTime: new Date(session.startTime),
-        endTime: new Date(session.endTime),
-        location: session.location || packageData.location,
-        addressLine1: session.addressLine1 || packageData.addressLine1,
-        city: session.city || packageData.city,
-        state: session.state || packageData.state,
-        zipCode: session.zipCode || packageData.zipCode,
-        address: session.address || packageData.address,
-        latitude: session.latitude || packageData.latitude,
-        longitude: session.longitude || packageData.longitude,
-        sessionType: session.sessionType || null,
-        status: 'scheduled'
-      }));
+      // Get the timezone for the package location
+      const packageTimezone = getTimezoneForState(packageData.state);
+      
+      // Create all sessions for this package with timezone-aware conversion
+      const sessionRecords = sessions.map((session: any, index: number) => {
+        // Parse the ISO date string sent from frontend
+        const sentStartTime = new Date(session.startTime);
+        const sentEndTime = new Date(session.endTime);
+        
+        // Extract the date and time components (these are what the user selected)
+        // The frontend sends these as ISO strings, but we need to re-interpret them in the package's timezone
+        const year = sentStartTime.getUTCFullYear();
+        const month = sentStartTime.getUTCMonth();
+        const day = sentStartTime.getUTCDate();
+        const hours = sentStartTime.getUTCHours();
+        const minutes = sentStartTime.getUTCMinutes();
+        
+        // Create a date object representing this local time in the package's timezone
+        // then convert it to UTC for storage
+        const localDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+        const startTimeUTC = fromZonedTime(localDateStr, packageTimezone);
+        
+        // Calculate end time in the same way
+        const endHours = sentEndTime.getUTCHours();
+        const endMinutes = sentEndTime.getUTCMinutes();
+        const endLocalDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
+        const endTimeUTC = fromZonedTime(endLocalDateStr, packageTimezone);
+        
+        // Date column should just be the date (no time)
+        const sessionDate = new Date(year, month, day);
+        
+        return {
+          packageId: newPackage.id,
+          sessionNumber: index + 1,
+          date: sessionDate,
+          startTime: startTimeUTC,
+          endTime: endTimeUTC,
+          location: session.location || packageData.location,
+          addressLine1: session.addressLine1 || packageData.addressLine1,
+          city: session.city || packageData.city,
+          state: session.state || packageData.state,
+          zipCode: session.zipCode || packageData.zipCode,
+          address: session.address || packageData.address,
+          latitude: session.latitude || packageData.latitude,
+          longitude: session.longitude || packageData.longitude,
+          sessionType: session.sessionType || null,
+          status: 'scheduled'
+        };
+      });
       
       const createdSessions = await storage.createTimeBoundPackageSessions(sessionRecords);
       
@@ -1812,22 +1873,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Delete existing sessions
         await storage.deleteTimeBoundPackageSessions(packageId);
         
-        // Create new sessions with computed timestamps
+        // Get the timezone for the package location
+        const packageTimezone = getTimezoneForState(updateData.state || existingPackage.state);
+        
+        // Create new sessions with timezone-aware conversion
         const sessionRecords = sessions.map((session: any) => {
+          // Parse the date string (ISO format from frontend)
           const sessionDate = new Date(session.date);
-          const [hours, minutes] = session.startTime.split(':');
-          const startDateTime = new Date(sessionDate);
-          startDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          const year = sessionDate.getUTCFullYear();
+          const month = sessionDate.getUTCMonth() + 1;
+          const day = sessionDate.getUTCDate();
           
-          const endDateTime = new Date(startDateTime);
-          endDateTime.setMinutes(endDateTime.getMinutes() + session.duration);
+          // Parse the time string (HH:MM format from frontend)
+          const [hours, minutes] = session.startTime.split(':');
+          
+          // Create a local datetime string in the package's timezone
+          const localDateTimeStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+          
+          // Convert from the package's timezone to UTC
+          const startTimeUTC = fromZonedTime(localDateTimeStr, packageTimezone);
+          
+          // Calculate end time by adding duration (in minutes)
+          const endTimeUTC = new Date(startTimeUTC.getTime() + session.duration * 60000);
+          
+          // Date column should just be the date (no time)
+          const dateOnly = new Date(year, month - 1, day);
           
           return {
             packageId,
             sessionNumber: session.sessionNumber,
-            date: sessionDate,
-            startTime: startDateTime,
-            endTime: endDateTime,
+            date: dateOnly,
+            startTime: startTimeUTC,
+            endTime: endTimeUTC,
             location: session.location || updateData.location,
             addressLine1: session.addressLine1 || updateData.addressLine1,
             city: session.city || updateData.city,
