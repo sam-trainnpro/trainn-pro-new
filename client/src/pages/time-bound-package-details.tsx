@@ -11,6 +11,7 @@ import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
 import GoogleMapsScript from "@/components/maps/google-maps-script";
 import LocationPreview from "@/components/maps/location-preview";
+import PackageLocationsMap from "@/components/maps/package-locations-map";
 import { 
   Card, 
   CardContent, 
@@ -250,6 +251,9 @@ interface TimeBoundPackageSession {
   startTime: string;
   endTime: string;
   location: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   notes: string | null;
   sessionType: string | null;
 }
@@ -272,6 +276,8 @@ interface TimeBoundPackageDetails {
   allowLateJoin: boolean | null;
   location: string | null;
   address: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   categoryId: number | null;
   categoryName?: string;
   ageGroup: string;
@@ -732,43 +738,98 @@ export default function TimeBoundPackageDetailsPage() {
                     </TabsContent>
                     
                     <TabsContent value="location" className="bg-white rounded-xl p-6 shadow-sm" data-testid="tab-content-location">
-                      <h2 className="text-xl font-bold mb-4">Location</h2>
+                      <h2 className="text-xl font-bold mb-6">Location</h2>
                       
                       {packageDetails.address || packageDetails.location ? (
                         <>
-                          <div className="mb-4">
-                            <div className="flex items-start gap-3 p-4 border rounded-lg bg-gray-50">
-                              <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                              <div>
-                                <p className="font-medium">Primary Location</p>
-                                <p className="text-muted-foreground">
-                                  {packageDetails.address || packageDetails.location}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
+                          {/* Interactive Map */}
+                          <GoogleMapsScript>
+                            <PackageLocationsMap
+                              primaryLocation={{
+                                name: packageDetails.location || 'Primary Location',
+                                address: packageDetails.address,
+                                latitude: packageDetails.latitude,
+                                longitude: packageDetails.longitude
+                              }}
+                              sessionLocations={packageDetails.sessions?.map((session, index) => ({
+                                id: session.id,
+                                sessionNumber: index + 1,
+                                location: session.location || packageDetails.location || '',
+                                address: session.address || undefined,
+                                latitude: session.latitude || undefined,
+                                longitude: session.longitude || undefined,
+                                sessionDate: new Date(session.date),
+                                sessionTime: formatTime(session.startTime)
+                              })) || []}
+                              height="450px"
+                              className="rounded-lg overflow-hidden border shadow-sm"
+                            />
+                          </GoogleMapsScript>
 
-                          {/* Show session-specific locations if they differ */}
-                          {packageDetails.sessions?.some(s => s.location && s.location !== packageDetails.location) && (
-                            <div className="mt-6">
-                              <h3 className="text-lg font-semibold mb-3">Session-Specific Locations</h3>
-                              <div className="space-y-2">
-                                {packageDetails.sessions
-                                  .filter(s => s.location && s.location !== packageDetails.location)
-                                  .map((session, index) => (
-                                    <div key={session.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
-                                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                      <div className="flex-1">
-                                        <p className="font-medium text-sm">
-                                          Session {packageDetails.sessions.indexOf(session) + 1} - {new Date(session.date).toLocaleDateString()}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">{session.location}</p>
-                                      </div>
-                                    </div>
-                                  ))}
+                          {/* Location Details */}
+                          <div className="mt-6 space-y-4">
+                            <div>
+                              <div className="flex items-start gap-3 p-4 border rounded-lg bg-gray-50">
+                                <MapPin className="h-5 w-5 text-red-500 mt-0.5" />
+                                <div>
+                                  <p className="font-semibold">Primary Location</p>
+                                  <p className="text-muted-foreground">
+                                    {packageDetails.address || packageDetails.location}
+                                  </p>
+                                  {packageDetails.latitude && packageDetails.longitude && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Coordinates: {packageDetails.latitude.toFixed(6)}, {packageDetails.longitude.toFixed(6)}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          )}
+
+                            {/* Show session-specific locations if they differ */}
+                            {packageDetails.sessions?.some(s => 
+                              s.location && 
+                              s.location !== packageDetails.location &&
+                              s.latitude &&
+                              s.longitude
+                            ) && (
+                              <div className="mt-6">
+                                <h3 className="text-lg font-semibold mb-3">Session-Specific Locations</h3>
+                                <div className="space-y-2">
+                                  {packageDetails.sessions
+                                    .map((session, index) => ({ ...session, sessionNumber: index + 1 }))
+                                    .filter(s => 
+                                      s.location && 
+                                      s.location !== packageDetails.location &&
+                                      s.latitude &&
+                                      s.longitude
+                                    )
+                                    .map((session) => (
+                                      <div key={session.id} className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                        <MapPin className="h-5 w-5 text-blue-500 mt-0.5" />
+                                        <div className="flex-1">
+                                          <p className="font-semibold text-sm">
+                                            Session {session.sessionNumber} - {new Date(session.date).toLocaleDateString('en-US', {
+                                              month: 'short',
+                                              day: 'numeric',
+                                              year: 'numeric'
+                                            })}
+                                          </p>
+                                          <p className="text-sm text-muted-foreground mt-1">{session.location}</p>
+                                          {session.address && (
+                                            <p className="text-xs text-muted-foreground mt-1">{session.address}</p>
+                                          )}
+                                          {session.latitude && session.longitude && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                              Coordinates: {session.latitude.toFixed(6)}, {session.longitude.toFixed(6)}
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </>
                       ) : (
                         <p className="text-muted-foreground">Location information not available</p>
