@@ -211,7 +211,7 @@ export interface IStorage {
   // Class Package methods
   createPackage(packageData: InsertClassPackage): Promise<ClassPackage>;
   getPackage(id: number): Promise<ClassPackage | undefined>;
-  getCoachPackages(coachId: number): Promise<ClassPackage[]>;
+  getCoachPackages(coachId: number, activeOnly?: boolean): Promise<ClassPackage[]>;
   getAllPackages(): Promise<ClassPackage[]>;
   updatePackage(id: number, packageData: Partial<ClassPackage>): Promise<ClassPackage | undefined>;
   deletePackage(id: number): Promise<boolean>;
@@ -1944,10 +1944,16 @@ export class DatabaseStorage implements IStorage {
     } as ClassPackage;
   }
 
-  async getCoachPackages(coachId: number): Promise<ClassPackage[]> {
+  async getCoachPackages(coachId: number, activeOnly: boolean = false): Promise<ClassPackage[]> {
+    const conditions = [eq(classPackages.coachId, coachId)];
+    
+    if (activeOnly) {
+      conditions.push(eq(classPackages.isActive, true));
+    }
+    
     return await db.select()
       .from(classPackages)
-      .where(eq(classPackages.coachId, coachId))
+      .where(and(...conditions))
       .orderBy(desc(classPackages.createdAt));
   }
 
