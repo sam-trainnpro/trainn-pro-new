@@ -18,8 +18,7 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Package,
-  CheckCircle
+  Package
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -325,10 +324,6 @@ export default function CoachDetailsPage() {
                                 <div className="flex-1">
                                   <CardTitle className="text-lg flex flex-wrap items-center gap-2 mb-2">
                                     <span className="break-words">{pkg.title}</span>
-                                    <Badge variant="default" className="bg-green-600 flex-shrink-0">
-                                      <CheckCircle className="w-3 h-3 mr-1" />
-                                      Active
-                                    </Badge>
                                   </CardTitle>
                                   {pkg.categoryName && (
                                     <Badge variant="outline" className="mb-2">
