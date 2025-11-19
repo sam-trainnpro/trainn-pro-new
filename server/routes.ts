@@ -1513,11 +1513,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get packages for a specific coach
+  // Get packages for a specific coach (customer-facing, only show active packages)
   app.get("/api/coaches/:id/packages", async (req, res) => {
     try {
       const coachId = parseInt(req.params.id);
-      const packages = await storage.getCoachPackages(coachId);
+      const packages = await storage.getCoachPackages(coachId, true);
       res.json(packages);
     } catch (error) {
       console.error("Error fetching coach packages:", error);
