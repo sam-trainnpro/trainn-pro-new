@@ -51,7 +51,7 @@ export default function HeroSection() {
                     Find Your Perfect Class
                   </h1>
                   <p className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto">
-                    Connect with top providers in the San Francisco Bay Area for sports, workouts, music, art and other fun classes for adults and kids
+                    Connect with top providers for adult and kid flexible fitness, sports, and creative classes in the San Francisco Bay Area, LA and beyond!
                   </p>
                 </div>
               </div>
