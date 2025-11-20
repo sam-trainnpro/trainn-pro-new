@@ -59,7 +59,7 @@ export default function WhyUseTrainn() {
               <div className="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-2xl font-heading font-bold text-gray-900">For Providers</h3>
+              <h3 className="text-2xl font-heading font-bold text-gray-900">Providers</h3>
             </div>
             
             <div className="space-y-6">
