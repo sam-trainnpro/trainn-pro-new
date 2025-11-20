@@ -1,0 +1,115 @@
+import { Users, DollarSign, TrendingUp, Calendar, Clock, Award } from "lucide-react";
+
+export default function WhyUseTrainn() {
+  return (
+    <section className="py-12 md:py-16 bg-gray-50">
+      <div className="container mx-auto px-4">
+        <h2 className="text-2xl md:text-3xl font-heading font-bold text-center mb-12">Why Use Trainn</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Customers Section */}
+          <div className="bg-white rounded-xl p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-2xl font-heading font-bold text-gray-900">For Customers</h3>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <Award className="h-5 w-5 text-green-600" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-700 leading-relaxed">
+                    Build skills, strength, and confidence through a variety of classes
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-700 leading-relaxed">
+                    Save an average of 8 hours a month by aggregating activities for kids and adults onto one platform
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-700 leading-relaxed">
+                    Save an average of $200 per year with flexible drop-in style classes that meet your schedule and don't require long-term commitments
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Providers Section */}
+          <div className="bg-white rounded-xl p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-2xl font-heading font-bold text-gray-900">For Providers</h3>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-700 leading-relaxed">
+                    Increase income and monthly earning potential
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-700 leading-relaxed">
+                    Easy to use and free platform to handle class scheduling, packages, payment collection and customer engagement
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-700 leading-relaxed">
+                    Increase existing class sizes by 20%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

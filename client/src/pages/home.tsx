@@ -5,6 +5,7 @@ import HeroSection from "@/components/home/hero-section";
 import SearchFilters from "@/components/home/search-filters";
 import FeaturedClasses from "@/components/home/featured-classes";
 import BookAgainClasses from "@/components/home/book-again-classes";
+import WhyUseTrainn from "@/components/home/why-use-trainn";
 import HowItWorks from "@/components/home/how-it-works";
 import DownloadApp from "@/components/home/download-app";
 import Testimonials from "@/components/home/testimonials";
@@ -75,6 +76,7 @@ export default function Home() {
       <main className="flex-grow">
         <HeroSection />
         <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
+        <WhyUseTrainn />
         <HowItWorks />
         <FeaturedClasses />
         <BookAgainClasses />
