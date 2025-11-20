@@ -10,7 +10,7 @@ export default function HowItWorks() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="text-center">
             <div className="w-16 h-16 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-primary text-2xl font-bold">1</span>
+              <span className="text-2xl font-bold text-[#ffffff]">1</span>
             </div>
             <h3 className="font-heading font-bold text-xl mb-2">Find Your Class</h3>
             <p className="text-gray-600">Search and filter through hundreds of classes by type, location, time, and age group to find the right adult or kids class.</p>
