@@ -68,9 +68,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex flex-col items-start">
           <span className="text-primary text-2xl font-heading font-bold">Trainn</span>
-          <span className="text-xs text-gray-600 leading-tight font-bold">
-            Sports, fitness, music, art and other fun classes for adults and kids in San Francisco
-          </span>
+          <span className="text-xs text-gray-600 leading-tight font-bold">Local, flexible and fun sports, fitness, music and art classes for adults and kids</span>
         </Link>
         
         {/* Desktop Navigation */}
@@ -103,7 +101,7 @@ export default function Header() {
             </div>
           ) : (
             /* Logged in state */
-            <div className="flex items-center space-x-4">
+            (<div className="flex items-center space-x-4">
               {(user.role === 'coach' || user.role === 'admin') && (
                 <>
                   <Link href="/create-class">
@@ -118,13 +116,11 @@ export default function Header() {
                   </Link>
                 </>
               )}
-              
               <Link href={user.role === 'coach' ? "/my-calendar" : "/bookings"}>
                 <Button variant="ghost" className="p-2">
                   <Calendar className="h-5 w-5" />
                 </Button>
               </Link>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 p-1">
@@ -235,7 +231,7 @@ export default function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
+            </div>)
           )}
         </nav>
         
@@ -436,7 +432,6 @@ export default function Header() {
           </SheetContent>
         </Sheet>
       </div>
-      
       {/* Referral Modal - Only for customers */}
       {user?.role === 'customer' && (
         <ReferralModal
@@ -444,7 +439,6 @@ export default function Header() {
           onClose={() => setIsReferralModalOpen(false)}
         />
       )}
-      
       {/* Provider Referral Modal - Only for providers */}
       {(user?.role === 'coach' || user?.role === 'admin') && (
         <ProviderReferralModal
@@ -452,7 +446,6 @@ export default function Header() {
           onClose={() => setIsProviderReferralModalOpen(false)}
         />
       )}
-      
       {/* Refer Provider Modal - Only for customers */}
       {user?.role === 'customer' && (
         <ReferProviderModal
@@ -460,7 +453,6 @@ export default function Header() {
           onClose={() => setIsReferProviderModalOpen(false)}
         />
       )}
-      
       {/* Refer Provider Provider Modal - Only for providers */}
       {(user?.role === 'coach' || user?.role === 'admin') && (
         <ReferProviderProviderModal
