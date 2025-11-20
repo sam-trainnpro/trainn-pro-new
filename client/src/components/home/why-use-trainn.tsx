@@ -9,12 +9,7 @@ export default function WhyUseTrainn() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Customers Section */}
           <div className="bg-white rounded-xl p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-2xl font-heading font-bold text-gray-900">For Customers</h3>
-            </div>
+            <h3 className="text-2xl font-heading font-bold text-gray-900 mb-6">For Customers</h3>
             
             <div className="space-y-6">
               <div className="flex gap-4">
