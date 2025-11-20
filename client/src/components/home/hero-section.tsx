@@ -51,7 +51,7 @@ export default function HeroSection() {
                     Activities for Everyone
                   </h1>
                   <p className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto">
-                    Connect with top providers for adult and kid flexible fitness, sports, and creative classes in the San Francisco Bay Area, LA and beyond!
+                    Flexible fitness, sports, and creative classes for adults and kids in the San Francisco Bay Area, LA and beyond!
                   </p>
                 </div>
               </div>
