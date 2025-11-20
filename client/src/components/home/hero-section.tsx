@@ -48,7 +48,7 @@ export default function HeroSection() {
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="px-4 text-center">
                   <h1 className="text-3xl sm:text-4xl md:text-6xl font-heading font-bold mb-4 text-white">
-                    Find Your Perfect Class
+                    Activities for Everyone
                   </h1>
                   <p className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto">
                     Connect with top providers for adult and kid flexible fitness, sports, and creative classes in the San Francisco Bay Area, LA and beyond!
