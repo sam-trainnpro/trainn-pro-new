@@ -18,7 +18,7 @@ export default function HowItWorks() {
           
           <div className="text-center">
             <div className="w-16 h-16 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-primary text-2xl font-bold">2</span>
+              <span className="text-2xl font-bold text-[#ffffff]">2</span>
             </div>
             <h3 className="font-heading font-bold text-xl mb-2">Book & Pay</h3>
             <p className="text-gray-600">Securely book and pay in just a few clicks. Receive instant confirmation and add to your calendar.</p>
