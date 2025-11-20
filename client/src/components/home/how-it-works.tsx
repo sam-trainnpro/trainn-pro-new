@@ -26,7 +26,7 @@ export default function HowItWorks() {
           
           <div className="text-center">
             <div className="w-16 h-16 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-primary text-2xl font-bold">3</span>
+              <span className="text-2xl font-bold text-[#ffffff]">3</span>
             </div>
             <h3 className="font-heading font-bold text-xl mb-2">Trainn & Review</h3>
             <p className="text-gray-600">Attend your class, achieve your goals, have fun, and leave a review to help others find great providers.</p>
