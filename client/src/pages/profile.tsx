@@ -320,10 +320,10 @@ function DashboardContent() {
               Plans start at $116/month for 4 classes.
             </p>
             <Button 
-              onClick={() => window.location.href = '/subscriptions'}
-              data-testid="button-view-subscriptions"
+              onClick={() => window.location.href = '/plans'}
+              data-testid="button-view-plans"
             >
-              View Subscription Plans <ArrowRight className="w-4 h-4 ml-2" />
+              View Plans <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
         </Card>

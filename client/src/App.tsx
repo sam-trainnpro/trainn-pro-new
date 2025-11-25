@@ -63,7 +63,7 @@ import KidsDropInSportsSF from "@/pages/kids-drop-in-sports-sf";
 import KidsAfterSchoolActivitiesSF from "@/pages/kids-after-school-activities-sf";
 import LandingPagesPage from "@/pages/landing-pages";
 import ProviderLandingPage from "@/pages/provider-landing";
-import SubscriptionsPage from "@/pages/subscriptions";
+import PlansPage from "@/pages/plans";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -111,8 +111,8 @@ function Router() {
       <Route path="/packages">
         <PackagesPage />
       </Route>
-      <Route path="/subscriptions">
-        <SubscriptionsPage />
+      <Route path="/plans">
+        <PlansPage />
       </Route>
       <Route path="/package/:id">
         <TimeBoundPackageDetailsPage />
