@@ -61,7 +61,7 @@ interface UserSubscription {
   classesRemaining: number | 'unlimited';
 }
 
-export default function SubscriptionsPage() {
+export default function PlansPage() {
   const [, navigate] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -108,7 +108,7 @@ export default function SubscriptionsPage() {
         description: "Please sign in to subscribe to a plan.",
         variant: "destructive",
       });
-      navigate("/auth?redirect=/subscriptions");
+      navigate("/auth?redirect=/plans");
       return;
     }
 
