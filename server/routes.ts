@@ -7227,6 +7227,386 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // ========== SUBSCRIPTION ROUTES ==========
+  
+  // Get all active subscription plans
+  app.get("/api/subscriptions/plans", async (req, res) => {
+    try {
+      const plans = await storage.getActiveSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Failed to fetch subscription plans" });
+    }
+  });
+
+  // Get user's active subscription
+  app.get("/api/subscriptions/my", requireAuth, async (req, res) => {
+    try {
+      const subscription = await storage.getActiveUserSubscription(req.user.id);
+      
+      if (!subscription) {
+        return res.json(null);
+      }
+      
+      // Get the plan details
+      const plan = await storage.getSubscriptionPlan(subscription.planId);
+      
+      // Get total classes taken all time
+      const totalClassesTaken = await storage.getTotalClassesTakenWithSubscription(req.user.id);
+      
+      res.json({
+        ...subscription,
+        plan,
+        totalClassesTaken,
+        classesRemaining: subscription.classesAllottedThisPeriod === -1 
+          ? 'unlimited' 
+          : subscription.classesAllottedThisPeriod - subscription.classesUsedThisPeriod
+      });
+    } catch (error) {
+      console.error("Error fetching user subscription:", error);
+      res.status(500).json({ message: "Failed to fetch subscription" });
+    }
+  });
+
+  // Get subscription usage history
+  app.get("/api/subscriptions/usage", requireAuth, async (req, res) => {
+    try {
+      const usage = await storage.getUserSubscriptionUsageHistory(req.user.id);
+      res.json(usage);
+    } catch (error) {
+      console.error("Error fetching subscription usage:", error);
+      res.status(500).json({ message: "Failed to fetch usage history" });
+    }
+  });
+
+  // Create Stripe Checkout session for subscription
+  app.post("/api/subscriptions/checkout", requireAuth, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const { planId } = req.body;
+      
+      if (!planId) {
+        return res.status(400).json({ message: "Plan ID is required" });
+      }
+
+      const plan = await storage.getSubscriptionPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: "Subscription plan not found" });
+      }
+
+      // Check if user already has an active subscription
+      const existingSubscription = await storage.getActiveUserSubscription(req.user.id);
+      if (existingSubscription) {
+        return res.status(400).json({ message: "You already have an active subscription" });
+      }
+
+      // Get or create Stripe customer
+      let stripeCustomerId = req.user.stripeCustomerId;
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: req.user.email,
+          name: `${req.user.firstName} ${req.user.lastName}`,
+          metadata: {
+            userId: req.user.id.toString()
+          }
+        });
+        stripeCustomerId = customer.id;
+        await storage.updateUser(req.user.id, { stripeCustomerId });
+      }
+
+      // Create or get Stripe price for this plan
+      let stripePriceId = plan.stripePriceId;
+      if (!stripePriceId) {
+        // Create a product and price in Stripe
+        let stripeProductId = plan.stripeProductId;
+        if (!stripeProductId) {
+          const product = await stripe.products.create({
+            name: `Trainn ${plan.name}`,
+            description: plan.isUnlimited 
+              ? 'Unlimited monthly classes subscription'
+              : `${plan.classesPerMonth} classes per month subscription`,
+            metadata: {
+              planId: plan.id.toString()
+            }
+          });
+          stripeProductId = product.id;
+        }
+
+        const price = await stripe.prices.create({
+          product: stripeProductId,
+          unit_amount: Math.round(plan.monthlyPrice * 100), // Convert to cents
+          currency: 'usd',
+          recurring: {
+            interval: 'month',
+            interval_count: 1
+          },
+          metadata: {
+            planId: plan.id.toString()
+          }
+        });
+        stripePriceId = price.id;
+
+        // Save the Stripe IDs to the plan
+        await storage.updateSubscriptionPlan(plan.id, { 
+          stripePriceId, 
+          stripeProductId 
+        });
+      }
+
+      // Determine the base URL for success/cancel redirects
+      const host = req.get('host');
+      const baseUrl = host?.includes('trainn.pro') 
+        ? 'https://trainn.pro'
+        : `https://${host}`;
+
+      // Create Stripe Checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: stripePriceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${baseUrl}/profile?tab=dashboard&subscription=success`,
+        cancel_url: `${baseUrl}/subscriptions?cancelled=true`,
+        metadata: {
+          userId: req.user.id.toString(),
+          planId: plan.id.toString()
+        },
+        subscription_data: {
+          metadata: {
+            userId: req.user.id.toString(),
+            planId: plan.id.toString()
+          }
+        }
+      });
+
+      res.json({ sessionId: session.id, url: session.url });
+    } catch (error) {
+      console.error("Error creating subscription checkout:", error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  // Cancel subscription (at end of billing period)
+  app.post("/api/subscriptions/cancel", requireAuth, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const subscription = await storage.getActiveUserSubscription(req.user.id);
+      if (!subscription) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+
+      // Cancel at period end in Stripe
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true
+      });
+
+      // Update our database
+      await storage.updateUserSubscription(subscription.id, {
+        cancelAtPeriodEnd: true,
+        cancelledAt: new Date()
+      });
+
+      res.json({ 
+        message: "Subscription will be cancelled at the end of your billing period",
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: subscription.currentPeriodEnd
+      });
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      res.status(500).json({ message: "Failed to cancel subscription" });
+    }
+  });
+
+  // Reactivate cancelled subscription (before period ends)
+  app.post("/api/subscriptions/reactivate", requireAuth, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const subscription = await storage.getActiveUserSubscription(req.user.id);
+      if (!subscription) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+
+      if (!subscription.cancelAtPeriodEnd) {
+        return res.status(400).json({ message: "Subscription is not scheduled for cancellation" });
+      }
+
+      // Reactivate in Stripe
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: false
+      });
+
+      // Update our database
+      await storage.updateUserSubscription(subscription.id, {
+        cancelAtPeriodEnd: false,
+        cancelledAt: null
+      });
+
+      res.json({ 
+        message: "Subscription has been reactivated",
+        cancelAtPeriodEnd: false
+      });
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+      res.status(500).json({ message: "Failed to reactivate subscription" });
+    }
+  });
+
+  // Stripe webhook for subscription events
+  app.post("/api/webhooks/stripe-subscriptions", 
+    express.raw({ type: 'application/json' }),
+    async (req, res) => {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const webhookSecret = process.env.STRIPE_SUBSCRIPTION_WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        console.warn("STRIPE_SUBSCRIPTION_WEBHOOK_SECRET not configured");
+        return res.status(400).json({ message: "Webhook secret not configured" });
+      }
+
+      let event: Stripe.Event;
+
+      try {
+        const sig = req.headers['stripe-signature'] as string;
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      } catch (err: any) {
+        console.error(`Webhook signature verification failed: ${err.message}`);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+
+      try {
+        switch (event.type) {
+          case 'customer.subscription.created': {
+            const subscription = event.data.object as Stripe.Subscription;
+            const userId = parseInt(subscription.metadata.userId);
+            const planId = parseInt(subscription.metadata.planId);
+            
+            if (!userId || !planId) {
+              console.error('Missing userId or planId in subscription metadata');
+              break;
+            }
+
+            const plan = await storage.getSubscriptionPlan(planId);
+            if (!plan) {
+              console.error('Plan not found:', planId);
+              break;
+            }
+
+            // Create user subscription record
+            await storage.createUserSubscription({
+              userId,
+              planId,
+              stripeSubscriptionId: subscription.id,
+              stripeCustomerId: subscription.customer as string,
+              status: 'active',
+              currentPeriodStart: new Date(subscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              classesUsedThisPeriod: 0,
+              classesAllottedThisPeriod: plan.isUnlimited ? -1 : (plan.classesPerMonth || 0),
+              cancelAtPeriodEnd: subscription.cancel_at_period_end
+            });
+
+            console.log(`Created subscription for user ${userId}, plan ${planId}`);
+            break;
+          }
+
+          case 'customer.subscription.updated': {
+            const subscription = event.data.object as Stripe.Subscription;
+            const existingSubscription = await storage.getUserSubscriptionByStripeId(subscription.id);
+            
+            if (!existingSubscription) {
+              console.warn('Subscription not found in database:', subscription.id);
+              break;
+            }
+
+            // Handle period renewal - reset usage count
+            const newPeriodStart = new Date(subscription.current_period_start * 1000);
+            const currentPeriodStart = existingSubscription.currentPeriodStart;
+            
+            if (newPeriodStart.getTime() > currentPeriodStart.getTime()) {
+              // New billing period - reset usage
+              await storage.resetSubscriptionUsageForNewPeriod(
+                existingSubscription.id,
+                newPeriodStart,
+                new Date(subscription.current_period_end * 1000)
+              );
+              console.log(`Reset subscription usage for new period: ${existingSubscription.id}`);
+            }
+
+            // Update status and cancel_at_period_end
+            const statusMap: Record<string, string> = {
+              'active': 'active',
+              'past_due': 'past_due',
+              'canceled': 'cancelled',
+              'incomplete': 'active',
+              'incomplete_expired': 'cancelled',
+              'trialing': 'active',
+              'unpaid': 'past_due',
+              'paused': 'paused'
+            };
+
+            await storage.updateUserSubscription(existingSubscription.id, {
+              status: statusMap[subscription.status] || 'active',
+              cancelAtPeriodEnd: subscription.cancel_at_period_end,
+              currentPeriodStart: new Date(subscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+            });
+            break;
+          }
+
+          case 'customer.subscription.deleted': {
+            const subscription = event.data.object as Stripe.Subscription;
+            const existingSubscription = await storage.getUserSubscriptionByStripeId(subscription.id);
+            
+            if (existingSubscription) {
+              await storage.updateUserSubscription(existingSubscription.id, {
+                status: 'cancelled',
+                cancelledAt: new Date()
+              });
+              console.log(`Cancelled subscription: ${existingSubscription.id}`);
+            }
+            break;
+          }
+
+          case 'invoice.payment_failed': {
+            const invoice = event.data.object as Stripe.Invoice;
+            if (invoice.subscription) {
+              const existingSubscription = await storage.getUserSubscriptionByStripeId(invoice.subscription as string);
+              if (existingSubscription) {
+                await storage.updateUserSubscription(existingSubscription.id, {
+                  status: 'past_due'
+                });
+                console.log(`Marked subscription as past_due: ${existingSubscription.id}`);
+              }
+            }
+            break;
+          }
+        }
+
+        res.json({ received: true });
+      } catch (error) {
+        console.error('Error processing webhook event:', error);
+        res.status(500).json({ message: 'Webhook processing failed' });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
 
   return httpServer;
