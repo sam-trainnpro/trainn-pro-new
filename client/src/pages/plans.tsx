@@ -359,6 +359,47 @@ export default function PlansPage() {
               </div>
             </div>
           </div>
+
+          <div className="mt-16 max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-center mb-8">How It Works</h2>
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <CardTitle className="text-lg">1. Choose Your Plan</CardTitle>
+                </CardHeader>
+                <CardContent className="text-gray-600 dark:text-gray-400">
+                  Select a monthly subscription that fits your activity level. Plans range from 4 to unlimited classes per month.
+                </CardContent>
+              </Card>
+
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <CardTitle className="text-lg">2. Book Classes</CardTitle>
+                </CardHeader>
+                <CardContent className="text-gray-600 dark:text-gray-400">
+                  Use your subscription credits to book any class priced under $40. Your credits reset at the start of each billing period.
+                </CardContent>
+              </Card>
+
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <CardTitle className="text-lg">3. Enjoy & Repeat</CardTitle>
+                </CardHeader>
+                <CardContent className="text-gray-600 dark:text-gray-400">
+                  Attend your booked classes and enjoy activities with no extra charges. Your subscription automatically renews each month.
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
       <Footer />
