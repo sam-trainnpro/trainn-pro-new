@@ -313,7 +313,7 @@ function DashboardContent() {
                 </Button>
               ) : (
                 <Button 
-                  variant="destructive"
+                  className="text-[#4c4c4c] bg-[#ffffff] hover:bg-destructive/90"
                   onClick={() => {
                     if (window.confirm('Are you sure you want to cancel your subscription? You can continue using it until the end of your billing period.')) {
                       cancelMutation.mutate();
