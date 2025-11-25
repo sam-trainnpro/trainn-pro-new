@@ -369,7 +369,6 @@ function DashboardContent() {
           </CardContent>
         </Card>
       ) : null}
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -383,7 +382,7 @@ function DashboardContent() {
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="text-2xl font-bold text-primary">{classStats?.allTime || 0}</div>
+              <div className="text-2xl font-bold text-[#333333]">{classStats?.allTime || 0}</div>
               <div className="text-xs text-muted-foreground">All Time</div>
             </div>
             <div className="text-center p-3 bg-muted/50 rounded-lg">
@@ -397,7 +396,6 @@ function DashboardContent() {
           </div>
         </CardContent>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
