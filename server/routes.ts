@@ -7607,6 +7607,167 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   );
 
+  // ========== SUBSCRIPTION BOOKING ROUTE ==========
+  
+  // Book a class using subscription (no customer payment required)
+  app.post("/api/bookings/subscription", requireAuth, async (req, res) => {
+    try {
+      const { classId, quantity = 1 } = req.body;
+      
+      if (!classId) {
+        return res.status(400).json({ message: "Class ID is required" });
+      }
+
+      // Get user's active subscription
+      const subscription = await storage.getActiveUserSubscription(req.user.id);
+      if (!subscription) {
+        return res.status(400).json({ message: "No active subscription found" });
+      }
+
+      // Check subscription status
+      if (subscription.status !== 'active') {
+        return res.status(400).json({ message: "Subscription is not active" });
+      }
+
+      // Get the subscription plan
+      const plan = await storage.getSubscriptionPlan(subscription.planId);
+      if (!plan) {
+        return res.status(400).json({ message: "Subscription plan not found" });
+      }
+
+      // Check remaining classes (unless unlimited)
+      if (!plan.isUnlimited) {
+        const classesRemaining = subscription.classesAllottedThisPeriod - subscription.classesUsedThisPeriod;
+        if (classesRemaining < quantity) {
+          return res.status(400).json({ 
+            message: `Not enough subscription classes remaining. You have ${classesRemaining} class${classesRemaining !== 1 ? 'es' : ''} left this month.`
+          });
+        }
+      }
+
+      // Get class details
+      const classItem = await storage.getClass(classId);
+      if (!classItem) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+
+      // Check if class price is eligible (under $40)
+      const MAX_SUBSCRIPTION_CLASS_PRICE = 40;
+      if (classItem.price > MAX_SUBSCRIPTION_CLASS_PRICE) {
+        return res.status(400).json({ 
+          message: `This class costs $${classItem.price}, which exceeds the $${MAX_SUBSCRIPTION_CLASS_PRICE} subscription limit. Please pay for this class separately.`
+        });
+      }
+
+      // Check available spots
+      const confirmedCount = await storage.getConfirmedBookingsCount(classId);
+      const availableSpots = classItem.capacity - confirmedCount;
+      if (quantity > availableSpots) {
+        return res.status(400).json({ 
+          message: `Only ${availableSpots} spot${availableSpots !== 1 ? 's' : ''} available in this class` 
+        });
+      }
+
+      // Check for existing booking
+      const existingBooking = await storage.getBookingByUserAndClass(req.user.id, classId);
+      if (existingBooking && existingBooking.status === 'confirmed') {
+        return res.status(400).json({ message: "You have already booked this class" });
+      }
+
+      // Create the booking with subscription payment method
+      const booking = await storage.createBooking({
+        userId: req.user.id,
+        classId: classId,
+        coachId: classItem.coachId,
+        quantity: quantity,
+        status: "confirmed",
+        paymentMethod: "subscription",
+        stripePaymentIntentId: null, // No payment intent for subscription bookings
+        totalAmount: 0, // Customer doesn't pay
+        createdAt: new Date(),
+        classDateTime: classItem.dateTime,
+        classTitle: classItem.title,
+        coachName: `${classItem.coachFirstName || ''} ${classItem.coachLastName || ''}`.trim()
+      });
+
+      // Record subscription usage
+      await storage.createSubscriptionUsage({
+        subscriptionId: subscription.id,
+        userId: req.user.id,
+        bookingId: booking.id,
+        classId: classId,
+        coachId: classItem.coachId,
+        classPrice: classItem.price,
+        billingPeriodStart: subscription.currentPeriodStart,
+        billingPeriodEnd: subscription.currentPeriodEnd,
+        usedAt: new Date()
+      });
+
+      // Increment subscription usage counter
+      await storage.incrementSubscriptionUsage(subscription.id);
+
+      // Create scheduled payout for provider (85% of class price, paid from Trainn account)
+      const providerPayout = Math.round(classItem.price * 0.85 * 100); // Convert to cents
+      const classDateTime = new Date(classItem.dateTime);
+      const payoutDate = new Date(classDateTime);
+      payoutDate.setDate(payoutDate.getDate() + 2); // 2 days after class
+
+      await storage.createScheduledPayout({
+        bookingId: booking.id,
+        coachId: classItem.coachId,
+        amount: providerPayout,
+        payoutType: 'subscription_booking',
+        status: 'pending',
+        scheduledFor: payoutDate,
+        classDateTime: classItem.dateTime,
+        notes: `Subscription booking payout - Class: ${classItem.title} (ID: ${classId}), Customer: ${req.user.firstName} ${req.user.lastName}`
+      });
+
+      // Send confirmation emails
+      try {
+        // Get coach details for email
+        const coach = await storage.getUser(classItem.coachId);
+        
+        // Send customer confirmation email
+        if (req.user.email) {
+          await sendBookingConfirmationEmail(
+            req.user.email,
+            `${req.user.firstName} ${req.user.lastName}`,
+            classItem,
+            booking.id.toString(),
+            'subscription'
+          );
+        }
+
+        // Send coach notification email
+        if (coach?.email) {
+          await sendCoachBookingNotificationEmail(
+            coach.email,
+            `${coach.firstName} ${coach.lastName}`,
+            classItem,
+            `${req.user.firstName} ${req.user.lastName}`,
+            quantity
+          );
+        }
+      } catch (emailError) {
+        console.error('Error sending booking confirmation emails:', emailError);
+        // Don't fail the booking if email fails
+      }
+
+      res.json({
+        success: true,
+        message: "Class booked successfully with your subscription!",
+        booking,
+        classesUsedThisPeriod: subscription.classesUsedThisPeriod + quantity,
+        classesRemaining: plan.isUnlimited ? 'unlimited' : 
+          (subscription.classesAllottedThisPeriod - subscription.classesUsedThisPeriod - quantity)
+      });
+    } catch (error) {
+      console.error("Error booking with subscription:", error);
+      res.status(500).json({ message: "Failed to book class with subscription" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
