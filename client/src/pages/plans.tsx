@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout,
+} from "@stripe/react-stripe-js";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Helmet } from "react-helmet";
@@ -30,7 +35,10 @@ import {
   ArrowRight,
   Clock,
   DollarSign,
+  X,
 } from "lucide-react";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
 
 interface SubscriptionPlan {
   id: number;
@@ -62,11 +70,28 @@ interface UserSubscription {
 }
 
 export default function PlansPage() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Check for successful return from Stripe
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    
+    if (sessionId) {
+      // Refetch user subscription data and redirect to profile
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions/my"] });
+      toast({
+        title: "Subscription Activated!",
+        description: "Your subscription is now active. Welcome aboard!",
+      });
+      navigate("/profile?tab=dashboard&subscription=success");
+    }
+  }, [location, navigate, toast]);
 
   const { data: plans, isLoading: plansLoading } = useQuery<SubscriptionPlan[]>({
     queryKey: ["/api/subscriptions/plans"],
@@ -77,29 +102,23 @@ export default function PlansPage() {
     enabled: !!user,
   });
 
-  const checkoutMutation = useMutation({
-    mutationFn: async (planId: number) => {
-      const response = await apiRequest("POST", "/api/subscriptions/checkout", { planId });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create checkout session");
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Checkout Error",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsProcessing(false);
-    },
-  });
+  const fetchClientSecret = useCallback(async () => {
+    if (!selectedPlanId) {
+      throw new Error("No plan selected");
+    }
+    
+    const response = await apiRequest("POST", "/api/subscriptions/checkout", { 
+      planId: selectedPlanId 
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to create checkout session");
+    }
+    
+    const data = await response.json();
+    return data.clientSecret;
+  }, [selectedPlanId]);
 
   const handleSubscribe = async (planId: number) => {
     if (!user) {
@@ -122,8 +141,14 @@ export default function PlansPage() {
     }
 
     setSelectedPlanId(planId);
-    setIsProcessing(true);
-    checkoutMutation.mutate(planId);
+    setCheckoutError(null);
+    setShowCheckout(true);
+  };
+
+  const handleCloseCheckout = () => {
+    setShowCheckout(false);
+    setSelectedPlanId(null);
+    setCheckoutError(null);
   };
 
   const formatPrice = (price: number) => `$${Math.floor(price)}`;
@@ -171,6 +196,39 @@ export default function PlansPage() {
         />
       </Helmet>
       <Header />
+
+      {/* Embedded Stripe Checkout Overlay */}
+      {showCheckout && selectedPlanId && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+              <div>
+                <h2 className="text-xl font-bold">Complete Your Subscription</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {plans?.find(p => p.id === selectedPlanId)?.name} - {formatPrice(plans?.find(p => p.id === selectedPlanId)?.monthlyPrice || 0)}/mo
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCloseCheckout}
+                data-testid="button-close-checkout"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <EmbeddedCheckoutProvider
+                stripe={stripePromise}
+                options={{ fetchClientSecret }}
+              >
+                <EmbeddedCheckout />
+              </EmbeddedCheckoutProvider>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-20 md:pb-8">
         <div className="container mx-auto px-4 py-12">
           <div className="text-center mb-12">
@@ -312,16 +370,11 @@ export default function PlansPage() {
                       <Button
                         className="w-full"
                         variant={isBestValue ? "default" : "outline"}
-                        disabled={isProcessing || !!userSubscription}
+                        disabled={!!userSubscription}
                         onClick={() => handleSubscribe(plan.id)}
                         data-testid={`button-subscribe-${plan.id}`}
                       >
-                        {isProcessing && selectedPlanId === plan.id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : isCurrentPlan ? (
+                        {isCurrentPlan ? (
                           'Current Plan'
                         ) : userSubscription ? (
                           'Already Subscribed'
