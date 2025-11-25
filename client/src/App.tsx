@@ -63,6 +63,7 @@ import KidsDropInSportsSF from "@/pages/kids-drop-in-sports-sf";
 import KidsAfterSchoolActivitiesSF from "@/pages/kids-after-school-activities-sf";
 import LandingPagesPage from "@/pages/landing-pages";
 import ProviderLandingPage from "@/pages/provider-landing";
+import SubscriptionsPage from "@/pages/subscriptions";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -109,6 +110,9 @@ function Router() {
       </Route>
       <Route path="/packages">
         <PackagesPage />
+      </Route>
+      <Route path="/subscriptions">
+        <SubscriptionsPage />
       </Route>
       <Route path="/package/:id">
         <TimeBoundPackageDetailsPage />
