@@ -22,7 +22,10 @@ import {
   timeBoundPackageSessions, type TimeBoundPackageSession, type InsertTimeBoundPackageSession,
   timeBoundPackageBookings, type TimeBoundPackageBooking, type InsertTimeBoundPackageBooking,
   emailReminderTracking, type EmailReminderTracking, type InsertEmailReminderTracking,
-  classLikes, type ClassLike, type InsertClassLike
+  classLikes, type ClassLike, type InsertClassLike,
+  subscriptionPlans, type SubscriptionPlan, type InsertSubscriptionPlan,
+  userSubscriptions, type UserSubscription, type InsertUserSubscription,
+  subscriptionUsage, type SubscriptionUsage, type InsertSubscriptionUsage
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -269,6 +272,29 @@ export interface IStorage {
     classData: Class;
   }>>;
   getAllCustomersForNewsletter(): Promise<User[]>;
+  
+  // Subscription Plan methods
+  getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
+  createSubscriptionPlan(planData: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+  updateSubscriptionPlan(id: number, planData: Partial<SubscriptionPlan>): Promise<SubscriptionPlan | undefined>;
+  
+  // User Subscription methods
+  getUserSubscription(userId: number): Promise<UserSubscription | undefined>;
+  getActiveUserSubscription(userId: number): Promise<UserSubscription | undefined>;
+  getUserSubscriptionByStripeId(stripeSubscriptionId: string): Promise<UserSubscription | undefined>;
+  createUserSubscription(subscriptionData: InsertUserSubscription): Promise<UserSubscription>;
+  updateUserSubscription(id: number, subscriptionData: Partial<UserSubscription>): Promise<UserSubscription | undefined>;
+  incrementSubscriptionUsage(subscriptionId: number): Promise<UserSubscription | undefined>;
+  resetSubscriptionUsageForNewPeriod(subscriptionId: number, newPeriodStart: Date, newPeriodEnd: Date): Promise<UserSubscription | undefined>;
+  
+  // Subscription Usage methods
+  createSubscriptionUsage(usageData: InsertSubscriptionUsage): Promise<SubscriptionUsage>;
+  getSubscriptionUsageByBooking(bookingId: number): Promise<SubscriptionUsage | undefined>;
+  getUserSubscriptionUsageHistory(userId: number): Promise<SubscriptionUsage[]>;
+  getUserSubscriptionUsageForPeriod(userId: number, periodStart: Date, periodEnd: Date): Promise<SubscriptionUsage[]>;
+  getTotalClassesTakenWithSubscription(userId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3932,6 +3958,147 @@ export class DatabaseStorage implements IStorage {
         eq(users.receiveNewsletter, true)
       ))
       .orderBy(desc(users.createdAt));
+  }
+
+  // Subscription Plan methods
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select()
+      .from(subscriptionPlans)
+      .orderBy(subscriptionPlans.displayOrder);
+  }
+
+  async getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.isActive, true))
+      .orderBy(subscriptionPlans.displayOrder);
+  }
+
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    const result = await db.select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, id));
+    return result[0];
+  }
+
+  async createSubscriptionPlan(planData: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const result = await db.insert(subscriptionPlans)
+      .values(planData)
+      .returning();
+    return result[0];
+  }
+
+  async updateSubscriptionPlan(id: number, planData: Partial<SubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
+    const result = await db.update(subscriptionPlans)
+      .set({ ...planData, updatedAt: new Date() })
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // User Subscription methods
+  async getUserSubscription(userId: number): Promise<UserSubscription | undefined> {
+    const result = await db.select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, userId))
+      .orderBy(desc(userSubscriptions.createdAt));
+    return result[0];
+  }
+
+  async getActiveUserSubscription(userId: number): Promise<UserSubscription | undefined> {
+    const result = await db.select()
+      .from(userSubscriptions)
+      .where(and(
+        eq(userSubscriptions.userId, userId),
+        eq(userSubscriptions.status, 'active')
+      ));
+    return result[0];
+  }
+
+  async getUserSubscriptionByStripeId(stripeSubscriptionId: string): Promise<UserSubscription | undefined> {
+    const result = await db.select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.stripeSubscriptionId, stripeSubscriptionId));
+    return result[0];
+  }
+
+  async createUserSubscription(subscriptionData: InsertUserSubscription): Promise<UserSubscription> {
+    const result = await db.insert(userSubscriptions)
+      .values(subscriptionData)
+      .returning();
+    return result[0];
+  }
+
+  async updateUserSubscription(id: number, subscriptionData: Partial<UserSubscription>): Promise<UserSubscription | undefined> {
+    const result = await db.update(userSubscriptions)
+      .set({ ...subscriptionData, updatedAt: new Date() })
+      .where(eq(userSubscriptions.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async incrementSubscriptionUsage(subscriptionId: number): Promise<UserSubscription | undefined> {
+    const result = await db.update(userSubscriptions)
+      .set({ 
+        classesUsedThisPeriod: sql`${userSubscriptions.classesUsedThisPeriod} + 1`,
+        updatedAt: new Date() 
+      })
+      .where(eq(userSubscriptions.id, subscriptionId))
+      .returning();
+    return result[0];
+  }
+
+  async resetSubscriptionUsageForNewPeriod(subscriptionId: number, newPeriodStart: Date, newPeriodEnd: Date): Promise<UserSubscription | undefined> {
+    const result = await db.update(userSubscriptions)
+      .set({ 
+        classesUsedThisPeriod: 0,
+        currentPeriodStart: newPeriodStart,
+        currentPeriodEnd: newPeriodEnd,
+        updatedAt: new Date() 
+      })
+      .where(eq(userSubscriptions.id, subscriptionId))
+      .returning();
+    return result[0];
+  }
+
+  // Subscription Usage methods
+  async createSubscriptionUsage(usageData: InsertSubscriptionUsage): Promise<SubscriptionUsage> {
+    const result = await db.insert(subscriptionUsage)
+      .values(usageData)
+      .returning();
+    return result[0];
+  }
+
+  async getSubscriptionUsageByBooking(bookingId: number): Promise<SubscriptionUsage | undefined> {
+    const result = await db.select()
+      .from(subscriptionUsage)
+      .where(eq(subscriptionUsage.bookingId, bookingId));
+    return result[0];
+  }
+
+  async getUserSubscriptionUsageHistory(userId: number): Promise<SubscriptionUsage[]> {
+    return await db.select()
+      .from(subscriptionUsage)
+      .where(eq(subscriptionUsage.userId, userId))
+      .orderBy(desc(subscriptionUsage.createdAt));
+  }
+
+  async getUserSubscriptionUsageForPeriod(userId: number, periodStart: Date, periodEnd: Date): Promise<SubscriptionUsage[]> {
+    return await db.select()
+      .from(subscriptionUsage)
+      .where(and(
+        eq(subscriptionUsage.userId, userId),
+        gte(subscriptionUsage.billingPeriodStart, periodStart),
+        lte(subscriptionUsage.billingPeriodEnd, periodEnd)
+      ))
+      .orderBy(desc(subscriptionUsage.createdAt));
+  }
+
+  async getTotalClassesTakenWithSubscription(userId: number): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(subscriptionUsage)
+      .where(eq(subscriptionUsage.userId, userId));
+    return result[0]?.count || 0;
   }
 }
 
