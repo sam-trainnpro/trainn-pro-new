@@ -116,6 +116,12 @@ function DashboardContent() {
   });
   
   const creditBalance = (creditData as { balance?: number })?.balance || 0;
+
+  // Fetch class attendance stats
+  const { data: classStats } = useQuery<{ allTime: number; thisMonth: number; lastMonth: number }>({
+    queryKey: ['/api/user/class-stats'],
+    enabled: !!user,
+  });
   
   // Fetch user subscription
   const { data: subscription, isLoading: subscriptionLoading } = useQuery<UserSubscription | null>({
@@ -263,7 +269,7 @@ function DashboardContent() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
                 <div className="text-2xl font-bold text-[#15a34a]">
                   {subscription.classesRemaining === 'unlimited' ? (
@@ -277,10 +283,6 @@ function DashboardContent() {
               <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
                 <div className="text-2xl font-bold">{subscription.classesUsedThisPeriod}</div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">Used This Month</div>
-              </div>
-              <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
-                <div className="text-2xl font-bold">{subscription.totalClassesTaken}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">All Time</div>
               </div>
               <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
                 <div className="text-2xl font-bold">${Math.floor(subscription.plan.monthlyPrice)}</div>
@@ -367,6 +369,35 @@ function DashboardContent() {
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Class Stats
+          </CardTitle>
+          <CardDescription>
+            Your class attendance history
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl font-bold text-primary">{classStats?.allTime || 0}</div>
+              <div className="text-xs text-muted-foreground">All Time</div>
+            </div>
+            <div className="text-center p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl font-bold">{classStats?.thisMonth || 0}</div>
+              <div className="text-xs text-muted-foreground">This Month</div>
+            </div>
+            <div className="text-center p-3 bg-muted/50 rounded-lg">
+              <div className="text-2xl font-bold">{classStats?.lastMonth || 0}</div>
+              <div className="text-xs text-muted-foreground">Last Month</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
