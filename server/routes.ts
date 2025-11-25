@@ -7492,6 +7492,59 @@ Sitemap: https://trainn.pro/sitemap.xml`);
 
       try {
         switch (event.type) {
+          case 'checkout.session.completed': {
+            const session = event.data.object as Stripe.Checkout.Session;
+            
+            // Only handle subscription mode checkouts
+            if (session.mode !== 'subscription') {
+              console.log('Skipping non-subscription checkout session');
+              break;
+            }
+
+            const userId = parseInt(session.metadata?.userId || '');
+            const planId = parseInt(session.metadata?.planId || '');
+            
+            if (!userId || !planId) {
+              console.error('Missing userId or planId in checkout session metadata');
+              break;
+            }
+
+            // Check if subscription already exists (from customer.subscription.created event)
+            const stripeSubscriptionId = session.subscription as string;
+            const existingSubscription = await storage.getUserSubscriptionByStripeId(stripeSubscriptionId);
+            
+            if (existingSubscription) {
+              console.log('Subscription already exists, skipping:', stripeSubscriptionId);
+              break;
+            }
+
+            // Retrieve the full subscription from Stripe
+            const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+            
+            const plan = await storage.getSubscriptionPlan(planId);
+            if (!plan) {
+              console.error('Plan not found:', planId);
+              break;
+            }
+
+            // Create user subscription record
+            await storage.createUserSubscription({
+              userId,
+              planId,
+              stripeSubscriptionId: subscription.id,
+              stripeCustomerId: subscription.customer as string,
+              status: 'active',
+              currentPeriodStart: new Date(subscription.current_period_start * 1000),
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              classesUsedThisPeriod: 0,
+              classesAllottedThisPeriod: plan.isUnlimited ? -1 : (plan.classesPerMonth || 0),
+              cancelAtPeriodEnd: subscription.cancel_at_period_end
+            });
+
+            console.log(`Created subscription from checkout.session.completed for user ${userId}, plan ${planId}`);
+            break;
+          }
+
           case 'customer.subscription.created': {
             const subscription = event.data.object as Stripe.Subscription;
             const userId = parseInt(subscription.metadata.userId);
