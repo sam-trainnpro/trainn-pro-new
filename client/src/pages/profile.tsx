@@ -7,7 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { useToast } from "../../../hooks/use-toast";
 import { ClassCategory } from "@shared/schema";
-import { Loader2, X, DollarSign, Users, Gift, Heart, Mail } from "lucide-react";
+import { Loader2, X, DollarSign, Users, Gift, Heart, Mail, CreditCard, Infinity, Calendar, AlertCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -80,6 +80,30 @@ interface StripeStatus {
   accountId?: string;
 }
 
+// User Subscription Interface
+interface UserSubscription {
+  id: number;
+  userId: number;
+  planId: number;
+  stripeSubscriptionId: string;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  classesUsedThisPeriod: number;
+  classesAllottedThisPeriod: number;
+  cancelAtPeriodEnd: boolean;
+  plan: {
+    id: number;
+    name: string;
+    classesPerMonth: number | null;
+    isUnlimited: boolean;
+    pricePerClass: number | null;
+    monthlyPrice: number;
+  };
+  totalClassesTaken: number;
+  classesRemaining: number | 'unlimited';
+}
+
 // Dashboard Component
 function DashboardContent() {
   const { user } = useAuth();
@@ -92,6 +116,64 @@ function DashboardContent() {
   });
   
   const creditBalance = (creditData as { balance?: number })?.balance || 0;
+  
+  // Fetch user subscription
+  const { data: subscription, isLoading: subscriptionLoading } = useQuery<UserSubscription | null>({
+    queryKey: ['/api/subscriptions/my'],
+    enabled: !!user,
+  });
+
+  // Cancel subscription mutation
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/subscriptions/cancel");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to cancel subscription");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/my'] });
+      toast({
+        title: "Subscription Cancelled",
+        description: "Your subscription will end at the end of your current billing period.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reactivate subscription mutation
+  const reactivateMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/subscriptions/reactivate");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to reactivate subscription");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/my'] });
+      toast({
+        title: "Subscription Reactivated",
+        description: "Your subscription has been reactivated and will continue as normal.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   
   // Fetch referral data if available
   const { data: referralData } = useQuery({
@@ -107,9 +189,146 @@ function DashboardContent() {
   
   const referrals = (referralData as any[]) || [];
   const completedReferrals = referrals.filter((r: any) => r.status === 'completed').length;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
   
   return (
     <div className="space-y-6">
+      {subscription ? (
+        <Card className={subscription.cancelAtPeriodEnd 
+          ? "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800" 
+          : "border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800"
+        }>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  {subscription.plan.name}
+                </CardTitle>
+                <CardDescription>
+                  {subscription.cancelAtPeriodEnd ? (
+                    <span className="text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      Cancels on {formatDate(subscription.currentPeriodEnd)}
+                    </span>
+                  ) : (
+                    <span>
+                      Renews on {formatDate(subscription.currentPeriodEnd)}
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              <Badge 
+                variant="outline" 
+                className={subscription.cancelAtPeriodEnd 
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : "bg-green-100 text-green-800 border-green-300"
+                }
+              >
+                {subscription.cancelAtPeriodEnd ? 'Cancelling' : 'Active'}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold text-primary">
+                  {subscription.classesRemaining === 'unlimited' ? (
+                    <Infinity className="w-6 h-6 mx-auto" />
+                  ) : (
+                    subscription.classesRemaining
+                  )}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Remaining</div>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold">{subscription.classesUsedThisPeriod}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Used This Month</div>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold">{subscription.totalClassesTaken}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">All Time</div>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
+                <div className="text-2xl font-bold">${Math.floor(subscription.plan.monthlyPrice)}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Monthly</div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-between items-center">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/classes'}
+                data-testid="button-browse-classes"
+              >
+                Browse Classes <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              
+              {subscription.cancelAtPeriodEnd ? (
+                <Button 
+                  variant="default"
+                  onClick={() => reactivateMutation.mutate()}
+                  disabled={reactivateMutation.isPending}
+                  data-testid="button-reactivate-subscription"
+                >
+                  {reactivateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Reactivate Subscription
+                </Button>
+              ) : (
+                <Button 
+                  variant="destructive"
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to cancel your subscription? You can continue using it until the end of your billing period.')) {
+                      cancelMutation.mutate();
+                    }
+                  }}
+                  disabled={cancelMutation.isPending}
+                  data-testid="button-cancel-subscription"
+                >
+                  {cancelMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Cancel Subscription
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : !subscriptionLoading && user?.role === 'customer' ? (
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Monthly Subscription
+            </CardTitle>
+            <CardDescription>
+              Save on classes with a monthly subscription
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Subscribe to book classes under $40 with your monthly credits. 
+              Plans start at $116/month for 4 classes.
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/subscriptions'}
+              data-testid="button-view-subscriptions"
+            >
+              View Subscription Plans <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
