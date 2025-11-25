@@ -7357,13 +7357,13 @@ Sitemap: https://trainn.pro/sitemap.xml`);
         });
       }
 
-      // Determine the base URL for success/cancel redirects
+      // Determine the base URL for return redirect
       const host = req.get('host');
       const baseUrl = host?.includes('trainn.pro') 
         ? 'https://trainn.pro'
         : `https://${host}`;
 
-      // Create Stripe Checkout session
+      // Create Stripe Checkout session with embedded mode
       const session = await stripe.checkout.sessions.create({
         customer: stripeCustomerId,
         payment_method_types: ['card'],
@@ -7374,8 +7374,8 @@ Sitemap: https://trainn.pro/sitemap.xml`);
           },
         ],
         mode: 'subscription',
-        success_url: `${baseUrl}/profile?tab=dashboard&subscription=success`,
-        cancel_url: `${baseUrl}/subscriptions?cancelled=true`,
+        ui_mode: 'embedded',
+        return_url: `${baseUrl}/plans?session_id={CHECKOUT_SESSION_ID}`,
         metadata: {
           userId: req.user.id.toString(),
           planId: plan.id.toString()
@@ -7388,7 +7388,7 @@ Sitemap: https://trainn.pro/sitemap.xml`);
         }
       });
 
-      res.json({ sessionId: session.id, url: session.url });
+      res.json({ clientSecret: session.client_secret });
     } catch (error) {
       console.error("Error creating subscription checkout:", error);
       res.status(500).json({ message: "Failed to create checkout session" });
