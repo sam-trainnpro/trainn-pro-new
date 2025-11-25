@@ -299,35 +299,19 @@ export default function PlansPage() {
                         )}
                       </div>
                       <CardTitle className="text-lg">{plan.name}</CardTitle>
-                      <CardDescription>
-                        {plan.isUnlimited 
-                          ? 'Unlimited monthly classes' 
-                          : `${plan.classesPerMonth} classes per month`
-                        }
-                      </CardDescription>
                     </CardHeader>
                     
                     <CardContent className="space-y-4">
                       <div className="text-center">
                         <div className="text-3xl font-bold text-primary">
-                          {formatPrice(plan.monthlyPrice)}
+                          {formatPrice(plan.monthlyPrice)} <span className="text-lg font-normal text-gray-500">/ mo</span>
                         </div>
-                        <div className="text-sm text-gray-500">per month</div>
                         {plan.pricePerClass && (
                           <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                             {formatPrice(plan.pricePerClass)}/class
                           </div>
                         )}
                       </div>
-
-                      <ul className="space-y-2 text-sm">
-                        {getPlanFeatures(plan).map((feature, i) => (
-                          <li key={i} className="flex items-start gap-2">
-                            <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-600 dark:text-gray-400">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
 
                       <Button
                         className="w-full"
@@ -359,70 +343,25 @@ export default function PlansPage() {
             </div>
           )}
 
-          <div className="mt-16 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-center mb-8">How Subscriptions Work</h2>
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card className="text-center">
-                <CardHeader>
-                  <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <CardTitle className="text-lg">1. Choose Your Plan</CardTitle>
-                </CardHeader>
-                <CardContent className="text-gray-600 dark:text-gray-400">
-                  Select a monthly subscription that fits your activity level. Plans range from 4 to unlimited classes per month.
-                </CardContent>
-              </Card>
-
-              <Card className="text-center">
-                <CardHeader>
-                  <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <CardTitle className="text-lg">2. Book Classes</CardTitle>
-                </CardHeader>
-                <CardContent className="text-gray-600 dark:text-gray-400">
-                  Use your subscription credits to book any class priced under $40. Your credits reset at the start of each billing period.
-                </CardContent>
-              </Card>
-
-              <Card className="text-center">
-                <CardHeader>
-                  <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <CardTitle className="text-lg">3. Enjoy & Repeat</CardTitle>
-                </CardHeader>
-                <CardContent className="text-gray-600 dark:text-gray-400">
-                  Attend your booked classes and enjoy activities with no extra charges. Your subscription automatically renews each month.
-                </CardContent>
-              </Card>
+          <div className="mt-12 max-w-2xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-gray-700 dark:text-gray-300">Book classes under $40</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-gray-700 dark:text-gray-300">No commitment, cancel anytime</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-gray-700 dark:text-gray-300">Automatic monthly renewal</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <span className="text-gray-700 dark:text-gray-300">Invite friends to join you on Trainn and earn rewards</span>
+              </div>
             </div>
-          </div>
-
-          <div className="mt-16 max-w-3xl mx-auto">
-            <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-              <CardContent className="p-8 text-center">
-                <DollarSign className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2">Classes Under $40 Only</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Subscription credits work for classes priced under $40. For premium classes above this price, 
-                  you can use your account balance, promo codes, or pay the difference at checkout.
-                </p>
-                <Button variant="outline" asChild>
-                  <Link href="/classes">
-                    Browse All Classes <ArrowRight className="w-4 h-4 ml-2" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="mt-16 max-w-3xl mx-auto text-center text-sm text-gray-500 dark:text-gray-400">
-            <p>
-              Subscriptions automatically renew monthly. You can cancel anytime from your profile dashboard. 
-              Cancellations take effect at the end of your current billing period.
-            </p>
           </div>
         </div>
       </div>
