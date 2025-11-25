@@ -174,6 +174,32 @@ function DashboardContent() {
       });
     },
   });
+
+  // Sync subscription from Stripe (for missed webhooks)
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/subscriptions/sync");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to sync subscription");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/my'] });
+      toast({
+        title: "Subscription Synced",
+        description: "Your subscription has been synced successfully!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Sync Result",
+        description: error.message,
+        variant: "default",
+      });
+    },
+  });
   
   // Fetch referral data if available
   const { data: referralData } = useQuery({
@@ -319,12 +345,25 @@ function DashboardContent() {
               Subscribe to book classes under $40 with your monthly credits. 
               Plans start at $116/month for 4 classes.
             </p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              data-testid="button-view-plans"
-            >
-              View Plans <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                onClick={() => window.location.href = '/plans'}
+                data-testid="button-view-plans"
+              >
+                View Plans <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => syncMutation.mutate()}
+                disabled={syncMutation.isPending}
+                data-testid="button-sync-subscription"
+              >
+                {syncMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Already subscribed? Sync
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : null}
