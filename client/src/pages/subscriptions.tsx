@@ -4,6 +4,9 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Helmet } from "react-helmet";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
+import MobileNavigation from "@/components/layout/mobile-navigation";
 import {
   Card,
   CardContent,
@@ -168,7 +171,9 @@ export default function SubscriptionsPage() {
         />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <Header />
+
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-20 md:pb-8">
         <div className="container mx-auto px-4 py-12">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-primary/10 rounded-full">
@@ -421,6 +426,9 @@ export default function SubscriptionsPage() {
           </div>
         </div>
       </div>
+
+      <Footer />
+      <MobileNavigation />
     </>
   );
 }
