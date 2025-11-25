@@ -64,6 +64,7 @@ import KidsAfterSchoolActivitiesSF from "@/pages/kids-after-school-activities-sf
 import LandingPagesPage from "@/pages/landing-pages";
 import ProviderLandingPage from "@/pages/provider-landing";
 import PlansPage from "@/pages/plans";
+import ChangePlanPage from "@/pages/change-plan";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -114,6 +115,9 @@ function Router() {
       <Route path="/plans">
         <PlansPage />
       </Route>
+      <ProtectedRoute path="/change-plan">
+        <ChangePlanPage />
+      </ProtectedRoute>
       <Route path="/package/:id">
         <TimeBoundPackageDetailsPage />
       </Route>

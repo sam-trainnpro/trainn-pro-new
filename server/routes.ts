@@ -7664,6 +7664,88 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // Change subscription plan
+  app.post("/api/subscriptions/change-plan", requireAuth, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const { newPlanId } = req.body;
+      if (!newPlanId) {
+        return res.status(400).json({ message: "New plan ID is required" });
+      }
+
+      const subscription = await storage.getActiveUserSubscription(req.user.id);
+      if (!subscription) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+
+      if (subscription.planId === newPlanId) {
+        return res.status(400).json({ message: "This is already your current plan" });
+      }
+
+      const newPlan = await storage.getSubscriptionPlan(newPlanId);
+      if (!newPlan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+
+      // Get or create Stripe price for the new plan
+      let stripePriceId = newPlan.stripePriceId;
+      if (!stripePriceId) {
+        // Create product and price in Stripe if not exists
+        let stripeProductId = newPlan.stripeProductId;
+        if (!stripeProductId) {
+          const product = await stripe.products.create({
+            name: newPlan.name,
+            description: newPlan.isUnlimited 
+              ? 'Unlimited monthly classes' 
+              : `${newPlan.classesPerMonth} classes per month`,
+          });
+          stripeProductId = product.id;
+          await storage.updateSubscriptionPlan(newPlan.id, { stripeProductId });
+        }
+
+        const price = await stripe.prices.create({
+          product: stripeProductId,
+          unit_amount: Math.round(newPlan.monthlyPrice * 100),
+          currency: 'usd',
+          recurring: { interval: 'month' },
+        });
+        stripePriceId = price.id;
+        await storage.updateSubscriptionPlan(newPlan.id, { stripePriceId });
+      }
+
+      // Get the Stripe subscription
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
+      const subscriptionItemId = stripeSubscription.items.data[0].id;
+
+      // Update the subscription to the new plan (takes effect at next billing cycle)
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        items: [{
+          id: subscriptionItemId,
+          price: stripePriceId,
+        }],
+        proration_behavior: 'none', // Change takes effect at next billing cycle, no proration
+      });
+
+      // Update our database with the new plan
+      await storage.updateUserSubscription(subscription.id, {
+        planId: newPlanId,
+        classesAllottedThisPeriod: newPlan.isUnlimited ? -1 : (newPlan.classesPerMonth || 0),
+      });
+
+      res.json({ 
+        message: "Your plan has been changed successfully",
+        newPlan: newPlan,
+        effectiveDate: subscription.currentPeriodEnd
+      });
+    } catch (error) {
+      console.error("Error changing subscription plan:", error);
+      res.status(500).json({ message: "Failed to change subscription plan" });
+    }
+  });
+
   // Stripe webhook for subscription events
   app.post("/api/webhooks/stripe-subscriptions", 
     express.raw({ type: 'application/json' }),

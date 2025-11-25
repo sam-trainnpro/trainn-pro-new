@@ -293,10 +293,10 @@ function DashboardContent() {
             <div className="flex gap-3 justify-between items-center">
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = '/classes'}
-                data-testid="button-browse-classes"
+                onClick={() => window.location.href = '/change-plan'}
+                data-testid="button-change-plan"
               >
-                Browse Classes <ArrowRight className="w-4 h-4 ml-2" />
+                Change Plan <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
               
               {subscription.cancelAtPeriodEnd ? (
