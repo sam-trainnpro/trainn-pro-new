@@ -27,7 +27,9 @@ import {
   ArrowLeft,
   Loader2,
   DollarSign,
-  Package
+  Package,
+  CreditCard,
+  Infinity
 } from "lucide-react";
 import { useToast } from "../../../hooks/use-toast";
 import { format } from "date-fns";
@@ -247,6 +249,7 @@ export default function CheckoutPage() {
   const [appliedCredits, setAppliedCredits] = useState(0);
   const [useCredits, setUseCredits] = useState(false);
   const [usePackage, setUsePackage] = useState(false);
+  const [useSubscription, setUseSubscription] = useState(false);
   const [isBookingSuccess, setIsBookingSuccess] = useState(false);
   
   // Free booking mutation for 100% discount promo codes
@@ -337,6 +340,42 @@ export default function CheckoutPage() {
       });
     },
   });
+
+  // Subscription booking mutation
+  const subscriptionBookingMutation = useMutation({
+    mutationFn: async (data: { classId: number; quantity: number }) => {
+      const response = await apiRequest("POST", "/api/bookings/subscription", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to book with subscription");
+      }
+      return response.json();
+    },
+    onSuccess: async (result) => {
+      setIsBookingSuccess(true);
+      navigate("/bookings");
+      
+      setTimeout(() => {
+        toast({
+          title: "Booking confirmed!",
+          description: "Your class booking has been confirmed using your subscription.",
+        });
+        
+        queryClient.removeQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+        queryClient.invalidateQueries({ queryKey: [`/api/classes/${classId}/bookings/count`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/bookings/class/${classId}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/my'] });
+      }, 0);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Booking failed",
+        description: error.message || "Failed to book class with subscription",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Get quantity from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -397,6 +436,48 @@ export default function CheckoutPage() {
     queryKey: ['/api/user/packages'],
     enabled: !!user && !!classItem,
   });
+
+  // Subscription interface
+  interface UserSubscription {
+    id: number;
+    userId: number;
+    planId: number;
+    stripeSubscriptionId: string;
+    status: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    classesUsedThisPeriod: number;
+    classesAllottedThisPeriod: number;
+    cancelAtPeriodEnd: boolean;
+    plan: {
+      id: number;
+      name: string;
+      classesPerMonth: number | null;
+      isUnlimited: boolean;
+      pricePerClass: number | null;
+      monthlyPrice: number;
+    };
+    totalClassesTaken: number;
+    classesRemaining: number | 'unlimited';
+  }
+
+  // Fetch user's active subscription
+  const { data: userSubscription } = useQuery<UserSubscription | null>({
+    queryKey: ['/api/subscriptions/my'],
+    enabled: !!user,
+  });
+
+  // Check if subscription is eligible for this class (under $40 and has classes remaining)
+  const MAX_SUBSCRIPTION_CLASS_PRICE = 40;
+  const subscriptionEligible = React.useMemo(() => {
+    if (!userSubscription || !classItem) return false;
+    if (userSubscription.status !== 'active') return false;
+    if (classItem.price > MAX_SUBSCRIPTION_CLASS_PRICE) return false;
+    
+    // Check if unlimited or has remaining classes
+    if (userSubscription.classesRemaining === 'unlimited') return true;
+    return (userSubscription.classesRemaining as number) >= 1;
+  }, [userSubscription, classItem]);
 
   // Check if class is eligible for any purchased packages
   const eligiblePackage = React.useMemo(() => {
@@ -1339,6 +1420,7 @@ export default function CheckoutPage() {
                                     setUseCredits(checked);
                                     if (checked) {
                                       setUsePackage(false);
+                                      setUseSubscription(false);
                                     }
                                   }}
                                 />
@@ -1390,6 +1472,7 @@ export default function CheckoutPage() {
                                     setUsePackage(checked);
                                     if (checked) {
                                       setUseCredits(false);
+                                      setUseSubscription(false);
                                     }
                                   }}
                                 />
@@ -1407,8 +1490,93 @@ export default function CheckoutPage() {
                         </Card>
                       )}
 
-                      {/* Only show payment form if not using package and amount > 0 */}
-                      {!usePackage && finalAmount > 0 && clientSecret && (
+                      {/* Subscription Usage Section */}
+                      {subscriptionEligible && userSubscription && (
+                        <Card className="mb-6 border-indigo-200 bg-indigo-50/30">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <CreditCard className="w-5 h-5 text-indigo-600" />
+                              Monthly Subscription
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">{userSubscription.plan.name}</p>
+                                <p className="text-sm text-gray-600">
+                                  {userSubscription.classesRemaining === 'unlimited' ? (
+                                    <span className="flex items-center gap-1">
+                                      <Infinity className="w-4 h-4" /> Unlimited classes remaining
+                                    </span>
+                                  ) : (
+                                    `${userSubscription.classesRemaining} class${(userSubscription.classesRemaining as number) !== 1 ? 'es' : ''} remaining this month`
+                                  )}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Label htmlFor="use-subscription">Subscription</Label>
+                                <Switch
+                                  id="use-subscription"
+                                  checked={useSubscription}
+                                  onCheckedChange={(checked) => {
+                                    setUseSubscription(checked);
+                                    if (checked) {
+                                      setUseCredits(false);
+                                      setUsePackage(false);
+                                    }
+                                  }}
+                                  data-testid="switch-use-subscription"
+                                />
+                              </div>
+                            </div>
+                            
+                            {useSubscription && (
+                              <div className="bg-indigo-100 border border-indigo-200 rounded-lg p-3">
+                                <p className="text-sm text-indigo-800">
+                                  Booking with your {userSubscription.plan.name} - no additional payment required
+                                </p>
+                              </div>
+                            )}
+
+                            {useSubscription && (
+                              <Button 
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                                onClick={() => subscriptionBookingMutation.mutate({
+                                  classId: classItem.id,
+                                  quantity: quantity
+                                })}
+                                disabled={subscriptionBookingMutation.isPending}
+                                data-testid="button-book-with-subscription"
+                              >
+                                {subscriptionBookingMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Booking...
+                                  </>
+                                ) : (
+                                  "Book with Subscription"
+                                )}
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Show notice if class price exceeds subscription limit */}
+                      {userSubscription && userSubscription.status === 'active' && classItem && classItem.price > MAX_SUBSCRIPTION_CLASS_PRICE && (
+                        <Card className="mb-6 border-amber-200 bg-amber-50">
+                          <CardContent className="py-4">
+                            <p className="text-sm text-amber-800">
+                              <AlertCircle className="w-4 h-4 inline mr-1" />
+                              This class ($${classItem.price}) exceeds the $40 subscription limit. 
+                              Please pay for this class separately or choose a class under $40.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Only show payment form if not using package/subscription and amount > 0 */}
+                      {!usePackage && !useSubscription && finalAmount > 0 && clientSecret && (
                         <Elements 
                           stripe={stripePromise} 
                           options={{ 
