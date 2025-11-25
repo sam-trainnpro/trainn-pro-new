@@ -1,0 +1,25 @@
+Good morning Replit. I'd like to work on a new feature: a monthly recurring subscription plan. The way I'd like for this to work is for customers to be able to select from the following 5 options: 
+1. 4 classes/month for $29/class = $116
+2. 8 classes/month for $26/class = $208
+3. 12 classes/month for $21/class = $252
+4. 16 classes/month for $20/class = $320
+5. Unlimited classes in a month = $360
+
+There should be a new subscriptions page where this info is laid out clearly. A customer will be able to pick the option they want and then pay on the right-hand side (similar view to the time_bound_package). 
+
+In addition, once a customer books a subscription, they'll be able to see their subscription within the My Profile page on the dashboard tab, which will show how many classes they have remaining in the month to use and how many classes they've taken already month to date, and how many classes they’ve taken all time. 
+
+I want to exclude classes that are $40 or more from the subscription as these will require someone to pay out of pocket.
+
+For classes <$40, the booking process will be similar to the current process, but for subscription customers who still have classes left in the monthly subscription, they'll be able to book the class using their subscription and not need to pay for classes. 
+
+Once the class is booked, the customer, the provider and sam@trainn.pro (admin) will receive emails similar to the emails today. 
+
+2 days after the class the provider will be paid from the Trainn Stripe account (follwoing same pattern as classes booked with a credit card). 
+
+Customers who purchase a monthly subscription will also need the ability to cancel the subscription. This cancellation will occur after the current billing cycle. 
+
+On the backnd let's brainstorm, but i think there will need to be a A) new Subscription Offerings table that includes the different price points and classes / month for each of the 5 options above. 
+B) A Subscription Purchases table that shows the user_id ,the purhcase date, the purchase price including the stripe fee, the # of classes in the monthly package, the # of classes used in the month, the # of classes remaining in the month. Each row would represent a monthly purchase of the subscription. So a customer who subscribes for a monthly package for 4 months would have 4 rows (1 for each month). This money would go to Trainn’s Stripe account
+C) Bookings table would update with the payment_method of Monthly Subscription
+D) Scheduled Payouts would update with the payout amount associated with the booking, but would not include a Stripe fee
