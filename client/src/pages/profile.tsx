@@ -265,7 +265,7 @@ function DashboardContent() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div className="text-center p-3 bg-white dark:bg-gray-800 rounded-lg">
-                <div className="text-2xl font-bold text-primary">
+                <div className="text-2xl font-bold text-[#15a34a]">
                   {subscription.classesRemaining === 'unlimited' ? (
                     <Infinity className="w-6 h-6 mx-auto" />
                   ) : (
@@ -367,7 +367,6 @@ function DashboardContent() {
           </CardContent>
         </Card>
       ) : null}
-      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -387,7 +386,6 @@ function DashboardContent() {
           </p>
         </CardContent>
       </Card>
-      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -411,7 +409,6 @@ function DashboardContent() {
           </div>
         </CardContent>
       </Card>
-      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -470,7 +467,6 @@ function DashboardContent() {
           )}
         </CardContent>
       </Card>
-      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
