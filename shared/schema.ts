@@ -778,6 +778,81 @@ export const insertClassInstanceSchema = createInsertSchema(classInstances).omit
 export type InsertClassInstance = z.infer<typeof insertClassInstanceSchema>;
 export type ClassInstance = typeof classInstances.$inferSelect;
 
+// Subscription Plans - Platform-wide subscription offerings
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "4 Classes/Month", "8 Classes/Month", etc.
+  classesPerMonth: integer("classes_per_month"), // null for unlimited
+  isUnlimited: boolean("is_unlimited").notNull().default(false),
+  pricePerClass: real("price_per_class"), // null for unlimited
+  monthlyPrice: real("monthly_price").notNull(), // Total monthly price
+  stripePriceId: text("stripe_price_id"), // Stripe recurring price ID
+  stripeProductId: text("stripe_product_id"), // Stripe product ID
+  displayOrder: integer("display_order").notNull().default(0), // For ordering on page
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+
+// User Subscriptions - Active customer subscriptions
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  planId: integer("plan_id").notNull(), // FK to subscription_plans
+  stripeSubscriptionId: text("stripe_subscription_id").notNull(),
+  stripeCustomerId: text("stripe_customer_id").notNull(),
+  status: text("status").notNull().default("active"), // active, cancelled, past_due, paused
+  currentPeriodStart: timestamp("current_period_start").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  classesUsedThisPeriod: integer("classes_used_this_period").notNull().default(0),
+  classesAllottedThisPeriod: integer("classes_allotted_this_period").notNull(), // From plan or unlimited (-1)
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  cancelledAt: timestamp("cancelled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+
+// Subscription Usage - Track each class booked with subscription
+export const subscriptionUsage = pgTable("subscription_usage", {
+  id: serial("id").primaryKey(),
+  subscriptionId: integer("subscription_id").notNull(), // FK to user_subscriptions
+  userId: integer("user_id").notNull(),
+  bookingId: integer("booking_id").notNull(), // FK to bookings
+  classId: integer("class_id").notNull(),
+  coachId: integer("coach_id").notNull(),
+  classPrice: real("class_price").notNull(), // Original class price (for payout calculation)
+  billingPeriodStart: timestamp("billing_period_start").notNull(), // Which billing period this usage is for
+  billingPeriodEnd: timestamp("billing_period_end").notNull(),
+  usedAt: timestamp("used_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSubscriptionUsageSchema = createInsertSchema(subscriptionUsage).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSubscriptionUsage = z.infer<typeof insertSubscriptionUsageSchema>;
+export type SubscriptionUsage = typeof subscriptionUsage.$inferSelect;
+
 // Email Reminder Tracking - for production idempotency
 export const emailReminderTracking = pgTable("email_reminder_tracking", {
   id: serial("id").primaryKey(),
