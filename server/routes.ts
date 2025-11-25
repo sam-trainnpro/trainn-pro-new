@@ -7280,6 +7280,192 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // Sync subscription from Stripe (for missed webhooks)
+  app.post("/api/subscriptions/sync", requireAuth, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const user = req.user;
+      
+      // Check if user already has an active subscription in our database
+      const existingSubscription = await storage.getActiveUserSubscription(user.id);
+      if (existingSubscription) {
+        return res.json({ 
+          message: "Subscription already exists", 
+          subscription: existingSubscription 
+        });
+      }
+
+      // Check Stripe for active subscriptions
+      if (!user.stripeCustomerId) {
+        return res.status(404).json({ message: "No Stripe customer found for this user" });
+      }
+
+      const subscriptions = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        status: 'active',
+        limit: 1
+      });
+
+      if (subscriptions.data.length === 0) {
+        return res.status(404).json({ message: "No active subscription found in Stripe" });
+      }
+
+      const stripeSubscription = subscriptions.data[0];
+      
+      // Find the matching plan by Stripe price ID
+      const priceId = stripeSubscription.items.data[0]?.price?.id;
+      const plans = await storage.getActiveSubscriptionPlans();
+      const matchingPlan = plans.find(p => p.stripePriceId === priceId);
+      
+      if (!matchingPlan) {
+        // Try to match by price amount
+        const priceAmount = stripeSubscription.items.data[0]?.price?.unit_amount;
+        const matchByPrice = plans.find(p => Math.round(p.monthlyPrice * 100) === priceAmount);
+        
+        if (!matchByPrice) {
+          return res.status(404).json({ 
+            message: "Could not match Stripe subscription to a plan",
+            stripePriceId: priceId,
+            priceAmount: priceAmount
+          });
+        }
+        
+        // Create subscription with matched plan
+        const newSubscription = await storage.createUserSubscription({
+          userId: user.id,
+          planId: matchByPrice.id,
+          stripeSubscriptionId: stripeSubscription.id,
+          stripeCustomerId: stripeSubscription.customer as string,
+          status: 'active',
+          currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+          classesUsedThisPeriod: 0,
+          classesAllottedThisPeriod: matchByPrice.isUnlimited ? -1 : (matchByPrice.classesPerMonth || 0),
+          cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+        });
+
+        console.log(`Synced subscription for user ${user.id}, plan ${matchByPrice.id} (matched by price)`);
+        return res.json({ 
+          message: "Subscription synced successfully", 
+          subscription: newSubscription 
+        });
+      }
+
+      // Create subscription with matched plan (by price ID)
+      const newSubscription = await storage.createUserSubscription({
+        userId: user.id,
+        planId: matchingPlan.id,
+        stripeSubscriptionId: stripeSubscription.id,
+        stripeCustomerId: stripeSubscription.customer as string,
+        status: 'active',
+        currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+        classesUsedThisPeriod: 0,
+        classesAllottedThisPeriod: matchingPlan.isUnlimited ? -1 : (matchingPlan.classesPerMonth || 0),
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+      });
+
+      console.log(`Synced subscription for user ${user.id}, plan ${matchingPlan.id}`);
+      return res.json({ 
+        message: "Subscription synced successfully", 
+        subscription: newSubscription 
+      });
+
+    } catch (error) {
+      console.error("Error syncing subscription:", error);
+      res.status(500).json({ message: "Failed to sync subscription" });
+    }
+  });
+
+  // Admin endpoint to sync subscription by user ID
+  app.post("/api/admin/subscriptions/sync/:userId", requireAdmin, async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
+      }
+
+      const userId = parseInt(req.params.userId);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user already has an active subscription in our database
+      const existingSubscription = await storage.getActiveUserSubscription(userId);
+      if (existingSubscription) {
+        return res.json({ 
+          message: "Subscription already exists", 
+          subscription: existingSubscription 
+        });
+      }
+
+      // Check Stripe for active subscriptions
+      if (!user.stripeCustomerId) {
+        return res.status(404).json({ message: "No Stripe customer found for this user" });
+      }
+
+      const subscriptions = await stripe.subscriptions.list({
+        customer: user.stripeCustomerId,
+        status: 'active',
+        limit: 1
+      });
+
+      if (subscriptions.data.length === 0) {
+        return res.status(404).json({ message: "No active subscription found in Stripe" });
+      }
+
+      const stripeSubscription = subscriptions.data[0];
+      
+      // Find the matching plan by Stripe price ID or amount
+      const priceId = stripeSubscription.items.data[0]?.price?.id;
+      const priceAmount = stripeSubscription.items.data[0]?.price?.unit_amount;
+      const plans = await storage.getActiveSubscriptionPlans();
+      
+      let matchingPlan = plans.find(p => p.stripePriceId === priceId);
+      if (!matchingPlan) {
+        matchingPlan = plans.find(p => Math.round(p.monthlyPrice * 100) === priceAmount);
+      }
+      
+      if (!matchingPlan) {
+        return res.status(404).json({ 
+          message: "Could not match Stripe subscription to a plan",
+          stripePriceId: priceId,
+          priceAmount: priceAmount
+        });
+      }
+
+      // Create subscription record
+      const newSubscription = await storage.createUserSubscription({
+        userId: user.id,
+        planId: matchingPlan.id,
+        stripeSubscriptionId: stripeSubscription.id,
+        stripeCustomerId: stripeSubscription.customer as string,
+        status: 'active',
+        currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+        classesUsedThisPeriod: 0,
+        classesAllottedThisPeriod: matchingPlan.isUnlimited ? -1 : (matchingPlan.classesPerMonth || 0),
+        cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+      });
+
+      console.log(`Admin synced subscription for user ${user.id}, plan ${matchingPlan.id}`);
+      return res.json({ 
+        message: "Subscription synced successfully", 
+        subscription: newSubscription,
+        user: { id: user.id, email: user.email, name: `${user.firstName} ${user.lastName}` },
+        plan: matchingPlan
+      });
+
+    } catch (error) {
+      console.error("Error syncing subscription:", error);
+      res.status(500).json({ message: "Failed to sync subscription" });
+    }
+  });
+
   // Create Stripe Checkout session for subscription
   app.post("/api/subscriptions/checkout", requireAuth, async (req, res) => {
     try {
