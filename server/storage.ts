@@ -1261,6 +1261,39 @@ export class DatabaseStorage implements IStorage {
   async getUserBookings(userId: number): Promise<Booking[]> {
     return await db.select().from(bookings).where(eq(bookings.userId, userId));
   }
+
+  async getUserClassAttendanceStats(userId: number): Promise<{ allTime: number; thisMonth: number; lastMonth: number }> {
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    const allBookings = await db.select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.userId, userId),
+          or(
+            eq(bookings.status, 'confirmed'),
+            eq(bookings.status, 'completed')
+          )
+        )
+      );
+
+    const allTime = allBookings.length;
+    
+    const thisMonth = allBookings.filter(b => {
+      const bookingDate = new Date(b.createdAt);
+      return bookingDate >= startOfThisMonth;
+    }).length;
+
+    const lastMonth = allBookings.filter(b => {
+      const bookingDate = new Date(b.createdAt);
+      return bookingDate >= startOfLastMonth && bookingDate <= endOfLastMonth;
+    }).length;
+
+    return { allTime, thisMonth, lastMonth };
+  }
   
   async getClassBookings(classId: number): Promise<Booking[]> {
     return await db.select().from(bookings).where(eq(bookings.classId, classId));
