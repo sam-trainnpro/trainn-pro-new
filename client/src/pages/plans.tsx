@@ -170,9 +170,7 @@ export default function PlansPage() {
           content="Subscribe to Trainn for unlimited access to fitness, sports, and creative classes. Choose from flexible monthly plans and save on every class." 
         />
       </Helmet>
-
       <Header />
-
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 pb-20 md:pb-8">
         <div className="container mx-auto px-4 py-12">
           <div className="text-center mb-12">
@@ -180,9 +178,7 @@ export default function PlansPage() {
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-primary">Save more with a subscription</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-              Monthly Class Subscriptions
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Monthly Plans</h1>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Book classes under $40 using your monthly subscription credits. 
               Perfect for regular attendees who want to save on every class.
@@ -365,7 +361,6 @@ export default function PlansPage() {
           </div>
         </div>
       </div>
-
       <Footer />
       <MobileNavigation />
     </>
