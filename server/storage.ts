@@ -258,6 +258,7 @@ export interface IStorage {
   // Post-class feedback emails
   getClassesEndedInTimeWindow(startTime: Date, endTime: Date): Promise<Class[]>;
   getActiveBookingsForClass(classId: number): Promise<Booking[]>;
+  getConfirmedBookingsCount(classId: number): Promise<number>;
   hasPostClassFeedbackEmailBeenSent(bookingId: number): Promise<boolean>;
   markPostClassFeedbackEmailSent(bookingId: number): Promise<void>;
   
@@ -3659,6 +3660,18 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.classId, classId),
         eq(bookings.status, 'confirmed')
       ));
+  }
+
+  async getConfirmedBookingsCount(classId: number): Promise<number> {
+    const result = await db.select({ 
+      total: sql<number>`COALESCE(SUM(${bookings.quantity}), 0)` 
+    })
+      .from(bookings)
+      .where(and(
+        eq(bookings.classId, classId),
+        eq(bookings.status, 'confirmed')
+      ));
+    return Number(result[0]?.total || 0);
   }
   
   async hasPostClassFeedbackEmailBeenSent(bookingId: number): Promise<boolean> {
