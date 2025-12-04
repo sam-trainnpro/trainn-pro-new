@@ -16,10 +16,10 @@ import { Helmet } from "react-helmet";
 import { ListFilter, Map as MapIcon, List, Calendar, Clock } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "../../../hooks/use-auth-simple";
+import { useSafeAuth } from "../../../hooks/use-auth-safe";
 
 export default function ClassesPage() {
-  const { user } = useAuth();
+  const { user } = useSafeAuth();
   
   // Scroll to top when component mounts
   useEffect(() => {
@@ -45,6 +45,18 @@ export default function ClassesPage() {
   
   // State to track the current view (list or map)
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+
+  // Check if any filters are actively applied
+  const hasActiveFilters = Boolean(
+    filters.query || 
+    filters.classType || 
+    filters.ageGroup || 
+    filters.city || 
+    filters.outdoors || 
+    filters.date ||
+    searchParams.category ||
+    searchParams.coachId
+  );
 
   // Build query parameters for server-side filtering
   const buildQueryParams = () => {
@@ -344,6 +356,7 @@ export default function ClassesPage() {
                         classes={sortedClasses} 
                         onClassSelect={handleClassSelect}
                         userPrimaryCity={user?.primaryCity}
+                        hasActiveFilters={hasActiveFilters}
                       />
                     </div>
                   </div>
@@ -354,6 +367,7 @@ export default function ClassesPage() {
                     classes={sortedClasses} 
                     onClassSelect={handleClassSelect}
                     userPrimaryCity={user?.primaryCity}
+                    hasActiveFilters={hasActiveFilters}
                   />
                 </div>
               )

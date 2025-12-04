@@ -11,6 +11,7 @@ interface MapViewProps {
   classes: ClassWithSchedules[];
   onClassSelect?: (classId: number) => void;
   userPrimaryCity?: string | null;
+  hasActiveFilters?: boolean;
 }
 
 // Default map container style
@@ -19,10 +20,10 @@ const mapContainerStyle = {
   height: "600px",
 };
 
-// City coordinates
+// City coordinates - keys match the dropdown values exactly
 const cityCoordinates: Record<string, { lat: number; lng: number }> = {
-  san_francisco: { lat: 37.7749, lng: -122.4194 },
-  los_angeles: { lat: 34.0195, lng: -118.4912 }, // Santa Monica area
+  "San Francisco": { lat: 37.7749, lng: -122.4194 },
+  "Los Angeles": { lat: 34.0195, lng: -118.4912 },
 };
 
 const defaultCenter = {
@@ -30,10 +31,11 @@ const defaultCenter = {
   lng: -122.4194
 };
 
-export default function MapView({ classes, onClassSelect, userPrimaryCity }: MapViewProps) {
+export default function MapView({ classes, onClassSelect, userPrimaryCity, hasActiveFilters = false }: MapViewProps) {
   const [selectedClass, setSelectedClass] = useState<ClassWithSchedules | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const prevClassesRef = useRef<ClassWithSchedules[]>([]);
+  const initialLoadRef = useRef(true);
   
   // Adjust map height based on container
   const [mapHeight, setMapHeight] = useState("600px");
@@ -74,9 +76,16 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity }: Map
     }));
   }, [classes]);
 
-  // Fit bounds when classes change (filters applied)
+  // Fit bounds when filters are applied, otherwise use primary city
   useEffect(() => {
-    if (!map || !isLoaded || classes.length === 0) return;
+    if (!map || !isLoaded) return;
+    
+    // On initial load (no filters), just use the user's primary city
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      // Map already initialized with initialCenter, no need to change
+      return;
+    }
     
     // Check if classes actually changed (not just re-render)
     const classIds = classes.map(c => c.id).sort().join(',');
@@ -85,6 +94,14 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity }: Map
     if (classIds === prevClassIds) return;
     
     prevClassesRef.current = classes;
+    
+    // Only fit bounds when there are active filters
+    if (!hasActiveFilters) {
+      // No filters - stay centered on user's primary city
+      map.setCenter(initialCenter);
+      map.setZoom(12);
+      return;
+    }
     
     // Get classes with valid coordinates
     const classesWithCoords = classes.filter(c => c.latitude && c.longitude);
@@ -106,7 +123,7 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity }: Map
       return;
     }
     
-    // Multiple classes - fit bounds to show all of them
+    // Multiple classes with filters - fit bounds to show all of them
     const bounds = new google.maps.LatLngBounds();
     classesWithCoords.forEach(classItem => {
       bounds.extend({
@@ -116,7 +133,7 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity }: Map
     });
     
     map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
-  }, [map, classes, isLoaded, initialCenter]);
+  }, [map, classes, isLoaded, initialCenter, hasActiveFilters]);
 
   const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance);
