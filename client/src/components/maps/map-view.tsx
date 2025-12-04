@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { GoogleMap, Marker, InfoWindow, useLoadScript } from "@react-google-maps/api";
 import { Class, ClassWithSchedules } from "@shared/schema";
 import { Link } from "wouter";
@@ -10,6 +10,7 @@ import { MapPin } from "lucide-react";
 interface MapViewProps {
   classes: ClassWithSchedules[];
   onClassSelect?: (classId: number) => void;
+  userPrimaryCity?: string | null;
 }
 
 // Default map container style
@@ -18,13 +19,21 @@ const mapContainerStyle = {
   height: "600px",
 };
 
+// City coordinates
+const cityCoordinates: Record<string, { lat: number; lng: number }> = {
+  san_francisco: { lat: 37.7749, lng: -122.4194 },
+  los_angeles: { lat: 34.0195, lng: -118.4912 }, // Santa Monica area
+};
+
 const defaultCenter = {
   lat: 37.7749, // San Francisco center
   lng: -122.4194
 };
 
-export default function MapView({ classes, onClassSelect }: MapViewProps) {
+export default function MapView({ classes, onClassSelect, userPrimaryCity }: MapViewProps) {
   const [selectedClass, setSelectedClass] = useState<ClassWithSchedules | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const prevClassesRef = useRef<ClassWithSchedules[]>([]);
   
   // Adjust map height based on container
   const [mapHeight, setMapHeight] = useState("600px");
@@ -46,6 +55,14 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
   });
 
+  // Determine initial center based on user's primary city or default
+  const initialCenter = useMemo(() => {
+    if (userPrimaryCity && cityCoordinates[userPrimaryCity]) {
+      return cityCoordinates[userPrimaryCity];
+    }
+    return defaultCenter;
+  }, [userPrimaryCity]);
+
   const markers = useMemo(() => {
     return classes.map(classItem => ({
       id: classItem.id,
@@ -56,6 +73,54 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
       classItem
     }));
   }, [classes]);
+
+  // Fit bounds when classes change (filters applied)
+  useEffect(() => {
+    if (!map || !isLoaded || classes.length === 0) return;
+    
+    // Check if classes actually changed (not just re-render)
+    const classIds = classes.map(c => c.id).sort().join(',');
+    const prevClassIds = prevClassesRef.current.map(c => c.id).sort().join(',');
+    
+    if (classIds === prevClassIds) return;
+    
+    prevClassesRef.current = classes;
+    
+    // Get classes with valid coordinates
+    const classesWithCoords = classes.filter(c => c.latitude && c.longitude);
+    
+    if (classesWithCoords.length === 0) {
+      // No classes with coordinates, center on user's primary city or default
+      map.setCenter(initialCenter);
+      map.setZoom(12);
+      return;
+    }
+    
+    if (classesWithCoords.length === 1) {
+      // Single class, just center on it
+      map.setCenter({
+        lat: classesWithCoords[0].latitude!,
+        lng: classesWithCoords[0].longitude!
+      });
+      map.setZoom(14);
+      return;
+    }
+    
+    // Multiple classes - fit bounds to show all of them
+    const bounds = new google.maps.LatLngBounds();
+    classesWithCoords.forEach(classItem => {
+      bounds.extend({
+        lat: classItem.latitude!,
+        lng: classItem.longitude!
+      });
+    });
+    
+    map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+  }, [map, classes, isLoaded, initialCenter]);
+
+  const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
+  }, []);
 
   const onMarkerClick = useCallback((classItem: ClassWithSchedules) => {
     setSelectedClass(classItem);
@@ -83,7 +148,8 @@ export default function MapView({ classes, onClassSelect }: MapViewProps) {
       <GoogleMap
         mapContainerStyle={dynamicMapContainerStyle}
         zoom={12}
-        center={defaultCenter}
+        center={initialCenter}
+        onLoad={onMapLoad}
         options={{
           fullscreenControl: true,
           streetViewControl: false,

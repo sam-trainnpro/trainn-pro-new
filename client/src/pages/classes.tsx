@@ -16,8 +16,11 @@ import { Helmet } from "react-helmet";
 import { ListFilter, Map as MapIcon, List, Calendar, Clock } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../../../hooks/use-auth-simple";
 
 export default function ClassesPage() {
+  const { user } = useAuth();
+  
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -339,7 +342,8 @@ export default function ClassesPage() {
                     <div className="bg-white rounded-xl shadow-sm sticky top-20">
                       <MapView 
                         classes={sortedClasses} 
-                        onClassSelect={handleClassSelect} 
+                        onClassSelect={handleClassSelect}
+                        userPrimaryCity={user?.primaryCity}
                       />
                     </div>
                   </div>
@@ -348,7 +352,8 @@ export default function ClassesPage() {
                 <div className="bg-white p-4 rounded-xl shadow-sm">
                   <MapView 
                     classes={sortedClasses} 
-                    onClassSelect={handleClassSelect} 
+                    onClassSelect={handleClassSelect}
+                    userPrimaryCity={user?.primaryCity}
                   />
                 </div>
               )
