@@ -82,6 +82,7 @@ export interface IStorage {
   getUserClasses(userId: number): Promise<Class[]>;
   getClassesByCategory(categoryId: number): Promise<Class[]>;
   getClassesByCoach(coachId: number): Promise<Class[]>;
+  getAllClassesForAdmin(coachId?: number): Promise<Class[]>;
   updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined>;
   updateClassSeries(parentClassId: number, classData: Partial<Class>): Promise<Class[]>;
   getClassesByParentId(parentClassId: number): Promise<Class[]>;
@@ -963,6 +964,24 @@ export class DatabaseStorage implements IStorage {
         ne(classes.status, 'cancelled'),
         ne(classes.status, 'deleted')
       ));
+  }
+
+  async getAllClassesForAdmin(coachId?: number): Promise<Class[]> {
+    // Return ALL classes (past and future) for admin Master Calendar
+    // Excludes deleted and cancelled classes, but includes past classes
+    const conditions = [
+      sql`${classes.startTime} IS NOT NULL`,
+      ne(classes.status, 'cancelled'),
+      ne(classes.status, 'deleted')
+    ];
+
+    if (coachId) {
+      conditions.push(eq(classes.coachId, coachId));
+    }
+
+    return await db.select().from(classes)
+      .where(and(...conditions))
+      .orderBy(desc(classes.startTime));
   }
   
   async updateClass(id: number, classData: Partial<Class>): Promise<Class | undefined> {
