@@ -32,6 +32,8 @@ export const users = pgTable("users", {
   providerReferralCode: text("provider_referral_code").unique(), // Unique provider referral code for each user
   // Email preferences
   receiveNewsletter: boolean("receive_newsletter").default(true), // User preference for weekly newsletter
+  // Primary location for map default
+  primaryCity: text("primary_city"), // 'san_francisco' or 'los_angeles'
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
