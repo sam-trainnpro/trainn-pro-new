@@ -5289,6 +5289,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update primary city preference
+  app.put("/api/users/:id/primary-city", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Only allow users to update their own preference
+      if (userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this preference" });
+      }
+      
+      const { primaryCity } = req.body;
+      
+      // Validate the primary city value
+      const validCities = ['san_francisco', 'los_angeles'];
+      if (!validCities.includes(primaryCity)) {
+        return res.status(400).json({ message: "Invalid primary city value" });
+      }
+      
+      // Update the user's primary city preference
+      const updatedUser = await storage.updateUser(userId, { primaryCity });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive information
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating primary city:", error);
+      res.status(500).json({ message: "Failed to update primary city" });
+    }
+  });
+
   // Change password endpoint
   app.put("/api/users/:id/password", requireAuth, async (req, res) => {
     const userId = parseInt(req.params.id);

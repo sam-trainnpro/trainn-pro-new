@@ -541,6 +541,56 @@ function DashboardContent() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Location Preferences
+          </CardTitle>
+          <CardDescription>
+            Set your primary location to customize your class browsing experience
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-0.5">
+              <div className="font-medium">Primary Location</div>
+              <div className="text-sm text-gray-600">
+                The map will center on this location when you browse classes
+              </div>
+            </div>
+            <Select
+              value={user.primaryCity || ""}
+              onValueChange={async (value) => {
+                try {
+                  await apiRequest("PUT", `/api/users/${user.id}/primary-city`, {
+                    primaryCity: value
+                  });
+                  await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+                  toast({
+                    title: "Location Updated",
+                    description: `Your primary location has been set to ${value === 'san_francisco' ? 'San Francisco' : 'Los Angeles'}`,
+                  });
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to update location preference",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="w-[180px]" data-testid="select-primary-city">
+                <SelectValue placeholder="Select a city" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="san_francisco">San Francisco</SelectItem>
+                <SelectItem value="los_angeles">Los Angeles</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
