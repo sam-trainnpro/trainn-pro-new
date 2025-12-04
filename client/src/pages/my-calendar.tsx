@@ -98,22 +98,30 @@ export default function MyCalendarPage() {
     enabled: user?.role === 'admin',
   });
 
+  // Build the query key for admin - includes coachId filter if selected
+  const adminQueryKey = selectedCoachId && selectedCoachId !== 'all'
+    ? `/api/admin/all-classes?coachId=${selectedCoachId}`
+    : '/api/admin/all-classes';
+
   // Fetch classes based on user role
+  // For admin: use new endpoint that includes past and future classes
+  // For coach: use existing coach classes endpoint
   const { data: classes = [], isLoading, refetch } = useQuery<Class[]>({
     queryKey: user?.role === 'admin' 
-      ? ['/api/classes']
+      ? ['/api/admin/all-classes', selectedCoachId]
       : [`/api/coaches/${user.id}/classes`],
+    queryFn: user?.role === 'admin'
+      ? async () => {
+          const response = await fetch(adminQueryKey, { credentials: 'include' });
+          if (!response.ok) throw new Error('Failed to fetch classes');
+          return response.json();
+        }
+      : undefined,
     enabled: !!user?.id,
   });
 
-  // Filter classes for admin based on selected coach
-  const filteredClasses = useMemo(() => {
-    if (user?.role !== 'admin' || !selectedCoachId || selectedCoachId === 'all') {
-      return classes;
-    }
-    
-    return classes.filter(cls => cls.coachId == selectedCoachId);
-  }, [classes, selectedCoachId, user?.role]);
+  // For admin, classes are already filtered by the API, so just return them directly
+  const filteredClasses = classes;
 
   const handleClassClick = (classItem: Class) => {
     setSelectedClass(classItem);
