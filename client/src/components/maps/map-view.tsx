@@ -76,54 +76,75 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity, hasAc
     }));
   }, [classes]);
 
+  // Track previous hasActiveFilters state
+  const prevHasActiveFiltersRef = useRef(hasActiveFilters);
+  
   // Fit bounds when filters are applied, otherwise use primary city
   useEffect(() => {
     if (!map || !isLoaded) return;
     
-    // On initial load (no filters), just use the user's primary city
-    if (initialLoadRef.current) {
+    // Check if this is the initial load with no filters
+    const isInitialLoad = initialLoadRef.current;
+    
+    // Check if classes changed
+    const classIds = classes.map(c => c.id).sort().join(',');
+    const prevClassIds = prevClassesRef.current.map(c => c.id).sort().join(',');
+    const classesChanged = classIds !== prevClassIds;
+    
+    // Check if filter state changed
+    const filtersJustActivated = hasActiveFilters && !prevHasActiveFiltersRef.current;
+    const filtersJustCleared = !hasActiveFilters && prevHasActiveFiltersRef.current;
+    
+    // Update refs
+    prevHasActiveFiltersRef.current = hasActiveFilters;
+    
+    // On initial load without filters, keep the primary city center
+    if (isInitialLoad && !hasActiveFilters) {
       initialLoadRef.current = false;
-      // Map already initialized with initialCenter, no need to change
+      prevClassesRef.current = classes;
       return;
     }
     
-    // Check if classes actually changed (not just re-render)
-    const classIds = classes.map(c => c.id).sort().join(',');
-    const prevClassIds = prevClassesRef.current.map(c => c.id).sort().join(',');
+    initialLoadRef.current = false;
     
-    if (classIds === prevClassIds) return;
+    // If nothing changed, skip
+    if (!classesChanged && !filtersJustActivated && !filtersJustCleared) {
+      return;
+    }
     
     prevClassesRef.current = classes;
     
-    // Only fit bounds when there are active filters
+    // If filters were cleared, go back to primary city
     if (!hasActiveFilters) {
-      // No filters - stay centered on user's primary city
+      console.log("MapView: No filters, centering on primary city");
       map.setCenter(initialCenter);
       map.setZoom(12);
       return;
     }
     
-    // Get classes with valid coordinates
+    // Filters are active - fit bounds to filtered classes
     const classesWithCoords = classes.filter(c => c.latitude && c.longitude);
     
+    console.log("MapView: Fitting bounds for", classesWithCoords.length, "filtered classes");
+    
     if (classesWithCoords.length === 0) {
-      // No classes with coordinates, center on user's primary city or default
       map.setCenter(initialCenter);
       map.setZoom(12);
       return;
     }
     
     if (classesWithCoords.length === 1) {
-      // Single class, just center on it
+      const singleClass = classesWithCoords[0];
+      console.log("MapView: Single class at", singleClass.latitude, singleClass.longitude, singleClass.location);
       map.setCenter({
-        lat: classesWithCoords[0].latitude!,
-        lng: classesWithCoords[0].longitude!
+        lat: singleClass.latitude!,
+        lng: singleClass.longitude!
       });
       map.setZoom(14);
       return;
     }
     
-    // Multiple classes with filters - fit bounds to show all of them
+    // Multiple classes - fit bounds
     const bounds = new google.maps.LatLngBounds();
     classesWithCoords.forEach(classItem => {
       bounds.extend({
@@ -132,6 +153,7 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity, hasAc
       });
     });
     
+    console.log("MapView: Fitting bounds to show", classesWithCoords.length, "classes");
     map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
   }, [map, classes, isLoaded, initialCenter, hasActiveFilters]);
 
