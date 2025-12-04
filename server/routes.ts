@@ -2607,6 +2607,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to get all classes (past and future) for Master Calendar
+  app.get("/api/admin/all-classes", requireAdmin, async (req, res) => {
+    try {
+      const coachId = req.query.coachId ? parseInt(req.query.coachId as string) : undefined;
+      const classes = await storage.getAllClassesForAdmin(coachId);
+      res.json(classes);
+    } catch (error) {
+      console.error("Error fetching all classes for admin:", error);
+      res.status(500).json({ message: "Failed to fetch classes" });
+    }
+  });
+
   app.put("/api/admin/coaches/:id/approve", requireAdmin, async (req, res) => {
     try {
       const coachId = parseInt(req.params.id);
