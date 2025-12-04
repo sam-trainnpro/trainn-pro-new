@@ -8011,16 +8011,11 @@ Sitemap: https://trainn.pro/sitemap.xml`);
       const booking = await storage.createBooking({
         userId: req.user.id,
         classId: classId,
-        coachId: classItem.coachId,
         quantity: quantity,
         status: "confirmed",
         paymentMethod: "subscription",
         stripePaymentIntentId: null, // No payment intent for subscription bookings
-        totalAmount: 0, // Customer doesn't pay
-        createdAt: new Date(),
-        classDateTime: classItem.dateTime,
-        classTitle: classItem.title,
-        coachName: `${classItem.coachFirstName || ''} ${classItem.coachLastName || ''}`.trim()
+        paymentDate: new Date()
       });
 
       // Record subscription usage
@@ -8040,20 +8035,26 @@ Sitemap: https://trainn.pro/sitemap.xml`);
       await storage.incrementSubscriptionUsage(subscription.id);
 
       // Create scheduled payout for provider (85% of class price, paid from Trainn account)
-      const providerPayout = Math.round(classItem.price * 0.85 * 100); // Convert to cents
-      const classDateTime = new Date(classItem.dateTime);
-      const payoutDate = new Date(classDateTime);
+      const classPriceCents = Math.round(classItem.price * 100);
+      const providerPayoutCents = Math.round(classItem.price * 0.85 * 100); // 85% to provider
+      const platformFeeCents = classPriceCents - providerPayoutCents; // 15% platform fee
+      const classStartTime = new Date(classItem.startTime);
+      const payoutDate = new Date(classStartTime);
       payoutDate.setDate(payoutDate.getDate() + 2); // 2 days after class
 
       await storage.createScheduledPayout({
         bookingId: booking.id,
+        classId: classId,
         coachId: classItem.coachId,
-        amount: providerPayout,
+        customerId: req.user.id,
+        amountCents: classPriceCents, // Full class price
+        stripeFee: 0, // No Stripe fee for subscription bookings (paid from Trainn account)
+        netAmount: classPriceCents, // Full amount since no payment processing
+        coachPayout: providerPayoutCents, // 85% to coach
+        platformFee: platformFeeCents, // 15% platform fee
         payoutType: 'subscription_booking',
-        status: 'pending',
-        scheduledFor: payoutDate,
-        classDateTime: classItem.dateTime,
-        notes: `Subscription booking payout - Class: ${classItem.title} (ID: ${classId}), Customer: ${req.user.firstName} ${req.user.lastName}`
+        status: 'scheduled',
+        scheduledPayoutDate: payoutDate
       });
 
       // Send confirmation emails
