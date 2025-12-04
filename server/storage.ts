@@ -468,7 +468,8 @@ export class DatabaseStorage implements IStorage {
         FROM classes 
         WHERE city IS NOT NULL 
           AND city != '' 
-          AND start_time >= CURRENT_DATE
+          AND start_time >= NOW()
+          AND status NOT IN ('cancelled', 'deleted')
         ORDER BY city
       `);
       
