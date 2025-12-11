@@ -133,6 +133,7 @@ export default function Footer() {
               {(!user || (user.role !== 'coach' && user.role !== 'admin')) && (
                 <li><Link href="/auth?register=true&role=coach" className="text-gray-400 hover:text-white transition">Join as a Provider</Link></li>
               )}
+              <li><Link href="/provider-landing" className="text-gray-400 hover:text-white transition">Why Use Trainn</Link></li>
               <li><Link href="/coach-resources" className="text-gray-400 hover:text-white transition">Provider Resources</Link></li>
               <li><Link href="/success-stories" className="text-gray-400 hover:text-white transition">Success Stories</Link></li>
               <li><Link href="/business-tools" className="text-gray-400 hover:text-white transition">Business Tools</Link></li>
