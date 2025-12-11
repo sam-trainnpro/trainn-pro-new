@@ -58,14 +58,14 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Helmet>
         <title>Book Fitness, Sports & Arts for Adults & Kids in San Francisco | Trainn</title>
-        <meta name="description" content="Trainn for top-rated fitness, sports, and art classes for adults and kids' in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
+        <meta name="description" content="Trainn for top-rated fitness, sports, and art classes for adults and kids in San Francisco, Los Angeles and beyond. Experienced providers, flexible scheduling, no long-term commitments." />
         <meta property="og:title" content="Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco | Trainn" />
-        <meta property="og:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
+        <meta property="og:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes in San Francisco, Los Angeles and beyond. Experienced providers, flexible scheduling, no long-term commitments." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://trainn.pro" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco | Trainn" />
-        <meta name="twitter:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes including kids sports classes in San Francisco. Expert coaches, flexible scheduling, no long-term commitments. Book today!" />
+        <meta name="twitter:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes in San Francisco, Los Angeles and beyond. Experienced providers, flexible scheduling, no long-term commitments." />
         <link rel="canonical" href="https://trainn.pro" />
       </Helmet>
       <h1 className="sr-only">
