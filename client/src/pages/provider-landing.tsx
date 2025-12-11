@@ -308,9 +308,7 @@ export default function ProviderLanding() {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to Grow Your Business?</h2>
-            <p className="text-xl text-teal-100 mb-8">
-              Join hundreds of providers who are already reaching more students and earning more with Trainn
-            </p>
+            <p className="text-xl text-teal-100 mb-8">Join the many providers who are already reaching more students and earning more with Trainn</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 href="/auth?register=true&role=coach" 
