@@ -20,10 +20,10 @@ const mapContainerStyle = {
   height: "600px",
 };
 
-// City coordinates - keys match the dropdown values exactly
+// City coordinates - keys match the database values (normalized format)
 const cityCoordinates: Record<string, { lat: number; lng: number }> = {
-  "San Francisco": { lat: 37.7749, lng: -122.4194 },
-  "Los Angeles": { lat: 34.0195, lng: -118.4912 },
+  "san_francisco": { lat: 37.7749, lng: -122.4194 },
+  "los_angeles": { lat: 34.0195, lng: -118.4912 },
 };
 
 const defaultCenter = {
