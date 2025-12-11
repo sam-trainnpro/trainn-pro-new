@@ -10,6 +10,8 @@ export const useAnalytics = () => {
     if (location !== prevLocationRef.current) {
       trackPageView(location);
       prevLocationRef.current = location;
+      // Scroll to top on route change
+      window.scrollTo(0, 0);
     }
   }, [location]);
 };
