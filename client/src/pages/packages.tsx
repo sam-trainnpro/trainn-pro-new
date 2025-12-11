@@ -199,10 +199,10 @@ export default function PackagesPage() {
     <div className="flex flex-col min-h-screen">
       <Helmet>
         <title>Browse Class Packages - Trainn</title>
-        <meta name="description" content="Discover and book class packages from top providers in the San Francisco Bay Area. Save money with multi-class bundles for sports, fitness, music and art classes." />
+        <meta name="description" content="Discover and book class packages from top providers in the San Francisco Bay Area, Los Angeles and beyond. Save money with multi-class bundles for sports, fitness, music and art classes." />
         <link rel="canonical" href="https://trainn.pro/packages" />
         <meta property="og:title" content="Browse Class Packages - Trainn" />
-        <meta property="og:description" content="Discover and book class packages from top providers in the San Francisco Bay Area. Save money with multi-class bundles for sports, fitness, music and art classes." />
+        <meta property="og:description" content="Discover and book class packages from top providers in the San Francisco Bay Area, Los Angeles and beyond. Save money with multi-class bundles for sports, fitness, music and art classes." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://trainn.pro/packages" />
         <meta name="twitter:card" content="summary_large_image" />
