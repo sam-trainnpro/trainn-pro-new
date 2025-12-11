@@ -307,9 +307,7 @@ export default function ProviderLanding() {
       <div className="bg-gradient-to-r from-teal-600 to-blue-600 py-20">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-              Ready to Grow Your Coaching Business?
-            </h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to Grow Your Business?</h2>
             <p className="text-xl text-teal-100 mb-8">
               Join hundreds of providers who are already reaching more students and earning more with Trainn
             </p>
