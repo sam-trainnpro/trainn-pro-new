@@ -77,12 +77,12 @@ export default function Header() {
           <Link href="/classes" className={`text-foreground hover:text-primary transition font-medium ${location === '/classes' ? 'text-primary' : ''}`}>
             Classes
           </Link>
-          {user?.role === 'customer' && (
+          {(!user || user?.role === 'customer') && (
             <Link href="/plans" className={`text-foreground hover:text-primary transition font-medium ${location === '/plans' ? 'text-primary' : ''}`}>
               Plans
             </Link>
           )}
-          {user?.role === 'customer' && (
+          {(!user || user?.role === 'customer') && (
             <Link href="/packages" className={`text-foreground hover:text-primary transition font-medium ${location === '/packages' ? 'text-primary' : ''}`}>
               Packages
             </Link>
@@ -262,7 +262,7 @@ export default function Header() {
                   Classes
                 </Button>
               </Link>
-              {user?.role === 'customer' && (
+              {(!user || user?.role === 'customer') && (
                 <Link href="/plans" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start">
                     <CreditCard className="mr-2 h-5 w-5" />
@@ -270,7 +270,7 @@ export default function Header() {
                   </Button>
                 </Link>
               )}
-              {user?.role === 'customer' && (
+              {(!user || user?.role === 'customer') && (
                 <Link href="/packages" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start">
                     <Package className="mr-2 h-5 w-5" />
