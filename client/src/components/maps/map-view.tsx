@@ -118,7 +118,7 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity, hasAc
     if (!hasActiveFilters) {
       console.log("MapView: No filters, centering on primary city");
       map.setCenter(initialCenter);
-      map.setZoom(12);
+      map.setZoom(11);
       return;
     }
     
@@ -129,7 +129,7 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity, hasAc
     
     if (classesWithCoords.length === 0) {
       map.setCenter(initialCenter);
-      map.setZoom(12);
+      map.setZoom(11);
       return;
     }
     
@@ -186,7 +186,7 @@ export default function MapView({ classes, onClassSelect, userPrimaryCity, hasAc
     <div ref={mapContainerRef} className="relative rounded-lg overflow-hidden border border-gray-200">
       <GoogleMap
         mapContainerStyle={dynamicMapContainerStyle}
-        zoom={12}
+        zoom={11}
         center={initialCenter}
         onLoad={onMapLoad}
         options={{
