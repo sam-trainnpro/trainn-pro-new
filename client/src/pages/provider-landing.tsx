@@ -8,7 +8,6 @@ export default function ProviderLanding() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white py-20">
         <div className="container mx-auto px-4">
@@ -36,13 +35,10 @@ export default function ProviderLanding() {
           </div>
         </div>
       </div>
-
       {/* Key Benefits Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Why Coaches Choose Trainn
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Providers Choose Trainn</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Everything you need to manage and grow your services business in one powerful platform
           </p>
@@ -200,7 +196,6 @@ export default function ProviderLanding() {
           </div>
         </div>
       </div>
-
       {/* Stats Section */}
       <div className="bg-gradient-to-r from-teal-600 to-blue-600 py-16">
         <div className="container mx-auto px-4">
@@ -229,7 +224,6 @@ export default function ProviderLanding() {
           </div>
         </div>
       </div>
-
       {/* How It Works */}
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
@@ -275,7 +269,6 @@ export default function ProviderLanding() {
           </div>
         </div>
       </div>
-
       {/* Testimonials */}
       <div className="bg-gray-100 py-16">
         <div className="container mx-auto px-4">
@@ -312,7 +305,6 @@ export default function ProviderLanding() {
           </div>
         </div>
       </div>
-
       {/* Final CTA */}
       <div className="bg-gradient-to-r from-teal-600 to-blue-600 py-20">
         <div className="container mx-auto px-4 text-center">
@@ -343,7 +335,6 @@ export default function ProviderLanding() {
           </div>
         </div>
       </div>
-
       <Footer />
     </div>
   );
