@@ -41,7 +41,7 @@ export default function AboutPage() {
                 dangerouslySetInnerHTML={{
                   __html: `
                     <p class="text-lg text-gray-700 leading-relaxed mb-6">
-                      Welcome to Trainn — a platform that makes it easy to discover and book kids activities, after-school programs, and adult fitness and creative classes in the San Francisco Bay Area.
+                      Welcome to Trainn, a platform that makes it easy to discover and book kids' activities, after-school programs, and adult fitness and creative classes in the San Francisco Bay Area, LA, and beyond.
                     </p>
                     
                     <p class="text-xl font-semibold text-gray-800 mb-3">
