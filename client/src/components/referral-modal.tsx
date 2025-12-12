@@ -33,7 +33,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
   const referralCode = referralData?.referralCode;
   const referralLink = referralCode ? `${window.location.origin}/register?ref=${referralCode}` : '';
   
-  const shareMessage = `Hey! I want to invite you to try Trainn with a $5 discount on your first paid class. Trainn builds stronger communities through fitness, creativity, and play. Use my referral link: ${referralLink}`;
+  const shareMessage = `Hey! I want to invite you to try Trainn with a $10 discount on your first paid class. Trainn builds stronger communities through fitness, creativity, and play. Use my referral link: ${referralLink}`;
 
   const handleCopyLink = async () => {
     try {
@@ -70,7 +70,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
         // Use Web Share API if available
         if (navigator.share) {
           navigator.share({
-            title: 'Join Trainn with $5 off!',
+            title: 'Join Trainn with $10 off!',
             text: shareMessage,
             url: referralLink,
           }).catch(console.error);
@@ -99,7 +99,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center flex items-center justify-center gap-2">
-            Refer a friend and get $5
+            Refer a friend and get $10
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#FF6B6B">
               <path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z"/>
             </svg>
@@ -112,7 +112,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-coral-500 font-bold mt-0.5">•</span>
-                <span>Give your friend $5 off their first class</span>
+                <span>Give your friend $10 off their first class</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-coral-500 font-bold mt-0.5">•</span>
@@ -120,7 +120,7 @@ export default function ReferralModal({ isOpen, onClose }: ReferralModalProps) {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-coral-500 font-bold mt-0.5">•</span>
-                <span>Receive $5 off your next class booking</span>
+                <span>Receive $10 off your next class booking</span>
               </li>
             </ul>
           </div>
