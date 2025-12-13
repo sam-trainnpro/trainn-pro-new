@@ -4422,12 +4422,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date()
       };
       
-      // Test pricing details for new user scenario: $15 class + $0.75 service fee - $5 referral credit = $10.75
+      // Test pricing details for new user scenario: $15 class + $0.75 service fee - $10 referral credit = $5.75
       const classPrice = 15.00;
       const serviceFee = 0.75;
       const originalTotal = classPrice + serviceFee; // $15.75
-      const referralDiscount = 5.00;
-      const finalAmount = originalTotal - referralDiscount; // $10.75
+      const referralDiscount = 10.00;
+      const finalAmount = originalTotal - referralDiscount; // $5.75
       
       const testPricingDetails = {
         originalPrice: originalTotal,
@@ -6906,12 +6906,12 @@ Sitemap: https://trainn.pro/sitemap.xml`);
         return res.status(400).json({ message: "Invalid or expired referral code" });
       }
       
-      // Grant the referee $5 credit immediately
+      // Grant the referee $10 credit immediately
       await storage.addUserCredit({
         userId,
-        amount: 500, // $5 in cents
+        amount: 1000, // $10 in cents
         transactionType: 'referral_reward',
-        description: 'Welcome credit - $5 off your first class',
+        description: 'Welcome credit - $10 off your first class',
         referralId: referral.id
       });
       
