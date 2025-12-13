@@ -1438,7 +1438,7 @@ export default function CheckoutPage() {
                             {isFirstTimeReferralUser && (
                               <div className="bg-green-100 border border-green-300 rounded-lg p-3">
                                 <p className="text-sm text-green-800">
-                                  Welcome bonus! You've received $5.00 credit for joining via referral.
+                                  Welcome bonus! You've received $10.00 credit for joining via referral.
                                 </p>
                               </div>
                             )}
