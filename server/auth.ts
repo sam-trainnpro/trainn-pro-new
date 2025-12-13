@@ -277,16 +277,16 @@ export function setupAuth(app: Express) {
             
             console.log('Created referral entry:', referral.id);
             
-            // Grant immediate $5 credit to the new user
+            // Grant immediate $10 credit to the new user
             await storage.addUserCredit({
               userId: user.id,
-              amount: 500, // $5 in cents
+              amount: 1000, // $10 in cents
               transactionType: 'referral_reward',
-              description: 'Welcome credit - $5 off your first class',
+              description: 'Welcome credit - $10 off your first class',
               referralId: referral.id
             });
             
-            console.log('Granted $5 referral credit to new user:', user.email);
+            console.log('Granted $10 referral credit to new user:', user.email);
           } else {
             console.log('Referral code not found or invalid:', referralCode);
           }
