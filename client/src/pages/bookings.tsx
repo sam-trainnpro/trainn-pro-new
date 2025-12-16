@@ -587,15 +587,15 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className="flex justify-between items-center gap-3">
-                          <div className="flex gap-3">
+                        <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                          <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
                             <Button 
                               asChild 
                               variant="outline" 
-                              className="border-primary text-primary hover:bg-primary hover:text-white"
+                              className="border-primary text-primary hover:bg-primary hover:text-white text-sm"
                             >
                               <Link href={`/classes/${booking.classId}`}>
-                                View Class Details
+                                Class Details
                               </Link>
                             </Button>
                             
@@ -603,11 +603,11 @@ export default function BookingsPage() {
                               <DropdownMenuTrigger asChild>
                                 <Button 
                                   variant="outline"
-                                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
                                   data-testid="add-to-calendar"
                                 >
-                                  <Calendar className="h-4 w-4 mr-2" />
-                                  Add to Calendar
+                                  <Calendar className="h-4 w-4 mr-1 sm:mr-2" />
+                                  <span className="hidden sm:inline">Add to </span>Calendar
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
@@ -652,7 +652,7 @@ export default function BookingsPage() {
                             <AlertDialogTrigger asChild>
                               <Button 
                                 variant="outline" 
-                                className="text-destructive border-destructive hover:bg-destructive hover:text-white"
+                                className="text-destructive border-destructive hover:bg-destructive hover:text-white w-full sm:w-auto text-sm"
                               >
                                 Cancel Booking
                               </Button>
@@ -741,13 +741,14 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className="flex gap-3">
+                        <CardFooter className="flex flex-wrap gap-2 sm:gap-3">
                           <Button 
                             asChild 
                             variant="outline"
+                            className="text-sm"
                           >
                             <Link href={`/classes/${booking.classId}`}>
-                              View Class Details
+                              Class Details
                             </Link>
                           </Button>
                           
