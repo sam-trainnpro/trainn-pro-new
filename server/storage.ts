@@ -264,6 +264,10 @@ export interface IStorage {
   hasPostClassFeedbackEmailBeenSent(bookingId: number): Promise<boolean>;
   markPostClassFeedbackEmailSent(bookingId: number): Promise<void>;
   
+  // Class reminder emails (per-booking idempotency)
+  hasClassReminderEmailBeenSent(bookingId: number, classId: number): Promise<boolean>;
+  markClassReminderEmailSent(bookingId: number, classId: number): Promise<void>;
+  
   // Weekly newsletter queries
   getUpcomingKidsClassesForNewsletter(): Promise<Array<Class & { coach: User; bookedCount: number }>>;
   getUpcomingAdultClassesForNewsletter(): Promise<Array<Class & { coach: User; bookedCount: number }>>;
@@ -3719,6 +3723,18 @@ export class DatabaseStorage implements IStorage {
   
   async markPostClassFeedbackEmailSent(bookingId: number): Promise<void> {
     const processType = `post_class_feedback_${bookingId}`;
+    const todayStr = new Date().toISOString().split('T')[0];
+    await this.upsertEmailReminderTracking(processType, todayStr);
+  }
+
+  async hasClassReminderEmailBeenSent(bookingId: number, classId: number): Promise<boolean> {
+    const processType = `class_reminder_${classId}_${bookingId}`;
+    const result = await this.getEmailReminderTracking(processType);
+    return result !== undefined;
+  }
+  
+  async markClassReminderEmailSent(bookingId: number, classId: number): Promise<void> {
+    const processType = `class_reminder_${classId}_${bookingId}`;
     const todayStr = new Date().toISOString().split('T')[0];
     await this.upsertEmailReminderTracking(processType, todayStr);
   }
