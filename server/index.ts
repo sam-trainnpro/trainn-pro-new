@@ -254,29 +254,52 @@ app.use((req, res, next) => {
           
           // Calculate next Sunday at 2:00 PM PT
           const nextSunday = new Date(nowInPT);
-          const daysSinceLastSunday = nextSunday.getDay() || 7; // 0 becomes 7 for Sunday
+          const currentDay = nowInPT.getDay(); // 0 = Sunday, 1 = Monday, etc.
+          const currentHour = nowInPT.getHours();
           
-          if (daysSinceLastSunday === 7 && nowInPT.getHours() < 14) {
-            // It's Sunday before 2 PM, schedule for today
+          if (currentDay === 0 && currentHour < 14) {
+            // It's Sunday before 2 PM, schedule for today at 2 PM
             nextSunday.setHours(14, 0, 0, 0);
           } else {
-            // Schedule for next Sunday
-            nextSunday.setDate(nextSunday.getDate() + (7 - daysSinceLastSunday));
+            // Schedule for next Sunday at 2 PM
+            // Calculate days until next Sunday
+            const daysUntilNextSunday = currentDay === 0 ? 7 : (7 - currentDay);
+            nextSunday.setDate(nextSunday.getDate() + daysUntilNextSunday);
             nextSunday.setHours(14, 0, 0, 0); // 2:00 PM PT
           }
           
           const nextSundayUTC = fromZonedTime(nextSunday, timeZone);
-          const msUntilNextRun = nextSundayUTC.getTime() - now.getTime();
+          let msUntilNextRun = nextSundayUTC.getTime() - now.getTime();
           
+          // Define the newsletter execution function with Sunday check
           const executeNewsletter = async () => {
             try {
-              const { sendWeeklyNewslettersWithIdempotency } = await import('./email-scheduler');
+              // Double-check it's actually Sunday before sending
+              const { shouldSendWeeklyNewsletter, sendWeeklyNewslettersWithIdempotency } = await import('./email-scheduler');
+              
+              if (!shouldSendWeeklyNewsletter()) {
+                console.log('📰 Newsletter execution skipped - not Sunday afternoon in PT');
+                return;
+              }
+              
               await sendWeeklyNewslettersWithIdempotency();
               console.log('📰 Weekly newsletter completed');
             } catch (error) {
               console.error('Error in weekly newsletter process:', error);
             }
           };
+          
+          // Safety check: ensure we never schedule for the past
+          if (msUntilNextRun < 0) {
+            console.error(`⚠️ Newsletter scheduling error: calculated time is in the past. Scheduling for next week instead.`);
+            // Add 7 days
+            nextSunday.setDate(nextSunday.getDate() + 7);
+            const correctedUTC = fromZonedTime(nextSunday, timeZone);
+            msUntilNextRun = correctedUTC.getTime() - now.getTime();
+            
+            const correctedPTStr = formatInTimeZone(correctedUTC, timeZone, 'yyyy-MM-dd HH:mm:ss');
+            log(`📰 Newsletter rescheduled for ${format(correctedUTC, 'yyyy-MM-dd HH:mm:ss')} UTC (${correctedPTStr} PT)`);
+          }
           
           // Schedule next newsletter
           setTimeout(() => {
