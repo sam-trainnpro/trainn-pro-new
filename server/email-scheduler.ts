@@ -122,8 +122,15 @@ export async function sendDailyClassReminders(): Promise<void> {
           continue;
         }
         
-        // Send reminder to each customer
+        // Send reminder to each customer (with per-booking idempotency)
         for (const booking of activeBookings) {
+          // Check if we've already sent a reminder for this specific booking
+          const alreadySent = await storage.hasClassReminderEmailBeenSent(booking.id, classItem.id);
+          if (alreadySent) {
+            console.log(`[IDEMPOTENCY] Reminder already sent for booking ${booking.id}, class ${classItem.id}, skipping...`);
+            continue;
+          }
+          
           const customer = await storage.getUser(booking.userId);
           if (!customer) {
             console.error(`Customer not found for booking ${booking.id}`);
@@ -131,7 +138,10 @@ export async function sendDailyClassReminders(): Promise<void> {
           }
           
           await sendClassReminder(customer, classItem, coach);
-          console.log(`Reminder sent to ${customer.email} for class ${classItem.title}`);
+          
+          // Mark this booking as having received a reminder
+          await storage.markClassReminderEmailSent(booking.id, classItem.id);
+          console.log(`Reminder sent to ${customer.email} for class ${classItem.title} (booking ${booking.id})`);
           
           // Add small delay to avoid rate limiting
           await new Promise(resolve => setTimeout(resolve, 100));
