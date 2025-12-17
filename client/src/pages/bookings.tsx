@@ -601,8 +601,7 @@ export default function BookingsPage() {
                                 className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-[44px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center w-full"
                                 data-testid="add-to-calendar"
                               >
-                                <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
-                                Calendar
+                                Add to Calendar
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
