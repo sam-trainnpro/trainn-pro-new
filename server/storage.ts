@@ -704,7 +704,13 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (filters?.ageGroup) {
-        whereConditions.push(eq(classes.ageGroup, filters.ageGroup));
+        // Include "Both" classes when filtering by Adults or Kids
+        whereConditions.push(
+          or(
+            eq(classes.ageGroup, filters.ageGroup),
+            eq(classes.ageGroup, 'Both')
+          )
+        );
       }
 
       if (filters?.city) {
