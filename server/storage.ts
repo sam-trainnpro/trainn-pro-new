@@ -3802,7 +3802,7 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.status, 'confirmed')
       ))
       .where(and(
-        eq(classes.ageGroup, 'Kids'),
+        or(eq(classes.ageGroup, 'Kids'), eq(classes.ageGroup, 'Both')),
         eq(classes.status, 'active'),
         eq(users.isApproved, true),
         gte(classes.startTime, now),
@@ -3905,7 +3905,7 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.status, 'confirmed')
       ))
       .where(and(
-        or(eq(classes.ageGroup, 'Adults'), eq(classes.ageGroup, 'All Ages')),
+        or(eq(classes.ageGroup, 'Adults'), eq(classes.ageGroup, 'All Ages'), eq(classes.ageGroup, 'Both')),
         eq(classes.status, 'active'),
         eq(users.isApproved, true),
         gte(classes.startTime, now),
