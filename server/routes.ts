@@ -1022,7 +1022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Continue with deletion even if emails fail
       }
 
-      // Process credit refunds for cancelled classes
+      // Process credit refunds and subscription restorations for cancelled classes
       try {
         const classesToProcess = classItem.recurringSeriesId && deleteOption === 'following'
           ? await storage.getClassesBySeriesId(classItem.recurringSeriesId).then(classes =>
@@ -1058,11 +1058,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Continue processing other bookings
               }
             }
+            
+            // Check if booking was paid with subscription credit
+            if (booking.paymentMethod === 'subscription') {
+              try {
+                const restored = await storage.restoreSubscriptionCreditForCancelledClass(booking.id);
+                if (restored) {
+                  console.log(`✅ Restored subscription credit for user ${booking.userId} for cancelled class booking ${booking.id}`);
+                } else {
+                  console.log(`⚠️ Could not restore subscription credit for booking ${booking.id} - no usage record found`);
+                }
+              } catch (subscriptionError) {
+                console.error(`Failed to restore subscription credit for booking ${booking.id}:`, subscriptionError);
+                // Continue processing other bookings
+              }
+            }
             // Package restoration is now handled automatically in storage.deleteClass
           }
         }
       } catch (refundError) {
-        console.error('Failed to process credit refunds:', refundError);
+        console.error('Failed to process credit/subscription refunds:', refundError);
         // Continue with deletion even if refunds fail
       }
       
