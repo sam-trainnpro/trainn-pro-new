@@ -577,9 +577,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Age group filter
+      // Age group filter - include "Both" classes when filtering by Adults or Kids
       if (query.ageGroup) {
-        if (classItem.ageGroup !== query.ageGroup) {
+        const matchesAgeGroup = classItem.ageGroup === query.ageGroup || classItem.ageGroup === 'Both';
+        if (!matchesAgeGroup) {
           return false;
         }
       }
@@ -675,9 +676,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Age group filter
+      // Age group filter - include "Both" classes when filtering by Adults or Kids
       if (query.ageGroup) {
-        if (classItem.ageGroup !== query.ageGroup) {
+        const matchesAgeGroup = classItem.ageGroup === query.ageGroup || classItem.ageGroup === 'Both';
+        if (!matchesAgeGroup) {
           return false;
         }
       }
