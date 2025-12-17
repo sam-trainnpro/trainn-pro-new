@@ -109,14 +109,15 @@ export default function MyCalendarPage() {
   const { data: classes = [], isLoading, refetch } = useQuery<Class[]>({
     queryKey: user?.role === 'admin' 
       ? ['/api/admin/all-classes', selectedCoachId]
-      : [`/api/coaches/${user.id}/classes`],
-    queryFn: user?.role === 'admin'
-      ? async () => {
-          const response = await fetch(adminQueryKey, { credentials: 'include' });
-          if (!response.ok) throw new Error('Failed to fetch classes');
-          return response.json();
-        }
-      : undefined,
+      : ['/api/coaches', user?.id, 'classes'],
+    queryFn: async () => {
+      const url = user?.role === 'admin' 
+        ? adminQueryKey 
+        : `/api/coaches/${user?.id}/classes`;
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch classes');
+      return response.json();
+    },
     enabled: !!user?.id,
   });
 
