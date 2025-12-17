@@ -497,9 +497,7 @@ export default function BookingsPage() {
         <title>My Bookings - Trainn Fitness</title>
         <meta name="description" content="View and manage your fitness class bookings. Track upcoming classes, past sessions, and booking status." />
       </Helmet>
-      
       <Header />
-      
       <main className="flex-grow bg-[#F7F7F7] py-8">
         <div className="container mx-auto px-4">
           <h1 className="text-2xl md:text-3xl font-heading font-bold mb-6">My Bookings</h1>
@@ -594,9 +592,7 @@ export default function BookingsPage() {
                               variant="outline" 
                               className="border-primary text-primary hover:bg-primary hover:text-white text-sm"
                             >
-                              <Link href={`/classes/${booking.classId}`}>
-                                Class Details
-                              </Link>
+                              <Link href={`/classes/${booking.classId}`}>Details</Link>
                             </Button>
                             
                             <DropdownMenu>
@@ -1223,7 +1219,6 @@ export default function BookingsPage() {
           )}
         </div>
       </main>
-      
       <Footer />
       <MobileNavigation />
     </div>
