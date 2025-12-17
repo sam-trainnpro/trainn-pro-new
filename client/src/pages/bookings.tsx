@@ -598,10 +598,10 @@ export default function BookingsPage() {
                             <DropdownMenuTrigger asChild>
                               <Button 
                                 variant="outline"
-                                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-[44px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center w-full flex-wrap"
+                                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-[10px] sm:text-sm h-[44px] py-2 px-1 sm:px-3 whitespace-nowrap text-center justify-center w-full"
                                 data-testid="add-to-calendar"
                               >
-                                <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+                                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
                                 Add to Calendar
                               </Button>
                             </DropdownMenuTrigger>
