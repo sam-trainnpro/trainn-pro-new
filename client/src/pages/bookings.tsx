@@ -585,70 +585,68 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                          <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                            <Button 
-                              asChild 
-                              variant="outline" 
-                              className="border-primary text-primary hover:bg-primary hover:text-white text-sm"
-                            >
-                              <Link href={`/classes/${booking.classId}`}>Details</Link>
-                            </Button>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="outline"
-                                  className="border-gray-300 text-gray-700 hover:bg-gray-50 text-sm"
-                                  data-testid="add-to-calendar"
-                                >
-                                  <Calendar className="h-4 w-4 mr-1 sm:mr-2" />
-                                  <span className="hidden sm:inline">Add to </span>Calendar
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  data-testid="google-calendar-option"
-                                  onClick={() => handleAddToGoogleCalendar(booking)}
-                                >
-                                  <div className="flex items-center">
-                                    <FcGoogle className="w-4 h-4 mr-3" />
-                                    Google Calendar
+                        <CardFooter className="grid grid-cols-3 gap-2">
+                          <Button 
+                            asChild 
+                            variant="outline" 
+                            className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
+                          >
+                            <Link href={`/classes/${booking.classId}`}>Class Details</Link>
+                          </Button>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline"
+                                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center w-full"
+                                data-testid="add-to-calendar"
+                              >
+                                <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+                                Calendar
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                data-testid="google-calendar-option"
+                                onClick={() => handleAddToGoogleCalendar(booking)}
+                              >
+                                <div className="flex items-center">
+                                  <FcGoogle className="w-4 h-4 mr-3" />
+                                  Google Calendar
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                data-testid="outlook-calendar-option"
+                                onClick={() => handleAddToOutlookCalendar(booking)}
+                              >
+                                <div className="flex items-center">
+                                  <Mail className="w-4 h-4 mr-3 text-blue-600" />
+                                  Outlook Calendar
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="cursor-pointer"
+                                data-testid="apple-calendar-option"
+                                onClick={() => handleAddToAppleCalendar(booking)}
+                              >
+                                <div className="flex items-center">
+                                  <div className="w-4 h-4 mr-3 bg-red-500 rounded-sm flex flex-col items-center justify-center text-white text-xs font-semibold leading-none">
+                                    <div className="text-[6px] mb-[1px]">SEP</div>
+                                    <div className="text-[8px]">16</div>
                                   </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  data-testid="outlook-calendar-option"
-                                  onClick={() => handleAddToOutlookCalendar(booking)}
-                                >
-                                  <div className="flex items-center">
-                                    <Mail className="w-4 h-4 mr-3 text-blue-600" />
-                                    Outlook Calendar
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="cursor-pointer"
-                                  data-testid="apple-calendar-option"
-                                  onClick={() => handleAddToAppleCalendar(booking)}
-                                >
-                                  <div className="flex items-center">
-                                    <div className="w-4 h-4 mr-3 bg-red-500 rounded-sm flex flex-col items-center justify-center text-white text-xs font-semibold leading-none">
-                                      <div className="text-[6px] mb-[1px]">SEP</div>
-                                      <div className="text-[8px]">16</div>
-                                    </div>
-                                    Apple Calendar
-                                  </div>
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                                  Apple Calendar
+                                </div>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button 
                                 variant="outline" 
-                                className="text-destructive border-destructive hover:bg-destructive hover:text-white w-full sm:w-auto text-sm"
+                                className="text-destructive border-destructive hover:bg-destructive hover:text-white text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
                               >
                                 Cancel Booking
                               </Button>
@@ -737,11 +735,11 @@ export default function BookingsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className="flex flex-wrap gap-2 sm:gap-3">
+                        <CardFooter className="grid grid-cols-2 gap-2">
                           <Button 
                             asChild 
                             variant="outline"
-                            className="text-sm"
+                            className="text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
                           >
                             <Link href={`/classes/${booking.classId}`}>
                               Class Details
@@ -752,19 +750,19 @@ export default function BookingsPage() {
                             hasBeenReviewed(booking.classId) ? (
                               <Button 
                                 variant="outline" 
-                                className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                                className="border-yellow-500 text-yellow-700 hover:bg-yellow-50 text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
                                 onClick={() => {
                                   const url = `/review?classId=${booking.classId}&bookingId=${booking.id}`;
                                   console.log('Navigating to view review URL:', url);
                                   window.location.href = url;
                                 }}
                               >
-                                <Star className="h-4 w-4 mr-2" />
+                                <Star className="h-4 w-4 mr-1 flex-shrink-0" />
                                 View Review
                               </Button>
                             ) : (
                               <Button 
-                                className="bg-primary text-white hover:bg-primary/90"
+                                className="bg-primary text-white hover:bg-primary/90 text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
                                 onClick={() => {
                                   const url = `/review?classId=${booking.classId}&bookingId=${booking.id}`;
                                   console.log('Navigating to add review URL:', url);
@@ -772,7 +770,7 @@ export default function BookingsPage() {
                                   window.location.href = url;
                                 }}
                               >
-                                <Star className="h-4 w-4 mr-2" />
+                                <Star className="h-4 w-4 mr-1 flex-shrink-0" />
                                 Add Review
                               </Button>
                             )
