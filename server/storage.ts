@@ -299,9 +299,11 @@ export interface IStorage {
   // Subscription Usage methods
   createSubscriptionUsage(usageData: InsertSubscriptionUsage): Promise<SubscriptionUsage>;
   getSubscriptionUsageByBooking(bookingId: number): Promise<SubscriptionUsage | undefined>;
+  getSubscriptionUsageByClassId(classId: number): Promise<SubscriptionUsage[]>;
   getUserSubscriptionUsageHistory(userId: number): Promise<SubscriptionUsage[]>;
   getUserSubscriptionUsageForPeriod(userId: number, periodStart: Date, periodEnd: Date): Promise<SubscriptionUsage[]>;
   getTotalClassesTakenWithSubscription(userId: number): Promise<number>;
+  restoreSubscriptionCreditForCancelledClass(bookingId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4198,6 +4200,49 @@ export class DatabaseStorage implements IStorage {
       .from(subscriptionUsage)
       .where(eq(subscriptionUsage.userId, userId));
     return result[0]?.count || 0;
+  }
+
+  async getSubscriptionUsageByClassId(classId: number): Promise<SubscriptionUsage[]> {
+    return await db.select()
+      .from(subscriptionUsage)
+      .where(eq(subscriptionUsage.classId, classId));
+  }
+
+  async restoreSubscriptionCreditForCancelledClass(bookingId: number): Promise<boolean> {
+    const usage = await this.getSubscriptionUsageByBooking(bookingId);
+    if (!usage) {
+      console.log(`No subscription usage found for booking ${bookingId}`);
+      return false;
+    }
+
+    const subscription = await db.select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.id, usage.subscriptionId));
+    
+    if (!subscription[0]) {
+      console.log(`No subscription found for subscription ID ${usage.subscriptionId}`);
+      return false;
+    }
+
+    const currentUsage = subscription[0].classesUsedThisPeriod;
+    if (currentUsage > 0) {
+      await db.update(userSubscriptions)
+        .set({ 
+          classesUsedThisPeriod: sql`GREATEST(${userSubscriptions.classesUsedThisPeriod} - 1, 0)`,
+          updatedAt: new Date() 
+        })
+        .where(eq(userSubscriptions.id, usage.subscriptionId));
+      
+      console.log(`✅ Restored subscription credit for user ${usage.userId}: decremented usage from ${currentUsage} to ${currentUsage - 1}`);
+    } else {
+      console.log(`⚠️ Subscription usage already at 0 for subscription ${usage.subscriptionId}`);
+    }
+
+    await db.delete(subscriptionUsage)
+      .where(eq(subscriptionUsage.id, usage.id));
+    
+    console.log(`✅ Deleted subscription usage record ${usage.id} for booking ${bookingId}`);
+    return true;
   }
 }
 
