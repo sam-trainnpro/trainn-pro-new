@@ -589,7 +589,7 @@ export default function BookingsPage() {
                           <Button 
                             asChild 
                             variant="outline" 
-                            className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-[44px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
                           >
                             <Link href={`/classes/${booking.classId}`}>Class Details</Link>
                           </Button>
@@ -598,7 +598,7 @@ export default function BookingsPage() {
                             <DropdownMenuTrigger asChild>
                               <Button 
                                 variant="outline"
-                                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center w-full"
+                                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-[44px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center w-full"
                                 data-testid="add-to-calendar"
                               >
                                 <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
@@ -646,7 +646,7 @@ export default function BookingsPage() {
                             <AlertDialogTrigger asChild>
                               <Button 
                                 variant="outline" 
-                                className="text-destructive border-destructive hover:bg-destructive hover:text-white text-xs sm:text-sm h-auto min-h-[40px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
+                                className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs sm:text-sm h-[44px] py-2 px-1 sm:px-3 whitespace-normal text-center justify-center"
                               >
                                 Cancel Booking
                               </Button>
