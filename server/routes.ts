@@ -2571,6 +2571,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Continue with cancellation even if package restoration fails
         }
       }
+
+      // Process subscription credit restoration if booking was made with subscription (>24 hours before class)
+      if (booking.paymentMethod === 'subscription' && classItem.startTime) {
+        const classStartTime = new Date(classItem.startTime);
+        const currentTime = new Date();
+        const hoursUntilClass = (classStartTime.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursUntilClass > 24) {
+          try {
+            const restored = await storage.restoreSubscriptionCreditForCancelledClass(booking.id);
+            if (restored) {
+              console.log(`✅ Restored subscription credit for user ${booking.userId} for booking ${booking.id} cancelled >24h in advance`);
+            } else {
+              console.log(`⚠️ Could not restore subscription credit for booking ${booking.id} - no usage record found`);
+            }
+          } catch (subscriptionError) {
+            console.error('Failed to restore subscription credit:', subscriptionError);
+            // Continue with cancellation even if subscription restoration fails
+          }
+        } else {
+          console.log(`❌ No subscription credit restoration for booking ${booking.id} - cancellation within 24 hours (${hoursUntilClass.toFixed(2)}h before class)`);
+        }
+      }
       
       const updatedBooking = await storage.updateBooking(bookingId, { status: "cancelled" });
 
