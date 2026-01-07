@@ -127,6 +127,7 @@ export default function CreateClassPage() {
   const [duplicatedImage, setDuplicatedImage] = useState<string | null>(null);
   const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(null);
+  const [recurrencePatternError, setRecurrencePatternError] = useState(false);
   const { latitude, longitude, getUserLocation } = useUserLocation();
 
   // Handle cancel navigation
@@ -637,6 +638,20 @@ export default function CreateClassPage() {
     console.log("=== FORM SUBMISSION STARTED ===");
     console.log("Form data received:", data);
     console.log("Form errors:", form.formState.errors);
+    
+    // Validate recurrence pattern if recurring class is checked
+    if (data.isRecurring && !recurrenceRule) {
+      setRecurrencePatternError(true);
+      toast({
+        title: "Recurrence pattern required",
+        description: "Please set a recurrence pattern for your recurring class.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Clear any previous recurrence pattern error
+    setRecurrencePatternError(false);
     
     try {
       setSubmitting(true);
@@ -1287,10 +1302,12 @@ export default function CreateClassPage() {
                     
                     {form.watch('isRecurring') && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
+                        <div className={`flex items-center justify-between rounded-lg border p-4 ${recurrencePatternError && !recurrenceRule ? 'border-destructive bg-destructive/5' : ''}`}>
                           <div className="flex-1">
-                            <p className="text-sm font-medium">Recurrence Pattern</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className={`text-sm font-medium ${recurrencePatternError && !recurrenceRule ? 'text-destructive' : ''}`}>
+                              Recurrence Pattern <span className="text-destructive">*</span>
+                            </p>
+                            <p className={`text-sm ${recurrencePatternError && !recurrenceRule ? 'text-destructive' : 'text-muted-foreground'}`}>
                               {recurrenceRule ? (
                                 `Repeats every ${recurrenceRule.interval} ${recurrenceRule.type}${recurrenceRule.interval > 1 ? 's' : ''}${
                                   recurrenceRule.type === 'weekly' && recurrenceRule.daysOfWeek?.length 
@@ -1301,15 +1318,23 @@ export default function CreateClassPage() {
                                   : `for ${recurrenceRule.endCount || 0} occurrences`
                                 }`
                               ) : (
-                                'No recurrence pattern set'
+                                'No recurrence pattern set - please click Set Pattern'
                               )}
                             </p>
+                            {recurrencePatternError && !recurrenceRule && (
+                              <p className="text-sm text-destructive mt-1">
+                                Please set a recurrence pattern for your recurring class
+                              </p>
+                            )}
                           </div>
                           <Button
                             type="button"
-                            variant="outline"
+                            variant={recurrencePatternError && !recurrenceRule ? "destructive" : "outline"}
                             size="sm"
-                            onClick={() => setShowRecurrenceModal(true)}
+                            onClick={() => {
+                              setRecurrencePatternError(false);
+                              setShowRecurrenceModal(true);
+                            }}
                             className="flex items-center"
                           >
                             <RotateCcw className="h-4 w-4 mr-2" />
