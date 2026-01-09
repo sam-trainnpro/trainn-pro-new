@@ -8191,31 +8191,46 @@ Sitemap: https://trainn.pro/sitemap.xml`);
         scheduledPayoutDate: payoutDate
       });
 
-      // Send confirmation emails
+      // Send confirmation emails (matching regular booking flow)
       try {
         // Get coach details for email
         const coach = await storage.getUser(classItem.coachId);
         
-        // Send customer confirmation email
-        if (req.user.email) {
-          await sendBookingConfirmationEmail(
-            req.user.email,
-            `${req.user.firstName} ${req.user.lastName}`,
+        if (coach) {
+          // Send customer confirmation email
+          await sendBookingConfirmation({
+            booking,
+            classData: classItem,
+            customer: req.user,
+            coach,
+            pricingDetails: {
+              originalPrice: classItem.price,
+              finalPrice: 0, // No charge - paid via subscription
+              subscriptionUsed: true
+            }
+          });
+          
+          // Send notification to coach
+          await sendNewBookingNotificationToCoach(
+            coach,
+            req.user,
             classItem,
-            booking.id.toString(),
-            'subscription'
+            booking
           );
-        }
 
-        // Send coach notification email
-        if (coach?.email) {
-          await sendCoachBookingNotificationEmail(
-            coach.email,
-            `${coach.firstName} ${coach.lastName}`,
-            classItem,
-            `${req.user.firstName} ${req.user.lastName}`,
-            quantity
-          );
+          // Send admin notification
+          try {
+            await sendBookingAdminNotification({
+              booking,
+              classData: classItem,
+              customer: req.user,
+              coach,
+              bookingType: 'subscription',
+              paymentAmount: 0
+            });
+          } catch (adminEmailError) {
+            console.error("Admin notification error:", adminEmailError);
+          }
         }
       } catch (emailError) {
         console.error('Error sending booking confirmation emails:', emailError);
