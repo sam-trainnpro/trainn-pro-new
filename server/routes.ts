@@ -7948,25 +7948,32 @@ Sitemap: https://trainn.pro/sitemap.xml`);
 
           case 'customer.subscription.updated': {
             const subscription = event.data.object as Stripe.Subscription;
+            console.log(`🔄 Processing subscription update: ${subscription.id}, status: ${subscription.status}`);
+            
             const existingSubscription = await storage.getUserSubscriptionByStripeId(subscription.id);
             
             if (!existingSubscription) {
-              console.warn('Subscription not found in database:', subscription.id);
+              console.warn(`⚠️ Subscription not found in database: ${subscription.id}`);
               break;
             }
 
             // Handle period renewal - reset usage count
             const newPeriodStart = new Date(subscription.current_period_start * 1000);
+            const newPeriodEnd = new Date(subscription.current_period_end * 1000);
             const currentPeriodStart = existingSubscription.currentPeriodStart;
+            
+            console.log(`📅 Period check - Current: ${currentPeriodStart.toISOString()}, New: ${newPeriodStart.toISOString()}`);
             
             if (newPeriodStart.getTime() > currentPeriodStart.getTime()) {
               // New billing period - reset usage
               await storage.resetSubscriptionUsageForNewPeriod(
                 existingSubscription.id,
                 newPeriodStart,
-                new Date(subscription.current_period_end * 1000)
+                newPeriodEnd
               );
-              console.log(`Reset subscription usage for new period: ${existingSubscription.id}`);
+              console.log(`✅ Reset subscription ${existingSubscription.id} usage for new period: ${newPeriodStart.toISOString()} - ${newPeriodEnd.toISOString()}`);
+            } else {
+              console.log(`ℹ️ No period change detected for subscription ${existingSubscription.id}`);
             }
 
             // Update status and cancel_at_period_end
@@ -8013,6 +8020,46 @@ Sitemap: https://trainn.pro/sitemap.xml`);
                   status: 'past_due'
                 });
                 console.log(`Marked subscription as past_due: ${existingSubscription.id}`);
+              }
+            }
+            break;
+          }
+
+          case 'invoice.paid': {
+            // Handle successful renewal payments - backup for customer.subscription.updated
+            const invoice = event.data.object as Stripe.Invoice;
+            
+            // Only process subscription renewal invoices (not first payments)
+            if (invoice.subscription && invoice.billing_reason === 'subscription_cycle') {
+              console.log(`📧 Processing subscription renewal invoice: ${invoice.id}`);
+              
+              const stripeSubscriptionId = invoice.subscription as string;
+              const existingSubscription = await storage.getUserSubscriptionByStripeId(stripeSubscriptionId);
+              
+              if (existingSubscription) {
+                // Fetch latest subscription data from Stripe
+                const stripeSubscription = await stripe!.subscriptions.retrieve(stripeSubscriptionId);
+                const newPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+                const newPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+                
+                // Check if we need to update the period (may have already been done by subscription.updated)
+                if (newPeriodStart.getTime() > existingSubscription.currentPeriodStart.getTime()) {
+                  await storage.resetSubscriptionUsageForNewPeriod(
+                    existingSubscription.id,
+                    newPeriodStart,
+                    newPeriodEnd
+                  );
+                  console.log(`✅ Reset subscription ${existingSubscription.id} for new period: ${newPeriodStart.toISOString()} - ${newPeriodEnd.toISOString()}`);
+                } else {
+                  console.log(`ℹ️ Subscription ${existingSubscription.id} already updated for current period`);
+                }
+                
+                // Ensure status is active after successful payment
+                await storage.updateUserSubscription(existingSubscription.id, {
+                  status: 'active'
+                });
+              } else {
+                console.warn(`⚠️ Subscription not found for invoice: ${stripeSubscriptionId}`);
               }
             }
             break;
