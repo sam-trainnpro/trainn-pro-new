@@ -211,7 +211,7 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName, phone, role, referralCode, providerReferralCode } = req.body;
+      const { email, password, firstName, lastName, phone, role, referralCode, providerReferralCode, welcomeCredit } = req.body;
       
       // Normalize email to lowercase to prevent duplicate accounts
       const normalizedEmail = email.toLowerCase();
@@ -310,6 +310,25 @@ export function setupAuth(app: Express) {
         } catch (providerReferralError) {
           console.error('Error processing provider referral signup:', providerReferralError);
           // Don't fail registration if provider referral processing fails
+        }
+      }
+
+      // Grant welcome credit from signup popup (only if no referral code - they already get $10)
+      if (welcomeCredit && !referralCode && role === 'customer') {
+        try {
+          console.log('Granting $5 welcome credit from signup popup to new user:', user.email);
+          
+          await storage.addUserCredit({
+            userId: user.id,
+            amount: 500, // $5 in cents
+            transactionType: 'welcome_bonus',
+            description: 'Welcome credit - $5 off your first class'
+          });
+          
+          console.log('Granted $5 welcome credit to new user:', user.email);
+        } catch (welcomeCreditError) {
+          console.error('Error granting welcome credit:', welcomeCreditError);
+          // Don't fail registration if welcome credit fails
         }
       }
 
