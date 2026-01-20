@@ -18,7 +18,8 @@ export default function AuthPage() {
     defaultRole: "customer",
     resetToken: "",
     referralCode: "",
-    providerReferralCode: ""
+    providerReferralCode: "",
+    welcomeCredit: false
   });
   
   const [activeTab, setActiveTab] = useState("login");
@@ -34,12 +35,13 @@ export default function AuthPage() {
       // Safe URL param extraction
       const searchParams = new URLSearchParams(window.location.search);
       const tab = searchParams.get('tab');
-      const hasRegister = searchParams.has('register') || tab === 'register';
+      const hasRegister = searchParams.has('register') || tab === 'register' || searchParams.get('signup') === 'true';
       const isReset = tab === 'reset';
       const role = searchParams.get('role') || "customer";
       const resetToken = searchParams.get('token') || "";
       const referralCode = searchParams.get('ref') || "";
       const providerReferralCode = searchParams.get('providerRef') || "";
+      const welcomeCredit = searchParams.get('welcome_credit') === 'true';
       
       let tabValue = "login";
       if (hasRegister) tabValue = "register";
@@ -50,13 +52,14 @@ export default function AuthPage() {
         defaultRole: role,
         resetToken: resetToken,
         referralCode: referralCode,
-        providerReferralCode: providerReferralCode
+        providerReferralCode: providerReferralCode,
+        welcomeCredit: welcomeCredit
       });
       
       setActiveTab(tabValue);
       
       console.log("Auth page path:", path);
-      console.log("Auth params set:", { tab: tabValue, role, hasToken: !!resetToken });
+      console.log("Auth params set:", { tab: tabValue, role, hasToken: !!resetToken, welcomeCredit });
     } catch (err) {
       console.error("Error parsing URL params:", err);
     }
@@ -110,6 +113,7 @@ export default function AuthPage() {
                   defaultRole={authParams.defaultRole} 
                   referralCode={authParams.referralCode}
                   providerReferralCode={authParams.providerReferralCode}
+                  welcomeCredit={authParams.welcomeCredit}
                 />
               </TabsContent>
             </Tabs>

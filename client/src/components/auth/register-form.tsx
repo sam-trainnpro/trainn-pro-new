@@ -84,9 +84,10 @@ interface RegisterFormProps {
   onSuccess?: () => void;
   referralCode?: string | null;
   providerReferralCode?: string | null;
+  welcomeCredit?: boolean;
 }
 
-export default function RegisterForm({ defaultRole = "customer", onSuccess, referralCode, providerReferralCode }: RegisterFormProps) {
+export default function RegisterForm({ defaultRole = "customer", onSuccess, referralCode, providerReferralCode, welcomeCredit }: RegisterFormProps) {
   const [, navigate] = useLocation();
   const { registerMutation, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -128,11 +129,12 @@ export default function RegisterForm({ defaultRole = "customer", onSuccess, refe
       setError(null);
       console.log("Submitting registration form:", { ...data, password: "***" });
       
-      // Include referral codes in submission data
+      // Include referral codes and welcome credit in submission data
       const submissionData = {
         ...data,
         referralCode: referralCode || null,
-        providerReferralCode: providerReferralCode || null
+        providerReferralCode: providerReferralCode || null,
+        welcomeCredit: welcomeCredit || false
       };
       
       // Combine country code and phone number

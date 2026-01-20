@@ -66,6 +66,7 @@ import ProviderLandingPage from "@/pages/provider-landing";
 import PlansPage from "@/pages/plans";
 import ChangePlanPage from "@/pages/change-plan";
 import { ProtectedRoute } from "./lib/protected-route";
+import SignupIncentivePopup from "./components/signup-incentive-popup";
 
 function Router() {
   // Track page views when routes change
@@ -271,6 +272,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <SignupIncentivePopup />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
