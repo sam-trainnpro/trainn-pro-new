@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext } from "react";
+import React, { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -43,6 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
+  // Mark localStorage when user becomes authenticated (handles Google OAuth and session restore)
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('trainn_has_logged_in', 'true');
+    }
+  }, [user]);
+
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
@@ -50,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
+      // Mark that this device has had a logged-in user (for popup targeting)
+      localStorage.setItem('trainn_has_logged_in', 'true');
     },
   });
 
@@ -61,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
+      // Mark that this device has had a logged-in user (for popup targeting)
+      localStorage.setItem('trainn_has_logged_in', 'true');
     },
   });
 
