@@ -8251,6 +8251,84 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // ========== Class Waitlist Endpoints ==========
+  
+  // Join waitlist for a full class
+  app.post("/api/waitlist", requireAuth, async (req, res) => {
+    try {
+      const { classId, classDate, classTime, className, providerName } = req.body;
+      
+      if (!classId || !classDate || !classTime || !className || !providerName) {
+        return res.status(400).json({ message: "Missing required waitlist data" });
+      }
+      
+      const user = req.user as any;
+      
+      // Check for duplicate entry
+      const existingEntry = await storage.getWaitlistEntry(user.id, classId, classDate);
+      if (existingEntry) {
+        return res.status(400).json({ message: "You're already on the waitlist for this class" });
+      }
+      
+      // Create waitlist entry
+      const waitlistEntry = await storage.addToWaitlist({
+        userId: user.id,
+        userName: `${user.firstName} ${user.lastName}`,
+        classId,
+        className,
+        classDate,
+        classTime,
+        providerName,
+        status: 'waiting'
+      });
+      
+      console.log(`✅ User ${user.id} joined waitlist for class ${classId} on ${classDate}`);
+      
+      res.json({
+        success: true,
+        message: "You've been added to the waitlist!",
+        waitlistEntry
+      });
+    } catch (error) {
+      console.error("Error joining waitlist:", error);
+      res.status(500).json({ message: "Failed to join waitlist" });
+    }
+  });
+  
+  // Check if user is on waitlist for a specific class instance
+  app.get("/api/waitlist/check", requireAuth, async (req, res) => {
+    try {
+      const { classId, classDate } = req.query;
+      
+      if (!classId || !classDate) {
+        return res.status(400).json({ message: "Missing classId or classDate" });
+      }
+      
+      const user = req.user as any;
+      const entry = await storage.getWaitlistEntry(user.id, Number(classId), classDate as string);
+      
+      res.json({
+        onWaitlist: !!entry,
+        entry: entry || null
+      });
+    } catch (error) {
+      console.error("Error checking waitlist:", error);
+      res.status(500).json({ message: "Failed to check waitlist status" });
+    }
+  });
+  
+  // Get user's waitlist entries
+  app.get("/api/waitlist/my", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const entries = await storage.getUserWaitlistEntries(user.id);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error getting user waitlist:", error);
+      res.status(500).json({ message: "Failed to get waitlist entries" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
