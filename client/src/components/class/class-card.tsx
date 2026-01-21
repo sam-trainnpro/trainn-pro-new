@@ -92,6 +92,41 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
     },
   });
 
+  // Handle like button click
+  const handleLikeClick = () => {
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to like classes",
+      });
+      return;
+    }
+
+    if (isLiked) {
+      unlikeMutation.mutate(classItem.id);
+    } else {
+      likeMutation.mutate(classItem.id);
+    }
+  };
+  
+  // Check if this is a recurring class
+  const isRecurring = classItem.isRecurring;
+  
+  // Get class schedules from props or from the classItem
+  const classSchedules = schedules || classItem.schedules || [];
+  
+  // Check if we have embedded data (ClassCardDTO) or need to handle simpler class objects
+  const isClassCardDTO = 'coach' in classItem && typeof classItem.coach === 'object';
+  
+  // Use consolidated data from props when available, otherwise provide fallbacks
+  const coach = isClassCardDTO ? (classItem as ClassCardDTO).coach : providedCoach || null;
+  const category = isClassCardDTO ? (classItem as ClassCardDTO).category : null;
+  const bookingCount = {
+    total: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.totalBookings || 0) : 0,
+    active: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.activeBookings || 0) : 0,
+    spotsLeft: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.spotsLeft || classItem.capacity) : classItem.capacity
+  };
+
   // Get class date string for waitlist (format: YYYY-MM-DD)
   const getClassDateString = (): string => {
     if (classItem.startTime) {
@@ -158,40 +193,6 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
     },
   });
 
-  // Handle like button click
-  const handleLikeClick = () => {
-    if (!user) {
-      toast({
-        title: "Please sign in",
-        description: "You need to be signed in to like classes",
-      });
-      return;
-    }
-
-    if (isLiked) {
-      unlikeMutation.mutate(classItem.id);
-    } else {
-      likeMutation.mutate(classItem.id);
-    }
-  };
-  
-  // Check if this is a recurring class
-  const isRecurring = classItem.isRecurring;
-  
-  // Get class schedules from props or from the classItem
-  const classSchedules = schedules || classItem.schedules || [];
-  
-  // Check if we have embedded data (ClassCardDTO) or need to handle simpler class objects
-  const isClassCardDTO = 'coach' in classItem && typeof classItem.coach === 'object';
-  
-  // Use consolidated data from props when available, otherwise provide fallbacks
-  const coach = isClassCardDTO ? (classItem as ClassCardDTO).coach : providedCoach || null;
-  const category = isClassCardDTO ? (classItem as ClassCardDTO).category : null;
-  const bookingCount = {
-    total: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.totalBookings || 0) : 0,
-    active: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.activeBookings || 0) : 0,
-    spotsLeft: isClassCardDTO ? ((classItem as ClassCardDTO).bookingStats?.spotsLeft || classItem.capacity) : classItem.capacity
-  };
   const coachRatingStats = {
     averageRating: isClassCardDTO ? ((classItem as ClassCardDTO).ratingStats?.averageRating || 0) : 0,
     totalReviews: isClassCardDTO ? ((classItem as ClassCardDTO).ratingStats?.totalReviews || 0) : 0
