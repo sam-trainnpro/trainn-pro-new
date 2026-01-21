@@ -816,6 +816,7 @@ export class DatabaseStorage implements IStorage {
           recurringSeriesId: classes.recurringSeriesId,
           ageGroup: classes.ageGroup,
           outdoors: classes.outdoors,
+          markedFull: classes.markedFull,
           createdAt: classes.createdAt,
           // Coach fields
           coachId: classes.coachId,
@@ -941,7 +942,7 @@ export class DatabaseStorage implements IStorage {
         bookingStats: {
           totalBookings: row.totalBookings,
           activeBookings: row.activeBookings,
-          spotsLeft: Math.max(0, row.capacity - row.activeBookings),
+          spotsLeft: row.markedFull ? 0 : Math.max(0, row.capacity - row.activeBookings),
         },
         ratingStats: {
           averageRating: row.averageRating,

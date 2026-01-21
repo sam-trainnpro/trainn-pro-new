@@ -2383,6 +2383,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         booking.status === "confirmed"
       );
       
+      // Check if admin marked class as full
+      if (classItem.markedFull) {
+        return res.status(400).json({ message: "Class is fully booked" });
+      }
+      
       if (confirmedBookings.length >= classItem.capacity) {
         return res.status(400).json({ message: "Class is fully booked" });
       }
@@ -2390,7 +2395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return availability status
       res.json({ 
         available: true, 
-        spotsLeft: classItem.capacity - confirmedBookings.length 
+        spotsLeft: classItem.markedFull ? 0 : classItem.capacity - confirmedBookings.length 
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to check availability" });
@@ -2477,7 +2482,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         active: confirmedBookings.length,
         totalSpotsBooked: totalSpotsBooked,
         capacity: classItem.capacity,
-        spotsLeft: classItem.capacity - totalSpotsBooked
+        spotsLeft: classItem.markedFull ? 0 : classItem.capacity - totalSpotsBooked,
+        markedFull: classItem.markedFull || false
       });
     } catch (error) {
       console.error("Error getting booking count:", error);
