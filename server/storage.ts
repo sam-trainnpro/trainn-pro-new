@@ -25,7 +25,8 @@ import {
   classLikes, type ClassLike, type InsertClassLike,
   subscriptionPlans, type SubscriptionPlan, type InsertSubscriptionPlan,
   userSubscriptions, type UserSubscription, type InsertUserSubscription,
-  subscriptionUsage, type SubscriptionUsage, type InsertSubscriptionUsage
+  subscriptionUsage, type SubscriptionUsage, type InsertSubscriptionUsage,
+  classWaitlist, type ClassWaitlist, type InsertClassWaitlist
 } from "@shared/schema";
 import { generateRecurringInstances, parseRecurrenceRule } from "./recurrence-utils";
 import session from "express-session";
@@ -304,6 +305,14 @@ export interface IStorage {
   getUserSubscriptionUsageForPeriod(userId: number, periodStart: Date, periodEnd: Date): Promise<SubscriptionUsage[]>;
   getTotalClassesTakenWithSubscription(userId: number): Promise<number>;
   restoreSubscriptionCreditForCancelledClass(bookingId: number): Promise<boolean>;
+  
+  // Class Waitlist methods
+  addToWaitlist(waitlistData: InsertClassWaitlist): Promise<ClassWaitlist>;
+  getWaitlistEntry(userId: number, classId: number, classDate: string): Promise<ClassWaitlist | undefined>;
+  getUserWaitlistEntries(userId: number): Promise<ClassWaitlist[]>;
+  getClassWaitlist(classId: number, classDate: string): Promise<ClassWaitlist[]>;
+  removeFromWaitlist(id: number): Promise<boolean>;
+  updateWaitlistStatus(id: number, status: string): Promise<ClassWaitlist | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -4243,6 +4252,55 @@ export class DatabaseStorage implements IStorage {
     
     console.log(`✅ Deleted subscription usage record ${usage.id} for booking ${bookingId}`);
     return true;
+  }
+
+  // Class Waitlist methods
+  async addToWaitlist(waitlistData: InsertClassWaitlist): Promise<ClassWaitlist> {
+    const [entry] = await db.insert(classWaitlist).values(waitlistData).returning();
+    return entry;
+  }
+
+  async getWaitlistEntry(userId: number, classId: number, classDate: string): Promise<ClassWaitlist | undefined> {
+    const [entry] = await db.select()
+      .from(classWaitlist)
+      .where(and(
+        eq(classWaitlist.userId, userId),
+        eq(classWaitlist.classId, classId),
+        eq(classWaitlist.classDate, classDate),
+        eq(classWaitlist.status, 'waiting')
+      ));
+    return entry;
+  }
+
+  async getUserWaitlistEntries(userId: number): Promise<ClassWaitlist[]> {
+    return await db.select()
+      .from(classWaitlist)
+      .where(eq(classWaitlist.userId, userId))
+      .orderBy(desc(classWaitlist.createdAt));
+  }
+
+  async getClassWaitlist(classId: number, classDate: string): Promise<ClassWaitlist[]> {
+    return await db.select()
+      .from(classWaitlist)
+      .where(and(
+        eq(classWaitlist.classId, classId),
+        eq(classWaitlist.classDate, classDate),
+        eq(classWaitlist.status, 'waiting')
+      ))
+      .orderBy(classWaitlist.createdAt);
+  }
+
+  async removeFromWaitlist(id: number): Promise<boolean> {
+    const result = await db.delete(classWaitlist).where(eq(classWaitlist.id, id));
+    return true;
+  }
+
+  async updateWaitlistStatus(id: number, status: string): Promise<ClassWaitlist | undefined> {
+    const [entry] = await db.update(classWaitlist)
+      .set({ status, notifiedAt: status === 'notified' ? new Date() : undefined })
+      .where(eq(classWaitlist.id, id))
+      .returning();
+    return entry;
   }
 }
 
