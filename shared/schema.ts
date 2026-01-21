@@ -118,6 +118,8 @@ export const classes = pgTable("classes", {
   outdoors: boolean("outdoors").default(false),
   // Status for soft deletes - prevents data loss when classes are cancelled/deleted
   status: text("status").notNull().default("active"), // 'active', 'cancelled'
+  // Admin override to mark class as full (triggers waitlist functionality)
+  markedFull: boolean("marked_full").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -153,6 +155,7 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   ageGroup: true,
   outdoors: true,
   status: true,
+  markedFull: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;
