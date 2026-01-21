@@ -50,6 +50,7 @@ const editClassSchema = z.object({
   image: z.string().optional().nullable(),
   ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
   outdoors: z.boolean().default(false),
+  markedFull: z.boolean().default(false),
   classDate: z.date(),
   startTime: z.string().min(1, "Start time is required"),
   duration: z.coerce.number().int().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
@@ -214,6 +215,7 @@ export default function EditClassPage() {
         image: classData.image || "",
         ageGroup: (classData.ageGroup as "Kids" | "Adults" | "Both") || "Adults",
         outdoors: classData.outdoors || false,
+        markedFull: classData.markedFull || false,
         classDate: classDate,
         startTime: timeString,
         duration: duration > 0 ? duration : 60, // Default to 60 minutes if calculation fails
@@ -291,6 +293,7 @@ export default function EditClassPage() {
         longitude: data.formData.longitude,
         ageGroup: data.formData.ageGroup,
         outdoors: data.formData.outdoors,
+        markedFull: data.formData.markedFull,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         whatToBring: data.formData.whatToBring,
@@ -579,6 +582,32 @@ export default function EditClassPage() {
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Admin-only: Mark Class as Full toggle */}
+                    {user?.role === 'admin' && (
+                      <FormField
+                        control={form.control}
+                        name="markedFull"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base text-amber-900">
+                                Mark Class as Full
+                              </FormLabel>
+                              <FormDescription className="text-amber-700">
+                                Override capacity - shows "Join Waitlist" button to customers
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     
                     <div>
                       <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
