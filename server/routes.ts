@@ -8329,6 +8329,32 @@ Sitemap: https://trainn.pro/sitemap.xml`);
     }
   });
 
+  // Remove from waitlist (leave waitlist)
+  app.delete("/api/waitlist/:id", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const entryId = parseInt(req.params.id);
+      
+      // Verify the entry belongs to the user
+      const entries = await storage.getUserWaitlistEntries(user.id);
+      const entry = entries.find(e => e.id === entryId);
+      
+      if (!entry) {
+        return res.status(404).json({ message: "Waitlist entry not found" });
+      }
+      
+      const success = await storage.removeFromWaitlist(entryId);
+      if (success) {
+        res.json({ success: true, message: "Removed from waitlist" });
+      } else {
+        res.status(500).json({ message: "Failed to remove from waitlist" });
+      }
+    } catch (error) {
+      console.error("Error removing from waitlist:", error);
+      res.status(500).json({ message: "Failed to remove from waitlist" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

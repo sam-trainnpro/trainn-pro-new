@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
-import { Booking, Class, TimeBoundPackageBooking, ClassPackage, TimeBoundPackageSession } from "@shared/schema";
+import { Booking, Class, TimeBoundPackageBooking, ClassPackage, TimeBoundPackageSession, ClassWaitlist } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -55,7 +55,9 @@ import {
   BookOpen,
   Package,
   User,
-  Mail
+  Mail,
+  Bell,
+  Trash2
 } from "lucide-react";
 import { SiGoogle, SiApple } from "react-icons/si";
 import { FcGoogle } from "react-icons/fc";
@@ -347,6 +349,41 @@ export default function BookingsPage() {
     enabled: !!user,
   });
 
+  // Fetch user's waitlist entries
+  const { 
+    data: waitlistEntries, 
+    isLoading: isLoadingWaitlist 
+  } = useQuery<ClassWaitlist[]>({
+    queryKey: ['/api/waitlist/my'],
+    enabled: !!user,
+  });
+
+  // Leave waitlist mutation
+  const leaveWaitlistMutation = useMutation({
+    mutationFn: async (entryId: number) => {
+      const res = await apiRequest("DELETE", `/api/waitlist/${entryId}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to leave waitlist");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Removed from waitlist",
+        description: "You've been removed from the waitlist for this class.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/waitlist/my'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Couldn't leave waitlist",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Fetch package and session details for each time_bound booking
   const timeBoundPackageQueries = useQuery({
     queryKey: ['time-bound-packages-details', timeBoundBookings?.map(b => b.packageId)],
@@ -547,6 +584,14 @@ export default function BookingsPage() {
 
                 <TabsTrigger value="past">Past</TabsTrigger>
                 <TabsTrigger value="packages">Packages</TabsTrigger>
+                <TabsTrigger value="waitlist">
+                  Waitlist
+                  {waitlistEntries && waitlistEntries.filter(e => e.status === 'waiting').length > 0 ? (
+                    <span className="ml-2 bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 text-xs">
+                      {waitlistEntries.filter(e => e.status === 'waiting').length}
+                    </span>
+                  ) : null}
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="upcoming">
@@ -1212,6 +1257,140 @@ export default function BookingsPage() {
                     )}
                   </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="waitlist">
+                {isLoadingWaitlist ? (
+                  <div className="space-y-4">
+                    {[1, 2].map((i) => (
+                      <Card key={i}>
+                        <CardHeader>
+                          <Skeleton className="h-6 w-3/4 mb-2" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-4 w-full" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : waitlistEntries && waitlistEntries.length > 0 ? (
+                  <div className="space-y-4">
+                    {waitlistEntries
+                      .sort((a, b) => {
+                        const dateA = new Date(`${a.classDate}T${a.classTime}`);
+                        const dateB = new Date(`${b.classDate}T${b.classTime}`);
+                        return dateA.getTime() - dateB.getTime();
+                      })
+                      .map((entry) => {
+                        const classDateTime = new Date(`${entry.classDate}T${entry.classTime}`);
+                        const isPast = classDateTime < new Date();
+                        
+                        return (
+                          <Card key={entry.id} className={isPast ? "opacity-60" : ""}>
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <CardTitle className="flex items-center gap-2">
+                                    <Bell className="h-5 w-5 text-amber-500" />
+                                    {entry.className}
+                                  </CardTitle>
+                                  <CardDescription>
+                                    {format(classDateTime, "EEEE, MMMM d, yyyy")}
+                                  </CardDescription>
+                                </div>
+                                <Badge 
+                                  className={
+                                    entry.status === 'waiting' 
+                                      ? "bg-amber-500" 
+                                      : entry.status === 'notified'
+                                      ? "bg-blue-500"
+                                      : entry.status === 'booked'
+                                      ? "bg-green-500"
+                                      : "bg-gray-500"
+                                  }
+                                >
+                                  {entry.status === 'waiting' ? 'On Waitlist' : 
+                                   entry.status === 'notified' ? 'Spot Available!' :
+                                   entry.status === 'booked' ? 'Booked' : 'Expired'}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="flex items-center">
+                                  <Clock className="h-5 w-5 mr-2 text-primary" />
+                                  <span>{format(classDateTime, "h:mm a")}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <User className="h-5 w-5 mr-2 text-primary" />
+                                  <span>{entry.providerName}</span>
+                                </div>
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                  <Calendar className="h-5 w-5 mr-2" />
+                                  <span>
+                                    Joined {entry.createdAt ? format(new Date(entry.createdAt), "MMM d, yyyy") : 'recently'}
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="flex gap-2">
+                              <Button 
+                                asChild 
+                                variant="outline"
+                                className="flex-1"
+                              >
+                                <Link href={`/classes/${entry.classId}`}>View Class</Link>
+                              </Button>
+                              {entry.status === 'waiting' && !isPast && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="outline"
+                                      className="text-destructive border-destructive hover:bg-destructive/10"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Leave Waitlist?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to leave the waitlist for "{entry.className}"? 
+                                        You'll need to rejoin if you change your mind.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => leaveWaitlistMutation.mutate(entry.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Leave Waitlist
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </CardFooter>
+                          </Card>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="py-8 text-center">
+                      <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Waitlist Entries</h3>
+                      <p className="text-muted-foreground mb-4">
+                        When a class is full, you can join the waitlist to be notified if a spot opens up.
+                      </p>
+                      <Button asChild>
+                        <Link href="/classes">Browse Classes</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
             </Tabs>
           )}
