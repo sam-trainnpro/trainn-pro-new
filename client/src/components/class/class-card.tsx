@@ -1,7 +1,7 @@
 // Removed useQuery - now using consolidated data from props to eliminate N+1 queries
 import { Link, useLocation } from "wouter";
 import { Class, User, ClassCategory, ClassSchedule, ClassWithSchedules, ClassCardDTO } from "@shared/schema";
-import { MapPin, Clock, Star, Heart, Calendar, Share2 } from "lucide-react";
+import { MapPin, Clock, Star, Heart, Calendar, Share2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, formatInTimeZone } from "date-fns-tz";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -87,6 +87,72 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
       toast({
         title: "Error",
         description: "Failed to unlike class. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Get class date string for waitlist (format: YYYY-MM-DD)
+  const getClassDateString = (): string => {
+    if (classItem.startTime) {
+      const date = new Date(classItem.startTime);
+      return date.toISOString().split('T')[0];
+    }
+    return new Date().toISOString().split('T')[0];
+  };
+  
+  // Get class time string for waitlist (format: HH:MM)
+  const getClassTimeString = (): string => {
+    if (classItem.startTime) {
+      const date = new Date(classItem.startTime);
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+    return '00:00';
+  };
+
+  // Check if user is on waitlist for this class instance
+  const { data: waitlistStatus } = useQuery<{ onWaitlist: boolean; entry: any }>({
+    queryKey: ["/api/waitlist/check", classItem.id, getClassDateString()],
+    queryFn: async () => {
+      const res = await fetch(`/api/waitlist/check?classId=${classItem.id}&classDate=${getClassDateString()}`);
+      if (!res.ok) return { onWaitlist: false, entry: null };
+      return res.json();
+    },
+    enabled: !!user && bookingCount.spotsLeft === 0,
+  });
+
+  // Join waitlist mutation
+  const joinWaitlistMutation = useMutation({
+    mutationFn: async () => {
+      const coachData = isClassCardDTO ? (classItem as ClassCardDTO).coach : providedCoach;
+      const coachName = coachData 
+        ? (coachData.displayBusinessName && coachData.businessName ? coachData.businessName : `${coachData.firstName} ${coachData.lastName}`)
+        : 'Provider';
+      
+      const res = await apiRequest("POST", "/api/waitlist", {
+        classId: classItem.id,
+        classDate: getClassDateString(),
+        classTime: getClassTimeString(),
+        className: classItem.title,
+        providerName: coachName
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to join waitlist");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "You're on the waitlist!",
+        description: "We'll let you know if a spot opens up.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/waitlist/check", classItem.id, getClassDateString()] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Couldn't join waitlist",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -360,13 +426,38 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
             )} spots left
           </div>
           {bookingCount?.spotsLeft === 0 ? (
-            <Button 
-              disabled 
-              className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Class Full
-            </Button>
+            waitlistStatus?.onWaitlist ? (
+              <Button 
+                disabled 
+                className="w-full bg-green-100 text-green-700 cursor-default"
+                onClick={(e) => e.stopPropagation()}
+              >
+                On Waitlist
+              </Button>
+            ) : (
+              <Button 
+                className="w-full bg-amber-500 text-white hover:bg-amber-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!user) {
+                    const returnUrl = encodeURIComponent(window.location.pathname);
+                    navigate(`/auth?redirect=${returnUrl}`);
+                    return;
+                  }
+                  joinWaitlistMutation.mutate();
+                }}
+                disabled={joinWaitlistMutation.isPending}
+              >
+                {joinWaitlistMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  'Join Waitlist'
+                )}
+              </Button>
+            )
           ) : (
             <Button 
               className="w-full bg-primary text-white hover:bg-primary/90"
