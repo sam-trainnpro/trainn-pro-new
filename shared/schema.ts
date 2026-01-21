@@ -871,3 +871,27 @@ export const insertEmailReminderTrackingSchema = createInsertSchema(emailReminde
 
 export type InsertEmailReminderTracking = z.infer<typeof insertEmailReminderTrackingSchema>;
 export type EmailReminderTracking = typeof emailReminderTracking.$inferSelect;
+
+// Class waitlist - for users to join waitlist when class is full
+export const classWaitlist = pgTable("class_waitlist", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  classId: integer("class_id").notNull(),
+  className: text("class_name").notNull(),
+  classDate: text("class_date").notNull(), // Format: "YYYY-MM-DD"
+  classTime: text("class_time").notNull(), // Format: "HH:MM"
+  providerName: text("provider_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  notifiedAt: timestamp("notified_at"), // Future: when user was notified of opening
+  status: text("status").notNull().default("waiting"), // 'waiting', 'notified', 'booked', 'expired'
+});
+
+export const insertClassWaitlistSchema = createInsertSchema(classWaitlist).omit({
+  id: true,
+  createdAt: true,
+  notifiedAt: true,
+});
+
+export type InsertClassWaitlist = z.infer<typeof insertClassWaitlistSchema>;
+export type ClassWaitlist = typeof classWaitlist.$inferSelect;
