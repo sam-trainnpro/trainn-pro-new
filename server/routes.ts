@@ -1154,6 +1154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
       if (req.body.toFindUs !== undefined) updateData.toFindUs = req.body.toFindUs ? String(req.body.toFindUs) : null;
+      if (req.body.outdoors !== undefined) updateData.outdoors = Boolean(req.body.outdoors);
+      
+      // Admin-only: Allow marking class as full (triggers waitlist functionality)
+      if (req.body.markedFull !== undefined && req.user.role === 'admin') {
+        updateData.markedFull = Boolean(req.body.markedFull);
+      }
       
       // Handle date fields carefully
       if (req.body.startTime) {
@@ -1259,6 +1265,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.ageGroup) updateData.ageGroup = String(req.body.ageGroup);
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
       if (req.body.toFindUs !== undefined) updateData.toFindUs = req.body.toFindUs ? String(req.body.toFindUs) : null;
+      if (req.body.outdoors !== undefined) updateData.outdoors = Boolean(req.body.outdoors);
+      
+      // Admin-only: Allow marking class as full (triggers waitlist functionality)
+      if (req.body.markedFull !== undefined && req.user.role === 'admin') {
+        updateData.markedFull = Boolean(req.body.markedFull);
+      }
       
       // Handle date fields carefully
       if (req.body.startTime) {
