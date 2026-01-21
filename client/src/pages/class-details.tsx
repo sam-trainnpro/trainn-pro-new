@@ -171,6 +171,71 @@ export default function ClassDetailsPage() {
     enabled: !!classItem?.coachId,
   });
 
+  // Get class date string for waitlist (format: YYYY-MM-DD)
+  const getClassDateString = (): string => {
+    if (classItem?.startTime) {
+      const date = new Date(classItem.startTime);
+      return date.toISOString().split('T')[0];
+    }
+    return new Date().toISOString().split('T')[0];
+  };
+  
+  // Get class time string for waitlist (format: HH:MM)
+  const getClassTimeString = (): string => {
+    if (classItem?.startTime) {
+      const date = new Date(classItem.startTime);
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+    return '00:00';
+  };
+
+  // Check if user is on waitlist for this class
+  const { data: waitlistStatus } = useQuery<{ onWaitlist: boolean; entry: any }>({
+    queryKey: ["/api/waitlist/check", classId, getClassDateString()],
+    queryFn: async () => {
+      const res = await fetch(`/api/waitlist/check?classId=${classId}&classDate=${getClassDateString()}`);
+      if (!res.ok) return { onWaitlist: false, entry: null };
+      return res.json();
+    },
+    enabled: !!user && !!classItem && bookingCount?.spotsLeft === 0,
+  });
+
+  // Join waitlist mutation
+  const joinWaitlistMutation = useMutation({
+    mutationFn: async () => {
+      const coachName = coach 
+        ? (coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`)
+        : 'Provider';
+      
+      const res = await apiRequest("POST", "/api/waitlist", {
+        classId: classId,
+        classDate: getClassDateString(),
+        classTime: getClassTimeString(),
+        className: classItem?.title || 'Class',
+        providerName: coachName
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to join waitlist");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "You're on the waitlist!",
+        description: "We'll notify you if a spot opens up.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/waitlist/check", classId, getClassDateString()] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Couldn't join waitlist",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Fetch user's liked classes
   const { data: likedClasses = [] } = useQuery<number[]>({
     queryKey: ["/api/user/liked-classes"],
@@ -710,12 +775,47 @@ export default function ClassDetailsPage() {
                             </p>
                           </div>
                         ) : bookingCount?.spotsLeft === 0 ? (
-                          <div className="bg-gray-100 p-4 rounded-lg text-center mb-4">
-                            <AlertCircle className="h-8 w-8 text-gray-500 mx-auto mb-2" />
+                          <div className="bg-amber-50 p-4 rounded-lg text-center mb-4">
+                            <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
                             <p className="text-gray-700 font-medium">Class is Full</p>
-                            <p className="text-sm text-muted-foreground">
-                              This class is full, please check back again later in case there are cancellations.
-                            </p>
+                            {waitlistStatus?.onWaitlist ? (
+                              <div className="mt-3">
+                                <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg inline-block">
+                                  <CheckCircle className="h-4 w-4 inline mr-1" />
+                                  You're on the waitlist
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                  We'll notify you if a spot opens up.
+                                </p>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                  Join the waitlist and we'll let you know if a spot opens up.
+                                </p>
+                                <Button
+                                  className="bg-amber-500 text-white hover:bg-amber-600"
+                                  onClick={() => {
+                                    if (!user) {
+                                      const returnUrl = encodeURIComponent(window.location.pathname);
+                                      navigate(`/auth?redirect=${returnUrl}`);
+                                      return;
+                                    }
+                                    joinWaitlistMutation.mutate();
+                                  }}
+                                  disabled={joinWaitlistMutation.isPending}
+                                >
+                                  {joinWaitlistMutation.isPending ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Joining...
+                                    </>
+                                  ) : (
+                                    'Join Waitlist'
+                                  )}
+                                </Button>
+                              </>
+                            )}
                           </div>
                         ) : (
                           <div className="space-y-4">
