@@ -8302,6 +8302,65 @@ Sitemap: https://trainn.pro/sitemap.xml`);
       
       console.log(`✅ User ${user.id} joined waitlist for class ${classId} on ${classDate}`);
       
+      // Send waitlist notification emails
+      try {
+        // Fetch class details for description
+        const classData = await storage.getClass(classId);
+        
+        // Import email functions
+        const { 
+          sendWaitlistConfirmationToCustomer, 
+          sendWaitlistNotificationToProvider,
+          sendWaitlistNotificationToAdmin 
+        } = await import('./email');
+        
+        // 1. Send confirmation to customer
+        await sendWaitlistConfirmationToCustomer(
+          { email: user.email, firstName: user.firstName },
+          {
+            className,
+            description: classData?.description || undefined,
+            classDate,
+            classTime,
+            providerName
+          }
+        );
+        
+        // 2. Send notification to provider
+        if (classData) {
+          const provider = await storage.getUser(classData.coachId);
+          if (provider) {
+            await sendWaitlistNotificationToProvider(
+              { email: provider.email, firstName: provider.firstName },
+              { firstName: user.firstName, lastName: user.lastName, email: user.email },
+              {
+                className,
+                description: classData.description || undefined,
+                classDate,
+                classTime
+              }
+            );
+          }
+        }
+        
+        // 3. Send notification to admin
+        await sendWaitlistNotificationToAdmin(
+          { firstName: user.firstName, lastName: user.lastName, email: user.email },
+          {
+            className,
+            description: classData?.description || undefined,
+            classDate,
+            classTime,
+            providerName
+          }
+        );
+        
+        console.log(`📧 Waitlist notification emails sent for class ${classId}`);
+      } catch (emailError) {
+        console.error('Error sending waitlist emails:', emailError);
+        // Don't fail the request if emails fail
+      }
+      
       res.json({
         success: true,
         message: "You've been added to the waitlist!",
