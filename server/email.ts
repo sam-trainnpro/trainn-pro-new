@@ -867,6 +867,12 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
       from: 'support@trainn.pro',
       subject: subject,
       html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+          enableText: false
+        }
+      }
     });
 
     console.log(`Welcome email sent to ${user.email}`);
