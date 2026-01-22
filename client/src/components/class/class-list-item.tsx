@@ -216,7 +216,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
               <Skeleton className="h-3 w-12" />
             ) : finalBookingCount ? (
               finalBookingCount.spotsLeft === 0 ? (
-                <span className="font-medium">Class Full</span>
+                <span className="font-medium">Join Waitlist</span>
               ) : (
                 <span>
                   <span className="font-medium">{finalBookingCount?.spotsLeft || 0}</span> spots left
