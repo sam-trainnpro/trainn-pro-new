@@ -32,9 +32,7 @@ export default function WhyUseTrainn() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-700 leading-relaxed">
-                    Save an average of 8 hours a month by aggregating activities for kids and adults onto one platform
-                  </p>
+                  <p className="text-gray-700 leading-relaxed">Save an average of 8 hours a month by accessing activities for kids and adults on one platform</p>
                 </div>
               </div>
               
