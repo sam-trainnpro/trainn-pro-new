@@ -883,6 +883,206 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
   }
 }
 
+// Waitlist confirmation email to customer
+export async function sendWaitlistConfirmationToCustomer(
+  customer: { email: string; firstName: string },
+  classDetails: { 
+    className: string; 
+    description?: string; 
+    classDate: string; 
+    classTime: string;
+    providerName: string;
+  }
+): Promise<boolean> {
+  try {
+    const subject = `You're on the Waitlist for ${classDetails.className}`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
+          </div>
+          
+          <h2 style="color: #f59e0b; margin-bottom: 20px;">📋 You're on the Waitlist!</h2>
+          
+          <p style="color: #333; line-height: 1.6;">Hi ${customer.firstName},</p>
+          <p style="color: #333; line-height: 1.6;">You've been added to the waitlist for the following class. We'll notify you if a spot opens up!</p>
+          
+          <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #92400e; margin-top: 0;">${classDetails.className}</h3>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Date:</strong> ${classDetails.classDate}</p>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Time:</strong> ${classDetails.classTime}</p>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Provider:</strong> ${classDetails.providerName}</p>
+            ${classDetails.description ? `<p style="color: #78350f; margin: 10px 0;"><strong>Description:</strong> ${classDetails.description}</p>` : ''}
+          </div>
+          
+          <p style="color: #333; line-height: 1.6;">If a spot becomes available, we'll send you an email right away so you can book your spot.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://trainn.pro/bookings" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View My Waitlist</a>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              Questions? Contact us at support@trainn.pro
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: customer.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+          enableText: false
+        }
+      }
+    });
+
+    console.log(`Waitlist confirmation email sent to ${customer.email}`);
+    return true;
+  } catch (error) {
+    console.error('Waitlist confirmation email error:', error);
+    return false;
+  }
+}
+
+// Waitlist notification email to provider
+export async function sendWaitlistNotificationToProvider(
+  provider: { email: string; firstName: string },
+  customer: { firstName: string; lastName: string; email: string },
+  classDetails: { 
+    className: string; 
+    description?: string; 
+    classDate: string; 
+    classTime: string;
+  }
+): Promise<boolean> {
+  try {
+    const subject = `New Waitlist Entry for ${classDetails.className}`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn</h1>
+            <p style="color: #666; margin: 5px 0 0 0;">Building stronger communities through fitness, creativity and play</p>
+          </div>
+          
+          <h2 style="color: #f59e0b; margin-bottom: 20px;">📋 New Waitlist Entry</h2>
+          
+          <p style="color: #333; line-height: 1.6;">Hi ${provider.firstName},</p>
+          <p style="color: #333; line-height: 1.6;">A customer has joined the waitlist for your class:</p>
+          
+          <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #92400e; margin-top: 0;">${classDetails.className}</h3>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Date:</strong> ${classDetails.classDate}</p>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Time:</strong> ${classDetails.classTime}</p>
+            ${classDetails.description ? `<p style="color: #78350f; margin: 10px 0;"><strong>Description:</strong> ${classDetails.description}</p>` : ''}
+          </div>
+          
+          <div style="background-color: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="color: #0369a1; margin-top: 0;">Customer Details:</h4>
+            <p style="color: #0c4a6e; margin: 5px 0;"><strong>Name:</strong> ${customer.firstName} ${customer.lastName}</p>
+            <p style="color: #0c4a6e; margin: 5px 0;"><strong>Email:</strong> ${customer.email}</p>
+          </div>
+          
+          <p style="color: #333; line-height: 1.6;">If a spot opens up in your class, you may want to reach out to this customer or they will be notified automatically.</p>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              Questions? Contact us at support@trainn.pro
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: provider.email,
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`Waitlist notification email sent to provider ${provider.email}`);
+    return true;
+  } catch (error) {
+    console.error('Waitlist notification to provider email error:', error);
+    return false;
+  }
+}
+
+// Waitlist notification email to admin
+export async function sendWaitlistNotificationToAdmin(
+  customer: { firstName: string; lastName: string; email: string },
+  classDetails: { 
+    className: string; 
+    description?: string; 
+    classDate: string; 
+    classTime: string;
+    providerName: string;
+  }
+): Promise<boolean> {
+  try {
+    const subject = `[Admin] New Waitlist Entry: ${classDetails.className}`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Trainn Admin</h1>
+          </div>
+          
+          <h2 style="color: #f59e0b; margin-bottom: 20px;">📋 New Waitlist Entry</h2>
+          
+          <p style="color: #333; line-height: 1.6;">A customer has joined the waitlist for a class:</p>
+          
+          <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #92400e; margin-top: 0;">${classDetails.className}</h3>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Date:</strong> ${classDetails.classDate}</p>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Time:</strong> ${classDetails.classTime}</p>
+            <p style="color: #78350f; margin: 10px 0;"><strong>Provider:</strong> ${classDetails.providerName}</p>
+            ${classDetails.description ? `<p style="color: #78350f; margin: 10px 0;"><strong>Description:</strong> ${classDetails.description}</p>` : ''}
+          </div>
+          
+          <div style="background-color: #e0f2fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="color: #0369a1; margin-top: 0;">Customer Details:</h4>
+            <p style="color: #0c4a6e; margin: 5px 0;"><strong>Name:</strong> ${customer.firstName} ${customer.lastName}</p>
+            <p style="color: #0c4a6e; margin: 5px 0;"><strong>Email:</strong> ${customer.email}</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0; font-size: 14px;">
+              This is an automated admin notification from Trainn.
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await mailService.send({
+      to: 'sam@trainn.pro',
+      from: 'support@trainn.pro',
+      subject: subject,
+      html: htmlContent,
+    });
+
+    console.log(`Waitlist admin notification email sent to sam@trainn.pro`);
+    return true;
+  } catch (error) {
+    console.error('Waitlist admin notification email error:', error);
+    return false;
+  }
+}
+
 // Coach notification for new bookings
 export async function sendNewBookingNotificationToCoach(
   coach: User,
