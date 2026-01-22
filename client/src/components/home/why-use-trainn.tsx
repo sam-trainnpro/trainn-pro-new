@@ -43,9 +43,7 @@ export default function WhyUseTrainn() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-700 leading-relaxed">
-                    Save an average of $200 per year with flexible drop-in style classes that meet your schedule and don't require long-term commitments
-                  </p>
+                  <p className="text-gray-700 leading-relaxed">Save about $200 per year with flexible drop-in style classes that meet your schedule and don't require long-term commitments</p>
                 </div>
               </div>
             </div>
