@@ -844,7 +844,7 @@ export async function sendWelcomeEmail(user: User): Promise<boolean> {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://trainn.pro" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Browse Classes</a>
+            <a href="https://trainn.pro/classes" style="background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Browse Classes</a>
           </div>
           `}
           
