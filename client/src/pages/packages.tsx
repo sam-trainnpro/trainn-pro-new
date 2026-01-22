@@ -129,6 +129,14 @@ export default function PackagesPage() {
     // Only show active packages
     if (!pkg.isActive) return false;
 
+    // Hide time-bound packages where end date has already passed
+    if (pkg.packageType === 'time_bound' && pkg.endDate) {
+      const endDate = new Date(pkg.endDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (endDate < today) return false;
+    }
+
     return true;
   }) || [];
 
