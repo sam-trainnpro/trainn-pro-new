@@ -67,6 +67,17 @@ import PlansPage from "@/pages/plans";
 import ChangePlanPage from "@/pages/change-plan";
 import { ProtectedRoute } from "./lib/protected-route";
 import SignupIncentivePopup from "./components/signup-incentive-popup";
+import SEOClassesPage from "@/pages/seo-classes";
+
+function SEOClassesRoute({ params }: { params: { city: string; ageGroup: string; category?: string } }) {
+  return (
+    <SEOClassesPage 
+      citySlug={params.city} 
+      ageGroupSlug={params.ageGroup} 
+      categorySlug={params.category}
+    />
+  );
+}
 
 function Router() {
   // Track page views when routes change
@@ -109,6 +120,12 @@ function Router() {
       </Route>
       <Route path="/classes">
         <ClassesPage />
+      </Route>
+      <Route path="/classes/:city/:ageGroup/:category">
+        {(params) => <SEOClassesRoute params={params} />}
+      </Route>
+      <Route path="/classes/:city/:ageGroup">
+        {(params) => <SEOClassesRoute params={{ ...params, category: undefined }} />}
       </Route>
       <Route path="/packages">
         <PackagesPage />
