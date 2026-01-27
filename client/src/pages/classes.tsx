@@ -125,6 +125,52 @@ export default function ClassesPage() {
     return aTime - bTime;
   });
 
+  // Generate dynamic header based on active filters
+  const generateDynamicHeader = (): string => {
+    const categoryId = filters.classType || searchParams.category;
+    const categoryName = categoryId && categories 
+      ? categories.find(c => c.id === Number(categoryId))?.name 
+      : null;
+    const ageGroup = filters.ageGroup;
+    const city = filters.city;
+
+    // If no filters applied, show default
+    if (!categoryName && !ageGroup && !city) {
+      if (searchParams.q) {
+        return `Search Results for "${searchParams.q}"`;
+      }
+      return "Browse All Classes";
+    }
+
+    // Build dynamic header: "{AgeGroup} {Category} Classes in {City}"
+    let header = "";
+    
+    if (ageGroup && categoryName && city) {
+      // Full filter: "Kids Soccer Classes in San Francisco"
+      header = `${ageGroup} ${categoryName} Classes in ${city}`;
+    } else if (ageGroup && categoryName) {
+      // Age + Category: "Kids Soccer Classes"
+      header = `${ageGroup} ${categoryName} Classes`;
+    } else if (categoryName && city) {
+      // Category + City: "Soccer Classes in San Francisco"
+      header = `${categoryName} Classes in ${city}`;
+    } else if (ageGroup && city) {
+      // Age + City: "Kids Activities in San Francisco"
+      header = `${ageGroup} Activities in ${city}`;
+    } else if (categoryName) {
+      // Just Category: "Soccer Classes"
+      header = `${categoryName} Classes`;
+    } else if (ageGroup) {
+      // Just Age: "Kids Classes"
+      header = `${ageGroup} Classes`;
+    } else if (city) {
+      // Just City: "Classes in San Francisco"
+      header = `Classes in ${city}`;
+    }
+
+    return header || "Browse All Classes";
+  };
+
   const handleSearch = (newFilters: SearchFiltersType) => {
     setFilters(newFilters);
     
@@ -201,9 +247,7 @@ export default function ClassesPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-heading font-bold">
-                  {searchParams.q 
-                    ? `Search Results for "${searchParams.q}"`
-                    : "Browse All Classes"}
+                  {generateDynamicHeader()}
                 </h1>
                 {filters.date && (
                   <div className="mt-2 flex items-center gap-2">
