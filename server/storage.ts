@@ -71,6 +71,7 @@ export interface IStorage {
   getClassesWithSchedules(): Promise<ClassWithSchedules[]>;
   getClassesWithAllData(filters?: {
     categoryId?: number;
+    categoryIds?: number[];
     ageGroup?: string;
     city?: string;
     outdoors?: boolean;
@@ -692,13 +693,14 @@ export class DatabaseStorage implements IStorage {
 
   async getClassesWithAllData(filters?: {
     categoryId?: number;
+    categoryIds?: number[];
     ageGroup?: string;
     city?: string;
     outdoors?: boolean;
     coachId?: number;
     searchQuery?: string;
     dateFilter?: Date;
-    packageClasses?: string; // Comma-separated list of class IDs or series IDs
+    packageClasses?: string;
     limit?: number;
     offset?: number;
   }): Promise<ClassCardDTO[]> {
@@ -716,6 +718,10 @@ export class DatabaseStorage implements IStorage {
 
       if (filters?.categoryId) {
         whereConditions.push(eq(classes.categoryId, filters.categoryId));
+      }
+
+      if (filters?.categoryIds && filters.categoryIds.length > 0) {
+        whereConditions.push(inArray(classes.categoryId, filters.categoryIds));
       }
 
       if (filters?.ageGroup) {

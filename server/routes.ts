@@ -505,8 +505,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(filteredClasses);
       } else {
         // Use optimized consolidated method with database-level filtering
+        // Support both single category and multiple categories (comma-separated)
+        let categoryIds: number[] | undefined;
+        if (req.query.categories) {
+          categoryIds = (req.query.categories as string).split(',').map(id => Number(id.trim())).filter(id => !isNaN(id));
+        } else if (req.query.category || req.query.type) {
+          const singleId = Number(req.query.category || req.query.type);
+          if (!isNaN(singleId)) categoryIds = [singleId];
+        }
+
         const filters = {
-          categoryId: req.query.category ? Number(req.query.category) : req.query.type ? Number(req.query.type) : undefined,
+          categoryId: categoryIds && categoryIds.length === 1 ? categoryIds[0] : undefined,
+          categoryIds: categoryIds && categoryIds.length > 1 ? categoryIds : undefined,
           ageGroup: req.query.ageGroup as string,
           city: req.query.city as string,
           outdoors: req.query.outdoors === "Yes" ? true : req.query.outdoors === "No" ? false : undefined,
