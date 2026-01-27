@@ -2286,17 +2286,21 @@ export class DatabaseStorage implements IStorage {
       return { valid: false, error: "Promo code usage limit reached" };
     }
 
-    // Check if user has already used this promo code
+    // Check if user has exceeded their per-customer usage limit
     const existingUsage = await db.select()
       .from(promoCodeUsage)
       .where(and(
         eq(promoCodeUsage.promoCodeId, promoCode.id),
         eq(promoCodeUsage.userId, userId)
-      ))
-      .limit(1);
+      ));
 
-    if (existingUsage.length > 0) {
-      return { valid: false, error: "You have already used this promo code" };
+    const usageLimitPerCustomer = promoCode.usageLimitPerCustomer || 1;
+    if (existingUsage.length >= usageLimitPerCustomer) {
+      if (usageLimitPerCustomer === 1) {
+        return { valid: false, error: "You have already used this promo code" };
+      } else {
+        return { valid: false, error: `You have reached the maximum of ${usageLimitPerCustomer} uses for this promo code` };
+      }
     }
 
     // Check first booking only restriction
@@ -2391,16 +2395,21 @@ export class DatabaseStorage implements IStorage {
       return { valid: false, error: "Promo code usage limit reached" };
     }
 
-    const existingUsage = await db.select()
+    // Check if user has exceeded their per-customer usage limit
+    const existingUsageForPackage = await db.select()
       .from(promoCodeUsage)
       .where(and(
         eq(promoCodeUsage.promoCodeId, promoCode.id),
         eq(promoCodeUsage.userId, userId)
-      ))
-      .limit(1);
+      ));
 
-    if (existingUsage.length > 0) {
-      return { valid: false, error: "You have already used this promo code" };
+    const usageLimitPerCustomerForPackage = promoCode.usageLimitPerCustomer || 1;
+    if (existingUsageForPackage.length >= usageLimitPerCustomerForPackage) {
+      if (usageLimitPerCustomerForPackage === 1) {
+        return { valid: false, error: "You have already used this promo code" };
+      } else {
+        return { valid: false, error: `You have reached the maximum of ${usageLimitPerCustomerForPackage} uses for this promo code` };
+      }
     }
 
     if (promoCode.firstBookingOnly) {

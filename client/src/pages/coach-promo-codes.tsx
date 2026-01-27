@@ -40,6 +40,7 @@ interface PromoCode {
   firstBookingOnly: boolean;
   minimumQuantity: number;
   usageLimit: number | null;
+  usageLimitPerCustomer: number;
   usageCount: number;
   validFrom: string;
   validUntil: string;
@@ -160,6 +161,7 @@ export default function CoachPromoCodes() {
       firstBookingOnly: formData.get('firstBookingOnly') === 'on',
       minimumQuantity: parseInt(formData.get('minimumQuantity') as string) || 1,
       usageLimit: formData.get('usageLimit') ? parseInt(formData.get('usageLimit') as string) : null,
+      usageLimitPerCustomer: parseInt(formData.get('usageLimitPerCustomer') as string) || 1,
       validFrom: formData.get('validFrom'),
       validUntil: formData.get('validUntil'),
     };
@@ -181,6 +183,7 @@ export default function CoachPromoCodes() {
       firstBookingOnly: formData.get('firstBookingOnly') === 'on',
       minimumQuantity: parseInt(formData.get('minimumQuantity') as string) || 1,
       usageLimit: formData.get('usageLimit') ? parseInt(formData.get('usageLimit') as string) : null,
+      usageLimitPerCustomer: parseInt(formData.get('usageLimitPerCustomer') as string) || 1,
       validFrom: formData.get('validFrom'),
       validUntil: formData.get('validUntil'),
     };
@@ -333,17 +336,33 @@ export default function CoachPromoCodes() {
                 </p>
               </div>
 
-              <div>
-                <Label htmlFor="usageLimit">Usage Limit (Optional)</Label>
-                <Input
-                  id="usageLimit"
-                  name="usageLimit"
-                  type="number"
-                  placeholder="100"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Leave empty for unlimited uses
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="usageLimit">Total Usage Limit (Optional)</Label>
+                  <Input
+                    id="usageLimit"
+                    name="usageLimit"
+                    type="number"
+                    placeholder="100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Max uses across all customers
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="usageLimitPerCustomer">Uses Per Customer</Label>
+                  <Input
+                    id="usageLimitPerCustomer"
+                    name="usageLimitPerCustomer"
+                    type="number"
+                    placeholder="1"
+                    min="1"
+                    defaultValue="1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Times each customer can use
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -615,7 +634,7 @@ export default function CoachPromoCodes() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-usageLimit">Usage Limit (optional)</Label>
+                  <Label htmlFor="edit-usageLimit">Total Usage Limit (optional)</Label>
                   <Input
                     id="edit-usageLimit"
                     name="usageLimit"
@@ -624,9 +643,24 @@ export default function CoachPromoCodes() {
                     placeholder="Leave blank for unlimited"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Leave empty for unlimited uses
+                    Max uses across all customers
                   </p>
                 </div>
+                <div>
+                  <Label htmlFor="edit-usageLimitPerCustomer">Uses Per Customer</Label>
+                  <Input
+                    id="edit-usageLimitPerCustomer"
+                    name="usageLimitPerCustomer"
+                    type="number"
+                    defaultValue={editingPromoCode.usageLimitPerCustomer || 1}
+                    min="1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Times each customer can use
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-minimumQuantity">Minimum Tickets Required</Label>
                   <Input
