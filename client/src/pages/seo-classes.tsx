@@ -17,7 +17,9 @@ import {
   categories as seoCategories, 
   generatePageTitle, 
   generatePageHeader,
-  generateMetaDescription 
+  generateMetaDescription,
+  generateFAQSchema,
+  generateBreadcrumbSchema
 } from "@/lib/seo-config";
 import { useSafeAuth } from "../../../hooks/use-auth-safe";
 
@@ -122,7 +124,15 @@ export default function SEOClassesPage({ citySlug, ageGroupSlug, categorySlug }:
         <meta name="description" content={metaDescription} />
         <meta property="og:title" content={`${pageTitle} | Trainn`} />
         <meta property="og:description" content={metaDescription} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`https://trainn.pro/classes/${citySlug}/${ageGroupSlug}${categorySlug ? `/${categorySlug}` : ''}`} />
         <link rel="canonical" href={`https://trainn.pro/classes/${citySlug}/${ageGroupSlug}${categorySlug ? `/${categorySlug}` : ''}`} />
+        <script type="application/ld+json">
+          {JSON.stringify(generateFAQSchema(citySlug, ageGroupSlug, categorySlug))}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(generateBreadcrumbSchema(citySlug, ageGroupSlug, categorySlug))}
+        </script>
       </Helmet>
       
       <Header />
