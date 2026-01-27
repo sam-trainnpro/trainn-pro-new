@@ -128,7 +128,14 @@ export default function CreateClassPage() {
   const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
   const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(null);
   const [recurrencePatternError, setRecurrencePatternError] = useState(false);
+  const [selectedProviderId, setSelectedProviderId] = useState<string>("");
   const { latitude, longitude, getUserLocation } = useUserLocation();
+
+  // Fetch providers list for admin to select from
+  const { data: providers } = useQuery<Array<{ id: number; firstName: string; lastName: string; businessName?: string; displayBusinessName?: boolean }>>({
+    queryKey: ['/api/admin/approved-coaches'],
+    enabled: user?.role === 'admin',
+  });
 
   // Handle cancel navigation
   const handleCancel = () => {
@@ -735,6 +742,11 @@ export default function CreateClassPage() {
         (formattedData as any).coachId = duplicateClass.coachId;
       }
       
+      // If admin selected a provider, use that coachId
+      if (user?.role === 'admin' && selectedProviderId && !isDuplicating) {
+        (formattedData as any).coachId = parseInt(selectedProviderId);
+      }
+      
       // Submit the processed data
       console.log("Submitting class with data:", formattedData);
       
@@ -807,6 +819,39 @@ export default function CreateClassPage() {
               <div className="bg-card rounded-lg shadow-sm p-6 border">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                
+                {/* Admin-only: Provider selection dropdown */}
+                {user?.role === 'admin' && !isEditMode && !isDuplicating && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                    <label className="block text-sm font-medium text-amber-800 mb-2">
+                      Create Class For Provider (Admin Only)
+                    </label>
+                    <Select 
+                      value={selectedProviderId} 
+                      onValueChange={setSelectedProviderId}
+                    >
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select a provider..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {providers?.map((provider) => {
+                          const displayName = provider.displayBusinessName && provider.businessName 
+                            ? provider.businessName 
+                            : `${provider.firstName} ${provider.lastName}`;
+                          return (
+                            <SelectItem key={provider.id} value={provider.id.toString()}>
+                              {displayName}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-amber-600 mt-2">
+                      Select a provider to create this class on their behalf. Leave empty to create as yourself.
+                    </p>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-6">
                     <FormField
