@@ -10,10 +10,14 @@ export default function FeaturedClasses() {
     queryKey: ['/api/classes'],
   });
   
-  // Filter for future classes and select specific class types
+  // Filter for future classes with open spots and select specific class types
   const featuredClasses = classes ? (() => {
     const now = new Date();
-    const futureClasses = classes.filter(c => c.startTime && new Date(c.startTime) > now);
+    const futureClasses = classes.filter(c => 
+      c.startTime && 
+      new Date(c.startTime) > now && 
+      c.bookingStats.spotsLeft > 0 // Only show classes with available spots
+    );
     
     // Group classes by category
     const classesByCategory = futureClasses.reduce((acc, classItem) => {
