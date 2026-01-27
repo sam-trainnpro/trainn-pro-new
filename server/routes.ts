@@ -7437,11 +7437,51 @@ Sitemap: https://trainn.pro/sitemap.xml`);
       
       // Check if user already has an active subscription in our database
       const existingSubscription = await storage.getActiveUserSubscription(user.id);
-      if (existingSubscription) {
-        return res.json({ 
-          message: "Subscription already exists", 
-          subscription: existingSubscription 
-        });
+      
+      if (existingSubscription && existingSubscription.stripeSubscriptionId) {
+        // Existing subscription - sync period from Stripe to catch renewals
+        try {
+          const stripeSubscription = await stripe.subscriptions.retrieve(existingSubscription.stripeSubscriptionId);
+          const newPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+          const newPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+          
+          // Check if the Stripe period is newer than our database period
+          if (newPeriodStart.getTime() > existingSubscription.currentPeriodStart.getTime()) {
+            // Reset usage for the new period
+            await storage.resetSubscriptionUsageForNewPeriod(
+              existingSubscription.id,
+              newPeriodStart,
+              newPeriodEnd
+            );
+            
+            // Update status and cancel_at_period_end
+            await storage.updateUserSubscription(existingSubscription.id, {
+              status: stripeSubscription.status === 'active' ? 'active' : 
+                      stripeSubscription.status === 'past_due' ? 'past_due' :
+                      stripeSubscription.status === 'canceled' ? 'cancelled' : 'active',
+              cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+            });
+            
+            const updatedSubscription = await storage.getUserSubscription(existingSubscription.id);
+            console.log(`✅ Synced subscription renewal for user ${user.id}: ${newPeriodStart.toISOString()} - ${newPeriodEnd.toISOString()}`);
+            return res.json({ 
+              message: "Subscription renewed and synced", 
+              subscription: updatedSubscription 
+            });
+          } else {
+            // Period hasn't changed, just return existing
+            return res.json({ 
+              message: "Subscription already up to date", 
+              subscription: existingSubscription 
+            });
+          }
+        } catch (stripeError: any) {
+          console.error(`Error fetching Stripe subscription: ${stripeError.message}`);
+          return res.json({ 
+            message: "Subscription exists but could not sync from Stripe", 
+            subscription: existingSubscription 
+          });
+        }
       }
 
       // Check Stripe for active subscriptions

@@ -193,19 +193,30 @@ function DashboardContent() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/subscriptions/my'] });
-      toast({
-        title: "Subscription Synced",
-        description: "Your subscription has been synced successfully!",
-      });
+      if (data.message === "Subscription renewed and synced") {
+        toast({
+          title: "Subscription Renewed",
+          description: "Your subscription has been renewed! Your classes have been reset for the new period.",
+        });
+      }
     },
     onError: (error: Error) => {
-      toast({
-        title: "Sync Result",
-        description: error.message,
-        variant: "default",
-      });
+      console.log("Sync error (non-critical):", error.message);
     },
   });
+  
+  // Auto-sync subscription on page load if period has expired
+  useEffect(() => {
+    if (subscription && subscription.currentPeriodEnd) {
+      const periodEnd = new Date(subscription.currentPeriodEnd);
+      const now = new Date();
+      
+      // If the period has ended and we haven't synced yet, trigger sync
+      if (periodEnd < now && subscription.status === 'active') {
+        syncMutation.mutate();
+      }
+    }
+  }, [subscription]);
   
   // Fetch referral data if available
   const { data: referralData } = useQuery({
