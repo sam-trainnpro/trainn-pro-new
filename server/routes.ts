@@ -2677,6 +2677,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all approved coaches for admin (for creating classes on behalf of providers)
+  app.get("/api/admin/approved-coaches", requireAdmin, async (req, res) => {
+    try {
+      const coaches = await storage.getApprovedCoaches();
+      // Return only necessary fields for the dropdown
+      const coachList = coaches.map(coach => ({
+        id: coach.id,
+        firstName: coach.firstName,
+        lastName: coach.lastName,
+        businessName: coach.businessName,
+        displayBusinessName: coach.displayBusinessName
+      }));
+      res.json(coachList);
+    } catch (error) {
+      console.error("Error fetching approved coaches:", error);
+      res.status(500).json({ message: "Failed to fetch approved coaches" });
+    }
+  });
+
   app.put("/api/admin/coaches/:id/approve", requireAdmin, async (req, res) => {
     try {
       const coachId = parseInt(req.params.id);
