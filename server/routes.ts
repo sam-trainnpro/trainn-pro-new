@@ -524,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           searchQuery: req.query.q as string,
           dateFilter: req.query.date ? new Date(req.query.date as string) : undefined,
           packageClasses: req.query.packageClasses as string,
-          limit: 100, // Default pagination limit
+          limit: 500, // Increased limit since we filter by 7 days
           offset: 0
         };
 

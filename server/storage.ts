@@ -707,9 +707,9 @@ export class DatabaseStorage implements IStorage {
     try {
       // Build WHERE conditions based on filters
       const whereConditions = [
-        // Always filter to future classes only
+        // Always filter to future classes only, within next 7 days by default
         or(
-          sql`${classes.startTime} >= NOW()`,
+          sql`${classes.startTime} >= NOW() AND ${classes.startTime} < NOW() + INTERVAL '7 days'`,
           sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
         ),
         // Exclude deleted classes from public views
