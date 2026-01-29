@@ -6314,6 +6314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstBookingOnly,
         minimumQuantity,
         usageLimit,
+        usageLimitPerCustomer,
         validFrom,
         validUntil,
         platformSubsidized,
@@ -6371,6 +6372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstBookingOnly: firstBookingOnly || false,
         minimumQuantity: minimumQuantity || 1,
         usageLimit: usageLimit || null,
+        usageLimitPerCustomer: usageLimitPerCustomer || 1,
         validFrom: new Date(validFrom),
         validUntil: new Date(validUntil),
         platformSubsidized: platformSubsidized || false,
@@ -6426,8 +6428,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updateData: any = {};
       const allowedFields = ['name', 'description', 'discountType', 'discountValue', 
-                           'firstBookingOnly', 'minimumQuantity', 'usageLimit', 'validFrom', 'validUntil',
-                           'platformSubsidized', 'commissionOverride', 'budgetLimit', 'isActive'];
+                           'firstBookingOnly', 'minimumQuantity', 'usageLimit', 'usageLimitPerCustomer', 
+                           'validFrom', 'validUntil', 'platformSubsidized', 'commissionOverride', 
+                           'budgetLimit', 'isActive'];
 
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
