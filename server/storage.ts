@@ -706,14 +706,21 @@ export class DatabaseStorage implements IStorage {
   }): Promise<ClassCardDTO[]> {
     try {
       // Build WHERE conditions based on filters
-      // Use 8 days to account for timezone differences (classes stored in UTC but displayed in local time)
-      // This ensures classes within 7 days of any US timezone are included
+      // When a category is specified, show all future classes (no time limit)
+      // Otherwise, use 8 days to account for timezone differences
+      const hasCategoryFilter = filters?.categoryId || (filters?.categoryIds && filters.categoryIds.length > 0);
+      
       const whereConditions = [
-        // Always filter to future classes only, within next 8 days (7 days + timezone buffer)
-        or(
-          sql`${classes.startTime} >= NOW() AND ${classes.startTime} < NOW() + INTERVAL '8 days'`,
-          sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
-        ),
+        // Filter to future classes - with time limit unless category is specified
+        hasCategoryFilter
+          ? or(
+              sql`${classes.startTime} >= NOW()`,
+              sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
+            )
+          : or(
+              sql`${classes.startTime} >= NOW() AND ${classes.startTime} < NOW() + INTERVAL '8 days'`,
+              sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
+            ),
         // Exclude deleted classes from public views
         ne(classes.status, 'deleted')
       ];
