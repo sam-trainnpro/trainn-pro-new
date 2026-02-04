@@ -903,6 +903,13 @@ export class DatabaseStorage implements IStorage {
         )
         .where(and(...whereConditions))
         .orderBy(
+          // Prioritize category matches when searching
+          ...(filters?.searchQuery ? [
+            sql`CASE 
+                WHEN LOWER(${classCategories.name}) LIKE LOWER(${'%' + filters.searchQuery + '%'}) THEN 0
+                ELSE 1
+               END`
+          ] : []),
           sql`CASE 
               WHEN ${classes.startTime} IS NOT NULL THEN 0
               ELSE 1
