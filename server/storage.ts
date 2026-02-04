@@ -763,6 +763,7 @@ export class DatabaseStorage implements IStorage {
             sql`LOWER(${classes.city}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
             sql`LOWER(${users.firstName}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
             sql`LOWER(${users.lastName}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
+            sql`LOWER(CONCAT(${users.firstName}, ' ', ${users.lastName})) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
             sql`LOWER(${users.businessName}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
             sql`LOWER(${classCategories.name}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`
           )
