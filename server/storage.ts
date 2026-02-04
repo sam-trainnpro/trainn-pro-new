@@ -706,13 +706,14 @@ export class DatabaseStorage implements IStorage {
   }): Promise<ClassCardDTO[]> {
     try {
       // Build WHERE conditions based on filters
-      // When a category is specified, show all future classes (no time limit)
+      // When a category or search query is specified, show all future classes (no time limit)
       // Otherwise, use 8 days to account for timezone differences
       const hasCategoryFilter = filters?.categoryId || (filters?.categoryIds && filters.categoryIds.length > 0);
+      const hasSearchQuery = !!filters?.searchQuery;
       
       const whereConditions = [
-        // Filter to future classes - with time limit unless category is specified
-        hasCategoryFilter
+        // Filter to future classes - with time limit unless category or search is specified
+        (hasCategoryFilter || hasSearchQuery)
           ? or(
               sql`${classes.startTime} >= NOW()`,
               sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
