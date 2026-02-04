@@ -759,7 +759,12 @@ export class DatabaseStorage implements IStorage {
         whereConditions.push(
           or(
             sql`LOWER(${classes.title}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
-            sql`LOWER(${classes.description}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`
+            sql`LOWER(${classes.description}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
+            sql`LOWER(${classes.city}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
+            sql`LOWER(${users.firstName}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
+            sql`LOWER(${users.lastName}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
+            sql`LOWER(${users.businessName}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`,
+            sql`LOWER(${classCategories.name}) LIKE LOWER(${'%' + filters.searchQuery + '%'})`
           )
         );
       }
