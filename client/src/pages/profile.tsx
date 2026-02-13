@@ -58,6 +58,8 @@ const profileFormSchema = z.object({
   profileImage: z.string().optional(),
   areasOfExpertise: z.array(z.number()).optional(),
   certifications: z.string().optional(),
+  website: z.string().optional(),
+  instagramHandle: z.string().optional(),
 });
 
 const passwordFormSchema = z.object({
@@ -637,6 +639,8 @@ export default function ProfilePage() {
       profileImage: user?.profileImage || "",
       areasOfExpertise: user?.areasOfExpertise || [],
       certifications: user?.certifications || "",
+      website: user?.website || "",
+      instagramHandle: user?.instagramHandle || "",
     },
   });
 
@@ -719,6 +723,8 @@ export default function ProfilePage() {
         phone: data.phone,
         bio: data.bio,
         certifications: data.certifications,
+        website: data.website,
+        instagramHandle: data.instagramHandle,
         areasOfExpertise: selectedExpertise,
         profileImage: profileImageUrl,
       };
@@ -1171,6 +1177,36 @@ export default function ProfilePage() {
                                     />
                                   </FormControl>
                                   <FormDescription>Enter your professional certifications to build trust with clients</FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={profileForm.control}
+                              name="website"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Website (Optional)</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="https://www.yourwebsite.com" />
+                                  </FormControl>
+                                  <FormDescription>Add your website URL so customers can learn more about you</FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={profileForm.control}
+                              name="instagramHandle"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Instagram Handle (Optional)</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="@yourhandle" />
+                                  </FormControl>
+                                  <FormDescription>Add your Instagram handle (e.g. @yourhandle) to connect with customers</FormDescription>
                                   <FormMessage />
                                 </FormItem>
                               )}

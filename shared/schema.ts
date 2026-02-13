@@ -34,6 +34,9 @@ export const users = pgTable("users", {
   receiveNewsletter: boolean("receive_newsletter").default(true), // User preference for weekly newsletter
   // Primary location for map default
   primaryCity: text("primary_city"), // 'san_francisco' or 'los_angeles'
+  // Social / web links
+  website: text("website"),
+  instagramHandle: text("instagram_handle"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
