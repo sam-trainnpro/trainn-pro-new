@@ -18,7 +18,9 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Package
+  Package,
+  Globe,
+  Instagram
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -222,6 +224,33 @@ export default function CoachDetailsPage() {
                     )}
                     
                     {/* Buttons removed as requested */}
+
+                    {(coach.website || coach.instagramHandle) && (
+                      <div className="flex flex-wrap gap-4 mb-6">
+                        {coach.website && (
+                          <a
+                            href={coach.website.startsWith('http') ? coach.website : `https://${coach.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium"
+                          >
+                            <Globe className="h-4 w-4" />
+                            Website
+                          </a>
+                        )}
+                        {coach.instagramHandle && (
+                          <a
+                            href={`https://instagram.com/${coach.instagramHandle.replace(/^@/, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium"
+                          >
+                            <Instagram className="h-4 w-4" />
+                            {coach.instagramHandle.startsWith('@') ? coach.instagramHandle : `@${coach.instagramHandle}`}
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
