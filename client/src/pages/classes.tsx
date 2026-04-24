@@ -273,7 +273,7 @@ export default function ClassesPage() {
         {!mobileSearchOpen && (
           <div className="flex items-center justify-between px-4 py-3">
             <div>
-              <p className="font-semibold text-sm leading-tight">{generateDynamicHeader()}</p>
+              <h1 className="font-bold text-xl leading-tight">{generateDynamicHeader()}</h1>
               {sortedClasses && (
                 <p className="text-xs text-gray-500">{sortedClasses.length} {sortedClasses.length === 1 ? 'class' : 'classes'}</p>
               )}
