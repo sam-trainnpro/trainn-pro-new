@@ -120,15 +120,6 @@ export default function HeroSection() {
               </Link>
             </div>
             
-            {!user && (
-              <div className="sm:order-2">
-                <Link href="/auth?register=true&role=coach">
-                  <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
-                    Become a Provider
-                  </Button>
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       </div>
