@@ -425,43 +425,58 @@ export default function ClassesPage() {
               </div>
             </div>
             
-            {/* Desktop filters summary */}
+            {/* Desktop active filter chips */}
             {(filters.classType || filters.ageGroup || filters.city || filters.outdoors || filters.date || searchParams.category) && (
               <div className="hidden md:flex flex-wrap gap-2 mb-4">
-                {filters.classType && categories && (
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                    Type: {categories.find(c => c.id === Number(filters.classType))?.name || filters.classType}
-                  </div>
-                )}
-                
                 {filters.ageGroup && (
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                    Age: {filters.ageGroup}
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {filters.ageGroup}
+                    <button onClick={() => handleSearch({ ...filters, ageGroup: undefined })} aria-label="Remove age group filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
                 )}
-                
+
+                {filters.classType && categories && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {categories.find(c => c.id === Number(filters.classType))?.name || filters.classType}
+                    <button onClick={() => handleSearch({ ...filters, classType: undefined })} aria-label="Remove class type filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
+                )}
+
                 {filters.city && (
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                    City: {filters.city}
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {filters.city}
+                    <button onClick={() => handleSearch({ ...filters, city: undefined })} aria-label="Remove city filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
                 )}
-                
+
                 {filters.outdoors && (
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
                     Outdoors: {filters.outdoors}
-                  </div>
+                    <button onClick={() => handleSearch({ ...filters, outdoors: undefined })} aria-label="Remove outdoors filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
                 )}
-                
-                {searchParams.category && categories && (
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                    Category: {categories.find(c => c.id === Number(searchParams.category))?.name || 'Selected category'}
-                  </div>
-                )}
-                
+
                 {filters.date && (
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                    Date: {filters.date.toLocaleDateString()}
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {filters.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    <button onClick={() => handleSearch({ ...filters, date: undefined })} aria-label="Remove date filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
+                )}
+
+                {searchParams.category && categories && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {categories.find(c => c.id === Number(searchParams.category))?.name || 'Category'}
+                  </span>
                 )}
               </div>
             )}
