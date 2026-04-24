@@ -50,9 +50,6 @@ export default function HeroSection() {
                   <h1 className="text-3xl sm:text-4xl md:text-6xl font-heading font-bold mb-4 text-white">
                     Activities for the Whole Family
                   </h1>
-                  <p className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto">
-                    Flexible fitness, sports, and creative classes for adults and kids in the San Francisco Bay Area, LA and beyond!
-                  </p>
                 </div>
               </div>
             </div>
