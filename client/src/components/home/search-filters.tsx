@@ -30,6 +30,7 @@ interface SearchFiltersProps {
   onSearch: (filters: SearchFilters) => void;
   showOnlyFutureCategories?: boolean;
   hideFilters?: ('outdoors' | 'date' | 'city')[];
+  currentFilters?: SearchFilters;
 }
 
 export interface SearchFilters {
@@ -44,13 +45,36 @@ export interface SearchFilters {
   longitude?: number | null;
 }
 
-export default function SearchFilters({ onSearch, showOnlyFutureCategories = false, hideFilters = [] }: SearchFiltersProps) {
+export default function SearchFilters({ onSearch, showOnlyFutureCategories = false, hideFilters = [], currentFilters }: SearchFiltersProps) {
   const initialFilters: SearchFilters = {
     query: '',
   };
   
   const [searchParams, setSearchParams] = useState<SearchFilters>(initialFilters);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+
+  // Sync internal state when filters are changed externally (e.g. removing a chip from classes.tsx)
+  useEffect(() => {
+    if (!currentFilters) return;
+    setSearchParams({
+      query: currentFilters.query ?? '',
+      classType: currentFilters.classType,
+      ageGroup: currentFilters.ageGroup,
+      city: currentFilters.city,
+      outdoors: currentFilters.outdoors,
+      date: currentFilters.date,
+      latitude: currentFilters.latitude,
+      longitude: currentFilters.longitude,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentFilters?.query,
+    currentFilters?.classType,
+    currentFilters?.ageGroup,
+    currentFilters?.city,
+    currentFilters?.outdoors,
+    currentFilters?.date,
+  ]);
   
   // Fetch class categories from database - use filtered categories if requested
   const categoriesEndpoint = showOnlyFutureCategories ? '/api/categories/with-future-classes' : '/api/categories';
