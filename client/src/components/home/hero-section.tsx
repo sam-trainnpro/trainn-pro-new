@@ -113,9 +113,9 @@ export default function HeroSection() {
             </div>
             
             <div className="sm:order-1">
-              <Link href="/packages">
+              <Link href="/plans">
                 <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto">
-                  Explore Packages
+                  Explore Plans
                 </Button>
               </Link>
             </div>
