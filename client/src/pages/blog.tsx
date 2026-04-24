@@ -13,15 +13,7 @@ import type { BlogPost } from "@shared/schema";
 export default function BlogPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   
-  // Temporary fallback to prevent crashes
-  let user = null;
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-  } catch (error) {
-    console.log("AuthProvider not available, using fallback");
-  }
+  const { user } = useAuth();
 
   // Fetch published blog posts
   const { data: posts = [], isLoading } = useQuery<BlogPost[]>({
