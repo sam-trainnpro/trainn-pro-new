@@ -384,7 +384,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             {activeFiltersCount > 0 && (
               <Button 
                 variant="outline" 
-                className="min-w-fit flex items-center gap-1 border-dashed"
+                className="md:hidden min-w-fit flex items-center gap-1 border-dashed"
                 onClick={handleClearFilters}
               >
                 <span>Clear Filters</span>
@@ -394,9 +394,9 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             )}
           </div>
           
-          {/* Active filters display */}
+          {/* Active filters display — mobile only (desktop shows chips in classes.tsx) */}
           {activeFiltersCount > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="md:hidden flex flex-wrap gap-2 mt-3">
               {searchParams.query && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   Search: {searchParams.query}
