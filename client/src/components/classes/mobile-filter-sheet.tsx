@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { X, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,15 +63,8 @@ export default function MobileFilterSheet({
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="w-full max-w-sm flex flex-col p-0">
-        <SheetHeader className="flex flex-row items-center justify-between p-4 border-b">
-          <SheetTitle className="text-lg font-semibold">Filter Activities</SheetTitle>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition"
-            aria-label="Close filters"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        <SheetHeader className="px-4 pt-4 pb-4 border-b">
+          <SheetTitle className="text-lg font-semibold text-left">Filter Activities</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
