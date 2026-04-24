@@ -22,7 +22,7 @@ export default function WhyUseTrainn() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-700 leading-relaxed">Build skills, strength, confidence and community through local activities</p>
+                  <p className="text-gray-700 leading-relaxed">Build: skills, strength, confidence and community through local activities</p>
                 </div>
               </div>
               
