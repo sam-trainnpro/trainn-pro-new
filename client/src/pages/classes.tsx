@@ -279,7 +279,7 @@ export default function ClassesPage() {
 
       {/* Desktop search filters — hidden on mobile */}
       <div className="hidden md:block">
-        <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
+        <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} currentFilters={filters} />
       </div>
 
       {/* Mobile search/filter icon bar */}
