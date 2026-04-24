@@ -4,7 +4,10 @@ export default function WhyUseTrainn() {
   return (
     <section className="py-12 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-heading font-bold text-center mb-12">Why Use Trainn</h2>
+        <h2 className="text-2xl md:text-3xl font-heading font-bold text-center mb-4">Why Use Trainn</h2>
+        <p className="text-center text-gray-600 max-w-3xl mx-auto mb-12">
+          Flexible fitness, sports, and creative classes for adults and kids in the San Francisco Bay Area, LA and beyond!
+        </p>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Customers Section */}
