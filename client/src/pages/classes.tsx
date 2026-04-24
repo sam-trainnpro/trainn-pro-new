@@ -262,6 +262,21 @@ export default function ClassesPage() {
       
       <Header />
 
+      {/* Desktop heading — above the search bar, hidden on mobile */}
+      <div className="hidden md:block bg-white pt-6 pb-2 px-8 border-b border-gray-100">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-heading font-bold">
+            {generateDynamicHeader()}
+          </h1>
+          {filters.date && (
+            <p className="text-sm text-muted-foreground flex items-center mt-1">
+              <Calendar className="h-4 w-4 text-primary mr-1" />
+              Showing classes for {filters.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Desktop search filters — hidden on mobile */}
       <div className="hidden md:block">
         <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
@@ -387,26 +402,8 @@ export default function ClassesPage() {
       <main className="flex-grow">
         <section className="py-8 bg-[#F7F7F7]">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div className="hidden md:block">
-                <h1 className="text-2xl md:text-3xl font-heading font-bold">
-                  {generateDynamicHeader()}
-                </h1>
-                {filters.date && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground flex items-center">
-                      <Calendar className="h-4 w-4 text-primary mr-1" />
-                      Showing classes for {filters.date.toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center bg-white rounded-md shadow-sm p-1 md:ml-auto">
+            <div className="flex justify-end mb-6">
+              <div className="flex items-center bg-white rounded-md shadow-sm p-1">
                 <Button 
                   variant={viewMode === "list" ? "default" : "ghost"} 
                   size="sm"
