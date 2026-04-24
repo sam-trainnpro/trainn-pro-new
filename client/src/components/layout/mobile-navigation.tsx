@@ -5,15 +5,7 @@ import { useAuth } from "../../../../hooks/use-auth-simple";
 export default function MobileNavigation() {
   const [location] = useLocation();
   
-  // Temporary fallback to prevent crashes
-  let user = null;
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-  } catch (error) {
-    console.log("AuthProvider not available, using fallback");
-  }
+  const { user } = useAuth();
 
   // Determine if current location matches the booking/calendar route
   const isBookingCalendarActive = user?.role === 'coach' 

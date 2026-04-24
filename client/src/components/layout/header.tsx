@@ -37,17 +37,7 @@ import ReferProviderProviderModal from "../refer-provider-provider-modal";
 export default function Header() {
   const [location] = useLocation();
   
-  // Temporary fallback to prevent crashes
-  let user = null;
-  let logoutMutation = { mutate: (...args: any[]) => {} };
-  
-  try {
-    const auth = useAuth();
-    user = auth.user;
-    logoutMutation = auth.logoutMutation;
-  } catch (error) {
-    console.log("AuthProvider not available, using fallback");
-  }
+  const { user, logoutMutation } = useAuth();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
