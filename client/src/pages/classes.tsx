@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Class, ClassCategory, ClassWithSchedules, ClassCardDTO } from "@shared/schema";
 import { useLocation } from "wouter";
@@ -10,12 +10,14 @@ import SearchFilters, { SearchFilters as SearchFiltersType } from "@/components/
 import ClassCard from "@/components/class/class-card";
 import ClassListItem from "@/components/class/class-list-item";
 import MapView from "@/components/maps/map-view";
+import MobileFilterSheet from "@/components/classes/mobile-filter-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Helmet } from "react-helmet";
-import { ListFilter, Map as MapIcon, List, Calendar, Clock } from "lucide-react";
+import { ListFilter, Map as MapIcon, List, Calendar, Clock, Search, SlidersHorizontal, X } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useSafeAuth } from "../../../hooks/use-auth-safe";
 
 export default function ClassesPage() {
@@ -42,7 +44,24 @@ export default function ClassesPage() {
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
   });
 
-  
+  // Mobile UI state
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [mobileQuery, setMobileQuery] = useState(filters.query || "");
+  const mobileInputRef = useRef<HTMLInputElement>(null);
+
+  // Open mobile search and focus input
+  const handleMobileSearchOpen = () => {
+    setMobileSearchOpen(true);
+    setTimeout(() => mobileInputRef.current?.focus(), 50);
+  };
+
+  const handleMobileSearchSubmit = () => {
+    const newFilters = { ...filters, query: mobileQuery };
+    handleSearch(newFilters);
+    setMobileSearchOpen(false);
+  };
+
   // State to track the current view (list or map)
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
@@ -58,10 +77,19 @@ export default function ClassesPage() {
     searchParams.coachId
   );
 
+  // Count active non-search filters (for mobile badge)
+  const activeFilterCount = [
+    filters.classType,
+    filters.ageGroup,
+    filters.city,
+    filters.outdoors,
+    filters.date,
+    searchParams.category,
+  ].filter(Boolean).length;
+
   // Build query parameters for server-side filtering
   const buildQueryParams = () => {
     const params = new URLSearchParams();
-    // Remove includeSchedules - use consolidated data endpoint
     
     if (filters.query) params.set('q', filters.query);
     if (filters.classType) params.set('type', filters.classType);
@@ -113,6 +141,10 @@ export default function ClassesPage() {
     queryKey: ['/api/categories'],
   });
 
+  // Fetch cities for mobile filter panel
+  const { data: cities } = useQuery<string[]>({
+    queryKey: ['/api/cities'],
+  });
 
   // Sort classes by start time (server already handles filtering)
   const sortedClasses = classes?.slice().sort((a, b) => {
@@ -146,25 +178,18 @@ export default function ClassesPage() {
     let header = "";
     
     if (ageGroup && categoryName && city) {
-      // Full filter: "Kids Soccer Classes in San Francisco"
       header = `${ageGroup} ${categoryName} Classes in ${city}`;
     } else if (ageGroup && categoryName) {
-      // Age + Category: "Kids Soccer Classes"
       header = `${ageGroup} ${categoryName} Classes`;
     } else if (categoryName && city) {
-      // Category + City: "Soccer Classes in San Francisco"
       header = `${categoryName} Classes in ${city}`;
     } else if (ageGroup && city) {
-      // Age + City: "Kids Activities in San Francisco"
       header = `${ageGroup} Activities in ${city}`;
     } else if (categoryName) {
-      // Just Category: "Soccer Classes"
       header = `${categoryName} Classes`;
     } else if (ageGroup) {
-      // Just Age: "Kids Classes"
       header = `${ageGroup} Classes`;
     } else if (city) {
-      // Just City: "Classes in San Francisco"
       header = `Classes in ${city}`;
     }
 
@@ -173,6 +198,7 @@ export default function ClassesPage() {
 
   const handleSearch = (newFilters: SearchFiltersType) => {
     setFilters(newFilters);
+    setMobileQuery(newFilters.query || "");
     
     const queryParams = new URLSearchParams();
     
@@ -210,17 +236,14 @@ export default function ClassesPage() {
       queryParams.set('category', searchParams.category as string);
     }
     
-    const queryString = queryParams.toString();
-    navigate(`/classes${queryString ? `?${queryString}` : ''}`);
+    const qs = queryParams.toString();
+    navigate(`/classes${qs ? `?${qs}` : ''}`);
   };
 
   // Handler for selecting a class on the map
   const handleClassSelect = (classId: number) => {
     navigate(`/classes/${classId}`);
   };
-  
-  // This function has been removed as we now default to today's date
-  // in the search filter component
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -238,14 +261,134 @@ export default function ClassesPage() {
       </Helmet>
       
       <Header />
+
+      {/* Desktop search filters — hidden on mobile */}
+      <div className="hidden md:block">
+        <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
+      </div>
+
+      {/* Mobile search/filter icon bar */}
+      <div className="md:hidden bg-white shadow-sm sticky top-[61px] z-30">
+        {/* Collapsed bar: title + icons */}
+        {!mobileSearchOpen && (
+          <div className="flex items-center justify-between px-4 py-3">
+            <div>
+              <p className="font-semibold text-sm leading-tight">{generateDynamicHeader()}</p>
+              {sortedClasses && (
+                <p className="text-xs text-gray-500">{sortedClasses.length} {sortedClasses.length === 1 ? 'class' : 'classes'}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleMobileSearchOpen}
+                className="p-1.5 text-gray-600 hover:text-primary transition"
+                aria-label="Search"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setMobileFilterOpen(true)}
+                className="relative p-1.5 text-gray-600 hover:text-primary transition"
+                aria-label="Filters"
+              >
+                <SlidersHorizontal className="h-5 w-5" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Expanded search input */}
+        {mobileSearchOpen && (
+          <div className="flex items-center gap-2 px-3 py-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                ref={mobileInputRef}
+                type="text"
+                placeholder="Search classes or coaches…"
+                className="pl-9 pr-4 py-2 h-9 text-sm border-gray-300 w-full"
+                value={mobileQuery}
+                onChange={(e) => setMobileQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleMobileSearchSubmit()}
+              />
+            </div>
+            <Button size="sm" className="shrink-0" onClick={handleMobileSearchSubmit}>
+              Search
+            </Button>
+            <button
+              onClick={() => setMobileSearchOpen(false)}
+              className="p-1 text-gray-500 hover:text-gray-700 shrink-0"
+              aria-label="Close search"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Active filter chips on mobile */}
+        {(filters.query || activeFilterCount > 0) && !mobileSearchOpen && (
+          <div className="flex gap-2 overflow-x-auto px-4 pb-2 hide-scrollbar">
+            {filters.query && (
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                "{filters.query}"
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, query: "" })} />
+              </span>
+            )}
+            {filters.ageGroup && (
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                {filters.ageGroup}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, ageGroup: undefined })} />
+              </span>
+            )}
+            {filters.classType && categories && (
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                {categories.find(c => c.id.toString() === filters.classType)?.name}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, classType: undefined })} />
+              </span>
+            )}
+            {filters.city && (
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                {filters.city}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, city: undefined })} />
+              </span>
+            )}
+            {filters.outdoors && (
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                Outdoors: {filters.outdoors}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, outdoors: undefined })} />
+              </span>
+            )}
+            {filters.date && (
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                {filters.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, date: undefined })} />
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Mobile filter sheet */}
+      <MobileFilterSheet
+        isOpen={mobileFilterOpen}
+        onClose={() => setMobileFilterOpen(false)}
+        currentFilters={filters}
+        onApplyFilters={(newFilters) => handleSearch({ ...newFilters, query: filters.query })}
+        categories={categories}
+        cities={cities}
+        resultCount={sortedClasses?.length}
+      />
       
       <main className="flex-grow">
-        <SearchFilters onSearch={handleSearch} showOnlyFutureCategories={true} />
-        
         <section className="py-8 bg-[#F7F7F7]">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div>
+              <div className="hidden md:block">
                 <h1 className="text-2xl md:text-3xl font-heading font-bold">
                   {generateDynamicHeader()}
                 </h1>
@@ -263,7 +406,7 @@ export default function ClassesPage() {
                 )}
               </div>
               
-              <div className="flex items-center bg-white rounded-md shadow-sm p-1">
+              <div className="flex items-center bg-white rounded-md shadow-sm p-1 md:ml-auto">
                 <Button 
                   variant={viewMode === "list" ? "default" : "ghost"} 
                   size="sm"
@@ -285,9 +428,9 @@ export default function ClassesPage() {
               </div>
             </div>
             
-            {/* Filters summary */}
+            {/* Desktop filters summary */}
             {(filters.classType || filters.ageGroup || filters.city || filters.outdoors || filters.date || searchParams.category) && (
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="hidden md:flex flex-wrap gap-2 mb-4">
                 {filters.classType && categories && (
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
                     Type: {categories.find(c => c.id === Number(filters.classType))?.name || filters.classType}
@@ -338,13 +481,10 @@ export default function ClassesPage() {
                     <div className="divide-y divide-gray-100">
                       {[1, 2, 3, 4, 5, 6].map((i) => (
                         <div key={i} className="p-4 flex flex-col md:flex-row gap-2 md:items-center">
-                          {/* Time and duration column */}
                           <div className="w-32 mr-4">
                             <Skeleton className="h-5 w-20 mb-2" />
                             <Skeleton className="h-4 w-12" />
                           </div>
-                          
-                          {/* Class title and coach info */}
                           <div className="flex-1">
                             <Skeleton className="h-5 w-3/4 mb-2" />
                             <div className="flex items-center">
@@ -352,8 +492,6 @@ export default function ClassesPage() {
                               <Skeleton className="h-4 w-16" />
                             </div>
                           </div>
-                          
-                          {/* Category */}
                           <div className="flex flex-col items-end">
                             <Skeleton className="h-6 w-20 mb-2" />
                             <Skeleton className="h-5 w-12" />
@@ -383,8 +521,6 @@ export default function ClassesPage() {
                   {/* Class List - Takes 2/3 of the space on large screens */}
                   <div className="lg:col-span-2">
                     <div className="bg-white rounded-xl shadow-sm h-full">
-                      
-                      
                       <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
                         {sortedClasses.map((classItem) => (
                           <ClassListItem key={classItem.id} classItem={classItem} />
