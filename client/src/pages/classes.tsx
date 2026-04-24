@@ -402,10 +402,61 @@ export default function ClassesPage() {
       <main className="flex-grow">
         <section className="py-8 bg-[#F7F7F7]">
           <div className="container mx-auto px-4">
-            <div className="flex justify-end mb-6">
-              <div className="flex items-center bg-white rounded-md shadow-sm p-1">
-                <Button 
-                  variant={viewMode === "list" ? "default" : "ghost"} 
+            {/* Combined row: active filter chips (left) + List/Map toggle (right) */}
+            <div className="flex items-center justify-between mb-6 gap-4">
+              {/* Desktop active filter chips */}
+              <div className="hidden md:flex flex-wrap items-center gap-2 flex-1">
+                {filters.ageGroup && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {filters.ageGroup}
+                    <button onClick={() => handleSearch({ ...filters, ageGroup: undefined })} aria-label="Remove age group filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
+                )}
+                {filters.classType && categories && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {categories.find(c => c.id === Number(filters.classType))?.name || filters.classType}
+                    <button onClick={() => handleSearch({ ...filters, classType: undefined })} aria-label="Remove class type filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
+                )}
+                {filters.city && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {filters.city}
+                    <button onClick={() => handleSearch({ ...filters, city: undefined })} aria-label="Remove city filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
+                )}
+                {filters.outdoors && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    Outdoors: {filters.outdoors}
+                    <button onClick={() => handleSearch({ ...filters, outdoors: undefined })} aria-label="Remove outdoors filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
+                )}
+                {filters.date && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {filters.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    <button onClick={() => handleSearch({ ...filters, date: undefined })} aria-label="Remove date filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
+                  </span>
+                )}
+                {searchParams.category && categories && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    {categories.find(c => c.id === Number(searchParams.category))?.name || 'Category'}
+                  </span>
+                )}
+              </div>
+
+              {/* List/Map toggle */}
+              <div className="flex items-center bg-white rounded-md shadow-sm p-1 shrink-0 ml-auto">
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("list")}
                   className="flex items-center gap-1"
@@ -413,8 +464,8 @@ export default function ClassesPage() {
                   <List className="h-4 w-4" />
                   List
                 </Button>
-                <Button 
-                  variant={viewMode === "map" ? "default" : "ghost"} 
+                <Button
+                  variant={viewMode === "map" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("map")}
                   className="flex items-center gap-1"
@@ -424,62 +475,6 @@ export default function ClassesPage() {
                 </Button>
               </div>
             </div>
-            
-            {/* Desktop active filter chips */}
-            {(filters.classType || filters.ageGroup || filters.city || filters.outdoors || filters.date || searchParams.category) && (
-              <div className="hidden md:flex flex-wrap gap-2 mb-4">
-                {filters.ageGroup && (
-                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
-                    {filters.ageGroup}
-                    <button onClick={() => handleSearch({ ...filters, ageGroup: undefined })} aria-label="Remove age group filter">
-                      <X className="h-3.5 w-3.5 hover:opacity-70" />
-                    </button>
-                  </span>
-                )}
-
-                {filters.classType && categories && (
-                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
-                    {categories.find(c => c.id === Number(filters.classType))?.name || filters.classType}
-                    <button onClick={() => handleSearch({ ...filters, classType: undefined })} aria-label="Remove class type filter">
-                      <X className="h-3.5 w-3.5 hover:opacity-70" />
-                    </button>
-                  </span>
-                )}
-
-                {filters.city && (
-                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
-                    {filters.city}
-                    <button onClick={() => handleSearch({ ...filters, city: undefined })} aria-label="Remove city filter">
-                      <X className="h-3.5 w-3.5 hover:opacity-70" />
-                    </button>
-                  </span>
-                )}
-
-                {filters.outdoors && (
-                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
-                    Outdoors: {filters.outdoors}
-                    <button onClick={() => handleSearch({ ...filters, outdoors: undefined })} aria-label="Remove outdoors filter">
-                      <X className="h-3.5 w-3.5 hover:opacity-70" />
-                    </button>
-                  </span>
-                )}
-
-                {filters.date && (
-                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
-                    {filters.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    <button onClick={() => handleSearch({ ...filters, date: undefined })} aria-label="Remove date filter">
-                      <X className="h-3.5 w-3.5 hover:opacity-70" />
-                    </button>
-                  </span>
-                )}
-
-                {searchParams.category && categories && (
-                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
-                    {categories.find(c => c.id === Number(searchParams.category))?.name || 'Category'}
-                  </span>
-                )}
-              </div>
-            )}
             
             {isLoadingClasses ? (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
