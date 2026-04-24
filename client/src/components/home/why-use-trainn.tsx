@@ -73,9 +73,7 @@ export default function WhyUseTrainn() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-700 leading-relaxed">
-                    Easy to use and free platform to handle class scheduling, packages, payment collection and customer engagement
-                  </p>
+                  <p className="text-gray-700 leading-relaxed">Simplify: Easy to use and free platform that handles class scheduling, packages, payment collection and customer engagement</p>
                 </div>
               </div>
               
