@@ -62,9 +62,7 @@ export default function WhyUseTrainn() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-700 leading-relaxed">
-                    Increase income and monthly earning potential
-                  </p>
+                  <p className="text-gray-700 leading-relaxed">Earn: Increase income and monthly earning potential</p>
                 </div>
               </div>
               
