@@ -84,9 +84,7 @@ export default function WhyUseTrainn() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-gray-700 leading-relaxed">
-                    Increase existing class sizes by 20%
-                  </p>
+                  <p className="text-gray-700 leading-relaxed">Grow: Increase existing class sizes by 20+%</p>
                 </div>
               </div>
             </div>
