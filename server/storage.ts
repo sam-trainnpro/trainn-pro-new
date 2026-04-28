@@ -80,6 +80,8 @@ export interface IStorage {
     dateFilter?: Date;
     limit?: number;
     offset?: number;
+    packageClasses?: boolean;
+    targetAge?: number;
   }): Promise<ClassCardDTO[]>;
   getUserClasses(userId: number): Promise<Class[]>;
   getClassesByCategory(categoryId: number): Promise<Class[]>;
