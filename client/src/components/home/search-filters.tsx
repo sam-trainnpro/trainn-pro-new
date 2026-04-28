@@ -45,18 +45,24 @@ export interface SearchFilters {
   longitude?: number | null;
 }
 
-// Detect if a query looks like natural language (more than one word with conversational words)
+// Detect if a query looks like natural language (more than one word with conversational words).
+// Uses word-boundary matching to avoid false positives on substrings (e.g. "in" inside "training").
 function isNaturalLanguageQuery(query: string): boolean {
   const trimmed = query.trim();
   if (!trimmed.includes(' ')) return false; // single word — skip AI
-  const nlIndicators = [
-    'for', 'my', 'year', 'old', 'show', 'find', 'outdoor', 'indoor',
-    'class', 'classes', 'in', 'near', 'at', 'want', 'looking', 'kids',
-    'adults', 'children', 'fitness', 'sport', 'activity', 'activities',
+  const nlPhrases = [
+    'for my', 'year old', 'show me', 'find me', 'looking for',
+    'i want', 'i need', 'outdoor', 'indoor', 'classes', 'activities',
+    'near me', 'in the', 'on the', 'for kids', 'for adults', 'for children',
     'beginner', 'advanced', 'morning', 'evening', 'weekend', 'weekday',
   ];
   const lower = trimmed.toLowerCase();
-  return nlIndicators.some(word => lower.includes(word));
+  // Check for exact word tokens for short words to avoid substring false positives
+  const words = lower.split(/\s+/);
+  const wordSet = new Set(words);
+  const shortWordMatches = ['kids', 'adults', 'fitness', 'sport', 'sports', 'yoga', 'dance'];
+  if (shortWordMatches.some(w => wordSet.has(w))) return true;
+  return nlPhrases.some(phrase => lower.includes(phrase));
 }
 
 export default function SearchFilters({ onSearch, showOnlyFutureCategories = false, hideFilters = [], currentFilters }: SearchFiltersProps) {
