@@ -14,7 +14,7 @@ import MobileFilterSheet from "@/components/classes/mobile-filter-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Helmet } from "react-helmet";
-import { ListFilter, Map as MapIcon, List, Calendar, Clock, Search, SlidersHorizontal, X } from "lucide-react";
+import { ListFilter, Map as MapIcon, List, Calendar, Clock, Search, SlidersHorizontal, X, Sparkles } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,9 @@ export default function ClassesPage() {
     latitude: typeof searchParams.lat === 'string' ? Number(searchParams.lat) : null,
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
   });
+
+  // AI search indicator — true when the last search was AI-interpreted
+  const [aiSearchUsed, setAiSearchUsed] = useState(false);
 
   // Mobile UI state
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -196,8 +199,9 @@ export default function ClassesPage() {
     return header || "Browse All Classes";
   };
 
-  const handleSearch = (newFilters: SearchFiltersType) => {
+  const handleSearch = (newFilters: SearchFiltersType, aiUsed?: boolean) => {
     setFilters(newFilters);
+    setAiSearchUsed(aiUsed === true);
     setMobileQuery(newFilters.query || "");
     
     const queryParams = new URLSearchParams();
@@ -449,6 +453,14 @@ export default function ClassesPage() {
                 {searchParams.category && categories && (
                   <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
                     {categories.find(c => c.id === Number(searchParams.category))?.name || 'Category'}
+                  </span>
+                )}
+
+                {/* AI search indicator — shown when filters were AI-interpreted */}
+                {aiSearchUsed && (
+                  <span className="inline-flex items-center gap-1 text-xs text-violet-600 font-medium bg-violet-50 border border-violet-200 px-2.5 py-1 rounded-full">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    AI search
                   </span>
                 )}
               </div>
