@@ -182,19 +182,22 @@ Available categories (id: name): ${categoryList}
 Available cities: ${cityList}
 Available age groups: Kids, Adults, Both
 
-Return ONLY valid JSON (no markdown, no explanation) with these optional fields:
+IMPORTANT: Return ONLY a raw JSON object. Do NOT use markdown, code fences, backticks, or any explanation. Just the JSON.
+
+Fields (all optional — omit if not relevant):
 {
-  "categoryId": <number from the available categories, omit if unclear>,
-  "ageGroup": <"Kids" | "Adults" | "Both", omit if not mentioned>,
-  "city": <exact city name from available cities, omit if not mentioned or not in list>,
-  "outdoors": <true | false, omit if not mentioned>,
-  "keywords": <remaining search terms not captured by other fields, omit if empty>
+  "categoryId": <number — pick the best matching category id from the list above>,
+  "ageGroup": <"Kids" | "Adults" | "Both" — "for kids", "for children", "6 year old", "toddler" → "Kids"; "for adults" → "Adults">,
+  "city": <exact city name from the available cities list — omit if not mentioned or not in list>,
+  "outdoors": <true | false — omit if not mentioned>,
+  "keywords": <any remaining meaningful search terms not captured above — omit if empty>
 }
 
-Examples:
-- "show me art classes for my 6 year old" → {"categoryId": <art id>, "ageGroup": "Kids"}
-- "outdoor fitness in San Francisco" → {"outdoors": true, "city": "San Francisco", "keywords": "fitness"}
-- "soccer" → {"keywords": "soccer"}`;
+Examples (output only, no backticks):
+"basketball classes for kids" → {"categoryId": 5, "ageGroup": "Kids"}
+"show me art classes for my 6 year old" → {"categoryId": 3, "ageGroup": "Kids"}
+"outdoor fitness in San Francisco" → {"outdoors": true, "city": "San Francisco", "keywords": "fitness"}
+"beginner yoga adults" → {"categoryId": 2, "ageGroup": "Adults", "keywords": "beginner"}`;
 
       const message = await Promise.race([
         client.messages.create({
@@ -208,8 +211,13 @@ Examples:
         ),
       ]);
 
-      const text = message.content[0].type === "text" ? message.content[0].text : "{}";
-      const parsed = JSON.parse(text.trim());
+      const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : "{}";
+      // Strip markdown code fences that Claude sometimes wraps JSON in (```json ... ```)
+      const jsonText = rawText
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+      const parsed = JSON.parse(jsonText);
       return res.json(parsed);
     } catch (error: any) {
       console.error("AI search error:", error);
