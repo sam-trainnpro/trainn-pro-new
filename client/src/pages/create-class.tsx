@@ -92,7 +92,12 @@ const createClassSchema = z.object({
   recurrenceEndType: z.enum(['date', 'count']).optional(),
   recurrenceEndDate: z.date().optional(),
   recurrenceEndCount: z.number().min(1).optional(),
-});
+}).refine((data) => {
+  if (data.minAge != null && data.maxAge != null) {
+    return data.minAge <= data.maxAge;
+  }
+  return true;
+}, { message: "Min age must be less than or equal to max age", path: ["maxAge"] });
 
 // Time slots for the day
 const generateTimeSlots = () => {

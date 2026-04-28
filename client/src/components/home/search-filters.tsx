@@ -90,6 +90,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       date: currentFilters.date,
       latitude: currentFilters.latitude,
       longitude: currentFilters.longitude,
+      targetAge: currentFilters.targetAge,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -99,6 +100,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     currentFilters?.city,
     currentFilters?.outdoors,
     currentFilters?.date,
+    currentFilters?.targetAge,
   ]);
   
   // Fetch class categories from database - use filtered categories if requested

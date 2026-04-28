@@ -239,8 +239,10 @@ Examples (output only, no backticks):
       function parseAgeRange(title: string, description: string): { minAge: number; maxAge: number } | null {
         const text = `${title} ${description}`;
 
+        // separator: hyphen, en-dash, em-dash, or "to"
+        const sep = '(?:-|\u2013|\u2014|to)';
         // "X-Y months" or "X to Y months" → convert floor(months/12)
-        const monthsRange = text.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*months?/i);
+        const monthsRange = text.match(new RegExp(`(\\d+)\\s*${sep}\\s*(\\d+)\\s*months?`, 'i'));
         if (monthsRange) {
           return { minAge: Math.floor(Number(monthsRange[1]) / 12), maxAge: Math.floor(Number(monthsRange[2]) / 12) };
         }
@@ -250,13 +252,13 @@ Examples (output only, no backticks):
           const yrs = Math.floor(Number(singleMonths[1]) / 12);
           return { minAge: 0, maxAge: yrs };
         }
-        // "Ages X-Y" or "ages X to Y"
-        const agesRange = text.match(/ages?\s+(\d+)\s*(?:-|to)\s*(\d+)/i);
+        // "Ages X-Y" or "ages X to Y" (including en/em-dash variants)
+        const agesRange = text.match(new RegExp(`ages?\\s+(\\d+)\\s*${sep}\\s*(\\d+)`, 'i'));
         if (agesRange) {
           return { minAge: Number(agesRange[1]), maxAge: Number(agesRange[2]) };
         }
         // "X-Y year olds" or "X to Y year olds"
-        const yearOldsRange = text.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*year[\s-]?olds?/i);
+        const yearOldsRange = text.match(new RegExp(`(\\d+)\\s*${sep}\\s*(\\d+)\\s*year[\\s-]?olds?`, 'i'));
         if (yearOldsRange) {
           return { minAge: Number(yearOldsRange[1]), maxAge: Number(yearOldsRange[2]) };
         }
@@ -266,11 +268,11 @@ Examples (output only, no backticks):
           const age = Number(singleYearOld[1]);
           return { minAge: age, maxAge: age };
         }
-        // "(X-Y)" numbers in parens that look like age ranges
-        const parenRange = text.match(/\((\d+)\s*-\s*(\d+)\)/);
+        // "(X-Y)" numbers in parens that look like age ranges (including en/em-dash)
+        const parenRange = text.match(new RegExp(`\\((\\d+)\\s*${sep}\\s*(\\d+)\\)`));
         if (parenRange) {
           const lo = Number(parenRange[1]), hi = Number(parenRange[2]);
-          if (lo < 20 && hi < 20) return { minAge: lo, maxAge: hi }; // plausible age range
+          if (lo < 20 && hi < 20) return { minAge: lo, maxAge: hi };
         }
         return null;
       }
