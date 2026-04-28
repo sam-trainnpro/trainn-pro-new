@@ -702,7 +702,8 @@ export class DatabaseStorage implements IStorage {
     coachId?: number;
     searchQuery?: string;
     dateFilter?: Date;
-    packageClasses?: string;
+    packageClasses?: boolean;
+    targetAge?: number;
     limit?: number;
     offset?: number;
   }): Promise<ClassCardDTO[]> {

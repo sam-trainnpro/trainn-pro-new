@@ -231,7 +231,7 @@ Examples (output only, no backticks):
   // One-time admin route to backfill minAge/maxAge from class titles and descriptions
   app.post("/api/admin/backfill-age-ranges", async (req, res) => {
     try {
-      if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
+      if (!req.isAuthenticated() || !req.user || req.user.role !== 'admin') {
         return res.status(403).json({ error: "Admin only" });
       }
 

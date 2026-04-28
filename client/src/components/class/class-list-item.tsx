@@ -186,7 +186,7 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
                 let label = '';
                 if (minAge != null && maxAge != null) label = `Ages ${minAge}–${maxAge}`;
                 else if (minAge != null) label = `Ages ${minAge}+`;
-                else if (maxAge != null) label = `Up to ${maxAge}`;
+                else if (maxAge != null) label = `Up to age ${maxAge}`;
                 return <Badge variant="secondary" className="md:hidden text-xs">{label}</Badge>;
               })()}
             </div>
