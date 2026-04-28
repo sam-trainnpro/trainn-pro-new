@@ -78,10 +78,10 @@ export interface IStorage {
     coachId?: number;
     searchQuery?: string;
     dateFilter?: Date;
+    packageClasses?: string;
+    targetAge?: number;
     limit?: number;
     offset?: number;
-    packageClasses?: boolean;
-    targetAge?: number;
   }): Promise<ClassCardDTO[]>;
   getUserClasses(userId: number): Promise<Class[]>;
   getClassesByCategory(categoryId: number): Promise<Class[]>;
@@ -702,7 +702,7 @@ export class DatabaseStorage implements IStorage {
     coachId?: number;
     searchQuery?: string;
     dateFilter?: Date;
-    packageClasses?: boolean;
+    packageClasses?: string;
     targetAge?: number;
     limit?: number;
     offset?: number;
