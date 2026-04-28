@@ -132,6 +132,8 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
 
     if (query && isNaturalLanguageQuery(query)) {
       setIsAiSearching(true);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
       try {
         const response = await fetch('/api/search/ai', {
           method: 'POST',
@@ -141,7 +143,9 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             categories: categories?.map(c => ({ id: c.id, name: c.name })) ?? [],
             cities: cities ?? [],
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
         const result = await response.json();
 
         if (!result.fallback) {
@@ -162,7 +166,8 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
           return;
         }
       } catch {
-        // Fall through to regular keyword search
+        // Timeout or error — fall through to regular keyword search
+        clearTimeout(timeout);
       }
       setIsAiSearching(false);
     }
