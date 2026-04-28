@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Filter, X, RefreshCw, ChevronDown } from 'lucide-react';
+import { Search, MapPin, Calendar, Filter, X, RefreshCw, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -45,6 +45,20 @@ export interface SearchFilters {
   longitude?: number | null;
 }
 
+// Detect if a query looks like natural language (more than one word with conversational words)
+function isNaturalLanguageQuery(query: string): boolean {
+  const trimmed = query.trim();
+  if (!trimmed.includes(' ')) return false; // single word — skip AI
+  const nlIndicators = [
+    'for', 'my', 'year', 'old', 'show', 'find', 'outdoor', 'indoor',
+    'class', 'classes', 'in', 'near', 'at', 'want', 'looking', 'kids',
+    'adults', 'children', 'fitness', 'sport', 'activity', 'activities',
+    'beginner', 'advanced', 'morning', 'evening', 'weekend', 'weekday',
+  ];
+  const lower = trimmed.toLowerCase();
+  return nlIndicators.some(word => lower.includes(word));
+}
+
 export default function SearchFilters({ onSearch, showOnlyFutureCategories = false, hideFilters = [], currentFilters }: SearchFiltersProps) {
   const initialFilters: SearchFilters = {
     query: '',
@@ -52,6 +66,8 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
   
   const [searchParams, setSearchParams] = useState<SearchFilters>(initialFilters);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiSearchUsed, setAiSearchUsed] = useState(false);
 
   // Sync internal state when filters are changed externally (e.g. removing a chip from classes.tsx)
   useEffect(() => {
@@ -66,6 +82,8 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       latitude: currentFilters.latitude,
       longitude: currentFilters.longitude,
     });
+    // If user changed a filter manually, clear AI indicator
+    setAiSearchUsed(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentFilters?.query,
@@ -110,11 +128,53 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     });
   };
   
-  const handleSearch = () => {
+  const handleSearch = async () => {
+    const query = searchParams.query?.trim() || '';
+
+    if (query && isNaturalLanguageQuery(query)) {
+      setIsAiSearching(true);
+      try {
+        const response = await fetch('/api/search/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query,
+            categories: categories?.map(c => ({ id: c.id, name: c.name })) ?? [],
+            cities: cities ?? [],
+          }),
+        });
+        const result = await response.json();
+
+        if (!result.fallback) {
+          // Build enriched filters from AI result
+          const aiFilters: SearchFilters = {
+            ...searchParams,
+            query: result.keywords || '',
+            classType: result.categoryId ? String(result.categoryId) : searchParams.classType,
+            ageGroup: result.ageGroup || searchParams.ageGroup,
+            city: result.city || searchParams.city,
+            outdoors: result.outdoors === true ? 'Yes' : result.outdoors === false ? 'No' : searchParams.outdoors,
+            latitude: null,
+            longitude: null,
+          };
+          setSearchParams(aiFilters);
+          setAiSearchUsed(true);
+          onSearch(aiFilters);
+          setIsAiSearching(false);
+          return;
+        }
+      } catch {
+        // Fall through to regular keyword search
+      }
+      setIsAiSearching(false);
+    }
+
+    // Plain keyword search (no AI, or fallback)
+    setAiSearchUsed(false);
     onSearch({
       ...searchParams,
       latitude: null,
-      longitude: null
+      longitude: null,
     });
   };
   
@@ -145,6 +205,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       classType: value
     };
     setSearchParams(newParams);
+    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
@@ -158,6 +219,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       ageGroup: value
     };
     setSearchParams(newParams);
+    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
@@ -171,6 +233,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       city: value
     };
     setSearchParams(newParams);
+    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
@@ -184,6 +247,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       outdoors: value
     };
     setSearchParams(newParams);
+    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
@@ -194,6 +258,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
   // Reset all filters to initial state
   const handleClearFilters = () => {
     setSearchParams(initialFilters);
+    setAiSearchUsed(false);
     onSearch({
       ...initialFilters,
       latitude: null,
@@ -238,7 +303,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input 
               type="text" 
-              placeholder="Search for classes or coaches" 
+              placeholder='Try "outdoor fitness in San Francisco" or "art classes for kids"' 
               className="w-full pl-10 pr-4 py-3 border-gray-300"
               value={searchParams.query}
               onChange={handleInputChange}
@@ -401,9 +466,23 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
               </DropdownMenu>
             )}
             
-            <Button className="min-w-fit pl-[8px] pr-[8px]" onClick={handleSearch}>
-              Search
+            <Button className="min-w-fit pl-[8px] pr-[8px]" onClick={handleSearch} disabled={isAiSearching}>
+              {isAiSearching ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Searching…
+                </span>
+              ) : (
+                'Search'
+              )}
             </Button>
+
+            {aiSearchUsed && (
+              <span className="flex items-center gap-1 text-xs text-violet-600 font-medium self-center whitespace-nowrap px-1">
+                <Sparkles className="h-3.5 w-3.5" />
+                AI search
+              </span>
+            )}
             
             {activeFiltersCount > 0 && (
               <Button 

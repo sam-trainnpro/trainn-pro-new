@@ -160,6 +160,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use('/uploads', express.static(uploadsDir));
   }
 
+  // AI Natural Language Search endpoint (public, no auth required)
+  app.post("/api/search/ai", async (req, res) => {
+    try {
+      const { query, categories, cities } = req.body;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "query is required" });
+      }
+
+      const Anthropic = (await import("@anthropic-ai/sdk")).default;
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+      const categoryList = Array.isArray(categories)
+        ? categories.map((c: { id: number; name: string }) => `${c.id}: ${c.name}`).join(", ")
+        : "";
+      const cityList = Array.isArray(cities) ? cities.join(", ") : "";
+
+      const systemPrompt = `You are a search intent parser for a fitness and activities marketplace. Extract structured filters from the user's natural language query.
+
+Available categories (id: name): ${categoryList}
+Available cities: ${cityList}
+Available age groups: Kids, Adults, Both
+
+Return ONLY valid JSON (no markdown, no explanation) with these optional fields:
+{
+  "categoryId": <number from the available categories, omit if unclear>,
+  "ageGroup": <"Kids" | "Adults" | "Both", omit if not mentioned>,
+  "city": <exact city name from available cities, omit if not mentioned or not in list>,
+  "outdoors": <true | false, omit if not mentioned>,
+  "keywords": <remaining search terms not captured by other fields, omit if empty>
+}
+
+Examples:
+- "show me art classes for my 6 year old" → {"categoryId": <art id>, "ageGroup": "Kids"}
+- "outdoor fitness in San Francisco" → {"outdoors": true, "city": "San Francisco", "keywords": "fitness"}
+- "soccer" → {"keywords": "soccer"}`;
+
+      const message = await client.messages.create({
+        model: "claude-haiku-4-5",
+        max_tokens: 256,
+        messages: [{ role: "user", content: query }],
+        system: systemPrompt,
+      });
+
+      const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+      const parsed = JSON.parse(text.trim());
+      return res.json(parsed);
+    } catch (error: any) {
+      console.error("AI search error:", error);
+      // Graceful fallback — treat the query as plain keyword search
+      return res.json({ fallback: true, keywords: req.body?.query || "" });
+    }
+  });
+
   // Public rating statistics endpoints (before authentication)
   app.get("/api/reviews/class/:classId/stats", async (req, res) => {
     try {
