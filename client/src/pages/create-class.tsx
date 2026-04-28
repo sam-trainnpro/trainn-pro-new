@@ -965,51 +965,56 @@ export default function CreateClassPage() {
                       )}
                     />
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="minAge"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Min Age</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={0}
-                                max={120}
-                                placeholder="e.g. 3"
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormDescription>In years — use 0 for under 1</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="maxAge"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Max Age</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={0}
-                                max={120}
-                                placeholder="e.g. 7"
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                              />
-                            </FormControl>
-                            <FormDescription>Optional age range</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="minAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Min Age</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={120}
+                                  placeholder="e.g. 3"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription>In years — use 0 for under 1</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="maxAge"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Max Age</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={120}
+                                  placeholder="e.g. 12"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormDescription>Leave blank for no upper limit</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Age range helps customers find the right class for their child. Leave both blank if there is no age restriction.
+                      </p>
                     </div>
 
                     <FormField

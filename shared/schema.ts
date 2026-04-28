@@ -28,8 +28,8 @@ export const users = pgTable("users", {
   authMethod: text("auth_method").notNull().default("password"), // 'password', 'google', or 'both'
   googleProfilePicture: text("google_profile_picture"),
   // Referral system
-  referralCode: text("referral_code").unique(), // Unique referral code for each user
-  providerReferralCode: text("provider_referral_code").unique(), // Unique provider referral code for each user
+  referralCode: text("referral_code").unique("users_referral_code_key"), // Unique referral code for each user
+  providerReferralCode: text("provider_referral_code").unique("users_provider_referral_code_key"), // Unique provider referral code for each user
   // Email preferences
   receiveNewsletter: boolean("receive_newsletter").default(true), // User preference for weekly newsletter
   // Primary location for map default
@@ -326,7 +326,7 @@ export type ClassLike = typeof classLikes.$inferSelect;
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  token: text("token").notNull().unique(),
+  token: text("token").notNull().unique("password_reset_tokens_token_key"),
   expiresAt: timestamp("expires_at").notNull(),
   usedAt: timestamp("used_at"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -365,7 +365,7 @@ export const blogPosts = pgTable("blog_posts", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   excerpt: text("excerpt"),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull().unique("blog_posts_slug_key"),
   featuredImage: text("featured_image"),
   authorId: integer("author_id").notNull(),
   status: text("status").notNull().default("draft"), // draft, published, archived
@@ -424,7 +424,7 @@ export type ScheduledPayout = typeof scheduledPayouts.$inferSelect;
 // Promo Codes
 export const promoCodes = pgTable("promo_codes", {
   id: serial("id").primaryKey(),
-  code: text("code").notNull().unique(), // The actual promo code (e.g., "WELCOME10")
+  code: text("code").notNull().unique("promo_codes_code_key"), // The actual promo code (e.g., "WELCOME10")
   name: text("name").notNull(), // Display name for admin purposes
   description: text("description"), // Optional description
   discountType: text("discount_type").notNull(), // "percentage" or "fixed"
@@ -507,7 +507,7 @@ export type BookingSubsidy = typeof bookingSubsidies.$inferSelect;
 // User Commission Tiers (VIP/Partner/Influencer rates)
 export const userCommissionTiers = pgTable("user_commission_tiers", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().unique(),
+  userId: integer("user_id").notNull().unique("user_commission_tiers_user_id_key"),
   tierName: text("tier_name").notNull(), // "VIP", "Partner", "Influencer", etc.
   commissionRate: integer("commission_rate").notNull(), // Custom commission rate (0-100)
   isActive: boolean("is_active").notNull().default(true),
@@ -872,7 +872,7 @@ export type SubscriptionUsage = typeof subscriptionUsage.$inferSelect;
 // Email Reminder Tracking - for production idempotency
 export const emailReminderTracking = pgTable("email_reminder_tracking", {
   id: serial("id").primaryKey(),
-  processType: text("process_type").notNull().unique(), // 'daily_class_reminders' 
+  processType: text("process_type").notNull().unique("email_reminder_tracking_process_type_key"), // 'daily_class_reminders' 
   lastProcessedDate: text("last_processed_date").notNull(), // YYYY-MM-DD in PT
   lastProcessedAt: timestamp("last_processed_at").notNull(), // UTC timestamp when process ran
   updatedAt: timestamp("updated_at").defaultNow(),
