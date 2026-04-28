@@ -123,6 +123,9 @@ export const classes = pgTable("classes", {
   status: text("status").notNull().default("active"), // 'active', 'cancelled'
   // Admin override to mark class as full (triggers waitlist functionality)
   markedFull: boolean("marked_full").default(false),
+  // Precise age range in whole years (0 = under 1 year old)
+  minAge: integer("min_age"),
+  maxAge: integer("max_age"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -159,6 +162,8 @@ export const insertClassSchema = createInsertSchema(classes).pick({
   outdoors: true,
   status: true,
   markedFull: true,
+  minAge: true,
+  maxAge: true,
 });
 
 export type InsertClass = z.infer<typeof insertClassSchema>;
@@ -200,6 +205,8 @@ export interface ClassCardDTO {
   recurringSeriesId: string | null;
   ageGroup: string;
   outdoors: boolean;
+  minAge: number | null;
+  maxAge: number | null;
   createdAt: Date | null;
   
   // Coach information (to eliminate /api/coaches/{id} calls)

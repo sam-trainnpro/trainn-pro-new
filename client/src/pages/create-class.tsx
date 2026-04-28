@@ -81,6 +81,8 @@ const createClassSchema = z.object({
   toFindUs: z.string().optional(),
   image: z.string().optional(),
   ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
+  minAge: z.coerce.number().int().min(0, "Min age must be 0 or greater").max(120).optional(),
+  maxAge: z.coerce.number().int().min(0, "Max age must be 0 or greater").max(120).optional(),
   outdoors: z.boolean().default(false),
   isRecurring: z.boolean().default(false),
   // Recurrence fields
@@ -261,6 +263,8 @@ export default function CreateClassPage() {
       toFindUs: "",
       image: "",
       ageGroup: "Adults",
+      minAge: undefined,
+      maxAge: undefined,
       outdoors: false,
       isRecurring: false,
       recurrenceType: undefined,
@@ -321,6 +325,8 @@ export default function CreateClassPage() {
         toFindUs: existingClass.toFindUs || "",
         image: existingClass.image || "",
         ageGroup: existingClass.ageGroup || "Adults",
+        minAge: (existingClass as any).minAge ?? undefined,
+        maxAge: (existingClass as any).maxAge ?? undefined,
         outdoors: existingClass.outdoors || false,
         isRecurring: existingClass.isRecurring || false,
       });
@@ -392,6 +398,8 @@ export default function CreateClassPage() {
         toFindUs: duplicateClass.toFindUs || "",
         image: duplicateClass.image || "",
         ageGroup: duplicateClass.ageGroup || "Adults",
+        minAge: (duplicateClass as any).minAge ?? undefined,
+        maxAge: (duplicateClass as any).maxAge ?? undefined,
         outdoors: duplicateClass.outdoors || false,
         isRecurring: false, // Reset recurring to false for duplicates
       });
@@ -952,6 +960,53 @@ export default function CreateClassPage() {
                       )}
                     />
                     
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="minAge"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Min Age</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={120}
+                                placeholder="e.g. 3"
+                                {...field}
+                                value={field.value ?? ''}
+                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>In years — use 0 for under 1</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="maxAge"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Age</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={120}
+                                placeholder="e.g. 7"
+                                {...field}
+                                value={field.value ?? ''}
+                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>Optional age range</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="outdoors"

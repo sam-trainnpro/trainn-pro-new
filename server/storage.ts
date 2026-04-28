@@ -817,6 +817,18 @@ export class DatabaseStorage implements IStorage {
         whereConditions.push(or(...packageConditions));
       }
 
+      if (filters?.targetAge !== undefined) {
+        // Only return classes that have an age range set AND it includes the target age
+        whereConditions.push(
+          and(
+            sql`${classes.minAge} IS NOT NULL`,
+            sql`${classes.maxAge} IS NOT NULL`,
+            sql`${classes.minAge} <= ${filters.targetAge}`,
+            sql`${classes.maxAge} >= ${filters.targetAge}`
+          )
+        );
+      }
+
       // Single query that joins all necessary tables to eliminate N+1 queries
       let query = db
         .select({
@@ -839,6 +851,8 @@ export class DatabaseStorage implements IStorage {
           ageGroup: classes.ageGroup,
           outdoors: classes.outdoors,
           markedFull: classes.markedFull,
+          minAge: classes.minAge,
+          maxAge: classes.maxAge,
           createdAt: classes.createdAt,
           // Coach fields
           coachId: classes.coachId,
@@ -949,6 +963,8 @@ export class DatabaseStorage implements IStorage {
         recurringSeriesId: row.recurringSeriesId,
         ageGroup: row.ageGroup,
         outdoors: row.outdoors ?? false,
+        minAge: row.minAge ?? null,
+        maxAge: row.maxAge ?? null,
         createdAt: row.createdAt,
         coach: {
           id: row.coachId,
