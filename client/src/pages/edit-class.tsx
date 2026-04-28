@@ -49,6 +49,8 @@ const editClassSchema = z.object({
   longitude: z.number().optional(),
   image: z.string().optional().nullable(),
   ageGroup: z.enum(['Kids', 'Adults', 'Both']).default('Adults'),
+  minAge: z.coerce.number().int().min(0, "Min age must be 0 or greater").max(120).optional(),
+  maxAge: z.coerce.number().int().min(0, "Max age must be 0 or greater").max(120).optional(),
   outdoors: z.boolean().default(false),
   markedFull: z.boolean().default(false),
   classDate: z.date(),
@@ -214,6 +216,8 @@ export default function EditClassPage() {
         longitude: classData.longitude || 0,
         image: classData.image || "",
         ageGroup: (classData.ageGroup as "Kids" | "Adults" | "Both") || "Adults",
+        minAge: classData.minAge ?? undefined,
+        maxAge: classData.maxAge ?? undefined,
         outdoors: classData.outdoors || false,
         markedFull: classData.markedFull || false,
         classDate: classDate,
@@ -292,6 +296,8 @@ export default function EditClassPage() {
         latitude: data.formData.latitude,
         longitude: data.formData.longitude,
         ageGroup: data.formData.ageGroup,
+        minAge: data.formData.minAge ?? null,
+        maxAge: data.formData.maxAge ?? null,
         outdoors: data.formData.outdoors,
         markedFull: data.formData.markedFull,
         startTime: startDateTime.toISOString(),
@@ -560,6 +566,53 @@ export default function EditClassPage() {
                       )}
                     />
                     
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="minAge"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Min Age</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={120}
+                                placeholder="e.g. 3"
+                                {...field}
+                                value={field.value ?? ''}
+                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>In years — use 0 for under 1</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="maxAge"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Age</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={120}
+                                placeholder="e.g. 7"
+                                {...field}
+                                value={field.value ?? ''}
+                                onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormDescription>Optional age range</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="outdoors"

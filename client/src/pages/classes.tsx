@@ -91,6 +91,7 @@ export default function ClassesPage() {
             outdoors: result.outdoors === true ? 'Yes' : result.outdoors === false ? 'No' : filters.outdoors,
             latitude: null,
             longitude: null,
+            targetAge: result.targetAge != null ? Number(result.targetAge) : null,
           };
           setIsAiSearchingMobile(false);
           setMobileSearchOpen(false);
@@ -119,6 +120,7 @@ export default function ClassesPage() {
     filters.city || 
     filters.outdoors || 
     filters.date ||
+    filters.targetAge != null ||
     searchParams.category ||
     searchParams.coachId
   );
@@ -130,8 +132,9 @@ export default function ClassesPage() {
     filters.city,
     filters.outdoors,
     filters.date,
+    filters.targetAge != null ? filters.targetAge : undefined,
     searchParams.category,
-  ].filter(Boolean).length;
+  ].filter(v => v !== undefined && v !== null && v !== false && v !== '').length;
 
   // Build query parameters for server-side filtering
   const buildQueryParams = () => {
@@ -147,6 +150,7 @@ export default function ClassesPage() {
       params.set('lat', filters.latitude.toString());
       params.set('lng', filters.longitude.toString());
     }
+    if (filters.targetAge != null) params.set('targetAge', filters.targetAge.toString());
     
     // Handle URL-based filters
     const categoryParam = searchParams.category as string;
@@ -440,6 +444,12 @@ export default function ClassesPage() {
                 <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, date: undefined })} />
               </span>
             )}
+            {filters.targetAge != null && (
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                Age {filters.targetAge}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, targetAge: null })} />
+              </span>
+            )}
             {/* AI search indicator — mobile */}
             {aiSearchUsed && (
               <span className="inline-flex items-center gap-1 text-xs text-violet-600 font-medium bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
@@ -512,6 +522,14 @@ export default function ClassesPage() {
                 {searchParams.category && categories && (
                   <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
                     {categories.find(c => c.id === Number(searchParams.category))?.name || 'Category'}
+                  </span>
+                )}
+                {filters.targetAge != null && (
+                  <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
+                    Age {filters.targetAge}
+                    <button onClick={() => handleSearch({ ...filters, targetAge: null })} aria-label="Remove age filter">
+                      <X className="h-3.5 w-3.5 hover:opacity-70" />
+                    </button>
                   </span>
                 )}
 

@@ -5,7 +5,7 @@ import passport from "passport";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { format, toZonedTime, fromZonedTime } from 'date-fns-tz';
-import { db } from "./db";
+import { db, pool } from "./db";
 import { classes, users } from "../shared/schema";
 
 // Map US states to their IANA timezone identifiers
@@ -190,12 +190,14 @@ Fields (all optional — omit if not relevant):
   "ageGroup": <"Kids" | "Adults" | "Both" — "for kids", "for children", "6 year old", "toddler" → "Kids"; "for adults" → "Adults">,
   "city": <exact city name from the available cities list — omit if not mentioned or not in list>,
   "outdoors": <true | false — omit if not mentioned>,
-  "keywords": <any remaining meaningful search terms not captured above — omit if empty>
+  "keywords": <any remaining meaningful search terms not captured above — omit if empty>,
+  "targetAge": <integer in whole years — extract ONLY when a specific age is given, e.g. "6 year old" → 6, "18 month old" → 1, "2.5 year old" → 2. Omit entirely when only a general group is mentioned like "for kids" or "for adults">
 }
 
 Examples (output only, no backticks):
 "basketball classes for kids" → {"categoryId": 5, "ageGroup": "Kids"}
-"show me art classes for my 6 year old" → {"categoryId": 3, "ageGroup": "Kids"}
+"show me basketball for my 6 year old" → {"categoryId": 5, "ageGroup": "Kids", "targetAge": 6}
+"art classes for my 18 month old" → {"categoryId": 3, "ageGroup": "Kids", "targetAge": 1}
 "outdoor fitness in San Francisco" → {"outdoors": true, "city": "San Francisco", "keywords": "fitness"}
 "beginner yoga adults" → {"categoryId": 2, "ageGroup": "Adults", "keywords": "beginner"}`;
 
@@ -223,6 +225,77 @@ Examples (output only, no backticks):
       console.error("AI search error:", error);
       // Graceful fallback — treat the query as plain keyword search
       return res.json({ fallback: true, keywords: req.body?.query || "" });
+    }
+  });
+
+  // One-time admin route to backfill minAge/maxAge from class titles and descriptions
+  app.post("/api/admin/backfill-age-ranges", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
+        return res.status(403).json({ error: "Admin only" });
+      }
+
+      // Regex patterns to extract age ranges (all in years, months converted)
+      function parseAgeRange(title: string, description: string): { minAge: number; maxAge: number } | null {
+        const text = `${title} ${description}`;
+
+        // "X-Y months" or "X to Y months" → convert floor(months/12)
+        const monthsRange = text.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*months?/i);
+        if (monthsRange) {
+          return { minAge: Math.floor(Number(monthsRange[1]) / 12), maxAge: Math.floor(Number(monthsRange[2]) / 12) };
+        }
+        // "X months" (single) → 0 to floor(X/12)
+        const singleMonths = text.match(/(\d+)\s*months?/i);
+        if (singleMonths) {
+          const yrs = Math.floor(Number(singleMonths[1]) / 12);
+          return { minAge: 0, maxAge: yrs };
+        }
+        // "Ages X-Y" or "ages X to Y"
+        const agesRange = text.match(/ages?\s+(\d+)\s*(?:-|to)\s*(\d+)/i);
+        if (agesRange) {
+          return { minAge: Number(agesRange[1]), maxAge: Number(agesRange[2]) };
+        }
+        // "X-Y year olds" or "X to Y year olds"
+        const yearOldsRange = text.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*year[\s-]?olds?/i);
+        if (yearOldsRange) {
+          return { minAge: Number(yearOldsRange[1]), maxAge: Number(yearOldsRange[2]) };
+        }
+        // "X year old" (single, e.g., title says "5 year old class")
+        const singleYearOld = text.match(/(\d+)\s*year[\s-]?old/i);
+        if (singleYearOld) {
+          const age = Number(singleYearOld[1]);
+          return { minAge: age, maxAge: age };
+        }
+        // "(X-Y)" numbers in parens that look like age ranges
+        const parenRange = text.match(/\((\d+)\s*-\s*(\d+)\)/);
+        if (parenRange) {
+          const lo = Number(parenRange[1]), hi = Number(parenRange[2]);
+          if (lo < 20 && hi < 20) return { minAge: lo, maxAge: hi }; // plausible age range
+        }
+        return null;
+      }
+
+      const { rows } = await pool.query(`SELECT id, title, description FROM classes WHERE status != 'deleted'`);
+      let updated = 0;
+      let skipped = 0;
+
+      for (const row of rows) {
+        const parsed = parseAgeRange(row.title, row.description || '');
+        if (parsed) {
+          await pool.query(
+            `UPDATE classes SET min_age = $1, max_age = $2 WHERE id = $3`,
+            [parsed.minAge, parsed.maxAge, row.id]
+          );
+          updated++;
+        } else {
+          skipped++;
+        }
+      }
+
+      return res.json({ success: true, updated, skipped, total: rows.length });
+    } catch (error: any) {
+      console.error("Backfill error:", error);
+      return res.status(500).json({ error: error.message });
     }
   });
 
@@ -590,6 +663,7 @@ Examples (output only, no backticks):
           searchQuery: req.query.q as string,
           dateFilter: req.query.date ? new Date(req.query.date as string) : undefined,
           packageClasses: req.query.packageClasses as string,
+          targetAge: req.query.targetAge ? Number(req.query.targetAge) : undefined,
           limit: 500, // Increased limit since we filter by 7 days
           offset: 0
         };

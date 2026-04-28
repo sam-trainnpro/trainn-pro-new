@@ -43,6 +43,7 @@ export interface SearchFilters {
   outdoors?: string;
   latitude?: number | null;
   longitude?: number | null;
+  targetAge?: number | null;
 }
 
 // Detect if a query looks like natural language (more than one word with conversational words).
@@ -166,6 +167,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             outdoors: result.outdoors === true ? 'Yes' : result.outdoors === false ? 'No' : searchParams.outdoors,
             latitude: null,
             longitude: null,
+            targetAge: result.targetAge != null ? Number(result.targetAge) : null,
           };
           setSearchParams(aiFilters);
           onSearch(aiFilters, true); // pass aiUsed=true to parent

@@ -200,10 +200,15 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
         {/* Category and spots left column */}
         <div className="flex flex-col items-end">
           {/* Category badge shown on desktop only */}
-          <div className="hidden md:flex gap-1 mb-1">
+          <div className="hidden md:flex flex-wrap gap-1 mb-1">
             <Badge variant="outline">
               {finalIsLoadingCategory ? 'Loading...' : finalCategory?.name || 'Fitness'}
             </Badge>
+            {(classItem as any).minAge != null && (classItem as any).maxAge != null && (
+              <Badge variant="secondary" className="text-xs">
+                Ages {(classItem as any).minAge}–{(classItem as any).maxAge}
+              </Badge>
+            )}
           </div>
           
           {/* Price shown on desktop only */}
