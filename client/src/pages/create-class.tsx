@@ -6,7 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { useAuth } from "../../../hooks/use-auth-simple";
-import { ClassCategory } from "@shared/schema";
+import { ClassCategory, Class } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation as useUserLocation } from "../../../hooks/use-location";
 import PlacesAutocomplete from "@/components/maps/places-autocomplete";
@@ -166,9 +166,9 @@ export default function CreateClassPage() {
   const isDuplicating = !!duplicateClassId;
 
   // Fetch class data for editing
-  const { data: existingClass, isLoading: loadingClass } = useQuery({
+  const { data: existingClass, isLoading: loadingClass } = useQuery<Class | null>({
     queryKey: ['/api/classes', editClassId],
-    queryFn: ({ queryKey }) => {
+    queryFn: () => {
       if (!editClassId) return null;
       return fetch(`/api/classes/${editClassId}`).then(res => res.json());
     },
@@ -176,9 +176,9 @@ export default function CreateClassPage() {
   });
 
   // Fetch class data for duplication
-  const { data: duplicateClass, isLoading: loadingDuplicate } = useQuery({
+  const { data: duplicateClass, isLoading: loadingDuplicate } = useQuery<Class | null>({
     queryKey: ['/api/classes', duplicateClassId],
-    queryFn: ({ queryKey }) => {
+    queryFn: () => {
       if (!duplicateClassId) return null;
       return fetch(`/api/classes/${duplicateClassId}`).then(res => res.json());
     },
@@ -330,8 +330,8 @@ export default function CreateClassPage() {
         toFindUs: existingClass.toFindUs || "",
         image: existingClass.image || "",
         ageGroup: existingClass.ageGroup || "Adults",
-        minAge: (existingClass as any).minAge ?? undefined,
-        maxAge: (existingClass as any).maxAge ?? undefined,
+        minAge: existingClass.minAge ?? undefined,
+        maxAge: existingClass.maxAge ?? undefined,
         outdoors: existingClass.outdoors || false,
         isRecurring: existingClass.isRecurring || false,
       });
@@ -403,8 +403,8 @@ export default function CreateClassPage() {
         toFindUs: duplicateClass.toFindUs || "",
         image: duplicateClass.image || "",
         ageGroup: duplicateClass.ageGroup || "Adults",
-        minAge: (duplicateClass as any).minAge ?? undefined,
-        maxAge: (duplicateClass as any).maxAge ?? undefined,
+        minAge: duplicateClass.minAge ?? undefined,
+        maxAge: duplicateClass.maxAge ?? undefined,
         outdoors: duplicateClass.outdoors || false,
         isRecurring: false, // Reset recurring to false for duplicates
       });

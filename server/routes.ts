@@ -1307,6 +1307,8 @@ Examples (output only, no backticks):
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
       if (req.body.toFindUs !== undefined) updateData.toFindUs = req.body.toFindUs ? String(req.body.toFindUs) : null;
       if (req.body.outdoors !== undefined) updateData.outdoors = Boolean(req.body.outdoors);
+      updateData.minAge = (req.body.minAge !== undefined && req.body.minAge !== null && req.body.minAge !== '') ? parseInt(req.body.minAge) : null;
+      updateData.maxAge = (req.body.maxAge !== undefined && req.body.maxAge !== null && req.body.maxAge !== '') ? parseInt(req.body.maxAge) : null;
       
       // Admin-only: Allow marking class as full (triggers waitlist functionality)
       if (req.body.markedFull !== undefined && req.user.role === 'admin') {
@@ -1418,6 +1420,8 @@ Examples (output only, no backticks):
       if (req.body.whatToBring !== undefined) updateData.whatToBring = req.body.whatToBring ? String(req.body.whatToBring) : null;
       if (req.body.toFindUs !== undefined) updateData.toFindUs = req.body.toFindUs ? String(req.body.toFindUs) : null;
       if (req.body.outdoors !== undefined) updateData.outdoors = Boolean(req.body.outdoors);
+      updateData.minAge = (req.body.minAge !== undefined && req.body.minAge !== null && req.body.minAge !== '') ? parseInt(req.body.minAge) : null;
+      updateData.maxAge = (req.body.maxAge !== undefined && req.body.maxAge !== null && req.body.maxAge !== '') ? parseInt(req.body.maxAge) : null;
       
       // Admin-only: Allow marking class as full (triggers waitlist functionality)
       if (req.body.markedFull !== undefined && req.user.role === 'admin') {

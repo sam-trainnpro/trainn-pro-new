@@ -173,9 +173,22 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
           
           {/* Location information */}
           <div className="text-gray-600 text-sm mt-1 flex items-center justify-between">
-            <div className="flex items-center">
-              <MapPin className="h-3.5 w-3.5 mr-1 text-gray-400" />
-              <span>{classItem.location || 'Location not specified'}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center">
+                <MapPin className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                <span>{classItem.location || 'Location not specified'}</span>
+              </div>
+              {/* Age badge on mobile */}
+              {(() => {
+                const minAge = isClassCardDTO ? (classItem as ClassCardDTO).minAge : null;
+                const maxAge = isClassCardDTO ? (classItem as ClassCardDTO).maxAge : null;
+                if (minAge == null && maxAge == null) return null;
+                let label = '';
+                if (minAge != null && maxAge != null) label = `Ages ${minAge}–${maxAge}`;
+                else if (minAge != null) label = `Ages ${minAge}+`;
+                else if (maxAge != null) label = `Up to ${maxAge}`;
+                return <Badge variant="secondary" className="md:hidden text-xs">{label}</Badge>;
+              })()}
             </div>
             {/* Spots left indicator shown on mobile only */}
             <div className="md:hidden text-xs px-2 py-0.5 rounded-full bg-gray-100 flex items-center">
