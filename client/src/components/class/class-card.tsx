@@ -291,8 +291,8 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
               if (minAge == null && maxAge == null) return null;
               let label = '';
               if (minAge != null && maxAge != null) label = `Ages ${minAge}–${maxAge}`;
-              else if (minAge != null) label = `Ages ${minAge}+`;
-              else if (maxAge != null) label = `Up to age ${maxAge}`;
+              else if (minAge != null) label = `${minAge}+`;
+              else if (maxAge != null) label = `Up to ${maxAge}`;
               return (
                 <div className="bg-white/90 text-gray-700 text-xs font-medium px-2 py-0.5 rounded">
                   {label}
