@@ -196,12 +196,17 @@ Examples:
 - "outdoor fitness in San Francisco" → {"outdoors": true, "city": "San Francisco", "keywords": "fitness"}
 - "soccer" → {"keywords": "soccer"}`;
 
-      const message = await client.messages.create({
-        model: "claude-haiku-4-5",
-        max_tokens: 256,
-        messages: [{ role: "user", content: query }],
-        system: systemPrompt,
-      });
+      const message = await Promise.race([
+        client.messages.create({
+          model: "claude-haiku-4-5",
+          max_tokens: 256,
+          messages: [{ role: "user", content: query }],
+          system: systemPrompt,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("AI search timeout")), 8000)
+        ),
+      ]);
 
       const text = message.content[0].type === "text" ? message.content[0].text : "{}";
       const parsed = JSON.parse(text.trim());
