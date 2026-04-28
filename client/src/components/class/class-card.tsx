@@ -285,11 +285,20 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
             <div className="bg-primary text-white text-sm font-medium px-2 py-1 rounded">
               {isLoadingCategory ? <Skeleton className="h-4 w-16" /> : category?.name || "Class"}
             </div>
-            {(classItem as any).minAge != null && (classItem as any).maxAge != null && (
-              <div className="bg-white/90 text-gray-700 text-xs font-medium px-2 py-0.5 rounded">
-                Ages {(classItem as any).minAge}–{(classItem as any).maxAge}
-              </div>
-            )}
+            {(() => {
+              const minAge = isClassCardDTO ? (classItem as ClassCardDTO).minAge : null;
+              const maxAge = isClassCardDTO ? (classItem as ClassCardDTO).maxAge : null;
+              if (minAge == null && maxAge == null) return null;
+              let label = '';
+              if (minAge != null && maxAge != null) label = `Ages ${minAge}–${maxAge}`;
+              else if (minAge != null) label = `Ages ${minAge}+`;
+              else if (maxAge != null) label = `Up to age ${maxAge}`;
+              return (
+                <div className="bg-white/90 text-gray-700 text-xs font-medium px-2 py-0.5 rounded">
+                  {label}
+                </div>
+              );
+            })()}
           </div>
           <div className="absolute top-3 right-3 flex gap-2">
             <button 

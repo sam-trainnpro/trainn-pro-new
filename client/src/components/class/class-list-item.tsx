@@ -204,11 +204,16 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
             <Badge variant="outline">
               {finalIsLoadingCategory ? 'Loading...' : finalCategory?.name || 'Fitness'}
             </Badge>
-            {(classItem as any).minAge != null && (classItem as any).maxAge != null && (
-              <Badge variant="secondary" className="text-xs">
-                Ages {(classItem as any).minAge}–{(classItem as any).maxAge}
-              </Badge>
-            )}
+            {(() => {
+              const minAge = isClassCardDTO ? (classItem as ClassCardDTO).minAge : null;
+              const maxAge = isClassCardDTO ? (classItem as ClassCardDTO).maxAge : null;
+              if (minAge == null && maxAge == null) return null;
+              let label = '';
+              if (minAge != null && maxAge != null) label = `Ages ${minAge}–${maxAge}`;
+              else if (minAge != null) label = `Ages ${minAge}+`;
+              else if (maxAge != null) label = `Up to age ${maxAge}`;
+              return <Badge variant="secondary" className="text-xs">{label}</Badge>;
+            })()}
           </div>
           
           {/* Price shown on desktop only */}

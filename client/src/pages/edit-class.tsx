@@ -58,7 +58,12 @@ const editClassSchema = z.object({
   duration: z.coerce.number().int().min(15, "Duration must be at least 15 minutes").max(480, "Duration cannot exceed 8 hours"),
   whatToBring: z.string().optional(),
   toFindUs: z.string().optional(),
-});
+}).refine((data) => {
+  if (data.minAge != null && data.maxAge != null) {
+    return data.minAge <= data.maxAge;
+  }
+  return true;
+}, { message: "Min age must be less than or equal to max age", path: ["maxAge"] });
 
 type EditClassFormValues = z.infer<typeof editClassSchema>;
 
