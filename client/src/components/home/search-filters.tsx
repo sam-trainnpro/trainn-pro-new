@@ -47,7 +47,8 @@ export interface SearchFilters {
 
 // Detect if a query looks like natural language (more than one word with conversational words).
 // Uses word-boundary matching to avoid false positives on substrings (e.g. "in" inside "training").
-function isNaturalLanguageQuery(query: string): boolean {
+// Exported so the mobile search path in classes.tsx can share the same detection logic.
+export function isNaturalLanguageQuery(query: string): boolean {
   const trimmed = query.trim();
   if (!trimmed.includes(' ')) return false; // single word — skip AI
   const nlPhrases = [

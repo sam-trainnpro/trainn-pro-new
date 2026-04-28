@@ -6,7 +6,7 @@ import queryString from "query-string";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
-import SearchFilters, { SearchFilters as SearchFiltersType } from "@/components/home/search-filters";
+import SearchFilters, { SearchFilters as SearchFiltersType, isNaturalLanguageQuery } from "@/components/home/search-filters";
 import ClassCard from "@/components/class/class-card";
 import ClassListItem from "@/components/class/class-list-item";
 import MapView from "@/components/maps/map-view";
@@ -14,7 +14,7 @@ import MobileFilterSheet from "@/components/classes/mobile-filter-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Helmet } from "react-helmet";
-import { ListFilter, Map as MapIcon, List, Calendar, Clock, Search, SlidersHorizontal, X, Sparkles } from "lucide-react";
+import { ListFilter, Map as MapIcon, List, Calendar, Clock, Search, SlidersHorizontal, X, Sparkles, Loader2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,7 @@ export default function ClassesPage() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [mobileQuery, setMobileQuery] = useState(filters.query || "");
+  const [isAiSearchingMobile, setIsAiSearchingMobile] = useState(false);
   const mobileInputRef = useRef<HTMLInputElement>(null);
 
   // Open mobile search and focus input
@@ -59,9 +60,51 @@ export default function ClassesPage() {
     setTimeout(() => mobileInputRef.current?.focus(), 50);
   };
 
-  const handleMobileSearchSubmit = () => {
-    const newFilters = { ...filters, query: mobileQuery };
-    handleSearch(newFilters);
+  const handleMobileSearchSubmit = async () => {
+    const query = mobileQuery.trim();
+
+    if (query && isNaturalLanguageQuery(query)) {
+      setIsAiSearchingMobile(true);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      try {
+        const response = await fetch('/api/search/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query,
+            categories: categories?.map(c => ({ id: c.id, name: c.name })) ?? [],
+            cities: cities ?? [],
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        const result = await response.json();
+
+        if (!result.fallback) {
+          const aiFilters: SearchFiltersType = {
+            ...filters,
+            query: result.keywords || '',
+            classType: result.categoryId ? String(result.categoryId) : filters.classType,
+            ageGroup: result.ageGroup || filters.ageGroup,
+            city: result.city || filters.city,
+            outdoors: result.outdoors === true ? 'Yes' : result.outdoors === false ? 'No' : filters.outdoors,
+            latitude: null,
+            longitude: null,
+          };
+          setIsAiSearchingMobile(false);
+          setMobileSearchOpen(false);
+          handleSearch(aiFilters, true);
+          return;
+        }
+      } catch {
+        clearTimeout(timeout);
+      }
+      setIsAiSearchingMobile(false);
+    }
+
+    // Plain keyword search fallback
+    handleSearch({ ...filters, query, latitude: null, longitude: null }, false);
     setMobileSearchOpen(false);
   };
 
@@ -323,29 +366,38 @@ export default function ClassesPage() {
 
         {/* Expanded search input */}
         {mobileSearchOpen && (
-          <div className="flex items-center gap-2 px-3 py-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                ref={mobileInputRef}
-                type="text"
-                placeholder="Search classes or coaches…"
-                className="pl-9 pr-4 py-2 h-9 text-sm border-gray-300 w-full"
-                value={mobileQuery}
-                onChange={(e) => setMobileQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleMobileSearchSubmit()}
-              />
+          <div className="flex flex-col gap-1 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  ref={mobileInputRef}
+                  type="text"
+                  placeholder='Try "basketball for kids" or "outdoor yoga"'
+                  className="pl-9 pr-4 py-2 h-9 text-sm border-gray-300 w-full"
+                  value={mobileQuery}
+                  onChange={(e) => setMobileQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !isAiSearchingMobile && handleMobileSearchSubmit()}
+                />
+              </div>
+              <Button size="sm" className="shrink-0" onClick={handleMobileSearchSubmit} disabled={isAiSearchingMobile}>
+                {isAiSearchingMobile ? (
+                  <span className="flex items-center gap-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span className="text-xs">Searching…</span>
+                  </span>
+                ) : (
+                  'Search'
+                )}
+              </Button>
+              <button
+                onClick={() => setMobileSearchOpen(false)}
+                className="p-1 text-gray-500 hover:text-gray-700 shrink-0"
+                aria-label="Close search"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <Button size="sm" className="shrink-0" onClick={handleMobileSearchSubmit}>
-              Search
-            </Button>
-            <button
-              onClick={() => setMobileSearchOpen(false)}
-              className="p-1 text-gray-500 hover:text-gray-700 shrink-0"
-              aria-label="Close search"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
         )}
 
@@ -386,6 +438,13 @@ export default function ClassesPage() {
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 {filters.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, date: undefined })} />
+              </span>
+            )}
+            {/* AI search indicator — mobile */}
+            {aiSearchUsed && (
+              <span className="inline-flex items-center gap-1 text-xs text-violet-600 font-medium bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                <Sparkles className="h-3 w-3" />
+                AI search
               </span>
             )}
           </div>
