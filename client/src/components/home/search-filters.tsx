@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Calendar, Filter, X, RefreshCw, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+import { Search, MapPin, Calendar, Filter, X, RefreshCw, ChevronDown, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -27,7 +27,7 @@ import { ClassCategory } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 
 interface SearchFiltersProps {
-  onSearch: (filters: SearchFilters) => void;
+  onSearch: (filters: SearchFilters, aiUsed?: boolean) => void;
   showOnlyFutureCategories?: boolean;
   hideFilters?: ('outdoors' | 'date' | 'city')[];
   currentFilters?: SearchFilters;
@@ -67,9 +67,10 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
   const [searchParams, setSearchParams] = useState<SearchFilters>(initialFilters);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiSearchUsed, setAiSearchUsed] = useState(false);
 
   // Sync internal state when filters are changed externally (e.g. removing a chip from classes.tsx)
+  // NOTE: do NOT clear aiSearchUsed here — that state lives in the parent (classes.tsx)
+  // and is cleared by explicit user actions (chip removal, dropdown change).
   useEffect(() => {
     if (!currentFilters) return;
     setSearchParams({
@@ -82,8 +83,6 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       latitude: currentFilters.latitude,
       longitude: currentFilters.longitude,
     });
-    // If user changed a filter manually, clear AI indicator
-    setAiSearchUsed(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentFilters?.query,
@@ -158,8 +157,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             longitude: null,
           };
           setSearchParams(aiFilters);
-          setAiSearchUsed(true);
-          onSearch(aiFilters);
+          onSearch(aiFilters, true); // pass aiUsed=true to parent
           setIsAiSearching(false);
           return;
         }
@@ -170,12 +168,11 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     }
 
     // Plain keyword search (no AI, or fallback)
-    setAiSearchUsed(false);
     onSearch({
       ...searchParams,
       latitude: null,
       longitude: null,
-    });
+    }, false);
   };
   
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -205,12 +202,11 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       classType: value
     };
     setSearchParams(newParams);
-    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
       longitude: null
-    });
+    }, false); // explicit user action — clear AI indicator
   };
   
   const handleAgeGroupSelect = (value: string) => {
@@ -219,12 +215,11 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       ageGroup: value
     };
     setSearchParams(newParams);
-    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
       longitude: null
-    });
+    }, false);
   };
 
   const handleCitySelect = (value: string) => {
@@ -233,12 +228,11 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       city: value
     };
     setSearchParams(newParams);
-    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
       longitude: null
-    });
+    }, false);
   };
 
   const handleOutdoorsSelect = (value: string) => {
@@ -247,23 +241,21 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
       outdoors: value
     };
     setSearchParams(newParams);
-    setAiSearchUsed(false);
     onSearch({
       ...newParams,
       latitude: null,
       longitude: null
-    });
+    }, false);
   };
   
   // Reset all filters to initial state
   const handleClearFilters = () => {
     setSearchParams(initialFilters);
-    setAiSearchUsed(false);
     onSearch({
       ...initialFilters,
       latitude: null,
       longitude: null
-    });
+    }, false);
   };
   
   // Count active filters (excluding hidden filters)
@@ -477,12 +469,6 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
               )}
             </Button>
 
-            {aiSearchUsed && (
-              <span className="flex items-center gap-1 text-xs text-violet-600 font-medium self-center whitespace-nowrap px-1">
-                <Sparkles className="h-3.5 w-3.5" />
-                AI search
-              </span>
-            )}
             
             {activeFiltersCount > 0 && (
               <Button 
