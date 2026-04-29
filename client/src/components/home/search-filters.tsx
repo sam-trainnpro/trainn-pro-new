@@ -238,6 +238,19 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     }, false);
   };
 
+  const handleTargetAgeSelect = (value: number | null) => {
+    const newParams = {
+      ...searchParams,
+      targetAge: value,
+    };
+    setSearchParams(newParams);
+    onSearch({
+      ...newParams,
+      latitude: null,
+      longitude: null,
+    }, false);
+  };
+
   const handleCitySelect = (value: string) => {
     const newParams = {
       ...searchParams,
@@ -283,6 +296,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
     if (searchParams.ageGroup) count++;
     if (searchParams.city && !hideFilters.includes('city')) count++;
     if (searchParams.outdoors && !hideFilters.includes('outdoors')) count++;
+    if (searchParams.targetAge != null) count++;
     
     setActiveFiltersCount(count);
   }, [searchParams, hideFilters]);
@@ -348,6 +362,35 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
               </DropdownMenuContent>
             </DropdownMenu>
             
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={searchParams.targetAge != null ? "default" : "outline"}
+                  className="min-w-fit flex items-center gap-1"
+                >
+                  <span>
+                    {searchParams.targetAge != null
+                      ? `Age: ${searchParams.targetAge >= 18 ? "18+" : searchParams.targetAge}`
+                      : "Age"}
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="max-h-64 overflow-y-auto">
+                <DropdownMenuItem onClick={() => handleTargetAgeSelect(null)}>
+                  Any age
+                </DropdownMenuItem>
+                {Array.from({ length: 18 }, (_, i) => i).map((age) => (
+                  <DropdownMenuItem key={age} onClick={() => handleTargetAgeSelect(age)}>
+                    {age}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem onClick={() => handleTargetAgeSelect(18)}>
+                  18+
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -613,7 +656,20 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
                   />
                 </Badge>
               )}
-              
+
+              {searchParams.targetAge != null && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Age: {searchParams.targetAge >= 18 ? "18+" : searchParams.targetAge}
+                  <X
+                    className="h-3 w-3 ml-1 cursor-pointer"
+                    onClick={() => {
+                      const newParams = { ...searchParams, targetAge: null };
+                      setSearchParams(newParams);
+                      onSearch({ ...newParams, latitude: null, longitude: null });
+                    }}
+                  />
+                </Badge>
+              )}
 
             </div>
           )}
