@@ -821,13 +821,16 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (filters?.targetAge !== undefined) {
-        // Only return classes that have an age range set AND it includes the target age
+        // Include classes that have at least one age bound set and whose range covers targetAge.
+        // Handles partial ranges: "ages 3 and up" (minAge set, maxAge null) or "up to age 10" (maxAge set, minAge null).
         whereConditions.push(
           and(
-            sql`${classes.minAge} IS NOT NULL`,
-            sql`${classes.maxAge} IS NOT NULL`,
-            sql`${classes.minAge} <= ${filters.targetAge}`,
-            sql`${classes.maxAge} >= ${filters.targetAge}`
+            // At least one bound must be set (exclude classes with no age info)
+            sql`(${classes.minAge} IS NOT NULL OR ${classes.maxAge} IS NOT NULL)`,
+            // If minAge is set it must be <= targetAge (open upper bound counts as a match)
+            sql`(${classes.minAge} IS NULL OR ${classes.minAge} <= ${filters.targetAge})`,
+            // If maxAge is set it must be >= targetAge (open lower bound counts as a match)
+            sql`(${classes.maxAge} IS NULL OR ${classes.maxAge} >= ${filters.targetAge})`
           )
         );
       }
