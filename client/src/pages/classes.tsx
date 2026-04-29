@@ -42,6 +42,7 @@ export default function ClassesPage() {
     date: searchParams.date ? new Date(searchParams.date as string) : undefined,
     latitude: typeof searchParams.lat === 'string' ? Number(searchParams.lat) : null,
     longitude: typeof searchParams.lng === 'string' ? Number(searchParams.lng) : null,
+    targetAge: typeof searchParams.age === 'string' ? Number(searchParams.age) : null,
   });
 
   // AI search indicator — true when the last search was AI-interpreted
@@ -281,6 +282,10 @@ export default function ClassesPage() {
       queryParams.set('lat', newFilters.latitude.toString());
       queryParams.set('lng', newFilters.longitude.toString());
     }
+
+    if (newFilters.targetAge != null) {
+      queryParams.set('age', newFilters.targetAge.toString());
+    }
     
     // Preserve category if it's in the URL
     if (searchParams.category) {
@@ -446,7 +451,7 @@ export default function ClassesPage() {
             )}
             {filters.targetAge != null && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                Age {filters.targetAge}
+                Age: {filters.targetAge >= 18 ? "18+" : filters.targetAge}
                 <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, targetAge: null })} />
               </span>
             )}
@@ -526,7 +531,7 @@ export default function ClassesPage() {
                 )}
                 {filters.targetAge != null && (
                   <span className="inline-flex items-center gap-1.5 text-primary text-sm font-medium border border-primary/30 bg-primary/5 px-3 py-1 rounded-full">
-                    Age {filters.targetAge}
+                    Age: {filters.targetAge >= 18 ? "18+" : filters.targetAge}
                     <button onClick={() => handleSearch({ ...filters, targetAge: null })} aria-label="Remove age filter">
                       <X className="h-3.5 w-3.5 hover:opacity-70" />
                     </button>

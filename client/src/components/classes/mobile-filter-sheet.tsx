@@ -58,7 +58,8 @@ export default function MobileFilterSheet({
     pending.city,
     pending.outdoors,
     pending.date,
-  ].filter(Boolean).length;
+    pending.targetAge != null ? pending.targetAge : undefined,
+  ].filter(v => v !== undefined && v !== null && v !== false && v !== '').length;
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -93,6 +94,36 @@ export default function MobileFilterSheet({
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setPending({ ...pending, ageGroup: "Both" })}>
                   Both
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Age */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Age</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  <span>
+                    {pending.targetAge != null
+                      ? `Age: ${pending.targetAge >= 18 ? "18+" : pending.targetAge}`
+                      : "Any age"}
+                  </span>
+                  <ChevronDown className="h-4 w-4 ml-2 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-full min-w-[200px] max-h-64 overflow-y-auto">
+                <DropdownMenuItem onClick={() => setPending({ ...pending, targetAge: null })}>
+                  Any age
+                </DropdownMenuItem>
+                {Array.from({ length: 18 }, (_, i) => i).map((age) => (
+                  <DropdownMenuItem key={age} onClick={() => setPending({ ...pending, targetAge: age })}>
+                    {age}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem onClick={() => setPending({ ...pending, targetAge: 18 })}>
+                  18+
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
