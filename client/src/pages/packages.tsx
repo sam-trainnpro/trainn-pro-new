@@ -123,8 +123,8 @@ export default function PackagesPage() {
       if (pkg.categoryId.toString() !== filters.classType) return false;
     }
 
-    // Age group filter
-    if (filters.ageGroup && pkg.ageGroup !== filters.ageGroup) return false;
+    // Age group filter - include "Both" packages when filtering by Kids or Adults
+    if (filters.ageGroup && pkg.ageGroup !== filters.ageGroup && pkg.ageGroup !== 'Both') return false;
 
     // Only show active packages
     if (!pkg.isActive) return false;
@@ -221,6 +221,13 @@ export default function PackagesPage() {
       <Header />
       
       <main className="flex-grow">
+        <div className="bg-white border-b py-5">
+          <div className="container mx-auto px-4">
+            <h1 className="text-3xl font-bold mb-1">Class Packages</h1>
+            <p className="text-gray-600">Save money with multi-class packages from top providers</p>
+          </div>
+        </div>
+
         <SearchFilters 
           onSearch={handleSearch} 
           showOnlyFutureCategories={true}
@@ -231,11 +238,7 @@ export default function PackagesPage() {
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="flex-1">
               <div className="mb-6">
-                <h1 className="text-3xl font-bold mb-2">Class Packages</h1>
-                <p className="text-gray-600">
-                  Save money with multi-class packages from top providers
-                </p>
-                <div className="mt-3 mb-4 text-sm text-gray-600">
+                <div className="mb-4 text-sm text-gray-600">
                   <p>Package Expiration: 5 classes: 60 days* | 10 classes: 90 days* | 20 classes: 180 days*</p>
                   <p className="text-xs text-gray-500">* Expiration period begins on the date of purchase</p>
                 </div>
@@ -345,67 +348,56 @@ export default function PackagesPage() {
                             <span>Age group: {pkg.ageGroup}</span>
                           </div>
 
-                          <div className="flex justify-between items-center pt-2">
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm"
-                                onClick={() => navigate(`/coaches/${pkg.coachId}`)}
-                              >
-                                View Provider
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  // Create URL with coach filter and eligible classes filter
-                                  let classesUrl = `/classes?coachId=${pkg.coachId}`;
-                                  
-                                  // Add eligible classes filter if specific classes are defined
-                                  if (pkg.eligibleClasses && pkg.eligibleClasses !== 'all') {
-                                    try {
-                                      const eligibleClassIds = JSON.parse(pkg.eligibleClasses);
-                                      if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
-                                        classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
-                                      }
-                                    } catch (e) {
-                                      // If parsing fails, fall back to coach-only filter
-                                      console.warn('Failed to parse eligible classes:', pkg.eligibleClasses);
-                                    }
-                                  }
-                                  
-                                  navigate(classesUrl);
-                                }}
-                              >
-                                View Classes
-                              </Button>
-                            </div>
+                          <div className="flex items-center gap-2 pt-2 flex-wrap">
                             <Button 
                               className="bg-primary text-white hover:bg-primary/90"
                               size="sm"
                               data-testid={`button-buy-package-${pkg.id}`}
                               onClick={() => {
                                 if (pkg.packageType === 'time_bound') {
-                                  // Navigate to dedicated package details page
                                   navigate(`/package/${pkg.id}`);
                                 } else {
-                                  // Handle set_pack packages as before
                                   const options = [];
                                   if (pkg.classCount1 && pkg.price1) options.push({ count: pkg.classCount1, price: pkg.price1 });
                                   if (pkg.classCount2 && pkg.price2) options.push({ count: pkg.classCount2, price: pkg.price2 });
                                   if (pkg.classCount3 && pkg.price3) options.push({ count: pkg.classCount3, price: pkg.price3 });
-                                  
-                                  // If only one option, go directly to checkout
                                   if (options.length === 1) {
                                     const option = options[0];
                                     navigate(`/package-checkout?packageId=${pkg.id}&classCount=${option.count}&price=${option.price}`);
                                   } else {
-                                    // Multiple options, go to selection page
                                     navigate(`/package/${pkg.id}/purchase`);
                                   }
                                 }
                               }}
                             >
                               {pkg.packageType === 'time_bound' ? 'View Details' : 'Buy Package'}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                let classesUrl = `/classes?coachId=${pkg.coachId}`;
+                                if (pkg.eligibleClasses && pkg.eligibleClasses !== 'all') {
+                                  try {
+                                    const eligibleClassIds = JSON.parse(pkg.eligibleClasses);
+                                    if (Array.isArray(eligibleClassIds) && eligibleClassIds.length > 0) {
+                                      classesUrl += `&packageClasses=${eligibleClassIds.join(',')}`;
+                                    }
+                                  } catch (e) {
+                                    console.warn('Failed to parse eligible classes:', pkg.eligibleClasses);
+                                  }
+                                }
+                                navigate(classesUrl);
+                              }}
+                            >
+                              View Classes
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/coaches/${pkg.coachId}`)}
+                            >
+                              View Provider
                             </Button>
                           </div>
                         </div>
