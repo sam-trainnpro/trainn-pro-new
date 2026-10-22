@@ -17,7 +17,6 @@ import {
   Tag,
   Users,
   UserPlus,
-  Package,
   CreditCard
 } from "lucide-react";
 import {
@@ -70,11 +69,6 @@ export default function Header() {
           {(!user || user?.role === 'customer') && (
             <Link href="/plans" className={`text-foreground hover:text-primary transition font-medium ${location === '/plans' ? 'text-primary' : ''}`}>
               Plans
-            </Link>
-          )}
-          {(!user || user?.role === 'customer') && (
-            <Link href="/packages" className={`text-foreground hover:text-primary transition font-medium ${location === '/packages' ? 'text-primary' : ''}`}>
-              Packages
             </Link>
           )}
           <Link href="/coaches" className={`text-foreground hover:text-primary transition font-medium ${location === '/coaches' ? 'text-primary' : ''}`}>
@@ -257,14 +251,6 @@ export default function Header() {
                   <Button variant="ghost" className="w-full justify-start">
                     <CreditCard className="mr-2 h-5 w-5" />
                     Plans
-                  </Button>
-                </Link>
-              )}
-              {(!user || user?.role === 'customer') && (
-                <Link href="/packages" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Package className="mr-2 h-5 w-5" />
-                    Packages
                   </Button>
                 </Link>
               )}
