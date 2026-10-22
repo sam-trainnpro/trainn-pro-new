@@ -1,0 +1,1 @@
+- [Packages browse retirement](packages-retirement.md) — public package browsing was removed for low quality and usage, not the underlying package functionality.

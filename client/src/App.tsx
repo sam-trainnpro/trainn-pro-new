@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -49,7 +49,6 @@ import CoachPromoCodesPage from "@/pages/coach-promo-codes";
 import CreatePackagePage from "@/pages/create-package";
 import MyPackagesPage from "@/pages/my-packages";
 import EditPackagePage from "@/pages/edit-package";
-import PackagesPage from "@/pages/packages";
 import PackagePurchasePage from "@/pages/package-purchase";
 import PackageCheckoutPage from "@/pages/package-checkout";
 import TimeBoundPackageCheckoutPage from "@/pages/time-bound-package-checkout";
@@ -128,7 +127,7 @@ function Router() {
         {(params) => <SEOClassesRoute params={{ ...params, category: undefined }} />}
       </Route>
       <Route path="/packages">
-        <PackagesPage />
+        <Redirect to="/classes" replace />
       </Route>
       <Route path="/plans">
         <PlansPage />
