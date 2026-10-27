@@ -23,7 +23,7 @@ export default function ClassShareModal({
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
 
-  const classUrl = `${window.location.origin}/classes/${classId}`;
+  const classUrl = `${typeof window === "undefined" ? "" : window.location.origin}/classes/${classId}`;
   const shareMessage = `Check out this ${coachName ? `class by ${coachName}` : 'class'}: "${classTitle}" on Trainn! ${price === 0 ? 'It\'s free!' : `Only $${price.toFixed(2)}`} ${classUrl}`;
 
   const handleCopyLink = async () => {

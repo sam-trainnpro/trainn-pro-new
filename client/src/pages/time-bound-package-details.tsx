@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import DOMPurify from "isomorphic-dompurify";
+import { formatCalendarDate } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
@@ -617,10 +619,10 @@ export default function TimeBoundPackageDetailsPage() {
                       
                       {packageDetails.description && (
                         <div className="mb-6 whitespace-pre-line" dangerouslySetInnerHTML={{ 
-                          __html: packageDetails.description.replace(
+                          __html: DOMPurify.sanitize(packageDetails.description.replace(
                             /(https?:\/\/[^\s]+)/g, 
                             '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
-                          )
+                          ))
                         }} />
                       )}
                       
@@ -637,7 +639,7 @@ export default function TimeBoundPackageDetailsPage() {
                           <div>
                             <p className="text-sm text-muted-foreground">Program Dates</p>
                             <p className="font-medium">
-                              {packageDetails.startDate && new Date(packageDetails.startDate).toLocaleDateString()} - {packageDetails.endDate && new Date(packageDetails.endDate).toLocaleDateString()}
+                              {packageDetails.startDate && formatCalendarDate(packageDetails.startDate)} - {packageDetails.endDate && formatCalendarDate(packageDetails.endDate)}
                             </p>
                           </div>
                         </div>
@@ -808,7 +810,7 @@ export default function TimeBoundPackageDetailsPage() {
                                         <MapPin className="h-5 w-5 text-blue-500 mt-0.5" />
                                         <div className="flex-1">
                                           <p className="font-semibold text-sm">
-                                            Session {session.sessionNumber} - {new Date(session.date).toLocaleDateString('en-US', {
+                                            Session {session.sessionNumber} - {formatCalendarDate(session.date, {
                                               month: 'short',
                                               day: 'numeric',
                                               year: 'numeric'
@@ -890,7 +892,7 @@ export default function TimeBoundPackageDetailsPage() {
                                     ))}
                                   </div>
                                   <span className="text-sm text-muted-foreground">
-                                    {new Date(review.createdAt).toLocaleDateString()}
+                                    {formatCalendarDate(review.createdAt)}
                                   </span>
                                 </div>
                                 {review.comment && (
@@ -1171,7 +1173,7 @@ export default function TimeBoundPackageDetailsPage() {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Starts</span>
                             <span className="font-medium">
-                              {new Date(packageDetails.startDate).toLocaleDateString()}
+                              {formatCalendarDate(packageDetails.startDate)}
                             </span>
                           </div>
                         )}

@@ -15,9 +15,9 @@ export default function PrivacyPage() {
         <div className="container mx-auto px-4">
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-3xl font-bold text-center">
+              <h1 className="text-3xl font-bold text-center">
                 Trainn Privacy Policy
-              </CardTitle>
+              </h1>
               <p className="text-center text-gray-600 mt-2">
                 Last Updated: June 2, 2025
               </p>

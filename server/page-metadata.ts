@@ -3,6 +3,7 @@ import {
   publicPageMetadata,
   type PageMetadata,
 } from "../shared/page-metadata";
+import { publicRouteMetadata } from "../shared/public-route-metadata";
 
 type PublicPost = {
   title: string;
@@ -21,6 +22,7 @@ export async function getPublicPageMetadata(
   if (Object.prototype.hasOwnProperty.call(publicPageMetadata, path)) {
     return publicPageMetadata[path as keyof typeof publicPageMetadata];
   }
+  if (Object.prototype.hasOwnProperty.call(publicRouteMetadata, path)) return publicRouteMetadata[path];
   const match = /^\/blog\/([^/]+)$/.exec(path);
   if (!match || match[1] === "admin") return undefined;
 

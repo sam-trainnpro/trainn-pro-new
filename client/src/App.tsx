@@ -1,5 +1,5 @@
 import { Switch, Route, Redirect } from "wouter";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -67,8 +67,11 @@ import ChangePlanPage from "@/pages/change-plan";
 import { ProtectedRoute } from "./lib/protected-route";
 import SignupIncentivePopup from "./components/signup-incentive-popup";
 import SEOClassesPage from "@/pages/seo-classes";
+import { isSupportedLanding } from "@/lib/seo-config";
+import RouteDocumentMetadata from "@/components/route-document-metadata";
 
 function SEOClassesRoute({ params }: { params: { city: string; ageGroup: string; category?: string } }) {
+  if (!isSupportedLanding(params.city, params.ageGroup, params.category)) return <NotFound />;
   return (
     <SEOClassesPage 
       citySlug={params.city} 
@@ -83,6 +86,8 @@ function Router() {
   useAnalytics();
   
   return (
+    <>
+    <RouteDocumentMetadata />
     <Switch>
       <Route path="/">
         <Home />
@@ -151,7 +156,7 @@ function Router() {
         <ClassDetailsPage />
       </Route>
       <Route path="/class/:id">
-        <ClassDetailsPage />
+        {(params) => <Redirect to={`/classes/${params.id}`} replace />}
       </Route>
       <Route path="/outdoor-workouts-san-francisco">
         <OutdoorWorkoutsSF />
@@ -268,10 +273,17 @@ function Router() {
         <NotFound />
       </Route>
     </Switch>
+    </>
   );
 }
 
-function App() {
+function App({ client = queryClient, notFound = false }: { client?: QueryClient; notFound?: boolean }) {
+  useEffect(() => {
+    // Initial public HTML is anonymous; restore the visitor's real session after hydration.
+    if (document.getElementById("public-page-state")) {
+      void client.invalidateQueries({ queryKey: ["/api/user"] });
+    }
+  }, [client]);
   // Initialize Google Analytics when app loads
   useEffect(() => {
     // Verify required environment variable is present
@@ -283,11 +295,11 @@ function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={client}>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          {notFound ? <NotFound /> : <Router />}
           <SignupIncentivePopup />
         </TooltipProvider>
       </AuthProvider>

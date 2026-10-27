@@ -15,7 +15,7 @@ let isLoaded = false;
 export default function GoogleMapsScript({ children, onLoad, onError }: GoogleMapsScriptProps) {
   const [status, setStatus] = useState<GoogleMapsScriptLoadStatus>(
     // If the script is already loaded in a previous render, set the status to ready
-    window.google && window.google.maps ? 'ready' : 'loading'
+    'loading'
   );
   
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function GoogleMapsScript({ children, onLoad, onError }: GoogleMa
 // Hook to use Google Maps script
 export function useGoogleMapsScript() {
   const [status, setStatus] = useState<GoogleMapsScriptLoadStatus>(
-    window.google && window.google.maps ? 'ready' : 'loading'
+    'loading'
   );
   
   useEffect(() => {

@@ -1,4 +1,7 @@
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { hydrate } from "@tanstack/react-query";
+import { Router } from "wouter";
+import { queryClient } from "./lib/queryClient";
 import posthog from "posthog-js";
 import App from "./App";
 import "./index.css";
@@ -15,8 +18,16 @@ if (posthogKey && posthogHost) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(
-  <ThemeProvider attribute="class" defaultTheme="light">
-    <App />
-  </ThemeProvider>
+const initialState = document.getElementById("public-page-state");
+const page = initialState ? JSON.parse(initialState.textContent || "{}") : null;
+if (page) hydrate(queryClient, page.state);
+const app = (
+  <Router>
+    <ThemeProvider attribute="class" defaultTheme="light">
+      <App client={queryClient} notFound={page?.notFound} />
+    </ThemeProvider>
+  </Router>
 );
+const root = document.getElementById("root")!;
+if (page) hydrateRoot(root, app);
+else createRoot(root).render(app);

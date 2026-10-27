@@ -725,8 +725,9 @@ export class DatabaseStorage implements IStorage {
               sql`${classes.startTime} >= NOW() AND ${classes.startTime} < NOW() + INTERVAL '8 days'`,
               sql`${classes.startTime} IS NULL AND ${classes.isRecurring} = true`
             ),
-        // Exclude deleted classes from public views
-        ne(classes.status, 'deleted')
+        // Unavailable classes must not appear in public listings or rendered HTML.
+        ne(classes.status, 'deleted'),
+        ne(classes.status, 'cancelled')
       ];
 
       if (filters?.categoryId) {

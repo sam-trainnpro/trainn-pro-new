@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Class, ClassCategory, ClassWithSchedules, ClassCardDTO } from "@shared/schema";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import queryString from "query-string";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -30,7 +30,7 @@ export default function ClassesPage() {
 
   const [locationPath, navigate] = useLocation();
   // Get search params from URL and ensure it's a string for queryString.parse
-  const searchQuery: string = typeof window.location.search === 'string' ? window.location.search : '';
+  const searchQuery = useSearch();
   const searchParams = queryString.parse(searchQuery);
   // Initialize filters from URL params, but don't set a default date
   const [filters, setFilters] = useState<SearchFiltersType>({

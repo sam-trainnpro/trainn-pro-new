@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Star, MapPin, Users, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatTime, formatDate } from '@/lib/utils';
+import { formatInTimeZone } from "date-fns-tz";
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ClassListItemProps {
@@ -116,13 +117,11 @@ export default function ClassListItem({ classItem, showDetails = true }: ClassLi
   
   // Format date like "Sun 5/18"
   const formattedDateDisplay = startTime
-    ? `${startTime.toLocaleDateString('en-US', { weekday: 'short' })} ${(startTime.getMonth() + 1)}/${startTime.getDate()}`
+    ? formatInTimeZone(startTime, "America/Los_Angeles", "EEE M/d")
     : '';
   
   // Format time like "5:00 AM"
-  const formattedTimeDisplay = startTime
-    ? `${startTime.getHours() === 0 ? 12 : startTime.getHours() > 12 ? startTime.getHours() - 12 : startTime.getHours()}:${startTime.getMinutes().toString().padStart(2, '0')} ${startTime.getHours() >= 12 ? 'PM' : 'AM'}`
-    : '10:00 AM';
+  const formattedTimeDisplay = formattedStartTime;
 
   return (
     <Link href={`/classes/${classItem.id}`}>

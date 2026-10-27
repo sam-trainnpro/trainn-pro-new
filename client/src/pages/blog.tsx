@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { Clock, Tag, User } from "lucide-react";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -127,7 +127,7 @@ export default function BlogPage() {
                     <Clock className="w-4 h-4" />
                     <span>{post.readTime} min read</span>
                     <span>•</span>
-                    <span>{format(new Date(post.publishedAt!), 'MMM d, yyyy')}</span>
+                    <span>{formatInTimeZone(new Date(post.publishedAt || post.createdAt!), "America/Los_Angeles", 'MMM d, yyyy')}</span>
                   </div>
                   
                   <h2 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2">

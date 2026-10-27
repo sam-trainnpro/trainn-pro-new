@@ -73,8 +73,11 @@ test("HTML head injection escapes author-controlled strings and preserves the ap
 
 test("both HTML serving paths apply route metadata using the original request path", () => {
   const source = read("server/vite.ts");
-  assert.equal((source.match(/getPublicPageMetadata\(req\.originalUrl\.split\("\?"\)\[0\]/g) || []).length, 2);
-  assert.equal((source.match(/applyPageMetadata\(template, metadata\)/g) || []).length, 2);
+  assert.equal((source.match(/await renderPublicDocument\(req, res,/g) || []).length, 2);
+  const renderer = read("server/public-rendering.ts");
+  assert.match(renderer, /new URL\(req.originalUrl,/);
+  assert.match(renderer, /getPublicPageMetadata\(normalized,/);
+  assert.match(renderer, /applyPageMetadata\(/);
 });
 
 test("authoring and article sanitizers preserve H2/H3 but not H1 or scripts", () => {

@@ -5,8 +5,7 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
-import { applyPageMetadata, getPublicPageMetadata } from "./page-metadata";
-import { storage } from "./storage";
+import { renderPublicDocument } from "./public-rendering";
 
 const viteLogger = createLogger();
 
@@ -22,10 +21,11 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  app.get("/index.html", (_req, res) => res.redirect(301, "/"));
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
-    allowedHosts: true,
+    allowedHosts: true as const,
   };
 
   const vite = await createViteServer({
@@ -60,12 +60,12 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const metadata = await getPublicPageMetadata(req.originalUrl.split("?")[0], (slug) => storage.getBlogPostBySlug(slug));
-      const page = await vite.transformIndexHtml(url, applyPageMetadata(template, metadata));
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      const page = await vite.transformIndexHtml(url, template);
+      await renderPublicDocument(req, res, page, async () => (await vite.ssrLoadModule("/src/entry-server.tsx")).render);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
-      next(e);
+      console.error("Public document rendering failed:", e);
+      res.status(503).set("X-Robots-Tag", "noindex").type("html").send("<!doctype html><html><head><title>Temporarily Unavailable | Trainn</title><meta name=\"robots\" content=\"noindex\"></head><body><h1>Temporarily unavailable</h1><p>Please try again shortly.</p></body></html>");
     }
   });
 }
@@ -79,16 +79,18 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  app.get("/index.html", (_req, res) => res.redirect(301, "/"));
+  app.use(express.static(distPath, { index: false }));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", async (req, res, next) => {
     try {
-      const metadata = await getPublicPageMetadata(req.originalUrl.split("?")[0], (slug) => storage.getBlogPostBySlug(slug));
       const template = await fs.promises.readFile(path.resolve(distPath, "index.html"), "utf-8");
-      res.status(200).type("html").send(applyPageMetadata(template, metadata));
+      const entry = "./ssr/entry-server.js";
+      await renderPublicDocument(req, res, template, async () => (await import(/* @vite-ignore */ entry)).render);
     } catch (error) {
-      next(error);
+      console.error("Public document rendering failed:", error);
+      res.status(503).set("X-Robots-Tag", "noindex").type("html").send("<!doctype html><html><head><title>Temporarily Unavailable | Trainn</title><meta name=\"robots\" content=\"noindex\"></head><body><h1>Temporarily unavailable</h1><p>Please try again shortly.</p></body></html>");
     }
   });
 }

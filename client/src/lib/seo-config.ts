@@ -92,6 +92,11 @@ export const categories: Record<string, CategoryConfig> = {
   }
 };
 
+export function isSupportedLanding(city: string, age: string, category?: string): boolean {
+  return Object.hasOwn(cities, city) && Object.hasOwn(ageGroups, age) &&
+    (category === undefined || Object.hasOwn(categories, category));
+}
+
 export function generatePageTitle(
   citySlug: string,
   ageGroupSlug: string,
@@ -101,7 +106,7 @@ export function generatePageTitle(
   const ageGroup = ageGroups[ageGroupSlug];
   const category = categorySlug ? categories[categorySlug] : null;
 
-  if (!city || !ageGroup) return "Classes | Trainn";
+  if (!isSupportedLanding(citySlug, ageGroupSlug, categorySlug)) return "Page Not Found | Trainn";
 
   if (category) {
     if (ageGroup.slug === "kids") {
@@ -131,7 +136,7 @@ export function generateMetaDescription(
   const ageGroup = ageGroups[ageGroupSlug];
   const category = categorySlug ? categories[categorySlug] : null;
 
-  if (!city || !ageGroup) return "Find and book local fitness classes on Trainn.";
+  if (!isSupportedLanding(citySlug, ageGroupSlug, categorySlug)) return "The requested classes page could not be found.";
 
   if (category) {
     if (ageGroup.slug === "kids") {
@@ -157,7 +162,7 @@ export function generateBreadcrumbSchema(
   const ageGroup = ageGroups[ageGroupSlug];
   const category = categorySlug ? categories[categorySlug] : null;
 
-  if (!city || !ageGroup) return {};
+  if (!isSupportedLanding(citySlug, ageGroupSlug, categorySlug)) return {};
 
   const items = [
     {

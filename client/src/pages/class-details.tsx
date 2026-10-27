@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import DOMPurify from "isomorphic-dompurify";
+import { formatCalendarDate } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "../../../hooks/use-auth-simple";
@@ -388,8 +390,8 @@ export default function ClassDetailsPage() {
     <div className="flex flex-col min-h-screen">
       {classItem && (
         <Helmet>
-          <title>{classItem.title} - {classItem.startTime ? new Date(classItem.startTime).toLocaleDateString() : 'TBD'} - Trainn</title>
-          <meta name="description" content={`${classItem.startTime ? new Date(classItem.startTime).toLocaleDateString() : 'TBD'} - ${classItem.description}`} />
+          <title>{classItem.title} - {classItem.startTime ? formatCalendarDate(classItem.startTime) : 'TBD'} - Trainn</title>
+          <meta name="description" content={`${classItem.startTime ? formatCalendarDate(classItem.startTime) : 'TBD'} - ${classItem.description}`} />
           <link rel="canonical" href={`https://trainn.pro/classes/${classItem.id}`} />
           <meta property="og:title" content={`${classItem.title} - Trainn`} />
           <meta property="og:description" content={classItem.description} />
@@ -500,10 +502,10 @@ export default function ClassDetailsPage() {
                     <TabsContent value="details" className="bg-white rounded-xl p-6 shadow-sm">
                       <h2 className="text-xl font-bold mb-4">About This Class</h2>
                       <div className="mb-6 whitespace-pre-line" dangerouslySetInnerHTML={{ 
-                        __html: classItem.description.replace(
+                        __html: DOMPurify.sanitize(classItem.description.replace(
                           /(https?:\/\/[^\s]+)/g, 
                           '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
-                        )
+                        ))
                       }} />
                       
                       {classItem.whatToBring && (
@@ -674,10 +676,10 @@ export default function ClassDetailsPage() {
                             <div className="mb-4">
                               <h3 className="font-medium mb-2">About</h3>
                               <div className="text-muted-foreground whitespace-pre-line" dangerouslySetInnerHTML={{ 
-                                __html: coach.bio.replace(
+                                __html: DOMPurify.sanitize(coach.bio.replace(
                                   /(https?:\/\/[^\s]+)/g, 
                                   '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
-                                )
+                                ))
                               }} />
                             </div>
                           ) : (
@@ -710,7 +712,7 @@ export default function ClassDetailsPage() {
                                         {review.customerName}
                                       </span>
                                       <span className="ml-2 text-sm text-muted-foreground">
-                                        {new Date(review.updatedAt).toLocaleDateString('en-US', {
+                                        {formatCalendarDate(review.updatedAt, {
                                           month: 'short',
                                           day: 'numeric',
                                           year: 'numeric'

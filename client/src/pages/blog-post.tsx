@@ -1,7 +1,7 @@
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
-import DOMPurify from "dompurify";
+import { formatInTimeZone } from "date-fns-tz";
+import DOMPurify from "isomorphic-dompurify";
 import { Clock, Tag, ArrowLeft, User } from "lucide-react";
 import Header from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
@@ -125,12 +125,12 @@ export default function BlogPostPage() {
                 <span>
                   {(() => {
                     if (post.publishedAt && !isNaN(new Date(post.publishedAt).getTime())) {
-                      return format(new Date(post.publishedAt), 'MMMM d, yyyy');
+                      return formatInTimeZone(new Date(post.publishedAt), "America/Los_Angeles", 'MMMM d, yyyy');
                     }
                     if (post.createdAt && !isNaN(new Date(post.createdAt).getTime())) {
-                      return format(new Date(post.createdAt), 'MMMM d, yyyy');
+                      return formatInTimeZone(new Date(post.createdAt), "America/Los_Angeles", 'MMMM d, yyyy');
                     }
-                    return format(new Date(), 'MMMM d, yyyy');
+                    return "Publication date unavailable";
                   })()}
                 </span>
                 {post.status !== 'published' && (

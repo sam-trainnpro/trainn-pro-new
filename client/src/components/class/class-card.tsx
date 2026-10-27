@@ -235,10 +235,7 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
     const timeZone = 'America/Los_Angeles'; // Pacific Time Zone
     
     // Format date as "Sun 5/18"
-    const dayOfWeek = formatInTimeZone(startDate, timeZone, 'EEE');
-    const month = startDate.getMonth() + 1; // getMonth is 0-indexed
-    const day = startDate.getDate();
-    const formattedDate = `${dayOfWeek} ${month}/${day}`;
+    const formattedDate = formatInTimeZone(startDate, timeZone, 'EEE M/d');
     
     // Format times
     const startFormatted = formatInTimeZone(startDate, timeZone, 'h:mm a');

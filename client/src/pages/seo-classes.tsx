@@ -21,6 +21,8 @@ import {
   generateBreadcrumbSchema
 } from "@/lib/seo-config";
 import { useSafeAuth } from "../../../hooks/use-auth-safe";
+import NotFound from "./not-found";
+import { isSupportedLanding } from "@/lib/seo-config";
 
 interface SEOClassesPageProps {
   citySlug: string;
@@ -29,6 +31,11 @@ interface SEOClassesPageProps {
 }
 
 export default function SEOClassesPage({ citySlug, ageGroupSlug, categorySlug }: SEOClassesPageProps) {
+  if (!isSupportedLanding(citySlug, ageGroupSlug, categorySlug)) return <NotFound />;
+  return <ValidSEOClassesPage citySlug={citySlug} ageGroupSlug={ageGroupSlug} categorySlug={categorySlug} />;
+}
+
+function ValidSEOClassesPage({ citySlug, ageGroupSlug, categorySlug }: SEOClassesPageProps) {
   const { user } = useSafeAuth();
   
   useEffect(() => {
@@ -45,11 +52,6 @@ export default function SEOClassesPage({ citySlug, ageGroupSlug, categorySlug }:
   const city = cities[citySlug];
   const ageGroup = ageGroups[ageGroupSlug];
   const category = categorySlug ? seoCategories[categorySlug] : null;
-
-  if (!city || !ageGroup) {
-    navigate("/classes");
-    return null;
-  }
 
   const pageTitle = generatePageTitle(citySlug, ageGroupSlug, categorySlug);
   const pageHeader = generatePageHeader(citySlug, ageGroupSlug, categorySlug);

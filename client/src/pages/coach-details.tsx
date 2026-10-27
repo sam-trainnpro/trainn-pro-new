@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import DOMPurify from "isomorphic-dompurify";
 import { useRoute, Link, useLocation } from "wouter";
 import { User, Class, ClassCategory } from "@shared/schema";
 import Header from "@/components/layout/header";
@@ -212,10 +213,10 @@ export default function CoachDetailsPage() {
                     
                     {coach.bio ? (
                       <div className="mb-6 max-w-3xl whitespace-pre-line" dangerouslySetInnerHTML={{ 
-                        __html: coach.bio.replace(
+                        __html: DOMPurify.sanitize(coach.bio.replace(
                           /(https?:\/\/[^\s]+)/g, 
                           '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:text-primary/80">$1</a>'
-                        )
+                        ))
                       }} />
                     ) : (
                       <p className="text-muted-foreground italic mb-6">

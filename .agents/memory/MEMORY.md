@@ -1,2 +1,3 @@
 - [Packages browse retirement](packages-retirement.md) — public package browsing was removed for low quality and usage, not the underlying package functionality.
 - [Public SEO claims](seo-content-claims.md) — provider stories need attributable evidence; unfinished case-study teasers should not present unsupported metrics or be indexed.
+- [Public rendering](public-rendering.md) — hydration needs an explicit shared cache instance and deterministic class time zones; successful HTML alone is insufficient.
