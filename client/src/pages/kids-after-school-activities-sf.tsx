@@ -172,49 +172,6 @@ export default function KidsAfterSchoolActivitiesSF() {
         <meta name="twitter:title" content="Kids After School & Weekend Activities San Francisco" />
         <meta name="twitter:description" content="Find after school and weekend drop-in activities for kids in SF" />
         
-        {/* Structured Data */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            "mainEntity": [{
-              "@type": "Question",
-              "name": "What types of after school activities are available for kids in San Francisco?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "We offer sports (soccer, basketball), creative arts, music lessons, STEM activities, and multi-activity programs. All designed for after school and weekend scheduling with flexible drop-in options."
-              }
-            }, {
-              "@type": "Question",
-              "name": "How much do kids after school activities cost in San Francisco?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Kids after school and weekend activities range from $25-45 per session. No long-term commitments required - perfect for busy families who need flexible scheduling."
-              }
-            }, {
-              "@type": "Question",
-              "name": "What age groups are available for after school activities?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "After school activities are available for ages 3-17, with age-appropriate groupings: Preschool (3-5), Elementary (6-9), Middle School (10-13), and High School (14-17)."
-              }
-            }, {
-              "@type": "Question",
-              "name": "Are drop-in activities available for kids after school?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Yes! All our activities offer drop-in flexibility - perfect for busy families. No seasonal commitments or long-term registrations required. Book individual sessions as needed."
-              }
-            }, {
-              "@type": "Question",
-              "name": "What should kids bring to after school activities?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Kids should bring water, comfortable clothes for movement, and any specific materials mentioned in the activity description. Most instructors provide basic equipment and supplies."
-              }
-            }]
-          })}
-        </script>
       </Helmet>
 
       <Header />

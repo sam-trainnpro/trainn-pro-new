@@ -2,10 +2,12 @@ import { Link } from "wouter";
 import { ArrowLeft, Calculator, BarChart3, Calendar, CreditCard, MessageSquare, Shield } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import PageMetadata from "@/components/page-metadata";
 
 export default function BusinessTools() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <PageMetadata page="/business-tools" />
       <Header />
 
       {/* Coming Soon Banner */}

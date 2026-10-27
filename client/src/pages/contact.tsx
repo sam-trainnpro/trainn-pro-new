@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, MessageSquare, Users } from "lucide-react";
+import PageMetadata from "@/components/page-metadata";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -71,6 +72,7 @@ export default function ContactPage() {
   if (isSubmitted) {
     return (
       <>
+        <PageMetadata page="/contact" />
         <Header />
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
           <main className="container mx-auto px-4 py-12">
@@ -99,6 +101,7 @@ export default function ContactPage() {
 
   return (
     <>
+      <PageMetadata page="/contact" />
       <Header />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <main className="container mx-auto px-4 py-12">

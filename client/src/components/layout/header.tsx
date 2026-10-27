@@ -106,11 +106,11 @@ export default function Header() {
                   </Link>
                 </>
               )}
-              <Link href={user.role === 'coach' ? "/my-calendar" : "/bookings"}>
-                <Button variant="ghost" className="p-2">
+              <Button asChild variant="ghost" className="p-2">
+                <Link href={user.role === 'coach' ? "/my-calendar" : "/bookings"} aria-label={user.role === 'coach' ? "My calendar" : "My bookings"}>
                   <Calendar className="h-5 w-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 p-1">
@@ -228,7 +228,7 @@ export default function Header() {
         {/* Mobile Menu Button */}
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" className="md:hidden p-2 pl-[9px] pr-[9px] pt-[10px] pb-[10px]">
+            <Button variant="ghost" aria-label="Open navigation menu" className="md:hidden p-2 pl-[9px] pr-[9px] pt-[10px] pb-[10px]">
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>

@@ -382,6 +382,7 @@ export default function ClassesPage() {
                 <Input
                   ref={mobileInputRef}
                   type="text"
+                  aria-label="Search classes"
                   placeholder='Try "basketball for kids" or "outdoor yoga"'
                   className="pl-9 pr-4 py-2 h-9 text-sm border-gray-300 w-full"
                   value={mobileQuery}
@@ -416,43 +417,57 @@ export default function ClassesPage() {
             {filters.query && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 "{filters.query}"
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, query: "" })} />
+                <button type="button" aria-label="Remove search query filter" className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => handleSearch({ ...filters, query: "" })}>
+                  <X aria-hidden="true" className="h-3 w-3" />
+                </button>
               </span>
             )}
             {filters.ageGroup && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 {filters.ageGroup}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, ageGroup: undefined })} />
+                <button type="button" aria-label="Remove age group filter" className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => handleSearch({ ...filters, ageGroup: undefined })}>
+                  <X aria-hidden="true" className="h-3 w-3" />
+                </button>
               </span>
             )}
             {filters.classType && categories && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 {categories.find(c => c.id.toString() === filters.classType)?.name}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, classType: undefined })} />
+                <button type="button" aria-label="Remove class type filter" className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => handleSearch({ ...filters, classType: undefined })}>
+                  <X aria-hidden="true" className="h-3 w-3" />
+                </button>
               </span>
             )}
             {filters.city && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 {filters.city}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, city: undefined })} />
+                <button type="button" aria-label="Remove city filter" className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => handleSearch({ ...filters, city: undefined })}>
+                  <X aria-hidden="true" className="h-3 w-3" />
+                </button>
               </span>
             )}
             {filters.outdoors && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 Outdoors: {filters.outdoors}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, outdoors: undefined })} />
+                <button type="button" aria-label="Remove outdoors filter" className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => handleSearch({ ...filters, outdoors: undefined })}>
+                  <X aria-hidden="true" className="h-3 w-3" />
+                </button>
               </span>
             )}
             {filters.date && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 {filters.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, date: undefined })} />
+                <button type="button" aria-label="Remove date filter" className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => handleSearch({ ...filters, date: undefined })}>
+                  <X aria-hidden="true" className="h-3 w-3" />
+                </button>
               </span>
             )}
             {filters.targetAge != null && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                 Age: {filters.targetAge >= 18 ? "18+" : filters.targetAge}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => handleSearch({ ...filters, targetAge: null })} />
+                <button type="button" aria-label="Remove age filter" className="inline-flex rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => handleSearch({ ...filters, targetAge: null })}>
+                  <X aria-hidden="true" className="h-3 w-3" />
+                </button>
               </span>
             )}
             {/* AI search indicator — mobile */}

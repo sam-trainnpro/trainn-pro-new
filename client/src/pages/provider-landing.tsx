@@ -3,10 +3,12 @@ import { Link } from "wouter";
 import { Check, Clock, Users, TrendingUp, Calendar, Tag, Phone, Sparkles } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import PageMetadata from "@/components/page-metadata";
 
 export default function ProviderLanding() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <PageMetadata page="/provider-landing" />
       <Header />
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white py-20">

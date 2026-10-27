@@ -2,10 +2,12 @@ import { Link } from "wouter";
 import { ArrowLeft, Users, MessageCircle, Calendar, Trophy, Heart, Zap } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import PageMetadata from "@/components/page-metadata";
 
 export default function CoachCommunity() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <PageMetadata page="/coach-community" />
       <Header />
 
       {/* Coming Soon Banner */}

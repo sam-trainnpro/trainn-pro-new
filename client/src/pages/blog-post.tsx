@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import type { BlogPost } from "@shared/schema";
+import PageMetadata from "@/components/page-metadata";
+import { getBlogPostMetadata } from "@shared/page-metadata";
 
 export default function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -24,6 +26,7 @@ export default function BlogPostPage() {
   if (isLoading) {
     return (
       <>
+        <PageMetadata title="Loading Article | Trainn Blog" description="Loading this article from the Trainn blog." />
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
@@ -47,6 +50,7 @@ export default function BlogPostPage() {
   if (error || !post) {
     return (
       <>
+        <PageMetadata title="Article Unavailable | Trainn Blog" description="This article could not be found or loaded. Browse the Trainn blog for more guides and updates." noindex />
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto text-center">
@@ -68,6 +72,7 @@ export default function BlogPostPage() {
 
   return (
     <>
+      <PageMetadata {...getBlogPostMetadata(post)} noindex={post.status !== "published"} />
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -161,7 +166,7 @@ export default function BlogPostPage() {
                 className="text-gray-800 leading-relaxed"
                 dangerouslySetInnerHTML={{ 
                   __html: DOMPurify.sanitize((post.content || '').replace(/\n/g, '<br>'), {
-                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'ul', 'li', 'br', 'p', 'span'],
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'ul', 'li', 'br', 'p', 'span', 'h2', 'h3'],
                     ALLOWED_ATTR: ['href', 'target', 'rel', 'style']
                   })
                 }}

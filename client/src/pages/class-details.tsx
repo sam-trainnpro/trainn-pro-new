@@ -447,6 +447,7 @@ export default function ClassDetailsPage() {
                       variant="outline" 
                       size="icon"
                       onClick={() => setIsShareModalOpen(true)}
+                      aria-label={`Share ${classItem.title}`}
                       data-testid="button-share-class"
                     >
                       <Share2 className="h-4 w-4" />
@@ -455,6 +456,8 @@ export default function ClassDetailsPage() {
                       variant="outline" 
                       size="icon"
                       onClick={handleLikeClick}
+                      aria-label={`${isLiked ? "Unlike" : "Like"} ${classItem.title}`}
+                      aria-pressed={isLiked}
                       disabled={likeMutation.isPending || unlikeMutation.isPending}
                       data-testid="button-like-class"
                     >
@@ -827,6 +830,7 @@ export default function ClassDetailsPage() {
                                   variant="outline"
                                   size="icon"
                                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                  aria-label="Decrease number of spots"
                                   disabled={quantity <= 1}
                                   className="h-8 w-8"
                                 >
@@ -843,6 +847,7 @@ export default function ClassDetailsPage() {
                                     setQuantity(Math.min(maxSpots, quantity + 1));
                                   }}
                                   disabled={quantity >= (bookingCount?.spotsLeft || classItem.capacity)}
+                                  aria-label="Increase number of spots"
                                   className="h-8 w-8"
                                 >
                                   <Plus className="h-4 w-4" />

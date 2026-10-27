@@ -936,6 +936,7 @@ export default function TimeBoundPackageDetailsPage() {
                               onClick={() => setQuantity(Math.max(1, quantity - 1))}
                               disabled={quantity <= 1}
                               data-testid="button-decrease-quantity"
+                              aria-label="Decrease number of spots"
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
@@ -956,6 +957,7 @@ export default function TimeBoundPackageDetailsPage() {
                               }}
                               disabled={!isUnlimitedCapacity && spotsRemaining !== null && quantity >= spotsRemaining}
                               data-testid="button-increase-quantity"
+                              aria-label="Increase number of spots"
                             >
                               <Plus className="h-4 w-4" />
                             </Button>

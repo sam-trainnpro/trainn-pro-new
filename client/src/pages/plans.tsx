@@ -8,7 +8,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Helmet } from "react-helmet";
+import PageMetadata from "@/components/page-metadata";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import MobileNavigation from "@/components/layout/mobile-navigation";
@@ -188,13 +188,7 @@ export default function PlansPage() {
 
   return (
     <>
-      <Helmet>
-        <title>Subscription Plans - Trainn</title>
-        <meta 
-          name="description" 
-          content="Subscribe to Trainn for unlimited access to fitness, sports, and creative classes. Choose from flexible monthly plans and save on every class." 
-        />
-      </Helmet>
+      <PageMetadata page="/plans" />
       <Header />
 
       {/* Embedded Stripe Checkout Overlay */}

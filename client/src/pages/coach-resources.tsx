@@ -2,10 +2,12 @@ import { Link } from "wouter";
 import { ArrowLeft, BookOpen, Video, FileText, Users } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import PageMetadata from "@/components/page-metadata";
 
 export default function CoachResources() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <PageMetadata page="/coach-resources" />
       <Header />
 
       {/* Coming Soon Banner */}
