@@ -54,6 +54,7 @@ export default function CoachesPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input 
                 type="text" 
+                aria-label="Search providers by name or specialty"
                 placeholder="Search for providers by name or specialty..." 
                 className="w-full pl-10 pr-4 py-3 text-foreground border-gray-300 bg-white"
                 value={searchQuery}

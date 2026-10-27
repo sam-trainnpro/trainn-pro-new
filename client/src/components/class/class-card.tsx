@@ -250,23 +250,9 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
     return displayText;
   };
   
-  const handleCardClick = (e: React.MouseEvent) => {
-    console.log("Card clicked!", classItem.id);
-    // Don't navigate if user clicks on interactive elements
-    const target = e.target as HTMLElement;
-    if (target.closest('button')) {
-      console.log("Button clicked, not navigating");
-      return;
-    }
-    console.log("Navigating to:", `/classes/${classItem.id}`);
-    navigate(`/classes/${classItem.id}`);
-  };
-
   return (
     <div 
-      className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden cursor-pointer block"
-      onClick={handleCardClick}
-      style={{ userSelect: 'none' }}
+      className="relative bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden block"
     >
         <div className="h-48 overflow-hidden relative">
           <img 
@@ -300,8 +286,10 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
               );
             })()}
           </div>
-          <div className="absolute top-3 right-3 flex gap-2">
+          <div className="absolute top-3 right-3 z-20 flex gap-2">
             <button 
+              type="button"
+              aria-label={`Share ${classItem.title}`}
               className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
               onClick={(e) => {
                 e.stopPropagation();
@@ -312,6 +300,9 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
               <Share2 className="text-primary h-5 w-5" />
             </button>
             <button 
+              type="button"
+              aria-label={`${isLiked ? "Unlike" : "Like"} ${classItem.title}`}
+              aria-pressed={isLiked}
               className="bg-white bg-opacity-80 p-2 rounded-full hover:bg-opacity-100 transition"
               onClick={(e) => {
                 e.stopPropagation();
@@ -334,7 +325,14 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
         <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-heading font-bold text-lg">{classItem.title}</h3>
+            <h3 className="font-heading font-bold text-lg">
+              <Link
+                href={`/classes/${classItem.id}`}
+                className="after:absolute after:inset-0 after:z-10 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+              >
+                {classItem.title}
+              </Link>
+            </h3>
             {'parentClassId' in classItem && classItem.parentClassId && (
               <div className="text-xs text-primary font-medium mt-0.5">
                 Single class session
@@ -430,7 +428,7 @@ export default function ClassCard({ classItem, schedules, coach: providedCoach }
           )}
         </div>
         
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="relative z-20 mt-4 grid grid-cols-2 gap-3">
           <div className="text-center py-2 bg-[#F7F7F7] rounded-lg text-sm">
             {isLoadingBookingCount ? (
               <Skeleton className="h-4 w-16 mx-auto" />

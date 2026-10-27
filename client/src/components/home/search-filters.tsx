@@ -325,6 +325,7 @@ export default function SearchFilters({ onSearch, showOnlyFutureCategories = fal
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input 
               type="text" 
+              aria-label="Search classes"
               placeholder='Try "outdoor fitness in San Francisco" or "art classes for kids"' 
               className="w-full pl-10 pr-4 py-3 border-gray-300"
               value={searchParams.query}
