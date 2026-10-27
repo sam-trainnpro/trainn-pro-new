@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "../../../hooks/use-auth-simple";
 import type { BlogPost } from "@shared/schema";
+import PageMetadata from "@/components/page-metadata";
 
 export default function BlogPage() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export default function BlogPage() {
 
   return (
     <>
+      <PageMetadata page="/blog" />
       <Header />
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}

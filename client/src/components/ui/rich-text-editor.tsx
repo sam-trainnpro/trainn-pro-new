@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Input } from './input';
-import { Bold, Italic, Link, Smile, List, Undo, Redo } from 'lucide-react';
+import { Bold, Italic, Link, Smile, List, Undo, Redo, Heading2, Heading3, Pilcrow } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -49,7 +49,7 @@ export function RichTextEditor({
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
       const sanitizedValue = DOMPurify.sanitize(value || '', {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'ul', 'li', 'br', 'p', 'span'],
+        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'ul', 'li', 'br', 'p', 'span', 'h2', 'h3'],
         ALLOWED_ATTR: ['href', 'target', 'rel', 'style']
       });
       editorRef.current.innerHTML = sanitizedValue;
@@ -113,7 +113,29 @@ export function RichTextEditor({
   return (
     <div className={`border rounded-md ${className}`}>
       {/* Toolbar */}
-      <div className="flex items-center gap-1 p-2 border-b bg-gray-50">
+      <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-gray-50">
+        {[
+          { tag: 'p', label: 'Paragraph', Icon: Pilcrow },
+          { tag: 'h2', label: 'Section heading (H2)', Icon: Heading2 },
+          { tag: 'h3', label: 'Subsection heading (H3)', Icon: Heading3 },
+        ].map(({ tag, label, Icon }) => (
+          <Button
+            key={tag}
+            type="button"
+            variant="ghost"
+            size="sm"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              editorRef.current?.focus();
+              executeCommand('formatBlock', tag);
+            }}
+            className="h-8 w-8 p-0"
+            title={label}
+            aria-label={label}
+          >
+            <Icon className="h-4 w-4" />
+          </Button>
+        ))}
         <Button
           type="button"
           variant="ghost"
@@ -256,7 +278,7 @@ export function RichTextEditor({
       <div
         ref={editorRef}
         contentEditable
-        className="p-4 focus:outline-none"
+        className="p-4 focus:outline-none [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:my-4 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:my-3"
         style={{ minHeight }}
         onInput={handleContentChange}
         onKeyDown={handleKeyDown}
