@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "k7XEI1GnziFGihx47mWpW"
+uri = "file://generated-artifacts/production-database-csv-export.zip"
+type = "unspecified"
+title = "Production database — CSV export"
+description = "ZIP containing 31 table CSVs and 9,220 records, plus verified row counts and export notes. Contains sensitive data; store securely."
+logical_id = "0ddcdc7d-dd15-4868-826f-046b81deb033"
+content_hash = "sha256:d09450c72aa3c917c19900818898029ca14371bc57640b5b98621efe2fcf5cd4"
+size = 466325
+mtime_ms = 1793079395384
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:18601edf-4a24-406b-bba8-ab1ce8812f91/0ddcdc7d-dd15-4868-826f-046b81deb033/9636dde4-f251-4a69-b586-26504b122da6"
+storage_version_token = "1793079401940245"
+content_type = "application/octet-stream"
