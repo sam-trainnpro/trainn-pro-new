@@ -55,6 +55,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "../../../hooks/use-toast";
 import { formatInTimeZone } from "date-fns-tz";
 import { Helmet } from "react-helmet";
+import { socialPreviewImage } from "../../../shared/social-preview";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
@@ -544,7 +545,9 @@ export default function TimeBoundPackageDetailsPage() {
           <meta property="og:description" content={packageDetails.description || ''} />
           <meta property="og:type" content="website" />
           <meta property="og:url" content={`https://trainn.pro/package/${packageDetails.id}`} />
-          <meta property="og:image" content={packageDetails.image || "https://trainn.pro/default-package-image.jpg"} />
+          <meta property="og:image" content={socialPreviewImage(packageDetails.image)} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:image" content={socialPreviewImage(packageDetails.image)} />
         </Helmet>
       )}
       

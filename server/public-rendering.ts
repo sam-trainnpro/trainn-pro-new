@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { resolvePublicRoute } from "../shared/public-routes";
 import { applyPageMetadata, getPublicPageMetadata } from "./page-metadata";
 import { isPublicClass } from "../shared/public-availability";
+import { SOCIAL_PREVIEW_IMAGE, SOCIAL_PREVIEW_ALT, socialPreviewImage } from "../shared/social-preview";
 
 type Render = typeof import("../client/src/entry-server").render;
 
@@ -92,17 +93,23 @@ export async function renderPublicDocument(req: Request, res: Response, template
     .replace(/<meta\b[^>]*(?:property="og:[^"]*"|name="twitter:[^"]*")[^>]*\/?>/gi, "");
   if (!notFound) {
     const canonical = `https://trainn.pro${normalized === "/" ? "" : normalized}`;
-    const image = seed?.data.featuredImage || seed?.data.image;
+    const image = socialPreviewImage(seed?.data.profileImage || seed?.data.featuredImage || seed?.data.image);
     head += `
       <link data-react-helmet="true" rel="canonical" href="${escapeHtml(canonical)}" />
       <meta data-react-helmet="true" property="og:url" content="${escapeHtml(canonical)}" />
       <meta data-react-helmet="true" property="og:type" content="${normalized.startsWith("/blog/") ? "article" : "website"}" />
       <meta data-react-helmet="true" property="og:title" content="${title}" />
       <meta data-react-helmet="true" property="og:description" content="${description}" />
-      <meta data-react-helmet="true" name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />
+      <meta data-react-helmet="true" name="twitter:card" content="summary_large_image" />
       <meta data-react-helmet="true" name="twitter:title" content="${title}" />
       <meta data-react-helmet="true" name="twitter:description" content="${description}" />`;
-    if (image && /^https?:\/\//.test(image)) head += `<meta data-react-helmet="true" property="og:image" content="${escapeHtml(image)}" /><meta data-react-helmet="true" name="twitter:image" content="${escapeHtml(image)}" />`;
+    head += `<meta data-react-helmet="true" property="og:image" content="${escapeHtml(image)}" /><meta data-react-helmet="true" name="twitter:image" content="${escapeHtml(image)}" />`;
+    if (image === SOCIAL_PREVIEW_IMAGE) head += `
+      <meta data-react-helmet="true" property="og:image:width" content="1200" />
+      <meta data-react-helmet="true" property="og:image:height" content="630" />
+      <meta data-react-helmet="true" property="og:image:type" content="image/jpeg" />
+      <meta data-react-helmet="true" property="og:image:alt" content="${escapeHtml(SOCIAL_PREVIEW_ALT)}" />
+      <meta data-react-helmet="true" name="twitter:image:alt" content="${escapeHtml(SOCIAL_PREVIEW_ALT)}" />`;
     const data = seed?.data;
     const schema: Record<string, unknown> = {
       "@context": "https://schema.org", "@type": "WebPage", url: canonical,

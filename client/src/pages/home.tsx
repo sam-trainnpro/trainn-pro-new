@@ -10,6 +10,7 @@ import DownloadApp from "@/components/home/download-app";
 import Testimonials from "@/components/home/testimonials";
 import CTASection from "@/components/home/cta-section";
 import { Helmet } from "react-helmet";
+import { SOCIAL_PREVIEW_IMAGE, SOCIAL_PREVIEW_ALT } from "../../../shared/social-preview";
 
 export default function Home() {
   return (
@@ -21,7 +22,13 @@ export default function Home() {
         <meta property="og:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes in San Francisco, Los Angeles and beyond. Experienced providers, flexible scheduling, no long-term commitments." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://trainn.pro" />
+        <meta property="og:image" content={SOCIAL_PREVIEW_IMAGE} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={SOCIAL_PREVIEW_ALT} />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content={SOCIAL_PREVIEW_IMAGE} />
+        <meta name="twitter:image:alt" content={SOCIAL_PREVIEW_ALT} />
         <meta name="twitter:title" content="Book Fitness, Sports and Other Fun Creative Classes for Adults & Kids in San Francisco, Los Angeles and beyond | Trainn" />
         <meta name="twitter:description" content="Find adult and kids focused drop-in fitness, sports, and creative classes in San Francisco, Los Angeles and beyond. Experienced providers, flexible scheduling, no long-term commitments." />
         <link rel="canonical" href="https://trainn.pro" />

@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Helmet } from "react-helmet";
+import { socialPreviewImage } from "../../../shared/social-preview";
 import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,11 +141,11 @@ export default function CoachDetailsPage() {
           <meta property="og:description" content={coach.bio || `Book fitness classes with ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}. View upcoming classes, specialties, and more.`} />
           <meta property="og:type" content="profile" />
           <meta property="og:url" content={`https://trainn.pro/coaches/${coach.id}`} />
-          <meta property="og:image" content={coach.profileImage || "https://trainn.pro/default-coach-image.jpg"} />
+          <meta property="og:image" content={socialPreviewImage(coach.profileImage)} />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={`${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`} - Trainn Fitness`} />
           <meta name="twitter:description" content={coach.bio || `Book fitness classes with ${coach.displayBusinessName && coach.businessName ? coach.businessName : `${coach.firstName} ${coach.lastName}`}. View upcoming classes, specialties, and more.`} />
-          <meta name="twitter:image" content={coach.profileImage || "https://trainn.pro/default-coach-image.jpg"} />
+          <meta name="twitter:image" content={socialPreviewImage(coach.profileImage)} />
         </Helmet>
       )}
       

@@ -27,8 +27,26 @@ export default function HeroSection() {
         {/* Image with overlay wrapper - centered with max width */}
         <div className="flex justify-center w-full">
           <div className="relative inline-block" style={{ maxWidth: '100%' }}>
-            <img 
-              src="/hero-v6-no-border.png"
+            <picture>
+              <source
+                type="image/avif"
+                srcSet="/hero-640.avif 640w, /hero-1280.avif 1280w, /hero-1920.avif 1920w, /hero-2560.avif 2560w"
+                sizes="(min-width: 1503px) 1503px, 100vw"
+              />
+              <source
+                type="image/webp"
+                srcSet="/hero-640.webp 640w, /hero-1280.webp 1280w, /hero-1920.webp 1920w, /hero-2560.webp 2560w"
+                sizes="(min-width: 1503px) 1503px, 100vw"
+              />
+            <img
+              src="/hero-1280.jpg"
+              srcSet="/hero-640.jpg 640w, /hero-1280.jpg 1280w, /hero-1920.jpg 1920w, /hero-2560.jpg 2560w"
+              sizes="(min-width: 1503px) 1503px, 100vw"
+              width={3462}
+              height={1382}
+              // React 18 forwards lowercase attributes without an unknown-prop warning.
+              {...{ fetchpriority: "high" }}
+              loading="eager"
               alt="Fitness and creative classes for adults and kids"
               className="block"
               style={{
@@ -38,6 +56,7 @@ export default function HeroSection() {
                 maxWidth: '100%'
               }}
             />
+            </picture>
             
             {/* Overlay that matches image dimensions exactly */}
             <div className="absolute inset-0 pointer-events-none"
